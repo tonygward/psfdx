@@ -678,6 +678,19 @@ function Invoke-SalesforceApi {
     return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization="OAuth " + $AccessToken}
 }
 
+function Import-SalesforceJest {
+    [CmdletBinding()]
+    Param()       
+    Invoke-Sfdx -Command "sfdx force:lightning:lwc:setup"
+}
+
+function New-SalesforceJestTest {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $LwcName)       
+    $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
+    Invoke-Sfdx -Command "sfdx force:lightning:lwc:test:create -f $filePath"    
+}
+
 Export-ModuleMember Get-SalesforceDateTime
 Export-ModuleMember Connect-Salesforce
 Export-ModuleMember Disconnect-Salesforce
@@ -719,3 +732,6 @@ Export-ModuleMember Select-SalesforceObject
 Export-ModuleMember Set-SalesforceProject
 Export-ModuleMember Login-SalesforceApi
 Export-ModuleMember Invoke-SalesforceApi
+
+Export-ModuleMember Import-SalesforceJest
+Export-ModuleMember New-SalesforceJestTest
