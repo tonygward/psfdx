@@ -76,7 +76,7 @@ function Open-Salesforce {
     Invoke-Sfdx -Command "sfdx force:org:open -u $Username"    
 }
 
-function Get-Salesforce {    
+function Get-SalesforceConnections {    
     [CmdletBinding()]
     Param()    
     $result = Invoke-Sfdx -Command "sfdx force:org:list --json"
@@ -696,7 +696,7 @@ Export-ModuleMember Connect-Salesforce
 Export-ModuleMember Disconnect-Salesforce
 Export-ModuleMember Grant-SalesforceJWT
 Export-ModuleMember Open-Salesforce
-Export-ModuleMember Get-Salesforce
+Export-ModuleMember Get-SalesforceConnections
 Export-ModuleMember Get-SalesforceScratchOrgs
 Export-ModuleMember New-SalesforceScratchOrg
 Export-ModuleMember Select-SalesforceObjects
