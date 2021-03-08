@@ -8,7 +8,7 @@ Write-Verbose "Module Path: $pssfdxpath"
 
 # Get Source Path
 $filename = "psfdx.psm1"
-$gitUrl = "https://github.com/tonygward/psfdx/blob/master/psfdx.psm1"
+$gitUrl = "https://raw.githubusercontent.com/tonygward/psfdx/master/psfdx.psm1"
 
 # Install
 Write-Host "Creating module directory"
@@ -29,3 +29,5 @@ if ($LocalFile) {
 
 Write-Host "Installed."
 Write-Host 'Use "Import-Module psfdx" and then "Get-Command -Module psfdx"'
+
+Import-Module psfdx -Force
