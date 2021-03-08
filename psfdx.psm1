@@ -1,5 +1,3 @@
-$toolingApiObjects = @("SandboxInfo", "ProfileLayout")
-
 function Invoke-Sfdx {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Command)        
@@ -9,8 +7,7 @@ function Invoke-Sfdx {
 
 function Show-SfdxResult {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][psobject] $Result)        
-    
+    Param([Parameter(Mandatory = $true)][psobject] $Result)           
     $result = $Result | ConvertFrom-Json
     if ($result.status -ne 0) {
         Write-Debug $result
@@ -22,7 +19,6 @@ function Show-SfdxResult {
 function Get-SalesforceDateTime {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][datetime] $Datetime) 
-
     if ($null -eq $Datetime) { $Datetime = Get-Date}
     return $Datetime.ToString('s') + 'Z'
 }
@@ -110,40 +106,25 @@ function New-SalesforceScratchOrg {
     return Show-SfdxResult -Result $result
 }
 
-function Select-SalesforceObject {
+function Get-SalesforceAlias {
     [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ObjectName,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
-    )     
-    $query = Build-SalesforceQuery -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
-    return Select-SalesforceObjects -Query $query -Username $Username -UseToolingApi:$UseToolingApi
+    $result = Invoke-Sfdx -Command "sfdx force:alias:list --json"
+    return Show-SfdxResult -Result $result
 }
 
-function Select-SalesforceObjects {    
+function Add-SalesforceAlias {
     [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Query,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
-    )            
-    Write-Verbose $Query
-    $command = "sfdx force:data:soql:query -q `"$Query`" -u $Username "
-    if ($UseToolingApi) {
-        $command += "-t "
-    }
-    $command += "--json"
+    Param(        
+        [Parameter(Mandatory = $true)][string] $Alias,       
+        [Parameter(Mandatory = $true)][string] $Username
+    )    
+    Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"    
+}
 
-    Write-Verbose $command
-    $result = Invoke-Expression -Command $command
-
-    $result = $result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        $result
-        throw $result.message
-    }
-    return $result.result.records
+function Remove-SalesforceAlias {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $Alias)            
+    Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
 }
 
 function Get-SalesforceLimits {
@@ -168,6 +149,62 @@ function Get-SalesforceApiUsage {
     $values = Get-SalesforceLimits -Username $Username | Where-Object Name -eq "DailyApiRequests"        
     $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
     return $values
+}
+
+function Build-SalesforceQuery {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $ObjectName,    
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+    ) 
+    $fields = Describe-SalesforceFields -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
+    if ($null -eq $fields) {
+        return ""
+    }
+
+    $fieldNames = @()
+    foreach ($field in $fields) { 
+        $fieldNames += $field.name 
+    }
+    $value = "SELECT "
+    foreach ($fieldName in $fieldNames) { 
+        $value += $fieldName + "," 
+    }
+    $value = $value.TrimEnd(",")
+    $value += " FROM $ObjectName"
+    return $value
+}
+
+function Get-SalesforceObject {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $ObjectName,    
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+    )     
+    $query = Build-SalesforceQuery -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
+    return Select-SalesforceObjects -Query $query -Username $Username -UseToolingApi:$UseToolingApi
+}
+
+function Select-SalesforceObjects {    
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Query,    
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+    )               
+    $command = "sfdx force:data:soql:query -q `"$Query`" -u $Username "
+    if ($UseToolingApi) { $command += "-t " }
+    $command += "--json"    
+    Write-Verbose ("Query: " + $Query)
+    Write-Verbose $command
+    $result = Invoke-Expression -Command $command | ConvertFrom-Json
+    if ($result.status -ne 0) {        
+        $result        
+        throw $result.message
+    }
+    return $result.result.records
 }
 
 function Describe-SalesforceObjects {
@@ -216,31 +253,6 @@ function Describe-SalesforceCodeTypes {
     return $result
 }
 
-function Build-SalesforceQuery {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ObjectName,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
-    ) 
-    $fields = Describe-SalesforceFields -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
-    if ($null -eq $fields) {
-        return ""
-    }
-
-    $fieldNames = @()
-    foreach ($field in $fields) { 
-        $fieldNames += $field.name 
-    }
-    $value = "SELECT "
-    foreach ($fieldName in $fieldNames) { 
-        $value += $fieldName + "," 
-    }
-    $value = $value.TrimEnd(",")
-    $value += " FROM $ObjectName"
-    return $value
-}
-
 function New-SalesforceObject {
     [CmdletBinding()]
     Param(                
@@ -272,11 +284,130 @@ function Get-SalesforceRecordType {
         [Parameter(Mandatory = $true)][string] $ObjectType,            
         [Parameter(Mandatory = $true)][string] $Username
     )    
-
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
     if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
-    return Select-SalesforceObjects -Query $query -Username $Username
+    $results = Select-SalesforceObjects -Query $query -Username $Username
+    return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType    
+}
+
+function New-SalesforceProject {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $false)][string][ValidateSet('standard','empty')] $Template = 'standard',
+        [Parameter(Mandatory = $false)][string] $DefaultUserName = $null
+    )      
+    $result = Invoke-Sfdx -Command "sfdx force:project:create --projectname $Name --template $Template --json" 
+    $result = Show-SfdxResult -Result $result
+    
+    if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {                
+        $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
+        New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
+        Set-SalesforceProject -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder 
+    }
+    return $result
+}
+
+function Set-SalesforceProject {
+    [CmdletBinding()]
+    Param( 
+        [Parameter(Mandatory = $true)][string] $DefaultUserName,
+        [Parameter(Mandatory = $false)][string] $ProjectFolder
+    )       
+
+    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
+        $sfdxFolder = (Get-Location).Path
+    } else {
+        $sfdxFolder = $ProjectFolder
+    }    
+    
+    if ($sfdxFolder.EndsWith(".sfdx") -eq $false) {
+        $sfdxFolder = Join-Path -Path $sfdxFolder -ChildPath ".sfdx"
+    }
+
+    if ((Test-Path -Path $sfdxFolder) -eq $false) {
+        throw ".sfdx folder does not exist ing $sfdxFolder"
+    }   
+    
+    $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
+    if (Test-Path -Path $sfdxFile) {
+        throw "File already exists $sfdxFile"
+    }
+
+    New-Item -Path $sfdxFile | Out-Null
+    $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
+    Set-Content -Path $sfdxFile -Value $json 
+}
+
+function Get-SalesforceMetaTypes {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $Username)     
+    $result = Invoke-Sfdx -Command "sfdx force:mdapi:describemetadata -u $username --json"
+    $result = $result | ConvertFrom-Json
+    $result = $result.result.metadataObjects    
+    $result = $result.xmlName | Sort-Object
+    return $result
+}
+
+function Get-SalesforceApexClass {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $Username
+    )   
+    $query = "SELECT Id, Name "
+    $query += "FROM ApexClass "
+    $query += "WHERE Name = '$Name'"
+    $result = Select-SalesforceObjects -Query $query -Username $Username
+    $result = $result | Select-Object Id, name
+    return $result
+}
+
+function Get-SalesforceCodeCoverage {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $ApexClassOrTrigger = $null,
+        [Parameter(Mandatory = $true)][string] $Username
+    )    
+    $query = "SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage "    
+    $query += "FROM ApexCodeCoverage "
+    if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {        
+        $apexClass = Get-SalesforceApexClass -Name $ApexClassOrTrigger -Username $Username
+        $apexClassId = $apexClass.Id
+        $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
+    }
+
+    $result = Invoke-Sfdx -Command "sfdx force:data:soql:query -q `"$query`" -t -u $Username --json"
+    $result = $result | ConvertFrom-Json
+    if ($result.status -ne 0) {
+        throw ($result.message)
+    }
+    $result = $result.result.records   
+    
+    $values = @()
+    foreach ($item in $result) {
+        $value = New-Object -TypeName PSObject
+        $value | Add-Member -MemberType NoteProperty -Name 'ApexClassOrTrigger' -Value $item.ApexClassOrTrigger.Name
+        $value | Add-Member -MemberType NoteProperty -Name 'ApexTestClass' -Value $item.ApexTestClass.Name        
+        $value | Add-Member -MemberType NoteProperty -Name 'TestMethodName' -Value $item.TestMethodName                   
+
+        $codeCoverage = 0
+        $codeLength = $item.NumLinesCovered + $item.NumLinesUncovered
+        if ($codeLength -gt 0) {
+            $codeCoverage = $item.NumLinesCovered / $codeLength
+        }
+        $value | Add-Member -MemberType NoteProperty -Name 'CodeCoverage' -Value $codeCoverage.toString("P")                       
+        $codeCoverageOK = $false
+        if ($codeCoverage -ge 0.75) { $codeCoverageOK = $true }
+
+        $value | Add-Member -MemberType NoteProperty -Name 'CodeCoverageOK' -Value $codeCoverageOK              
+        $value | Add-Member -MemberType NoteProperty -Name 'NumLinesCovered' -Value $item.NumLinesCovered
+        $value | Add-Member -MemberType NoteProperty -Name 'NumLinesUncovered' -Value $item.NumLinesUncovered   
+        $values += $value        
+    }
+
+    return $values
 }
 
 function Pull-SalesforceCode {
@@ -328,6 +459,19 @@ function Push-SalesforceCode {
     return Invoke-Sfdx -Command $command
 }
 
+function Import-SalesforceJest {
+    [CmdletBinding()]
+    Param()       
+    Invoke-Sfdx -Command "sfdx force:lightning:lwc:setup"
+}
+
+function New-SalesforceJestTest {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $LwcName)       
+    $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
+    Invoke-Sfdx -Command "sfdx force:lightning:lwc:test:create -f $filePath"    
+}
+
 function Test-Salesforce {
     [CmdletBinding()]
     Param(        
@@ -368,27 +512,6 @@ function Invoke-SalesforceApexFile {
     )
     $result = Invoke-Sfdx -Command "sfdx force:apex:execute -f $ApexFile -u $Username --json"
     return Show-SfdxResult -Result $result
-}
-
-function Get-SalesforceAlias {
-    [CmdletBinding()]
-    $result = Invoke-Sfdx -Command "sfdx force:alias:list --json"
-    return Show-SfdxResult -Result $result
-}
-
-function Add-SalesforceAlias {
-    [CmdletBinding()]
-    Param(        
-        [Parameter(Mandatory = $true)][string] $Alias,       
-        [Parameter(Mandatory = $true)][string] $Username
-    )    
-    Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"    
-}
-
-function Remove-SalesforceAlias {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Alias)            
-    Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
 }
 
 function Get-SalesforcePackage {
@@ -520,127 +643,6 @@ function Out-Notepad {
     notepad $filename
 }
 
-function New-SalesforceProject {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $false)][string][ValidateSet('standard','empty')] $Template = 'standard',
-        [Parameter(Mandatory = $false)][string] $DefaultUserName = $null
-    )      
-    $result = Invoke-Sfdx -Command "sfdx force:project:create --projectname $Name --template $Template --json" 
-    $result = Show-SfdxResult -Result $result
-    
-    if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {                
-        $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
-        New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
-        Set-SalesforceProject -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder 
-    }
-
-    return $result
-}
-
-function Set-SalesforceProject {
-    [CmdletBinding()]
-    Param( 
-        [Parameter(Mandatory = $true)][string] $DefaultUserName,
-        [Parameter(Mandatory = $false)][string] $ProjectFolder
-    )       
-
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }    
-    
-    if ($sfdxFolder.EndsWith(".sfdx") -eq $false) {
-        $sfdxFolder = Join-Path -Path $sfdxFolder -ChildPath ".sfdx"
-    }
-
-    if ((Test-Path -Path $sfdxFolder) -eq $false) {
-        throw ".sfdx folder does not exist ing $sfdxFolder"
-    }   
-    
-    $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
-    if (Test-Path -Path $sfdxFile) {
-        throw "File already exists $sfdxFile"
-    }
-
-    New-Item -Path $sfdxFile | Out-Null
-    $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
-    Set-Content -Path $sfdxFile -Value $json 
-}
-
-function Get-SalesforceMetaTypes {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)     
-
-    $result = Invoke-Sfdx -Command "sfdx force:mdapi:describemetadata -u $username --json"
-    $result = $result | ConvertFrom-Json
-    $result = $result.result.metadataObjects    
-    $result = $result.xmlName | Sort-Object
-    return $result
-}
-
-function Get-SalesforceApexClass {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $Username
-    )   
-    $query = "SELECT Id, Name "
-    $query += "FROM ApexClass "
-    $query += "WHERE Name = '$Name'"
-    $result = Select-SalesforceObjects -Query $query -Username $Username
-    $result = $result | Select-Object Id, name
-    return $result
-}
-
-function Get-SalesforceCodeCoverage {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $ApexClassOrTrigger = $null,
-        [Parameter(Mandatory = $true)][string] $Username
-    )    
-    $query = "SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage "    
-    $query += "FROM ApexCodeCoverage "
-    if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {        
-        $apexClass = Get-SalesforceApexClass -Name $ApexClassOrTrigger -Username $Username
-        $apexClassId = $apexClass.Id
-        $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
-    }
-
-    $result = Invoke-Sfdx -Command "sfdx force:data:soql:query -q `"$query`" -t -u $Username --json"
-    $result = $result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        throw ($result.message)
-    }
-    $result = $result.result.records   
-    
-    $values = @()
-    foreach ($item in $result) {
-        $value = New-Object -TypeName PSObject
-        $value | Add-Member -MemberType NoteProperty -Name 'ApexClassOrTrigger' -Value $item.ApexClassOrTrigger.Name
-        $value | Add-Member -MemberType NoteProperty -Name 'ApexTestClass' -Value $item.ApexTestClass.Name        
-        $value | Add-Member -MemberType NoteProperty -Name 'TestMethodName' -Value $item.TestMethodName                   
-
-        $codeCoverage = 0
-        $codeLength = $item.NumLinesCovered + $item.NumLinesUncovered
-        if ($codeLength -gt 0) {
-            $codeCoverage = $item.NumLinesCovered / $codeLength
-        }
-        $value | Add-Member -MemberType NoteProperty -Name 'CodeCoverage' -Value $codeCoverage.toString("P")                       
-        $codeCoverageOK = $false
-        if ($codeCoverage -ge 0.75) { $codeCoverageOK = $true }
-
-        $value | Add-Member -MemberType NoteProperty -Name 'CodeCoverageOK' -Value $codeCoverageOK              
-        $value | Add-Member -MemberType NoteProperty -Name 'NumLinesCovered' -Value $item.NumLinesCovered
-        $value | Add-Member -MemberType NoteProperty -Name 'NumLinesUncovered' -Value $item.NumLinesUncovered   
-        $values += $value        
-    }
-
-    return $values
-}
-
 function Login-SalesforceApi {
     [CmdletBinding()]
     Param(        
@@ -678,19 +680,6 @@ function Invoke-SalesforceApi {
     return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization="OAuth " + $AccessToken}
 }
 
-function Import-SalesforceJest {
-    [CmdletBinding()]
-    Param()       
-    Invoke-Sfdx -Command "sfdx force:lightning:lwc:setup"
-}
-
-function New-SalesforceJestTest {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $LwcName)       
-    $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
-    Invoke-Sfdx -Command "sfdx force:lightning:lwc:test:create -f $filePath"    
-}
-
 Export-ModuleMember Get-SalesforceDateTime
 Export-ModuleMember Connect-Salesforce
 Export-ModuleMember Disconnect-Salesforce
@@ -699,39 +688,48 @@ Export-ModuleMember Open-Salesforce
 Export-ModuleMember Get-SalesforceConnections
 Export-ModuleMember Get-SalesforceScratchOrgs
 Export-ModuleMember New-SalesforceScratchOrg
-Export-ModuleMember Select-SalesforceObjects
+
+Export-ModuleMember Get-SalesforceAlias
+Export-ModuleMember Add-SalesforceAlias
+Export-ModuleMember Remove-SalesforceAlias
+
 Export-ModuleMember Get-SalesforceLimits
 Export-ModuleMember Get-SalesforceDataStorage
 Export-ModuleMember Get-SalesforceApiUsage
+
+Export-ModuleMember Build-SalesforceQuery
+Export-ModuleMember Get-SalesforceObject
+Export-ModuleMember Select-SalesforceObjects
+
 Export-ModuleMember Describe-SalesforceObjects
 Export-ModuleMember Describe-SalesforceObject
 Export-ModuleMember Describe-SalesforceFields
 Export-ModuleMember Describe-SalesforceCodeTypes
-Export-ModuleMember Build-SalesforceQuery
+
 Export-ModuleMember New-SalesforceObject
 Export-ModuleMember Set-SalesforceObject
 Export-ModuleMember Get-SalesforceRecordType
+
+Export-ModuleMember New-SalesforceProject
+Export-ModuleMember Set-SalesforceProject
+Export-ModuleMember Get-SalesforceMetaTypes
+Export-ModuleMember Get-SalesforceCodeCoverage
+
 Export-ModuleMember Pull-SalesforceCode
 Export-ModuleMember Push-SalesforceCode
+Export-ModuleMember Import-SalesforceJest
+Export-ModuleMember New-SalesforceJestTest
 Export-ModuleMember Test-Salesforce
 Export-ModuleMember Invoke-SalesforceApexFile
-Export-ModuleMember Get-SalesforceAlias
-Export-ModuleMember Add-SalesforceAlias
-Export-ModuleMember Remove-SalesforceAlias
+
 Export-ModuleMember Get-SalesforcePackage
+
 Export-ModuleMember Watch-SalesforceLogs
 Export-ModuleMember Get-SalesforceLogs
 Export-ModuleMember Get-SalesforceLog
 Export-ModuleMember Export-SalesforceLogs
 Export-ModuleMember Convert-SalesforceLog
 Export-ModuleMember Out-Notepad
-Export-ModuleMember New-SalesforceProject
-Export-ModuleMember Get-SalesforceMetaTypes
-Export-ModuleMember Get-SalesforceCodeCoverage
-Export-ModuleMember Select-SalesforceObject
-Export-ModuleMember Set-SalesforceProject
+
 Export-ModuleMember Login-SalesforceApi
 Export-ModuleMember Invoke-SalesforceApi
-
-Export-ModuleMember Import-SalesforceJest
-Export-ModuleMember New-SalesforceJestTest
