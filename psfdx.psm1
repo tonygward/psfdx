@@ -410,52 +410,304 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
-function Pull-SalesforceCode {
+function Retrieve-SalesforceCode {
     [CmdletBinding()]
     Param(        
         [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][string][ValidateSet('Apex', 'ApexTrigger','ApexClass', 'LightningComponentBundle', 'Profile')] $CodeType
+        [Parameter(Mandatory = $false)][string][ValidateSet(
+            'All',
+            'ActionLinkGroupTemplate',
+            'AnalyticSnapshot',
+            'AnimationRule',
+            'ApexClass',
+            'ApexComponent',
+            'ApexEmailNotifications',
+            'ApexPage',
+            'ApexTestSuite',
+            'ApexTrigger',
+            'AppMenu',
+            'AppointmentSchedulingPolicy',
+            'ApprovalProcess',
+            'AssignmentRules',
+            'AuraDefinitionBundle',
+            'AuthProvider',
+            'AutoResponseRules',
+            'BlacklistedConsumer',
+            'BrandingSet',
+            'CallCenter',
+            'CallCoachingMediaProvider',
+            'CanvasMetadata',
+            'Certificate',
+            'ChannelLayout',
+            'ChatterExtension',
+            'CleanDataService',
+            'Community',
+            'ConnectedApp',
+            'ContentAsset',
+            'CorsWhitelistOrigin',
+            'CspTrustedSite',
+            'CustomApplication',
+            'CustomApplicationComponent',
+            'CustomFeedFilter',
+            'CustomHelpMenuSection',
+            'CustomIndex',
+            'CustomLabels',
+            'CustomMetadata',
+            'CustomNotificationType',
+            'CustomObject',
+            'CustomObjectTranslation',
+            'CustomPageWebLink',
+            'CustomPermission',
+            'CustomSite',
+            'CustomTab',
+            'Dashboard',
+            'DataCategoryGroup',
+            'DelegateGroup',
+            'Document',
+            'DuplicateRule',
+            'EclairGeoData',
+            'EmailServicesFunction',
+            'EmailTemplate',
+            'EmbeddedServiceBranding',
+            'EmbeddedServiceConfig',
+            'EmbeddedServiceFlowConfig',
+            'EmbeddedServiceMenuSettings',
+            'EntityImplements',
+            'EscalationRules',
+            'ExternalDataSource',
+            'ExternalServiceRegistration',
+            'FlexiPage',
+            'Flow',
+            'FlowCategory',
+            'FlowDefinition',
+            'GatewayProviderPaymentMethodType',
+            'GlobalValueSet',
+            'GlobalValueSetTranslation',
+            'Group',
+            'HomePageComponent',
+            'HomePageLayout',
+            'IframeWhiteListUrlSettings',
+            'InboundNetworkConnection',
+            'InstalledPackage',
+            'Layout',
+            'LeadConvertSettings',
+            'Letterhead',
+            'LightningBolt',
+            'LightningComponentBundle',
+            'LightningExperienceTheme',
+            'LightningMessageChannel',
+            'LightningOnboardingConfig',
+            'LiveChatSensitiveDataRule',
+            'ManagedContentType',
+            'MatchingRules',
+            'MobileApplicationDetail',
+            'MutingPermissionSet',
+            'MyDomainDiscoverableLogin',
+            'NamedCredential',
+            'NetworkBranding',
+            'NotificationTypeConfig',
+            'OauthCustomScope',
+            'OutboundNetworkConnection',
+            'PathAssistant',
+            'PaymentGatewayProvider',
+            'PermissionSet',
+            'PermissionSetGroup',
+            'PlatformCachePartition',
+            'PlatformEventChannel',
+            'PlatformEventChannelMember',
+            'PlatformEventSubscriberConfig',
+            'PostTemplate',
+            'Profile',
+            'ProfilePasswordPolicy',
+            'ProfileSessionSetting',
+            'Prompt',
+            'Queue',
+            'QuickAction',
+            'RecommendationStrategy',
+            'RecordActionDeployment',
+            'RedirectWhitelistUrl',
+            'RemoteSiteSetting',
+            'Report',
+            'ReportType',
+            'Role',
+            'SamlSsoConfig',
+            'Scontrol',
+            'Settings',
+            'SharingRules',
+            'SharingSet',
+            'SiteDotCom',
+            'Skill',
+            'StandardValueSet',
+            'StandardValueSetTranslation',
+            'StaticResource',
+            'SynonymDictionary',
+            'TopicsForObjects',
+            'TransactionSecurityPolicy',
+            'UserProvisioningConfig',
+            'Workflow'
+        )] $CodeType
     )  
 
-    if ($CodeType) {
-        if ($CodeType -eq 'Apex') {
-            Invoke-Sfdx -Command "sfdx force:source:retrieve -m ApexClass -u $Username"
-            Invoke-Sfdx -Command "sfdx force:source:retrieve -m ApexTrigger -u $Username"
-            return
+    # Retrieve all Meta Types
+    if ($CodeType -eq 'All') {
+        $metaTypes = Get-SalesforceMetaTypes -Username $Username    
+        $count = 0
+        foreach ($metaType in $metaTypes) {
+            Invoke-Sfdx -Command "sfdx force:source:retrieve -m $metaType -u $Username"        
+            $count = $count + 1   
+            Write-Progress -Activity 'Getting Salesforce MetaData' -Status $metaType -PercentComplete (($count / $metaTypes.count) * 100) 
         }
-        return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $CodeType -u $Username"
+        return
     }
-    
-    $metaTypes = Get-SalesforceMetaTypes -Username $Username    
-    $count = 0
-    foreach ($metaType in $metaTypes) {
-        Invoke-Sfdx -Command "sfdx force:source:retrieve -m $metaType -u $Username"        
-        $count = $count + 1   
-        Write-Progress -Activity 'Getting Salesforce MetaData' -Status $metaType -PercentComplete (($count / $metaTypes.count) * 100) 
+
+    if ($CodeType -eq 'Apex') {
+        Invoke-Sfdx -Command "sfdx force:source:retrieve -m ApexClass -u $Username"
+        Invoke-Sfdx -Command "sfdx force:source:retrieve -m ApexTrigger -u $Username"
+        return
     }
+    return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $CodeType -u $Username"
 }
 
-function Push-SalesforceCode {
+function Deploy-SalesforceCode {
     [CmdletBinding()]
     Param(        
-        [Parameter(Mandatory = $false)][string][ValidateSet('ApexTrigger','ApexClass', 'LightningComponentBundle', 'Profile')] $CodeType = 'ApexClass',       
-        [Parameter(Mandatory = $true)][string] $Name,       
+        [Parameter(Mandatory = $false)][string][ValidateSet(
+            'ActionLinkGroupTemplate',
+            'AnalyticSnapshot',
+            'AnimationRule',
+            'ApexClass',
+            'ApexComponent',
+            'ApexEmailNotifications',
+            'ApexPage',
+            'ApexTestSuite',
+            'ApexTrigger',
+            'AppMenu',
+            'AppointmentSchedulingPolicy',
+            'ApprovalProcess',
+            'AssignmentRules',
+            'AuraDefinitionBundle',
+            'AuthProvider',
+            'AutoResponseRules',
+            'BlacklistedConsumer',
+            'BrandingSet',
+            'CallCenter',
+            'CallCoachingMediaProvider',
+            'CanvasMetadata',
+            'Certificate',
+            'ChannelLayout',
+            'ChatterExtension',
+            'CleanDataService',
+            'Community',
+            'ConnectedApp',
+            'ContentAsset',
+            'CorsWhitelistOrigin',
+            'CspTrustedSite',
+            'CustomApplication',
+            'CustomApplicationComponent',
+            'CustomFeedFilter',
+            'CustomHelpMenuSection',
+            'CustomIndex',
+            'CustomLabels',
+            'CustomMetadata',
+            'CustomNotificationType',
+            'CustomObject',
+            'CustomObjectTranslation',
+            'CustomPageWebLink',
+            'CustomPermission',
+            'CustomSite',
+            'CustomTab',
+            'Dashboard',
+            'DataCategoryGroup',
+            'DelegateGroup',
+            'Document',
+            'DuplicateRule',
+            'EclairGeoData',
+            'EmailServicesFunction',
+            'EmailTemplate',
+            'EmbeddedServiceBranding',
+            'EmbeddedServiceConfig',
+            'EmbeddedServiceFlowConfig',
+            'EmbeddedServiceMenuSettings',
+            'EntityImplements',
+            'EscalationRules',
+            'ExternalDataSource',
+            'ExternalServiceRegistration',
+            'FlexiPage',
+            'Flow',
+            'FlowCategory',
+            'FlowDefinition',
+            'GatewayProviderPaymentMethodType',
+            'GlobalValueSet',
+            'GlobalValueSetTranslation',
+            'Group',
+            'HomePageComponent',
+            'HomePageLayout',
+            'IframeWhiteListUrlSettings',
+            'InboundNetworkConnection',
+            'InstalledPackage',
+            'Layout',
+            'LeadConvertSettings',
+            'Letterhead',
+            'LightningBolt',
+            'LightningComponentBundle',
+            'LightningExperienceTheme',
+            'LightningMessageChannel',
+            'LightningOnboardingConfig',
+            'LiveChatSensitiveDataRule',
+            'ManagedContentType',
+            'MatchingRules',
+            'MobileApplicationDetail',
+            'MutingPermissionSet',
+            'MyDomainDiscoverableLogin',
+            'NamedCredential',
+            'NetworkBranding',
+            'NotificationTypeConfig',
+            'OauthCustomScope',
+            'OutboundNetworkConnection',
+            'PathAssistant',
+            'PaymentGatewayProvider',
+            'PermissionSet',
+            'PermissionSetGroup',
+            'PlatformCachePartition',
+            'PlatformEventChannel',
+            'PlatformEventChannelMember',
+            'PlatformEventSubscriberConfig',
+            'PostTemplate',
+            'Profile',
+            'ProfilePasswordPolicy',
+            'ProfileSessionSetting',
+            'Prompt',
+            'Queue',
+            'QuickAction',
+            'RecommendationStrategy',
+            'RecordActionDeployment',
+            'RedirectWhitelistUrl',
+            'RemoteSiteSetting',
+            'Report',
+            'ReportType',
+            'Role',
+            'SamlSsoConfig',
+            'Scontrol',
+            'Settings',
+            'SharingRules',
+            'SharingSet',
+            'SiteDotCom',
+            'Skill',
+            'StandardValueSet',
+            'StandardValueSetTranslation',
+            'StaticResource',
+            'SynonymDictionary',
+            'TopicsForObjects',
+            'TransactionSecurityPolicy',
+            'UserProvisioningConfig',
+            'Workflow'
+        )] $CodeType = 'ApexClass',       
+        [Parameter(Mandatory = $false)][string] $Name,       
         [Parameter(Mandatory = $true)][string] $Username
     )    
-    $command = "sfdx force:source:deploy -m "
-    if ($CodeType -eq 'ApexClass') {
-        $command += "ApexClass"
-    }
-    elseif ($CodeType -eq 'ApexTrigger') {
-        $command += "ApexTrigger"
-    }
-    elseif ($CodeType -eq 'LightningComponentBundle') {
-        $command += "LightningComponentBundle"
-    }
-    else {
-        throw "Unrecognised CodeType: $CodeType"    
-    }
-    $command += ":$Name -u $Username"
+    $command = "sfdx force:source:deploy -m $CodeType"
+    if ($Name) { $command += ":$Name" }
+    $command += " -u $Username"
     return Invoke-Sfdx -Command $command
 }
 
@@ -715,8 +967,8 @@ Export-ModuleMember Set-SalesforceProject
 Export-ModuleMember Get-SalesforceMetaTypes
 Export-ModuleMember Get-SalesforceCodeCoverage
 
-Export-ModuleMember Pull-SalesforceCode
-Export-ModuleMember Push-SalesforceCode
+Export-ModuleMember Retrieve-SalesforceCode
+Export-ModuleMember Deploy-SalesforceCode
 Export-ModuleMember Import-SalesforceJest
 Export-ModuleMember New-SalesforceJestTest
 Export-ModuleMember Test-Salesforce
