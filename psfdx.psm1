@@ -568,6 +568,26 @@ function Retrieve-SalesforceCode {
     return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $CodeType -u $Username"
 }
 
+function Retrieve-SalesforceObject {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,         
+        [Parameter(Mandatory = $true)][string] $Username)    
+    $command = "sfdx force:source:retrieve -m CustomObject:$Name -u $Username"    
+    Invoke-Sfdx -Command $command
+}
+
+function Retrieve-SalesforceField {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $ObjectName, 
+        [Parameter(Mandatory = $true)][string] $FieldName, 
+        [Parameter(Mandatory = $true)][string] $Username)    
+    $command = "sfdx force:source:retrieve -m CustomField:$ObjectName.$FieldName"
+    $command += " -u $Username"
+    Invoke-Sfdx -Command $command
+}
+
 function Deploy-SalesforceCode {
     [CmdletBinding()]
     Param(        
@@ -968,6 +988,8 @@ Export-ModuleMember Get-SalesforceMetaTypes
 Export-ModuleMember Get-SalesforceCodeCoverage
 
 Export-ModuleMember Retrieve-SalesforceCode
+Export-ModuleMember Retrieve-SalesforceObject
+Export-ModuleMember Retrieve-SalesforceField
 Export-ModuleMember Deploy-SalesforceCode
 Export-ModuleMember Import-SalesforceJest
 Export-ModuleMember New-SalesforceJestTest
