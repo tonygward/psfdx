@@ -19,7 +19,7 @@ function Show-SfdxResult {
 function Get-SalesforceDateTime {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][datetime] $Datetime) 
-    if ($null -eq $Datetime) { $Datetime = Get-Date}
+    if ($null -eq $Datetime) { $Datetime = Get-Date }
     return $Datetime.ToString('s') + 'Z'
 }
 
@@ -295,7 +295,7 @@ function New-SalesforceProject {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $false)][string][ValidateSet('standard','empty')] $Template = 'standard',
+        [Parameter(Mandatory = $false)][string][ValidateSet('standard', 'empty')] $Template = 'standard',
         [Parameter(Mandatory = $false)][string] $DefaultUserName = $null
     )      
     $result = Invoke-Sfdx -Command "sfdx force:project:create --projectname $Name --template $Template --json" 
@@ -318,7 +318,8 @@ function Set-SalesforceProject {
 
     if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
         $sfdxFolder = (Get-Location).Path
-    } else {
+    }
+    else {
         $sfdxFolder = $ProjectFolder
     }    
     
@@ -410,10 +411,9 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
-function Retrieve-SalesforceCode {
+function Retrieve-SalesforceComponent {
     [CmdletBinding()]
     Param(        
-        [Parameter(Mandatory = $true)][string] $Username,
         [Parameter(Mandatory = $false)][string][ValidateSet(
             'All',
             'ActionLinkGroupTemplate',
@@ -545,11 +545,12 @@ function Retrieve-SalesforceCode {
             'TransactionSecurityPolicy',
             'UserProvisioningConfig',
             'Workflow'
-        )] $CodeType
+        )] $Type,
+        [Parameter(Mandatory = $true)][string] $Username
     )  
 
     # Retrieve all Meta Types
-    if ($CodeType -eq 'All') {
+    if ($Type -eq 'All') {
         $metaTypes = Get-SalesforceMetaTypes -Username $Username    
         $count = 0
         foreach ($metaType in $metaTypes) {
@@ -559,22 +560,7 @@ function Retrieve-SalesforceCode {
         }
         return
     }
-
-    if ($CodeType -eq 'Apex') {
-        Invoke-Sfdx -Command "sfdx force:source:retrieve -m ApexClass -u $Username"
-        Invoke-Sfdx -Command "sfdx force:source:retrieve -m ApexTrigger -u $Username"
-        return
-    }
     return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $CodeType -u $Username"
-}
-
-function Retrieve-SalesforceObject {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,         
-        [Parameter(Mandatory = $true)][string] $Username)    
-    $command = "sfdx force:source:retrieve -m CustomObject:$Name -u $Username"    
-    Invoke-Sfdx -Command $command
 }
 
 function Retrieve-SalesforceField {
@@ -752,13 +738,16 @@ function Test-Salesforce {
         [Parameter(Mandatory = $true)][string] $Username
     )   
         
-    if ($ClassName -and $TestName) {        # Run specific Test in a Class
+    if ($ClassName -and $TestName) {
+        # Run specific Test in a Class
         $command = "sfdx force:apex:test:run --tests $ClassName.$TestName --synchronous -u $Username --codecoverage -r json"                        
     }     
-    elseif (-not $TestName) {               # Run Test Class
+    elseif (-not $TestName) {
+        # Run Test Class
         $command = "sfdx force:apex:test:run --classnames $ClassName --synchronous -u $Username --codecoverage -r json"           
     }     
-    else {                                  # Run all Tests
+    else {
+        # Run all Tests
         $command = "sfdx force:apex:test:run -l RunLocalTests -w:10 -d $PSScriptRoot -u $Username --codecoverage -r json"        
     }
     $result = Invoke-Sfdx -Command $command
@@ -789,7 +778,7 @@ function Invoke-SalesforceApexFile {
 function Get-SalesforcePackage {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Path)           
-    if (-not (Test-Path -Path $Path)) { throw "$Path does not exist"}
+    if (-not (Test-Path -Path $Path)) { throw "$Path does not exist" }
     
     [xml]$package = Get-Content .\package.xml
     $results = @()    
@@ -814,7 +803,8 @@ function Watch-SalesforceLogs {
     $command = "sfdx force:apex:log:tail "  
     if ($UseDebugLogSetup) {
         $command += ""
-    } else {    
+    }
+    else {    
         $command += "--skiptraceflag "
     }
     $command += "--color -u $Username"
@@ -836,7 +826,7 @@ function Get-SalesforceLog {
         [Parameter(Mandatory = $true)][string] $Username
     )   
     
-    if ((-not $LogId) -and (-not $Last)) { throw "Please provide either -LogId OR -Last"}
+    if ((-not $LogId) -and (-not $Last)) { throw "Please provide either -LogId OR -Last" }
 
     if ($Last) {
         $LogId = (Get-SalesforceLogs -Username $Username | Sort-Object StartTime -Descending | Select-Object -First 1).Id
@@ -934,12 +924,12 @@ function Login-SalesforceApi {
     return Invoke-RestMethod -Uri $loginUrl `
         -Method Post `
         -Body @{
-            grant_type = "password"
-            client_id = "$ClientId"
-            client_secret = "$ClientSecret"
-            username = "$Username"
-            password = ($Password + $Token)
-        }
+        grant_type    = "password"
+        client_id     = "$ClientId"
+        client_secret = "$ClientSecret"
+        username      = "$Username"
+        password      = ($Password + $Token)
+    }
 }
 
 function Invoke-SalesforceApi {
@@ -947,9 +937,9 @@ function Invoke-SalesforceApi {
     Param(
         [Parameter(Mandatory = $true)][string] $Url,
         [Parameter(Mandatory = $true)][string] $AccessToken,
-        [Parameter(Mandatory = $false)][string][ValidateSet('GET','POST', 'PATCH', 'DELETE')] $Method = "GET"
+        [Parameter(Mandatory = $false)][string][ValidateSet('GET', 'POST', 'PATCH', 'DELETE')] $Method = "GET"
     )          
-    return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization="OAuth " + $AccessToken}
+    return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "OAuth " + $AccessToken }
 }
 
 Export-ModuleMember Get-SalesforceDateTime
@@ -987,8 +977,7 @@ Export-ModuleMember Set-SalesforceProject
 Export-ModuleMember Get-SalesforceMetaTypes
 Export-ModuleMember Get-SalesforceCodeCoverage
 
-Export-ModuleMember Retrieve-SalesforceCode
-Export-ModuleMember Retrieve-SalesforceObject
+Export-ModuleMember Retrieve-SalesforceComponent
 Export-ModuleMember Retrieve-SalesforceField
 Export-ModuleMember Deploy-SalesforceCode
 Export-ModuleMember Import-SalesforceJest
