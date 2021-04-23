@@ -560,7 +560,7 @@ function Retrieve-SalesforceComponent {
         }
         return
     }
-    return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $CodeType -u $Username"
+    return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $Type -u $Username"
 }
 
 function Retrieve-SalesforceField {
