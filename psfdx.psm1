@@ -775,25 +775,6 @@ function Invoke-SalesforceApexFile {
     return Show-SfdxResult -Result $result
 }
 
-function Get-SalesforcePackage {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Path)           
-    if (-not (Test-Path -Path $Path)) { throw "$Path does not exist" }
-    
-    [xml]$package = Get-Content .\package.xml
-    $results = @()    
-    foreach ($t in $package.Package.types) {
-        $typeName = $t.name
-        foreach ($m in $t.members) {        
-            $result = New-Object -TypeName psobject
-            $result | Add-Member -MemberType NoteProperty -Name TypeName -Value $typeName
-            $result | Add-Member -MemberType NoteProperty -Name MemberName -Value $m
-            $results += $result
-        } # Member
-    }  # Type   
-    return $results
-}
-
 function Watch-SalesforceLogs {
     [CmdletBinding()]
     Param(
@@ -984,8 +965,6 @@ Export-ModuleMember Import-SalesforceJest
 Export-ModuleMember New-SalesforceJestTest
 Export-ModuleMember Test-Salesforce
 Export-ModuleMember Invoke-SalesforceApexFile
-
-Export-ModuleMember Get-SalesforcePackage
 
 Export-ModuleMember Watch-SalesforceLogs
 Export-ModuleMember Get-SalesforceLogs
