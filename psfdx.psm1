@@ -546,6 +546,7 @@ function Retrieve-SalesforceComponent {
             'UserProvisioningConfig',
             'Workflow'
         )] $Type,
+        [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $true)][string] $Username
     )  
 
@@ -554,13 +555,19 @@ function Retrieve-SalesforceComponent {
         $metaTypes = Get-SalesforceMetaTypes -Username $Username    
         $count = 0
         foreach ($metaType in $metaTypes) {
-            Invoke-Sfdx -Command "sfdx force:source:retrieve -m $metaType -u $Username"        
+            Invoke-Sfdx -Command "sfdx force:source:retrieve --metadata $metaType --targetusername $Username"        
             $count = $count + 1   
             Write-Progress -Activity 'Getting Salesforce MetaData' -Status $metaType -PercentComplete (($count / $metaTypes.count) * 100) 
         }
         return
     }
-    return Invoke-Sfdx -Command "sfdx force:source:retrieve -m $Type -u $Username"
+
+    $command = "sfdx force:source:retrieve --metadata $Type"
+    if ($Name) {
+        $command += ":$Name"
+    }
+    $command += " --targetusername $Username"
+    Invoke-Sfdx -Command $command
 }
 
 function Retrieve-SalesforceField {
@@ -569,8 +576,8 @@ function Retrieve-SalesforceField {
         [Parameter(Mandatory = $true)][string] $ObjectName, 
         [Parameter(Mandatory = $true)][string] $FieldName, 
         [Parameter(Mandatory = $true)][string] $Username)    
-    $command = "sfdx force:source:retrieve -m CustomField:$ObjectName.$FieldName"
-    $command += " -u $Username"
+    $command = "sfdx force:source:retrieve --metadata CustomField:$ObjectName.$FieldName"
+    $command += " --targetusername $Username"
     Invoke-Sfdx -Command $command
 }
 
@@ -711,9 +718,9 @@ function Deploy-SalesforceCode {
         [Parameter(Mandatory = $false)][string] $Name,       
         [Parameter(Mandatory = $true)][string] $Username
     )    
-    $command = "sfdx force:source:deploy -m $CodeType"
+    $command = "sfdx force:source:deploy --metadata $CodeType"
     if ($Name) { $command += ":$Name" }
-    $command += " -u $Username"
+    $command += " --targetusername $Username"
     return Invoke-Sfdx -Command $command
 }
 
