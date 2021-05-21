@@ -25,19 +25,59 @@ function Get-SalesforceDateTime {
 
 function Connect-Salesforce {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][switch] $IsSandbox)  
+    Param(
+        [Parameter(Mandatory = $false)][switch] $IsSandbox,
+        [Parameter(Mandatory = $false)][string] $DefaultUsername,
+        [Parameter(Mandatory = $false)][string] $DefaultAlias,
+        [Parameter(Mandatory = $false)][string] $DefaultDevhubUsername,
+        [Parameter(Mandatory = $false)][string] $OAuthClientId
+    )  
     
     $command = "sfdx force:auth:web:login"    
     if ($IsSandbox -eq $true) { 
-        $command += " -r https://test.salesforce.com" 
+        $command += " --instanceurl https://test.salesforce.com" 
     }
-    Invoke-Sfdx -Command $command
+
+    if ($DefaultUsername) {
+        $command += " --setdefaultusername $DefaultUsername"
+    }
+    if ($DefaultAlias) {
+        $command += " --setalias $DefaultAlias"
+    }
+    if ($OAuthClientId) {
+        $command += " --clientid $OAuthClientId"
+    }
+    if ($DefaultDevhubUsername) {
+        $command += " --setdefaultdevhubusername $DefaultDevhubUsername"        
+    }
+    $command += " --json"
+    $result = Invoke-Sfdx -Command $command
+    Show-SfdxResult -Result $result
 }
 
 function Disconnect-Salesforce {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)         
-    Invoke-Sfdx -Command "sfdx force:auth:logout -u $Username -p"
+    Param(        
+        [Parameter(Mandatory = $false)][switch] $All,    
+        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )         
+    $command = "sfdx force:auth:logout"
+    if ($All) {
+        $command += " --all"
+    }
+    elseif ($Username) {
+        $command += " --targetusername $Username"        
+    }
+    else {
+        throw "Please provide either -Username or -All"
+    }
+    if ($NoPrompt) {
+        $command += " --noprompt"
+    }    
+    $command += " --json"
+    $result = Invoke-Sfdx -Command $command
+    Show-SfdxResult -Result $result
 }
 
 function Grant-SalesforceJWT {
@@ -68,24 +108,59 @@ function Grant-SalesforceJWT {
 
 function Open-Salesforce {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)     
-    Invoke-Sfdx -Command "sfdx force:org:open -u $Username"    
+    Param(
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $UrlOnly
+    )
+    $command = "sfdx force:org:open"     
+    $comand += " --targetusername $Username"
+    if ($UrlOnly) {
+        $command += " --urlonly"
+    }
+    $result = Invoke-Sfdx -Command $command
+    Show-SfdxResult -Result $result    
 }
 
 function Get-SalesforceConnections {    
     [CmdletBinding()]
-    Param()    
-    $result = Invoke-Sfdx -Command "sfdx force:org:list --json"
+    Param(
+        [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails
+    ) 
+    $command = "sfdx force:org:list"
+    if ($ShowVerboseDetails) {
+        $command += " --verbose"
+    }
+    $command += " --json"
+    $result = Invoke-Sfdx -Command $command
+
     $result = $result | ConvertFrom-Json
     $result = $result.result.nonScratchOrgs # Exclude Scratch Orgs
     $result = $result | Select-Object orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias
     return $result
 }
 
+function Clean-SalesforceConnections {    
+    [CmdletBinding()]
+    Param() 
+    $command = "sfdx force:org:list --clean"
+    $result = Invoke-Sfdx -Command $command
+    Show-SfdxResult -Result $result
+}
+
 function Get-SalesforceScratchOrgs {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][switch] $Last)
+    Param(
+        [Parameter(Mandatory = $false)][switch] $SkipConnectionStatus,
+        [Parameter(Mandatory = $false)][switch] $Last
+    )
+
+    $command = "sfdx force:org:list --all"
+    if ($SkipConnectionStatus) {
+        $command += " --skipconnectionstatus"
+    }
+    $command += " --json"
     $result = Invoke-Sfdx -Command "sfdx force:org:list --all --json"
+    
     $result = $result | ConvertFrom-Json   
     $result = $result.result.scratchOrgs
     $result = $result | Select-Object orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias
@@ -97,11 +172,29 @@ function Get-SalesforceScratchOrgs {
 
 function New-SalesforceScratchOrg {
     [CmdletBinding()]
-    Param(
+    Param(        
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $DevhubUsername,
+        [Parameter(Mandatory = $false)][int] $DurationDays,
         [Parameter(Mandatory = $false)][string] $DefinitionFile = 'config/project-scratch-def.json',
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $false)][int] $WaitMinutes
     )     
-    $result = Invoke-Sfdx -Command "sfdx force:org:create -f $DefinitionFile -v $Username --json"   
+    $command = "sfdx force:org:create"   
+    $command += " --type scratch"
+    if ($DevhubUsername) {
+        $command += " --targetdevhubusername $DevhubUsername"
+    }
+    if ($DaysDuration) {
+        $command += " --durationdays $DurationDays"
+    }
+    $command += " --definitionfile $DefinitionFile"
+    $command += " --targetdevhubusername $Username"
+    if ($WaitMinutes) { 
+        $command += " --wait $WaitMinutes"
+    }
+    $command += " --json"
+
+    $result = Invoke-Sfdx -Command $command
     $result = $result | ConvertFrom-Json
     return Show-SfdxResult -Result $result
 }
@@ -118,19 +211,21 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $Alias,       
         [Parameter(Mandatory = $true)][string] $Username
     )    
-    Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"    
+    $result = Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"    
+    return Show-SfdxResult -Result $result
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)            
-    Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
+    $result = Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
+    return Show-SfdxResult -Result $result
 }
 
 function Get-SalesforceLimits {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Username)  
-    $result = Invoke-Sfdx -Command "sfdx force:limits:api:display -u $Username --json"
+    $result = Invoke-Sfdx -Command "sfdx force:limits:api:display --targetusername $Username --json"
     return Show-SfdxResult -Result $result    
 }
 
@@ -194,9 +289,12 @@ function Select-SalesforceObjects {
         [Parameter(Mandatory = $true)][string] $Username,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )               
-    $command = "sfdx force:data:soql:query -q `"$Query`" -u $Username "
-    if ($UseToolingApi) { $command += "-t " }
-    $command += "--json"    
+    $command = "sfdx force:data:soql:query --query `"$Query`""
+    if ($UseToolingApi) { 
+        $command += " --usetoolingapi" 
+    }
+    $command += " --targetusername $Username" 
+    $command += " --json"    
     Write-Verbose ("Query: " + $Query)
     Write-Verbose $command
     $result = Invoke-Expression -Command $command | ConvertFrom-Json
@@ -209,23 +307,32 @@ function Select-SalesforceObjects {
 
 function Describe-SalesforceObjects {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username) 
-    $result = Invoke-Sfdx -Command "sfdx force:schema:sobject:list -c all -u $Username --json"
+    Param(
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][string][ValidateSet('all', 'custom', 'standard')] $ObjectTypeCategory = 'all'
+    ) 
+    $command = "sfdx force:schema:sobject:list"
+    $command += " --sobjecttypecategory all"
+    $command += " --targetusername $Username"
+    $command += " --json"
+    $result = Invoke-Sfdx -Command $command
     return Show-SfdxResult -Result $result    
 }
 
 function Describe-SalesforceObject {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $ObjectName,    
+        [Parameter(Mandatory = $true)][string] $Name,    
         [Parameter(Mandatory = $true)][string] $Username,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     ) 
-    $command = "sfdx force:schema:sobject:describe -s $ObjectName -u $Username "
+    $command = "sfdx force:schema:sobject:describe"
+    $command += " --sobjecttype $Name"
     if ($UseToolingApi) {
-        $command += "-t "
+        $command += " --usetoolingapi"
     }    
-    $command += "--json"
+    $command += " --targetusername $Username"
+    $command += " --json"
     $result = Invoke-Sfdx -Command $command
     return Show-SfdxResult -Result $result
 }
@@ -246,7 +353,11 @@ function Describe-SalesforceFields {
 function Describe-SalesforceCodeTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Username)  
-    $result = Invoke-Sfdx -Command "sfdx force:mdapi:describemetadata -u $Username --json"           
+    $command = "sfdx force:mdapi:describemetadata"
+    $command += " --targetusername $Username"
+    $command += " --json"
+
+    $result = Invoke-Sfdx -Command $command           
     $result = $result | ConvertFrom-Json
     $result = $result.result.metadataObjects
     $result = $result | Select-Object xmlName
@@ -256,12 +367,20 @@ function Describe-SalesforceCodeTypes {
 function New-SalesforceObject {
     [CmdletBinding()]
     Param(                
-        [Parameter(Mandatory = $true)][string] $ObjectType,    
+        [Parameter(Mandatory = $true)][string] $Type,    
         [Parameter(Mandatory = $true)][string] $FieldUpdates,    
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $UseToolkingApi
     )
     Write-Verbose $FieldUpdates
-    $command = "sfdx force:data:record:create -s $ObjectType -v `"$FieldUpdates`" -u $Username"
+    $command = "sfdx force:data:record:create"
+    $command += " --sobjecttype $Type"
+    $command += " --values `"$FieldUpdates`""
+    if ($UseToolkingApi) {
+        $command += " --usetoolingapi"
+    }
+    $command += " --targetusername $Username"
+    $command += " --json"    
     return Invoke-Sfdx -Command $command    
 }
 
@@ -269,12 +388,21 @@ function Set-SalesforceObject {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Id,    
-        [Parameter(Mandatory = $true)][string] $ObjectType,    
+        [Parameter(Mandatory = $true)][string] $Type,    
         [Parameter(Mandatory = $true)][string] $FieldUpdates,    
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $UseToolkingApi
     )
     Write-Verbose $FieldUpdates
-    $command = "sfdx force:data:record:update -s $ObjectType -i $Id -v `"$FieldUpdates`" -u $Username"
+    $command = "sfdx force:data:record:update"
+    $command += " --sobjecttype $Type"
+    $command += " --sobjectid $Id"
+    $command += " --values `"$FieldUpdates`""
+    if ($UseToolkingApi) {
+        $command += " --usetoolkingapi"
+    }
+    $command += " --targetusername $Username"
+    $command += " --json"    
     return Invoke-Sfdx -Command $command        
 }
 
@@ -286,7 +414,9 @@ function Get-SalesforceRecordType {
     )    
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
-    if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
+    if ($ObjectType) { 
+        $query += " WHERE SobjectType = '$ObjectType'" 
+    }
     $results = Select-SalesforceObjects -Query $query -Username $Username
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType    
 }
@@ -936,6 +1066,7 @@ Export-ModuleMember Disconnect-Salesforce
 Export-ModuleMember Grant-SalesforceJWT
 Export-ModuleMember Open-Salesforce
 Export-ModuleMember Get-SalesforceConnections
+Export-ModuleMember Clean-SalesforceConnections
 Export-ModuleMember Get-SalesforceScratchOrgs
 Export-ModuleMember New-SalesforceScratchOrg
 
