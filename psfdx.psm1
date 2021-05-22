@@ -357,6 +357,15 @@ function Invoke-SalesforceApi {
     return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "OAuth " + $AccessToken }
 }
 
+function Install-SalesforcePlugin {    
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name
+    )               
+    $command = "sfdx plugins:install $Name"
+    Invoke-Sfdx -Command $command 
+}
+
 Export-ModuleMember Get-SalesforceDateTime
 Export-ModuleMember Connect-Salesforce
 Export-ModuleMember Disconnect-Salesforce
@@ -385,3 +394,5 @@ Export-ModuleMember Invoke-SalesforceApexFile
 
 Export-ModuleMember Login-SalesforceApi
 Export-ModuleMember Invoke-SalesforceApi
+
+Export-ModuleMember Install-SalesforcePlugin
