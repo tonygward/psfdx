@@ -253,65 +253,6 @@ function Select-SalesforceObjects {
     return $result.result.records
 }
 
-function Describe-SalesforceObjects {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][string][ValidateSet('all', 'custom', 'standard')] $ObjectTypeCategory = 'all'
-    ) 
-    $command = "sfdx force:schema:sobject:list"
-    $command += " --sobjecttypecategory all"
-    $command += " --targetusername $Username"
-    $command += " --json"
-    $result = Invoke-Sfdx -Command $command
-    return Show-SfdxResult -Result $result    
-}
-
-function Describe-SalesforceObject {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
-    ) 
-    $command = "sfdx force:schema:sobject:describe"
-    $command += " --sobjecttype $Name"
-    if ($UseToolingApi) {
-        $command += " --usetoolingapi"
-    }    
-    $command += " --targetusername $Username"
-    $command += " --json"
-    $result = Invoke-Sfdx -Command $command
-    return Show-SfdxResult -Result $result
-}
-
-function Describe-SalesforceFields {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ObjectName,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi        
-    )         
-    $result = Describe-SalesforceObject -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi 
-    $result = $result.fields
-    $result = $result | Select-Object name, label, type, byteLength
-    return $result
-}
-
-function Describe-SalesforceCodeTypes {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)  
-    $command = "sfdx force:mdapi:describemetadata"
-    $command += " --targetusername $Username"
-    $command += " --json"
-
-    $result = Invoke-Sfdx -Command $command           
-    $result = $result | ConvertFrom-Json
-    $result = $result.result.metadataObjects
-    $result = $result | Select-Object xmlName
-    return $result
-}
-
 function New-SalesforceObject {
     [CmdletBinding()]
     Param(                
@@ -367,30 +308,6 @@ function Get-SalesforceRecordType {
     }
     $results = Select-SalesforceObjects -Query $query -Username $Username
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType    
-}
-
-function Get-SalesforceMetaTypes {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)     
-    $result = Invoke-Sfdx -Command "sfdx force:mdapi:describemetadata --targetusername $username --json"
-    $result = $result | ConvertFrom-Json
-    $result = $result.result.metadataObjects    
-    $result = $result.xmlName | Sort-Object
-    return $result
-}
-
-function Get-SalesforceApexClass {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $Username
-    )   
-    $query = "SELECT Id, Name "
-    $query += "FROM ApexClass "
-    $query += "WHERE Name = '$Name'"
-    $result = Select-SalesforceObjects -Query $query -Username $Username
-    $result = $result | Select-Object Id, name
-    return $result
 }
 
 function Invoke-SalesforceApexFile {
@@ -460,16 +377,9 @@ Export-ModuleMember Build-SalesforceQuery
 Export-ModuleMember Get-SalesforceObject
 Export-ModuleMember Select-SalesforceObjects
 
-Export-ModuleMember Describe-SalesforceObjects
-Export-ModuleMember Describe-SalesforceObject
-Export-ModuleMember Describe-SalesforceFields
-Export-ModuleMember Describe-SalesforceCodeTypes
-
 Export-ModuleMember New-SalesforceObject
 Export-ModuleMember Set-SalesforceObject
 Export-ModuleMember Get-SalesforceRecordType
-
-Export-ModuleMember Get-SalesforceMetaTypes
 
 Export-ModuleMember Invoke-SalesforceApexFile
 
