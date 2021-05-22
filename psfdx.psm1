@@ -366,6 +366,24 @@ function Install-SalesforcePlugin {
     Invoke-Sfdx -Command $command 
 }
 
+function Get-SalesforcePlugins {    
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $IncludeCore
+    )               
+    $command = "sfdx plugins"
+    if ($IncludeCore) {
+        $command += " --core"
+    }    
+    Invoke-Sfdx -Command $command     
+}
+
+function Update-SalesforcePlugins {    
+    [CmdletBinding()]
+    Param()                   
+    Invoke-Sfdx -Command "sfdx plugins:update"  
+}
+
 Export-ModuleMember Get-SalesforceDateTime
 Export-ModuleMember Connect-Salesforce
 Export-ModuleMember Disconnect-Salesforce
@@ -396,3 +414,5 @@ Export-ModuleMember Login-SalesforceApi
 Export-ModuleMember Invoke-SalesforceApi
 
 Export-ModuleMember Install-SalesforcePlugin
+Export-ModuleMember Get-SalesforcePlugins
+Export-ModuleMember Update-SalesforcePlugins
