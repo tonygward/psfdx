@@ -113,12 +113,11 @@ function Open-Salesforce {
         [Parameter(Mandatory = $false)][switch] $UrlOnly
     )
     $command = "sfdx force:org:open"     
-    $comand += " --targetusername $Username"
+    $command += " --targetusername $Username"
     if ($UrlOnly) {
         $command += " --urlonly"
     }
-    $result = Invoke-Sfdx -Command $command
-    Show-SfdxResult -Result $result    
+    Invoke-Sfdx -Command $command
 }
 
 function Get-SalesforceConnections {    
