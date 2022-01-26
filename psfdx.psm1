@@ -159,15 +159,13 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $Alias,       
         [Parameter(Mandatory = $true)][string] $Username
     )    
-    $result = Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"    
-    return Show-SfdxResult -Result $result
+    Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"    
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)            
-    $result = Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
-    return Show-SfdxResult -Result $result
+    Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
 }
 
 function Get-SalesforceLimits {
