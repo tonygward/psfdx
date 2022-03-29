@@ -191,42 +191,6 @@ function Get-SalesforceApiUsage {
     return $values
 }
 
-function Build-SalesforceQuery {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ObjectName,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
-    ) 
-    $fields = Describe-SalesforceFields -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
-    if ($null -eq $fields) {
-        return ""
-    }
-
-    $fieldNames = @()
-    foreach ($field in $fields) { 
-        $fieldNames += $field.name 
-    }
-    $value = "SELECT "
-    foreach ($fieldName in $fieldNames) { 
-        $value += $fieldName + "," 
-    }
-    $value = $value.TrimEnd(",")
-    $value += " FROM $ObjectName"
-    return $value
-}
-
-function Get-SalesforceObject {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ObjectName,    
-        [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
-    )     
-    $query = Build-SalesforceQuery -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
-    return Select-SalesforceObjects -Query $query -Username $Username -UseToolingApi:$UseToolingApi
-}
-
 function Select-SalesforceObjects {    
     [CmdletBinding()]
     Param(
@@ -397,8 +361,6 @@ Export-ModuleMember Get-SalesforceLimits
 Export-ModuleMember Get-SalesforceDataStorage
 Export-ModuleMember Get-SalesforceApiUsage
 
-Export-ModuleMember Build-SalesforceQuery
-Export-ModuleMember Get-SalesforceObject
 Export-ModuleMember Select-SalesforceObjects
 
 Export-ModuleMember New-SalesforceObject
