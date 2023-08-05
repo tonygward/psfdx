@@ -145,10 +145,12 @@ function Get-SalesforceConnections {
 
 function Clean-SalesforceConnections {
     [CmdletBinding()]
-    Param()
-    $command = "sfdx force:org:list --clean"
-    $result = Invoke-Sfdx -Command $command
-    Show-SfdxResult -Result $result
+    Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
+    $command = "sf org list --clean"
+    if ($NoPrompt) {
+        $command += " --no-prompt"
+    }
+    Invoke-Sfdx -Command $command
 }
 
 function Get-SalesforceAlias {
