@@ -1,13 +1,13 @@
 Import-Module ./salesforce-username.ps1 -Force
 
-function Invoke-Sfdx {
+function Invoke-Sf {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Command)
     Write-Verbose $Command
     return Invoke-Expression -Command $Command
 }
 
-function Show-SfdxResult {
+function Show-SfResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
     $result = $Result | ConvertFrom-Json
@@ -29,32 +29,27 @@ function Connect-Salesforce {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][switch] $IsSandbox,
-        [Parameter(Mandatory = $false)][string] $DefaultUsername,
-        [Parameter(Mandatory = $false)][string] $DefaultAlias,
+        [Parameter(Mandatory = $false)][string] $CustomUrl,
         [Parameter(Mandatory = $false)][string] $DefaultDevhubUsername,
         [Parameter(Mandatory = $false)][string] $OAuthClientId
     )
 
-    $command = "sfdx force:auth:web:login"
+    $command = "sf org login web"
     if ($IsSandbox -eq $true) {
-        $command += " --instanceurl https://test.salesforce.com"
+        $command += " --instance-url https://test.salesforce.com"
     }
-
-    if ($DefaultUsername) {
-        $command += " --setdefaultusername $DefaultUsername"
-    }
-    if ($DefaultAlias) {
-        $command += " --setalias $DefaultAlias"
+    if ($CustomUrl) {
+        $command += " --instance-url $CustomUrl"
     }
     if ($OAuthClientId) {
-        $command += " --clientid $OAuthClientId"
+        $command += " --client-id $OAuthClientId"
     }
     if ($DefaultDevhubUsername) {
-        $command += " --setdefaultdevhubusername $DefaultDevhubUsername"
+        $command += " --set-default-dev-hub $DefaultDevhubUsername"
     }
     $command += " --json"
-    $result = Invoke-Sfdx -Command $command
-    Show-SfdxResult -Result $result
+    $result = Invoke-Sf -Command $command
+    Show-SfResult -Result $result
 }
 
 function Disconnect-Salesforce {
@@ -64,22 +59,22 @@ function Disconnect-Salesforce {
         [Parameter(Mandatory = $false)][string] $Username,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
-    $command = "sfdx force:auth:logout"
+    $command = "sf org logout"
     if ($All) {
         $command += " --all"
     }
     elseif ($Username) {
-        $command += " --targetusername $Username"
+        $command += " --target-org $Username"
     }
     else {
         throw "Please provide either -Username or -All"
     }
     if ($NoPrompt) {
-        $command += " --noprompt"
+        $command += " --no-prompt"
     }
     $command += " --json"
-    $result = Invoke-Sfdx -Command $command
-    Show-SfdxResult -Result $result
+    $result = Invoke-Sf -Command $command
+    Show-SfResult -Result $result
 }
 
 function Grant-SalesforceJWT {
@@ -98,31 +93,35 @@ function Grant-SalesforceJWT {
     $url = "https://login.salesforce.com/"
     if ($IsSandbox) { $url = "https://test.salesforce.com" }
 
-    $command = "sfdx force:auth:jwt:grant --clientid $ConsumerKey --username $Username --jwtkeyfile $JwtKeyfile --instanceurl $url "
+    $command = "sf org login jwt --client-id $ConsumerKey --username $Username --jwt-key-file $JwtKeyfile --instance-url $url"
     if ($SetDefaultUsername) {
-        $command += "--setdefaultusername "
+        $command += " --set-default"
     }
-    $command += "--json"
+    $command += " --json"
 
-    $result = Invoke-Sfdx -Command $command
-    return Show-SfdxResult -Result $result
+    $result = Invoke-Sf -Command $command
+    return Show-SfResult -Result $result
 }
 
 function Open-Salesforce {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UrlOnly
+        [Parameter(Mandatory = $false)][switch] $UrlOnly,
+        [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
-    $command = "sfdx force:org:open"
+    $command = "sf org open"
     $Username = Get-SalesforceUser -Username $Username
     if ($Username) {
-        $command += " --targetusername $Username"
+        $command += " --target-org $Username"
+    }
+    if ($Browser) {
+        $command += " --browser $Browser"
     }
     if ($UrlOnly) {
-        $command += " --urlonly"
+        $command += " --url-only"
     }
-    Invoke-Sfdx -Command $command
+    Invoke-Sf -Command $command
 }
 
 function Get-SalesforceConnections {
@@ -135,7 +134,7 @@ function Get-SalesforceConnections {
         $command += " --verbose"
     }
     $command += " --json"
-    $result = Invoke-Sfdx -Command $command
+    $result = Invoke-Sf -Command $command
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.nonScratchOrgs # Exclude Scratch Orgs
@@ -150,13 +149,13 @@ function Clean-SalesforceConnections {
     if ($NoPrompt) {
         $command += " --no-prompt"
     }
-    Invoke-Sfdx -Command $command
+    Invoke-Sf -Command $command
 }
 
 function Get-SalesforceAlias {
     [CmdletBinding()]
-    $result = Invoke-Sfdx -Command "sfdx force:alias:list --json"
-    return Show-SfdxResult -Result $result
+    $result = Invoke-Sf -Command "sf alias list --json"
+    return Show-SfResult -Result $result
 }
 
 function Add-SalesforceAlias {
@@ -165,20 +164,20 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $Alias,
         [Parameter(Mandatory = $true)][string] $Username
     )
-    Invoke-Sfdx -Command "sfdx force:alias:set $Alias=$Username"
+    Invoke-Sf -Command "sf alias set $Alias $Username"
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)
-    Invoke-Sfdx -Command "sfdx force:alias:set $Alias="
+    Invoke-Sf -Command " sf alias unset $Alias"
 }
 
 function Get-SalesforceLimits {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Username)
-    $result = Invoke-Sfdx -Command "sfdx force:limits:api:display --targetusername $Username --json"
-    return Show-SfdxResult -Result $result
+    $result = Invoke-Sf -Command "sf limits api display --target-org $Username --json"
+    return Show-SfResult -Result $result
 }
 
 function Get-SalesforceDataStorage {
@@ -205,11 +204,11 @@ function Select-SalesforceObjects {
         [Parameter(Mandatory = $true)][string] $Username,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    $command = "sfdx force:data:soql:query --query `"$Query`""
+    $command = "sf data query --query `"$Query`""
     if ($UseToolingApi) {
-        $command += " --usetoolingapi"
+        $command += " --use-tooling-api"
     }
-    $command += " --targetusername $Username"
+    $command += " --target-org $Username"
     $command += " --json"
     Write-Verbose ("Query: " + $Query)
     Write-Verbose $command
@@ -230,15 +229,15 @@ function New-SalesforceObject {
         [Parameter(Mandatory = $false)][switch] $UseToolkingApi
     )
     Write-Verbose $FieldUpdates
-    $command = "sfdx force:data:record:create"
-    $command += " --sobjecttype $Type"
+    $command = "sf data create record"
+    $command += " --sobject $Type"
     $command += " --values `"$FieldUpdates`""
     if ($UseToolkingApi) {
-        $command += " --usetoolingapi"
+        $command += " --use-tooling-api"
     }
-    $command += " --targetusername $Username"
+    $command += " --target-org $Username"
     $command += " --json"
-    return Invoke-Sfdx -Command $command
+    return Invoke-Sf -Command $command
 }
 
 function Set-SalesforceObject {
@@ -251,16 +250,16 @@ function Set-SalesforceObject {
         [Parameter(Mandatory = $false)][switch] $UseToolkingApi
     )
     Write-Verbose $FieldUpdates
-    $command = "sfdx force:data:record:update"
-    $command += " --sobjecttype $Type"
-    $command += " --sobjectid $Id"
+    $command = "sf data update record"
+    $command += " --sobject $Type"
+    $command += " --record-id $Id"
     $command += " --values `"$FieldUpdates`""
     if ($UseToolkingApi) {
-        $command += " --usetoolkingapi"
+        $command += " --use-tooling-api"
     }
-    $command += " --targetusername $Username"
+    $command += " --target-org $Username"
     $command += " --json"
-    return Invoke-Sfdx -Command $command
+    return Invoke-Sf -Command $command
 }
 
 function Get-SalesforceRecordType {
@@ -284,8 +283,8 @@ function Invoke-SalesforceApexFile {
         [Parameter(Mandatory = $true)][string] $ApexFile,
         [Parameter(Mandatory = $true)][string] $Username
     )
-    $result = Invoke-Sfdx -Command "sfdx force:apex:execute -f $ApexFile --targetusername $Username --json"
-    return Show-SfdxResult -Result $result
+    $result = Invoke-Sf -Command "sf apex run --file $ApexFile --target-org $Username --json"
+    return Show-SfResult -Result $result
 }
 
 function Login-SalesforceApi {
@@ -330,8 +329,8 @@ function Install-SalesforcePlugin {
     Param(
         [Parameter(Mandatory = $true)][string] $Name
     )
-    $command = "sfdx plugins:install $Name"
-    Invoke-Sfdx -Command $command
+    $command = "sf plugins install $Name"
+    Invoke-Sf -Command $command
 }
 
 function Get-SalesforcePlugins {
@@ -339,17 +338,17 @@ function Get-SalesforcePlugins {
     Param(
         [Parameter(Mandatory = $false)][switch] $IncludeCore
     )
-    $command = "sfdx plugins"
+    $command = "sf plugins"
     if ($IncludeCore) {
         $command += " --core"
     }
-    Invoke-Sfdx -Command $command
+    Invoke-Sf -Command $command
 }
 
 function Update-SalesforcePlugins {
     [CmdletBinding()]
     Param()
-    Invoke-Sfdx -Command "sfdx plugins:update"
+    Invoke-Sf -Command "sf plugins update"
 }
 
 Export-ModuleMember Get-SalesforceDateTime
