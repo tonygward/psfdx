@@ -130,7 +130,7 @@ function Get-SalesforceConnections {
     Param(
         [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails
     )
-    $command = "sfdx force:org:list"
+    $command = "sf org list"
     if ($ShowVerboseDetails) {
         $command += " --verbose"
     }
