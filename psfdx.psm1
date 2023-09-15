@@ -1,5 +1,3 @@
-Import-Module ./salesforce-username.ps1 -Force
-
 function Invoke-Sf {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Command)
