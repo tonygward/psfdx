@@ -33,18 +33,10 @@ function Connect-Salesforce {
     )
 
     $command = "sf org login web"
-    if ($IsSandbox -eq $true) {
-        $command += " --instance-url https://test.salesforce.com"
-    }
-    if ($CustomUrl) {
-        $command += " --instance-url $CustomUrl"
-    }
-    if ($OAuthClientId) {
-        $command += " --client-id $OAuthClientId"
-    }
-    if ($DefaultDevhubUsername) {
-        $command += " --set-default-dev-hub $DefaultDevhubUsername"
-    }
+    if ($IsSandbox -eq $true) { $command += " --instance-url https://test.salesforce.com" }
+    if ($CustomUrl) { $command += " --instance-url $CustomUrl" }
+    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
+    if ($DefaultDevhubUsername) { $command += " --set-default-dev-hub $DefaultDevhubUsername" }
     $command += " --json"
     $result = Invoke-Sf -Command $command
     Show-SfResult -Result $result
@@ -67,9 +59,8 @@ function Disconnect-Salesforce {
     else {
         throw "Please provide either -Username or -All"
     }
-    if ($NoPrompt) {
-        $command += " --no-prompt"
-    }
+
+    if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
     $result = Invoke-Sf -Command $command
     Show-SfResult -Result $result
@@ -92,9 +83,7 @@ function Grant-SalesforceJWT {
     if ($IsSandbox) { $url = "https://test.salesforce.com" }
 
     $command = "sf org login jwt --client-id $ConsumerKey --username $Username --jwt-key-file $JwtKeyfile --instance-url $url"
-    if ($SetDefaultUsername) {
-        $command += " --set-default"
-    }
+    if ($SetDefaultUsername) { $command += " --set-default" }
     $command += " --json"
 
     $result = Invoke-Sf -Command $command
@@ -109,16 +98,9 @@ function Open-Salesforce {
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
     $command = "sf org open"
-    $Username = Get-SalesforceUser -Username $Username
-    if ($Username) {
-        $command += " --target-org $Username"
-    }
-    if ($Browser) {
-        $command += " --browser $Browser"
-    }
-    if ($UrlOnly) {
-        $command += " --url-only"
-    }
+    if ($Username) { $command += " --target-org $Username" }
+    if ($Browser) { $command += " --browser $Browser" }
+    if ($UrlOnly) { $command += " --url-only" }
     Invoke-Sf -Command $command
 }
 
@@ -128,9 +110,7 @@ function Get-SalesforceConnections {
         [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails
     )
     $command = "sf org list"
-    if ($ShowVerboseDetails) {
-        $command += " --verbose"
-    }
+    if ($ShowVerboseDetails) { $command += " --verbose" }
     $command += " --json"
     $result = Invoke-Sf -Command $command
 
@@ -144,9 +124,7 @@ function Clean-SalesforceConnections {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
     $command = "sf org list --clean"
-    if ($NoPrompt) {
-        $command += " --no-prompt"
-    }
+    if ($NoPrompt) { $command += " --no-prompt" }
     Invoke-Sf -Command $command
 }
 
@@ -203,9 +181,7 @@ function Select-SalesforceObjects {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     $command = "sf data query --query `"$Query`""
-    if ($UseToolingApi) {
-        $command += " --use-tooling-api"
-    }
+    if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
     Write-Verbose ("Query: " + $Query)
@@ -230,9 +206,7 @@ function New-SalesforceObject {
     $command = "sf data create record"
     $command += " --sobject $Type"
     $command += " --values `"$FieldUpdates`""
-    if ($UseToolkingApi) {
-        $command += " --use-tooling-api"
-    }
+    if ($UseToolkingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
     return Invoke-Sf -Command $command
@@ -252,9 +226,7 @@ function Set-SalesforceObject {
     $command += " --sobject $Type"
     $command += " --record-id $Id"
     $command += " --values `"$FieldUpdates`""
-    if ($UseToolkingApi) {
-        $command += " --use-tooling-api"
-    }
+    if ($UseToolkingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
     return Invoke-Sf -Command $command
@@ -268,9 +240,7 @@ function Get-SalesforceRecordType {
     )
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
-    if ($ObjectType) {
-        $query += " WHERE SobjectType = '$ObjectType'"
-    }
+    if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
     $results = Select-SalesforceObjects -Query $query -Username $Username
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
@@ -297,9 +267,7 @@ function Login-SalesforceApi {
     )
 
     $loginUrl = "https://login.salesforce.com/services/oauth2/token"
-    if ($IsSandbox) {
-        $loginUrl = "https://test.salesforce.com/services/oauth2/token"
-    }
+    if ($IsSandbox) { $loginUrl = "https://test.salesforce.com/services/oauth2/token" }
 
     return Invoke-RestMethod -Uri $loginUrl `
         -Method Post `
@@ -337,9 +305,7 @@ function Get-SalesforcePlugins {
         [Parameter(Mandatory = $false)][switch] $IncludeCore
     )
     $command = "sf plugins"
-    if ($IncludeCore) {
-        $command += " --core"
-    }
+    if ($IncludeCore) { $command += " --core" }
     Invoke-Sf -Command $command
 }
 
