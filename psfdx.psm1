@@ -50,15 +50,9 @@ function Disconnect-Salesforce {
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
     $command = "sf org logout"
-    if ($All) {
-        $command += " --all"
-    }
-    elseif ($Username) {
-        $command += " --target-org $Username"
-    }
-    else {
-        throw "Please provide either -Username or -All"
-    }
+    if ($All) { $command += " --all" }
+    elseif ($Username) { $command += " --target-org $Username" }
+    else { throw "Please provide either -Username or -All" }
 
     if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
@@ -176,14 +170,22 @@ function Get-SalesforceApiUsage {
 function Select-SalesforceObjects {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $Query,
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $Query,
+        [Parameter(Mandatory = $false)][string] $File,
+        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string][ValidateSet('human', 'json', 'csv')] $ResultFormat = 'json',
+        [Parameter(Mandatory = $false)][switch] $UseBulkApi,
+        [Parameter(Mandatory = $false)][switch] $UseBulkApiAsync,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    $command = "sf data query --query `"$Query`""
+    $command = "sf data query"
+    if ($Query) { $command += " --query `"$Query`""}
+    if ($File) { $command += " --file $File"}
+    if ($Username) { $command += " --target-org $Username" }
+    if ($UseBulkApi) { $command += " --bulk" }
+    if ($UseBulkApi) { $command += " --async" }
     if ($UseToolingApi) { $command += " --use-tooling-api" }
-    $command += " --target-org $Username"
-    $command += " --json"
+    $command += " --result-format $ResultFormat"
     Write-Verbose ("Query: " + $Query)
     Write-Verbose $command
     $result = Invoke-Expression -Command $command | ConvertFrom-Json
