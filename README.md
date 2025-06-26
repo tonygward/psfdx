@@ -6,7 +6,7 @@ https://developer.salesforce.com/tools/sfdxcli
 
 # Installation
 ```
-git clone https://github.com/ZenInternet/psfdx
+git clone https://github.com/tonygward/psfdx
 cd psfdx
 .\Install-psfdx.ps1
 ```
