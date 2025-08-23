@@ -39,3 +39,26 @@ Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -Username
 ```
 Get-Command -Module psfdx
 ```
+
+## Reference
+## Authentication & Connection Management
+* `Connect-Salesforce` - Web-based org authentication
+* `Disconnect-Salesforce` - Logout from orgs
+* `Grant-SalesforceJWT` - JWT-based authentication
+* `Get-SalesforceConnections` - List connected orgs
+* `Clean-SalesforceConnections` - Clean up stale connections
+### Record Operations
+* `Select-SalesforceObjects` - SOQL queries with flexible output formats
+* `New-SalesforceObject` - Create records
+* `Set-SalesforceObject` - Update records
+* `Get-SalesforceRecordType` - Retrieve record type metadata
+### Org Management
+* `Open-Salesforce` - Open org in browser
+* `Get-SalesforceLimits` - API and storage limits
+* `Get-SalesforceDataStorage` - Data storage usage analysis
+* `Get-SalesforceApiUsage` - API usage tracking
+### Utilities
+* `Add-SalesforceAlias` / `Remove-SalesforceAlias` -  Alias management
+* `Invoke-SalesforceApexFile` - Execute Apex code
+* `Login-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
+Plugin management functions
