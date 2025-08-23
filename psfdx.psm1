@@ -196,24 +196,54 @@ function Select-SalesforceObjects {
     return $result.result.records
 }
 
+<#
+.SYNOPSIS
+Creates a new Salesforce record.
+.PARAMETER Type
+The sObject type to create.
+.PARAMETER FieldUpdates
+Comma-separated field=value pairs for the new record.
+.PARAMETER Username
+Target org username or alias.
+.PARAMETER UseToolingApi
+Use the Salesforce Tooling API for the request.
+.EXAMPLE
+New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -Username me@example.com -UseToolingApi
+#>
 function New-SalesforceObject {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
         [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolkingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
     $command = "sf data create record"
     $command += " --sobject $Type"
     $command += " --values `"$FieldUpdates`""
-    if ($UseToolkingApi) { $command += " --use-tooling-api" }
+    if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
     return Invoke-Sf -Command $command
 }
 
+<#
+.SYNOPSIS
+Updates an existing Salesforce record.
+.PARAMETER Id
+The record identifier to update.
+.PARAMETER Type
+The sObject type of the record.
+.PARAMETER FieldUpdates
+Comma-separated field=value pairs for the update.
+.PARAMETER Username
+Target org username or alias.
+.PARAMETER UseToolingApi
+Use the Salesforce Tooling API for the request.
+.EXAMPLE
+Set-SalesforceObject -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -Username me@example.com -UseToolingApi
+#>
 function Set-SalesforceObject {
     [CmdletBinding()]
     Param(
@@ -221,14 +251,14 @@ function Set-SalesforceObject {
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
         [Parameter(Mandatory = $true)][string] $Username,
-        [Parameter(Mandatory = $false)][switch] $UseToolkingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
     $command = "sf data update record"
     $command += " --sobject $Type"
     $command += " --record-id $Id"
     $command += " --values `"$FieldUpdates`""
-    if ($UseToolkingApi) { $command += " --use-tooling-api" }
+    if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
     return Invoke-Sf -Command $command
