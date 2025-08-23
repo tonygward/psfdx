@@ -174,17 +174,15 @@ function Select-SalesforceObjects {
         [Parameter(Mandatory = $false)][string] $File,
         [Parameter(Mandatory = $false)][string] $Username,
         [Parameter(Mandatory = $false)][string][ValidateSet('human', 'json', 'csv')] $ResultFormat = 'json',
-        [Parameter(Mandatory = $false)][switch] $UseBulkApi,
-        [Parameter(Mandatory = $false)][switch] $UseBulkApiAsync,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+        [Parameter(Mandatory = $false)][switch] $IncludeDeletedRows
     )
     $command = "sf data query"
     if ($Query) { $command += " --query `"$Query`""}
     if ($File) { $command += " --file $File"}
     if ($Username) { $command += " --target-org $Username" }
-    if ($UseBulkApi) { $command += " --bulk" }
-    if ($UseBulkApi) { $command += " --async" }
     if ($UseToolingApi) { $command += " --use-tooling-api" }
+    if ($IncludeDeletedRows) { $command += " --all-rows" }
     $command += " --result-format $ResultFormat"
     Write-Verbose ("Query: " + $Query)
     Write-Verbose $command
