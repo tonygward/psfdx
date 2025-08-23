@@ -29,14 +29,16 @@ function Connect-Salesforce {
         [Parameter(Mandatory = $false)][switch] $IsSandbox,
         [Parameter(Mandatory = $false)][string] $CustomUrl,
         [Parameter(Mandatory = $false)][string] $DefaultDevhubUsername,
-        [Parameter(Mandatory = $false)][string] $OAuthClientId
+        [Parameter(Mandatory = $false)][string] $OAuthClientId,
+        [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
 
     $command = "sf org login web"
     if ($IsSandbox -eq $true) { $command += " --instance-url https://test.salesforce.com" }
     if ($CustomUrl) { $command += " --instance-url $CustomUrl" }
-    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
     if ($DefaultDevhubUsername) { $command += " --set-default-dev-hub $DefaultDevhubUsername" }
+    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
+    if ($Browser) { $command += " --browser $Browser" }
     $command += " --json"
     $result = Invoke-Sf -Command $command
     Show-SfResult -Result $result
