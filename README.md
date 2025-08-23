@@ -8,7 +8,7 @@ https://developer.salesforce.com/tools/sfdxcli
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-.\Install-psfdx.ps1
+Import-Module ./psfdx.psm1
 ```
 # Examples
 **1. Connect to a Salesforce Sandbox Org**
@@ -40,7 +40,7 @@ Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -Username
 Get-Command -Module psfdx
 ```
 
-## Reference
+## Cmdlet Reference
 ## Authentication & Connection Management
 * `Connect-Salesforce` - Web-based org authentication
 * `Disconnect-Salesforce` - Logout from orgs
