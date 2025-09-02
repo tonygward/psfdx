@@ -28,7 +28,7 @@ function Connect-Salesforce {
     Param(
         [Parameter(Mandatory = $false)][switch] $IsSandbox,
         [Parameter(Mandatory = $false)][string] $CustomUrl,
-        [Parameter(Mandatory = $false)][string] $DefaultDevhubUsername,
+        [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub,
         [Parameter(Mandatory = $false)][string] $OAuthClientId,
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
@@ -36,7 +36,7 @@ function Connect-Salesforce {
     $command = "sf org login web"
     if ($IsSandbox -eq $true) { $command += " --instance-url https://test.salesforce.com" }
     if ($CustomUrl) { $command += " --instance-url $CustomUrl" }
-    if ($DefaultDevhubUsername) { $command += " --set-default-dev-hub $DefaultDevhubUsername" }
+    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
     if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
     if ($Browser) { $command += " --browser $Browser" }
     $command += " --json"
@@ -75,7 +75,7 @@ function Grant-SalesforceJWT {
         throw "File does not exist: $JwtKeyfile"
     }
 
-    $url = "https://login.salesforce.com/"
+    $url = "https://login.salesforce.com"
     if ($IsSandbox) { $url = "https://test.salesforce.com" }
 
     $command = "sf org login jwt --client-id $ConsumerKey --username $Username --jwt-key-file $JwtKeyfile --instance-url $url"
@@ -136,13 +136,13 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $Alias,
         [Parameter(Mandatory = $true)][string] $Username
     )
-    Invoke-Sf -Command "sf alias set $Alias $Username"
+    Invoke-Sf -Command "sf alias set $Alias=$Username"
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)
-    Invoke-Sf -Command " sf alias unset $Alias"
+    Invoke-Sf -Command "sf alias unset $Alias"
 }
 
 function Get-SalesforceLimits {
@@ -225,7 +225,8 @@ function New-SalesforceObject {
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
-    return Invoke-Sf -Command $command
+    $result = Invoke-Sf -Command $command
+    return Show-SfResult -Result $result
 }
 
 <#
@@ -261,7 +262,8 @@ function Set-SalesforceObject {
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --target-org $Username"
     $command += " --json"
-    return Invoke-Sf -Command $command
+    $result = Invoke-Sf -Command $command
+    return Show-SfResult -Result $result
 }
 
 function Get-SalesforceRecordType {
@@ -319,7 +321,7 @@ function Invoke-SalesforceApi {
         [Parameter(Mandatory = $true)][string] $AccessToken,
         [Parameter(Mandatory = $false)][string][ValidateSet('GET', 'POST', 'PATCH', 'DELETE')] $Method = "GET"
     )
-    return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "OAuth " + $AccessToken }
+    return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "Bearer " + $AccessToken }
 }
 
 function Install-SalesforcePlugin {
