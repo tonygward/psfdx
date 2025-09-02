@@ -1,4 +1,5 @@
 # psfdx
+[![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
 PowerShell module that wraps Salesforce SFDX command line interface
 # Pre-Requisites
 You must install Salesforce SFDX
