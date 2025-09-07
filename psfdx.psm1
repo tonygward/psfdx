@@ -61,7 +61,7 @@ function Disconnect-Salesforce {
     [CmdletBinding(DefaultParameterSetName = 'Username')]
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'All')][switch] $All,
-        [Parameter(Mandatory = $true, ParameterSetName = 'Username')][string] $Username,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username')][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
     $arguments = "org logout"
@@ -69,7 +69,7 @@ function Disconnect-Salesforce {
         $arguments += " --all"
     }
     else {
-        $arguments += " --target-org $Username"
+        $arguments += " --target-org $TargetOrg"
     }
     if ($NoPrompt) { $arguments += " --no-prompt" }
     $arguments += " --json"
@@ -81,7 +81,7 @@ function Connect-SalesforceJwt {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ConsumerKey,
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $true)][string] $JwtKeyfile,
         [Parameter(Mandatory = $false)][switch] $Sandbox,
         [Parameter(Mandatory = $false)][switch] $SetDefaultUsername
@@ -93,7 +93,7 @@ function Connect-SalesforceJwt {
     $url = "https://login.salesforce.com"
     if ($Sandbox) { $url = "https://test.salesforce.com" }
 
-    $arguments = "org login jwt --client-id $ConsumerKey --username $Username --jwt-key-file $JwtKeyfile --instance-url $url"
+    $arguments = "org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file $JwtKeyfile --instance-url $url"
     if ($SetDefaultUsername) { $arguments += " --set-default" }
     $arguments += " --json"
 
@@ -104,12 +104,12 @@ function Connect-SalesforceJwt {
 function Open-Salesforce {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UrlOnly,
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
     $arguments = "org open"
-    if ($Username) { $arguments += " --target-org $Username" }
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     if ($Browser) { $arguments += " --browser $Browser" }
     if ($UrlOnly) { $arguments += " --url-only" }
     Invoke-Sf -Arguments $arguments
@@ -149,9 +149,9 @@ function Add-SalesforceAlias {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Alias,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
-    Invoke-Sf -Arguments "alias set $Alias=$Username"
+    Invoke-Sf -Arguments "alias set $Alias=$TargetOrg"
 }
 
 function Remove-SalesforceAlias {
@@ -162,15 +162,15 @@ function Remove-SalesforceAlias {
 
 function Get-SalesforceLimits {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)
-    $result = Invoke-Sf -Arguments "limits api display --target-org $Username --json"
+    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    $result = Invoke-Sf -Arguments "limits api display --target-org $TargetOrg --json"
     return Show-SfResult -Result $result
 }
 
 function Get-SalesforceDataStorage {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)
-    $values = Get-SalesforceLimits -Username $Username | Where-Object Name -eq "DataStorageMB"
+    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DataStorageMB"
     $values | Add-Member -NotePropertyName InUse -NotePropertyValue ($values.max + ($values.remaining * -1))
     $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
     return $values
@@ -178,8 +178,8 @@ function Get-SalesforceDataStorage {
 
 function Get-SalesforceApiUsage {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)
-    $values = Get-SalesforceLimits -Username $Username | Where-Object Name -eq "DailyApiRequests"
+    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DailyApiRequests"
     $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
     return $values
 }
@@ -189,7 +189,7 @@ function Select-SalesforceObjects {
     Param(
         [Parameter(Mandatory = $false)][string] $Query,
         [Parameter(Mandatory = $false)][string] $File,
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][string][ValidateSet('human', 'json', 'csv')] $ResultFormat = 'json',
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
         [Parameter(Mandatory = $false)][switch] $IncludeDeletedRows
@@ -197,7 +197,7 @@ function Select-SalesforceObjects {
     $arguments = "data query"
     if ($Query) { $arguments += " --query `"$Query`"" }
     if ($File) { $arguments += " --file $File" }
-    if ($Username) { $arguments += " --target-org $Username" }
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
     if ($IncludeDeletedRows) { $arguments += " --all-rows" }
     $arguments += " --result-format $ResultFormat"
@@ -230,7 +230,7 @@ function New-SalesforceObject {
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
@@ -238,7 +238,7 @@ function New-SalesforceObject {
     $arguments += " --sobject $Type"
     $arguments += " --values `"$FieldUpdates`""
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    $arguments += " --target-org $Username"
+    $arguments += " --target-org $TargetOrg"
     $arguments += " --json"
     $result = Invoke-Sf -Arguments $arguments
     return Show-SfResult -Result $result
@@ -266,7 +266,7 @@ function Set-SalesforceObject {
         [Parameter(Mandatory = $true)][string] $Id,
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
@@ -275,7 +275,7 @@ function Set-SalesforceObject {
     $arguments += " --record-id $Id"
     $arguments += " --values `"$FieldUpdates`""
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    $arguments += " --target-org $Username"
+    $arguments += " --target-org $TargetOrg"
     $arguments += " --json"
     $result = Invoke-Sf -Arguments $arguments
     return Show-SfResult -Result $result
@@ -285,12 +285,12 @@ function Get-SalesforceRecordType {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectType,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
     if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
-    $results = Select-SalesforceObjects -Query $query -Username $Username
+    $results = Select-SalesforceObjects -Query $query -TargetOrg $TargetOrg
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
 
@@ -298,16 +298,16 @@ function Invoke-SalesforceApexFile {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ApexFile,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
-    $result = Invoke-Sf -Arguments "apex run --file $ApexFile --target-org $Username --json"
+    $result = Invoke-Sf -Arguments "apex run --file $ApexFile --target-org $TargetOrg --json"
     return Show-SfResult -Result $result
 }
 
 function Connect-SalesforceApi {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $true)][string] $Password,
         [Parameter(Mandatory = $true)][string] $Token,
         [Parameter(Mandatory = $true)][string] $ClientId,
@@ -324,7 +324,7 @@ function Connect-SalesforceApi {
         grant_type    = "password"
         client_id     = "$ClientId"
         client_secret = "$ClientSecret"
-        username      = "$Username"
+        username      = "$TargetOrg"
         password      = ($Password + $Token)
     }
 }
