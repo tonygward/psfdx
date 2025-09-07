@@ -229,14 +229,14 @@ function Install-SalesforcePackageVersion {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
-        [Parameter(Mandatory = $true)][Alias('DevHubUsername')][string] $Username,
+        [Parameter(Mandatory = $true)][Alias('Username','DevHubUsername')][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][int] $WaitMinutes = 10
     )
 
     $command = "sf package install"
     $command += " --package $PackageVersionId"
-    $command += " --target-org $Username"
+    $command += " --target-org $TargetOrg"
     if ($NoPrompt) {
         $command += " --no-prompt"
     }

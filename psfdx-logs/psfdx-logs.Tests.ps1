@@ -15,7 +15,7 @@ Describe 'Watch-SalesforceLogs' {
     }
 
     It 'adds username when provided' {
-        Watch-SalesforceLogs -Username 'user@example' | Out-Null
+        Watch-SalesforceLogs -TargetOrg 'user@example' | Out-Null
         Assert-MockCalled -ModuleName 'psfdx-logs' Invoke-Sf -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --target-org user@example --color' }
     }
 
@@ -44,7 +44,7 @@ Describe 'Get-SalesforceLogs' {
     }
 
     It 'adds username when provided' {
-        Get-SalesforceLogs -Username 'user@example' | Out-Null
+        Get-SalesforceLogs -TargetOrg 'user@example' | Out-Null
         Assert-MockCalled -ModuleName 'psfdx-logs' Invoke-Sf -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --target-org user@example --json' }
     }
 }
@@ -57,11 +57,11 @@ Describe 'Get-SalesforceLog' {
     }
 
     It 'requires either LogId or Last' {
-        { Get-SalesforceLog -Username 'user' } | Should -Throw
+        { Get-SalesforceLog -TargetOrg 'user' } | Should -Throw
     }
 
     It 'fetches by LogId and returns log text' {
-        $log = Get-SalesforceLog -LogId '07Lxx0000000001' -Username 'user'
+        $log = Get-SalesforceLog -LogId '07Lxx0000000001' -TargetOrg 'user'
         $log | Should -Be 'LOGDATA'
         Assert-MockCalled -ModuleName 'psfdx-logs' Invoke-Sf -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log get --log-id 07Lxx0000000001 --target-org user --json' }
     }
@@ -73,14 +73,14 @@ Describe 'Get-SalesforceLog' {
         )
         Mock -ModuleName 'psfdx-logs' Get-SalesforceLogs { $logs }
 
-        $null = Get-SalesforceLog -Last -Username 'user'
+        $null = Get-SalesforceLog -Last -TargetOrg 'user'
         # Should pick Id '2' (latest)
         Assert-MockCalled -ModuleName 'psfdx-logs' Invoke-Sf -Times 1 -ParameterFilter { ($Command -join ' ') -match '--log-id 2 ' }
     }
 
     It 'throws when sf returns error' {
         Mock -ModuleName 'psfdx-logs' Invoke-Sf { '{"status":1,"message":"failure"}' }
-        { Get-SalesforceLog -LogId 'X' -Username 'user' } | Should -Throw
+        { Get-SalesforceLog -LogId 'X' -TargetOrg 'user' } | Should -Throw
     }
 }
 
@@ -104,19 +104,19 @@ Describe 'Export-SalesforceLogs' {
     }
 
     It 'writes one file per log to the output folder' {
-        Export-SalesforceLogs -OutputFolder $script:tempDir -Username 'user' -Verbose | Out-Null
+        Export-SalesforceLogs -OutputFolder $script:tempDir -TargetOrg 'user' -Verbose | Out-Null
         Test-Path (Join-Path $script:tempDir 'A.log') | Should -BeTrue
         Test-Path (Join-Path $script:tempDir 'B.log') | Should -BeTrue
     }
 
     It 'throws when output folder does not exist' {
         $missing = Join-Path $script:tempDir 'missing'
-        { Export-SalesforceLogs -OutputFolder $missing -Username 'user' } | Should -Throw
+        { Export-SalesforceLogs -OutputFolder $missing -TargetOrg 'user' } | Should -Throw
     }
 
     It 'handles no logs gracefully' {
         Mock -ModuleName 'psfdx-logs' Get-SalesforceLogs { @() }
-        Export-SalesforceLogs -OutputFolder $script:tempDir -Username 'user' -Verbose | Out-Null
+        Export-SalesforceLogs -OutputFolder $script:tempDir -TargetOrg 'user' -Verbose | Out-Null
         (Get-ChildItem -Path $script:tempDir | Measure-Object).Count | Should -Be 0
     }
 }

@@ -19,17 +19,17 @@ function Show-SfResult {
 function Retrieve-SalesforceOrg {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $IncludePackages
     )
 
-    $command = "sf force source manifest create --from-org $Username"
+    $command = "sf force source manifest create --from-org $TargetOrg"
     $command += " --name=allMetadata"
     $command += " --output-dir ."
     if ($IncludePackages) { $command += " --include-packages=unlocked" }
     Invoke-Sf -Command $command
 
-    $command = "sf project retrieve start --target-org $Username"
+    $command = "sf project retrieve start --target-org $TargetOrg"
     $command += " --manifest allMetadata.xml"
     Invoke-Sf -Command $command
 }
@@ -194,12 +194,12 @@ function Retrieve-SalesforceComponent {
             'Workflow'
         )] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $false)][string] $Username
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     $command = "sf project retrieve start --metadata $Type"
     if ($Name) { $command += ":$Name" }
-    if ($Username) { $command += " --target-org $Username" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     Invoke-Sf -Command $command
 }
 
@@ -208,9 +208,9 @@ function Retrieve-SalesforceField {
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $FieldName,
-        [Parameter(Mandatory = $false)][string] $Username)
+        [Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf project retrieve start --metadata CustomField:$ObjectName.$FieldName"
-    if ($Username) { $command += " --target-org $Username" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     Invoke-Sf -Command $command
 }
 
@@ -219,9 +219,9 @@ function Retrieve-SalesforceValidationRule {
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $RuleName,
-        [Parameter(Mandatory = $false)][string] $Username)
+        [Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf project retrieve start --metadata ValidationRule:$ObjectName.$RuleName"
-    if ($Username) { $command += " --target-org $Username" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     Invoke-Sf -Command $command
 }
 
@@ -360,14 +360,14 @@ function Deploy-SalesforceComponent {
             'Workflow'
         )] $Type = 'ApexClass',
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $command = "sf project deploy start"
     $command += " --metadata $Type"
     if ($Name) {
         $command += ":$Name"
     }
-    $command += " --target-org $Username"
+    $command += " --target-org $TargetOrg"
     $command += " --json"
 
     $result = Invoke-Sf -Command $command
@@ -377,12 +377,12 @@ function Deploy-SalesforceComponent {
 function Describe-SalesforceObjects {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][string][ValidateSet('all', 'custom', 'standard')] $ObjectTypeCategory = 'all'
     )
     $command = "sf sobject list"
     $command += " --category $ObjectTypeCategory"
-    $command += " --target-org $Username"
+    $command += " --target-org $TargetOrg"
     $command += " --json"
     $result = Invoke-Sf -Command $command
     return Show-SfResult -Result $result
@@ -392,12 +392,12 @@ function Describe-SalesforceObject {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     $command = "sf sobject describe"
-    if ($Username) {
-        $command += " --target-org $Username"
+    if ($TargetOrg) {
+        $command += " --target-org $TargetOrg"
     }
     $command += " --sobject $Name"
     if ($UseToolingApi) {
@@ -412,10 +412,10 @@ function Describe-SalesforceFields {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    $result = Describe-SalesforceObject -Name $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
+    $result = Describe-SalesforceObject -Name $ObjectName -TargetOrg $TargetOrg -UseToolingApi:$UseToolingApi
     $result = $result.fields
     $result = $result | Select-Object name, label, type, byteLength
     return $result
@@ -423,9 +423,9 @@ function Describe-SalesforceFields {
 
 function Get-SalesforceMetaTypes {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)
+    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
     $command = "sf org list metadata-types"
-    $command += " --target-org $Username"
+    $command += " --target-org $TargetOrg"
     $command += " --json"
 
     $result = Invoke-Sf -Command $command
@@ -439,10 +439,10 @@ function Get-SalesforceApexClass {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $Username --json"
+    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
     $parsed = $result | ConvertFrom-Json
     if ($parsed.status -ne 0) {
         throw ($parsed.message)
@@ -454,10 +454,10 @@ function Build-SalesforceQuery {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
-        [Parameter(Mandatory = $true)][string] $Username,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    $fields = Describe-SalesforceFields -ObjectName $ObjectName -Username $Username -UseToolingApi:$UseToolingApi
+    $fields = Describe-SalesforceFields -ObjectName $ObjectName -TargetOrg $TargetOrg -UseToolingApi:$UseToolingApi
     if ($null -eq $fields) {
         return ""
     }
