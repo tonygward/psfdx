@@ -246,14 +246,3 @@ function Install-SalesforcePackageVersion {
     }
     Invoke-Sf -Command $command
 }
-
-Export-ModuleMember Get-SalesforcePackages
-Export-ModuleMember Get-SalesforcePackage
-Export-ModuleMember New-SalesforcePackage
-Export-ModuleMember Remove-SalesforcePackage
-
-Export-ModuleMember Get-SalesforcePackageVersions
-Export-ModuleMember New-SalesforcePackageVersion
-Export-ModuleMember Promote-SalesforcePackageVersion
-Export-ModuleMember Remove-SalesforcePackageVersion
-Export-ModuleMember Install-SalesforcePackageVersion

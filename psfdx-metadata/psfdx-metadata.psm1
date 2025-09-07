@@ -555,18 +555,3 @@ function Build-SalesforceQuery {
     $value += " FROM $ObjectName"
     return $value
 }
-
-Export-ModuleMember Retrieve-SalesforceOrg
-Export-ModuleMember Retrieve-SalesforceComponent
-Export-ModuleMember Retrieve-SalesforceField
-Export-ModuleMember Retrieve-SalesforceValidationRule
-Export-ModuleMember Deploy-SalesforceComponent
-
-Export-ModuleMember Describe-SalesforceObjects
-Export-ModuleMember Describe-SalesforceObject
-Export-ModuleMember Describe-SalesforceFields
-Export-ModuleMember Get-SalesforceMetaTypes
-
-Export-ModuleMember Get-SalesforceApexClass
-
-Export-ModuleMember Build-SalesforceQuery
