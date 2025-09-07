@@ -12,7 +12,6 @@ https://developer.salesforce.com/tools/sfdxcli
 git clone https://github.com/tonygward/psfdx
 cd psfdx
 ./install-linux.ps1
-Import-Module psfdx
 ```
 
 ### Windows
@@ -20,7 +19,6 @@ Import-Module psfdx
 git clone https://github.com/tonygward/psfdx
 cd psfdx
 ./install-windows.ps1
-Import-Module psfdx
 ```
 
 # Examples
