@@ -58,10 +58,10 @@ function Connect-Salesforce {
 }
 
 function Disconnect-Salesforce {
-    [CmdletBinding(DefaultParameterSetName = 'Username')]
+    [CmdletBinding(DefaultParameterSetName = 'TargetOrg')]
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'All')][switch] $All,
-        [Parameter(Mandatory = $true, ParameterSetName = 'Username')][string] $TargetOrg,
+        [Parameter(Mandatory = $true, ParameterSetName = 'TargetOrg')][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
     $arguments = "org logout"
