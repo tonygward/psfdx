@@ -23,12 +23,12 @@ function Show-SfResult {
 function Watch-SalesforceLogs {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $SkipTraceFlag,
         [Parameter(Mandatory = $false)][string] $DebugLevel
     )
     $command = @('sf','apex','log','tail')
-    if ($Username) { $command += @('--target-org', $Username) }
+    if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     if ($SkipTraceFlag) { $command += @('--skip-trace-flag') }
     if ($DebugLevel) { $command += @('--debug-level', $DebugLevel) }
     $command += @('--color')
@@ -37,9 +37,9 @@ function Watch-SalesforceLogs {
 
 function Get-SalesforceLogs {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][string] $Username)
+    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = @('sf','apex','log','list')
-    if ($Username) { $command += @('--target-org', $Username) }
+    if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
     $result = Invoke-Sf -Command $command
     return Show-SfResult -Result $result
@@ -50,14 +50,14 @@ function Get-SalesforceLog {
     Param(
         [Parameter(ParameterSetName='ById', Mandatory = $true)][string] $LogId,
         [Parameter(ParameterSetName='ByLast', Mandatory = $true)][switch] $Last,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'ByLast') {
-        $LogId = (Get-SalesforceLogs -Username $Username | Sort-Object StartTime -Descending | Select-Object -First 1).Id
+        $LogId = (Get-SalesforceLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
     }
 
-    $command = @('sf','apex','log','get','--log-id', $LogId, '--target-org', $Username, '--json')
+    $command = @('sf','apex','log','get','--log-id', $LogId, '--target-org', $TargetOrg, '--json')
     $raw = Invoke-Sf -Command $command
     $parsed = Show-SfResult -Result $raw
     return $parsed.log
@@ -68,7 +68,7 @@ function Export-SalesforceLogs {
     Param(
         [Parameter(Mandatory = $false)][int] $Limit = 50,
         [Parameter(Mandatory = $false)][string] $OutputFolder = $null,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
 
     if (($OutputFolder -eq $null) -or ($OutputFolder -eq "") ) {
@@ -78,7 +78,7 @@ function Export-SalesforceLogs {
     if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
     Write-Verbose "Output Folder: $OutputFolder"
 
-    $logs = Get-SalesforceLogs -Username $Username | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
+    $logs = Get-SalesforceLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
     if (-not $logs -or (($logs | Measure-Object).Count -eq 0)) {
         Write-Verbose "No Logs"
         return
@@ -90,7 +90,7 @@ function Export-SalesforceLogs {
         $fileName = $log.Id + ".log"
         $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
         Write-Verbose "Exporting file: $filePath"
-        Get-SalesforceLog -LogId $log.Id -Username $Username | Out-File -FilePath $filePath -Encoding utf8
+        Get-SalesforceLog -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
         $i = $i + 1
         $percentCompleted = ($i / $logsCount) * 100
         Write-Progress -Activity "Export Salesforce Logs" -Status "Completed $fileName" -PercentComplete $percentCompleted

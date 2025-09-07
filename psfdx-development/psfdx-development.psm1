@@ -102,7 +102,7 @@ function New-SalesforceScratchOrg {
 
     $scratchOrgUsername = $result.username
     if ($Set) {
-        Set-SalesforceProjectUser -Username $scratchOrgUsername
+        Set-SalesforceProjectUser -TargetOrg $scratchOrgUsername
     }
 }
 
@@ -180,7 +180,7 @@ function New-SalesforceProjectAndScratchOrg {
     Push-Location -Path $Name
     Remove-SalesforceScratchOrgs
     $scratchOrg = New-SalesforceScratchOrg -DevhubUsername $DevhubUsername
-    Set-SalesforceProjectUser -Username ($scratchOrg.username)
+    Set-SalesforceProjectUser -TargetOrg ($scratchOrg.username)
 }
 
 function Set-SalesforceProject {
@@ -281,8 +281,8 @@ function Get-SalesforceProjectUser {
 
 function Set-SalesforceProjectUser {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Username)
-    Invoke-Sf -Command "sf config set target-org=$Username"
+    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    Invoke-Sf -Command "sf config set target-org=$TargetOrg"
 }
 
 function DeployAndTest-SalesforceApex {
@@ -306,7 +306,7 @@ function Test-Salesforce {
     Param(
         [Parameter(Mandatory = $false)][string] $ClassName,
         [Parameter(Mandatory = $false)][string] $TestName,
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
 
         [Parameter(Mandatory = $false)][string][ValidateSet('human', 'tap', 'junit', 'json')] $ResultFormat = 'json',
 
@@ -342,7 +342,7 @@ function Test-Salesforce {
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
 
     if ($CodeCoverage) { $command += " --detailed-coverage" }
-    if ($Username) { $command += " --target-org $Username" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
     $result = Invoke-Sf -Command $command
@@ -370,17 +370,17 @@ function Get-SalesforceCodeCoverage {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $ApexClassOrTrigger = $null,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $query = "SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage "
     $query += "FROM ApexCodeCoverage "
     if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {
-        $apexClass = Get-SalesforceApexClass -Name $ApexClassOrTrigger -Username $Username
+        $apexClass = Get-SalesforceApexClass -Name $ApexClassOrTrigger -TargetOrg $TargetOrg
         $apexClassId = $apexClass.Id
         $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
     }
 
-    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $Username --json"
+    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
     $result = $result | ConvertFrom-Json
     if ($result.status -ne 0) {
         throw ($result.message)
@@ -416,10 +416,10 @@ function Get-SalesforceApexClass {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $Username --json"
+    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
     $parsed = $result | ConvertFrom-Json
     if ($parsed.status -ne 0) {
         throw ($parsed.message)
@@ -469,13 +469,13 @@ function Deploy-SalesforceComponent {
     Param(
         [Parameter(Mandatory = $false)][string][ValidateSet('ApexClass', 'ApexTrigger')] $Type = 'ApexClass',
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $Username
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $command = "sfdx force:source:deploy --metadata $Type"
     if ($Name) {
         $command += ":$Name"
     }
-    $command += " --targetusername $Username"
+    $command += " --targetusername $TargetOrg"
     $command += " --json"
 
     $response = Invoke-Sf -Command $command | ConvertFrom-Json
@@ -551,18 +551,18 @@ function Watch-SalesforceApex {
     $type = Get-SalesforceType -FileName $FileName
     if (($type -eq "ApexClass") -or ($type -eq "ApexTrigger")) {
         $name = Get-SalesforceName -FileName $FileName
-        Deploy-SalesforceComponent -Type $type -Name $name -Username $username
+        Deploy-SalesforceComponent -Type $type -Name $name -TargetOrg $username
 
         $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
         $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
-        Test-Salesforce -Username $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
+        Test-Salesforce -TargetOrg $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
     }
 }
 
 function Push-Salesforce {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
@@ -575,7 +575,7 @@ function Push-Salesforce {
     )
 
     $command = "sf project deploy start"
-    if ($Username) { $command += " --target-org $Username" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }
@@ -592,14 +592,14 @@ function Push-Salesforce {
 function Pull-Salesforce {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][string] $PackageNames,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings
     )
 
     $command = "sf project retrieve start"
-    if ($Username) { $command += " --target-org $Username"}
+    if ($TargetOrg) { $command += " --target-org $TargetOrg"}
     if ($PackageNames) { $command += " --package-name $PackageNames"}
     if ($IgnoreConflicts) { $command += " --ignore-conflicts"}
     if ($IgnoreWarnings) { $command += " --ignore-warnings"}
