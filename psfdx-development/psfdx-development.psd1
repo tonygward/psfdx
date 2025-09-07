@@ -22,7 +22,6 @@
 
     # Description of the functionality provided by this module
     Description       = 'PowerShell helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy).'
-    CmdletNameChecking = $false
 
     # Minimum version of the PowerShell engine required by this module
     PowerShellVersion = '5.1'

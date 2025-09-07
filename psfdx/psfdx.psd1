@@ -4,7 +4,6 @@
     GUID = '2785d2bf-775f-4f2b-9d00-ee98f0163cf0'
     Author = 'Tony Ward'
     Description = 'PowerShell module that wraps Salesforce SFDX command line interface'
-    CmdletNameChecking = $false
     FunctionsToExport = '*'
     CmdletsToExport = @()
     AliasesToExport = @()
