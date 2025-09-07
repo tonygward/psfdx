@@ -27,7 +27,7 @@ function Install-SalesforceLwcDevServer {
 function Start-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "sfdx force:lightning:lwc:start"
+    Invoke-Sf -Command "sf lightning lwc start"
 }
 
 function Set-SalesforceDefaultDevHub {
@@ -88,7 +88,7 @@ function New-SalesforceScratchOrg {
     if ($DevhubUsername) {
         $command += " --target-dev-hub $DevhubUsername"
     }
-    if ($DaysDuration) {
+    if ($DurationDays) {
         $command += " --duration-days $DurationDays"
     }
     $command += " --definition-file $DefinitionFile"
@@ -202,15 +202,13 @@ function Set-SalesforceProject {
     }
 
     if ((Test-Path -Path $sfdxFolder) -eq $false) {
-        throw ".sfdx folder does not exist ing $sfdxFolder"
+        throw ".sfdx folder does not exist in $sfdxFolder"
     }
 
     $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
-    if (Test-Path -Path $sfdxFile) {
-        throw "File already exists $sfdxFile"
+    if (-not (Test-Path -Path $sfdxFile)) {
+        New-Item -Path $sfdxFile | Out-Null
     }
-
-    New-Item -Path $sfdxFile | Out-Null
     $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
     Set-Content -Path $sfdxFile -Value $json
 }
@@ -237,7 +235,7 @@ function Get-SalesforceDefaultUserName {
     }
 
     $sfdxConfigFile = ""
-    $files = Get-ChildItem -Recurse -Filter "sfdx-config.json"
+    $files = Get-ChildItem -Path $sfdxFolder -Recurse -Filter "sfdx-config.json"
     foreach ($file in $files) {
         if ($file.FullName -like "*.sfdx*") {
             $sfdxConfigFile = $file
@@ -284,7 +282,7 @@ function Get-SalesforceProjectUser {
 function Set-SalesforceProjectUser {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Username)
-    Invoke-Sf -Command "sf config set target-org $Username"
+    Invoke-Sf -Command "sf config set target-org=$Username"
 }
 
 function DeployAndTest-SalesforceApex {
@@ -341,6 +339,8 @@ function Test-Salesforce {
         $command += " --output-dir $PSScriptRoot"
     }
 
+    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
+
     if ($CodeCoverage) { $command += " --detailed-coverage" }
     if ($Username) { $command += " --target-org $Username" }
     $command += " --result-format $ResultFormat"
@@ -355,14 +355,14 @@ function Test-Salesforce {
         throw ($result.result.summary.failing.tostring() + " Tests Failed")
     }
 
-    if (!$IncludeCodeCoverage) {
+    if (-not $CodeCoverage) {
         return
     }
 
     [int]$codeCoverage = ($result.result.summary.testRunCoverage -replace '%')
     if ($codeCoverage -lt 75) {
         $result.result.coverage.coverage
-        throw 'Insufficent code coverage '
+        throw 'Insufficient code coverage'
     }
 }
 
@@ -412,10 +412,29 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
+function Get-SalesforceApexClass {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $Username
+    )
+    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
+    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $Username --json"
+    $parsed = $result | ConvertFrom-Json
+    if ($parsed.status -ne 0) {
+        throw ($parsed.message)
+    }
+    return $parsed.result.records | Select-Object -First 1
+}
+
 function Install-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "yarn add -D @salesforce/sfdx-lwc-jest"
+    if (Get-Command yarn -ErrorAction SilentlyContinue) {
+        Invoke-Sf -Command "yarn add -D @salesforce/sfdx-lwc-jest"
+    } else {
+        Invoke-Sf -Command "npm install -D @salesforce/sfdx-lwc-jest"
+    }
 }
 
 function New-SalesforceJestTest {
@@ -473,7 +492,7 @@ function Get-SalesforceType {
     if ($FileName.EndsWith(".cls")) {
         return "ApexClass"
     }
-    if ($FileName.EndsWith(".cls")) {
+    if ($FileName.EndsWith(".trigger")) {
         return "ApexTrigger"
     }
     return ""
@@ -492,7 +511,7 @@ function Get-SalesforceTestResultsApexFolder {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
 
-    $folder = Join-Path -Path $ProjectFolder -ChildPath ".sfdx\tools\testresults\apex"
+    $folder = Join-Path -Path (Join-Path -Path (Join-Path -Path $ProjectFolder -ChildPath ".sfdx") -ChildPath "tools") -ChildPath "testresults/apex"
     Write-Verbose ("Apex Test Results Folder: " + $folder)
     # TODO: Check Folder Exists
     return $folder
@@ -536,7 +555,7 @@ function Watch-SalesforceApex {
 
         $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
         $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
-        Test-Salesforce -Username $username -ClassName $testClassNames -IncludeCodeCoverage:$false -OutputDirectory $outputDir
+        Test-Salesforce -Username $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
     }
 }
 
@@ -583,6 +602,7 @@ function Pull-Salesforce {
     if ($Username) { $command += " --target-org $Username"}
     if ($PackageNames) { $command += " --package-name $PackageNames"}
     if ($IgnoreConflicts) { $command += " --ignore-conflicts"}
+    if ($IgnoreWarnings) { $command += " --ignore-warnings"}
     Invoke-Sf -Command $command
 }
 
