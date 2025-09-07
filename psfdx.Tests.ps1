@@ -98,5 +98,22 @@ Describe 'psfdx module' {
                 $out.ok | Should -BeTrue
             }
         }
+
+        Context 'Get-SalesforceDataStorage' {
+            It 'calculates in-use and usage from limits' {
+                Mock Get-SalesforceLimits { @{ max = 100; remaining = 40 } } -ModuleName $module.Name
+                $res = Get-SalesforceDataStorage -Username me
+                $res.InUse | Should -Be 60
+                $res.Usage | Should -Be ((60/100).ToString('P'))
+            }
+        }
+
+        Context 'Get-SalesforceApiUsage' {
+            It 'calculates usage from limits' {
+                Mock Get-SalesforceLimits { @{ max = 1000; remaining = 250 } } -ModuleName $module.Name
+                $res = Get-SalesforceApiUsage -Username me
+                $res.Usage | Should -Be ((750/1000).ToString('P'))
+            }
+        }
     }
 }

@@ -171,8 +171,9 @@ function Get-SalesforceDataStorage {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Username)
     $values = Get-SalesforceLimits -Username $Username | Where-Object Name -eq "DataStorageMB"
-    $values | Add-Member -NotePropertyName InUse -NotePropertyValue ($values.max + ($values.remaining * -1))
-    $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
+    $inUse = $values.max - $values.remaining
+    $values | Add-Member -NotePropertyName InUse -NotePropertyValue $inUse
+    $values | Add-Member -NotePropertyName Usage -NotePropertyValue ($inUse / $values.max).ToString('P')
     return $values
 }
 
@@ -180,7 +181,8 @@ function Get-SalesforceApiUsage {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Username)
     $values = Get-SalesforceLimits -Username $Username | Where-Object Name -eq "DailyApiRequests"
-    $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
+    $inUse = $values.max - $values.remaining
+    $values | Add-Member -NotePropertyName Usage -NotePropertyValue ($inUse / $values.max).ToString('P')
     return $values
 }
 
