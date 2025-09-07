@@ -211,7 +211,8 @@ function Select-SalesforceRecords {
         $result
         throw $result.message
     }
-    return $result.result.records
+    # Exclude Salesforce's built-in 'attributes' metadata from each row
+    return ($result.result.records | Select-Object -ExcludeProperty attributes)
 }
 
 <#
