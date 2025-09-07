@@ -82,7 +82,7 @@ function New-SalesforceScratchOrg {
         [Parameter(Mandatory = $false)][switch] $Set,
         [Parameter(Mandatory = $false)][int] $DurationDays,
         [Parameter(Mandatory = $false)][string] $DefinitionFile = 'config/project-scratch-def.json',
-        [Parameter(Mandatory = $false)][int] $WaitMinutes        
+        [Parameter(Mandatory = $false)][int] $WaitMinutes
     )
     $command = "sf org create scratch"
     if ($DevhubUsername) {
@@ -122,11 +122,11 @@ function Remove-SalesforceScratchOrg {
 function Remove-SalesforceScratchOrgs {
     [CmdletBinding()]
     Param()
-    
+
     $scratchOrgs = Get-SalesforceScratchOrgs
     foreach ($scratchOrg in $scratchOrgs) {
         Remove-SalesforceScratchOrg -ScratchOrgUserName ($scratchOrg.username) -NoPrompt
-    }    
+    }
 }
 
 function New-SalesforceProject {
@@ -177,9 +177,9 @@ function New-SalesforceProjectAndScratchOrg {
         [Parameter(Mandatory = $true)][string] $DevhubUsername
     )
     New-SalesforceProject -Name $Name
-    Push-Location -Path $Name    
-    Remove-SalesforceScratchOrgs 
-    $scratchOrg = New-SalesforceScratchOrg -DevhubUsername $DevhubUsername    
+    Push-Location -Path $Name
+    Remove-SalesforceScratchOrgs
+    $scratchOrg = New-SalesforceScratchOrg -DevhubUsername $DevhubUsername
     Set-SalesforceProjectUser -Username ($scratchOrg.username)
 }
 
@@ -207,7 +207,7 @@ function Set-SalesforceProject {
 
     $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
     if (-not (Test-Path -Path $sfdxFile)) {
-        New-Item -Path $sfdxFile | Out-Null
+        throw "File already exists $sfdxFile"
     }
     $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
     Set-Content -Path $sfdxFile -Value $json
