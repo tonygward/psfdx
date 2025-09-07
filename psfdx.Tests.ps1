@@ -1,5 +1,5 @@
 <#
-Pester unit tests for psfdx.psm1
+Pester unit tests for psfdx module
 
 Run with:
 
@@ -7,7 +7,7 @@ pwsh -NoLogo -NoProfile -Command "Invoke-Pester -Path . -CI"
 #>
 
 $here = Split-Path -Parent $PSCommandPath
-$module = Import-Module (Join-Path $here 'psfdx.psm1') -Force -PassThru
+$module = Import-Module (Join-Path $here 'psfdx.psd1') -Force -PassThru
 
 Describe 'psfdx module' {
     Context 'Get-SalesforceDateTime' {
