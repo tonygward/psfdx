@@ -370,34 +370,3 @@ function Update-SalesforcePlugins {
     Param()
     Invoke-Sf -Arguments "plugins update"
 }
-
-Export-ModuleMember Get-SalesforceDateTime
-Export-ModuleMember Connect-Salesforce
-Export-ModuleMember Disconnect-Salesforce
-Export-ModuleMember Connect-SalesforceJwt
-Export-ModuleMember Open-Salesforce
-Export-ModuleMember Get-SalesforceConnections
-Export-ModuleMember Repair-SalesforceConnections
-
-Export-ModuleMember Get-SalesforceAlias
-Export-ModuleMember Add-SalesforceAlias
-Export-ModuleMember Remove-SalesforceAlias
-
-Export-ModuleMember Get-SalesforceLimits
-Export-ModuleMember Get-SalesforceDataStorage
-Export-ModuleMember Get-SalesforceApiUsage
-
-Export-ModuleMember Select-SalesforceRecords
-
-Export-ModuleMember New-SalesforceRecord
-Export-ModuleMember Set-SalesforceRecord
-Export-ModuleMember Get-SalesforceRecordType
-
-Export-ModuleMember Invoke-SalesforceApexFile
-
-Export-ModuleMember Connect-SalesforceApi
-Export-ModuleMember Invoke-SalesforceApi
-
-Export-ModuleMember Install-SalesforcePlugin
-Export-ModuleMember Get-SalesforcePlugins
-Export-ModuleMember Update-SalesforcePlugins

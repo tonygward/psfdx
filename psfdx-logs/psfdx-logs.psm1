@@ -137,10 +137,3 @@ function Out-Notepad {
         Start-Process -FilePath 'notepad' -ArgumentList $filename | Out-Null
     }
 }
-
-Export-ModuleMember Watch-SalesforceLogs
-Export-ModuleMember Get-SalesforceLogs
-Export-ModuleMember Get-SalesforceLog
-Export-ModuleMember Export-SalesforceLogs
-Export-ModuleMember Convert-SalesforceLog
-Export-ModuleMember Out-Notepad
