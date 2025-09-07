@@ -5,22 +5,13 @@ PowerShell module that wraps Salesforce SFDX command line interface
 You must install Salesforce SFDX
 https://developer.salesforce.com/tools/sfdxcli
 
-# Setup
+# Installation
 
-## Local
+### Linux
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-Import-Module ./psfdx/psfdx.psd1
-```
-
-## Install Module
-
-### Bash
-```
-git clone https://github.com/tonygward/psfdx
-cd psfdx
-sudo cp -rf psfdx /opt/microsoft/powershell/7/Modules/
+./install-linux.ps1
 Import-Module psfdx
 ```
 
@@ -28,10 +19,9 @@ Import-Module psfdx
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-Copy-Item psfdx $Home\Documents\PowerShell\Modules -Recurse -Force
+./install-windows.ps1
 Import-Module psfdx
 ```
-
 
 # Examples
 **1. Connect to a Salesforce Sandbox Org**
@@ -85,6 +75,6 @@ Get-Command -Module psfdx
 * `Invoke-SalesforceApexFile` - Execute Apex code
 * `Connect-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
 Plugin management functions
- 
+
 ## Breaking Changes
 - All cmdlets now use `-TargetOrg` instead of `-Username` to specify the org (username or alias). Update scripts accordingly.
