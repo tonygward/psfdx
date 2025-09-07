@@ -7,7 +7,8 @@ pwsh -NoLogo -NoProfile -Command "Invoke-Pester -Path . -CI"
 #>
 
 $here = Split-Path -Parent $PSCommandPath
-$module = Import-Module (Join-Path $here 'psfdx.psd1') -Force -PassThru
+$moduleManifest = Join-Path $here '..' 'psfdx.psd1'
+$module = Import-Module $moduleManifest -Force -PassThru
 
 Describe 'psfdx module' {
     Context 'Get-SalesforceDateTime' {
@@ -22,7 +23,7 @@ Describe 'psfdx module' {
         Context 'Alias commands' {
             It 'sets alias using equals syntax' {
                 Mock Invoke-Sf {} -ModuleName $module.Name
-                Add-SalesforceAlias -Alias 'my' -Username 'user@example.com'
+                Add-SalesforceAlias -Alias 'my' -TargetOrg 'user@example.com'
                 Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias set my=user@example.com' }
             }
 
@@ -48,13 +49,13 @@ Describe 'psfdx module' {
 
             It 'uses login URL for production' {
                 Mock Invoke-Sf { '{"status":0,"result":{}}' }
-                Connect-SalesforceJwt -ConsumerKey 'ck' -Username 'u' -JwtKeyfile 'key.pem'
+                Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem'
                 Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://login.salesforce.com*' }
             }
 
             It 'uses test URL for sandbox' {
                 Mock Invoke-Sf { '{"status":0,"result":{}}' }
-                Connect-SalesforceJwt -ConsumerKey 'ck' -Username 'u' -JwtKeyfile 'key.pem' -Sandbox
+                Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem' -Sandbox
                 Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://test.salesforce.com*' }
             }
         }
@@ -65,7 +66,7 @@ Describe 'psfdx module' {
 {"status":0,"result":{"records":[{"Id":"001xx0000000001"}]}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $rows = Select-SalesforceObjects -Query 'SELECT Id FROM Account LIMIT 1' -Username 'me'
+                $rows = Select-SalesforceObjects -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
                 $rows.Count | Should -Be 1
                 $rows[0].Id | Should -Be '001xx0000000001'
             }
@@ -77,7 +78,7 @@ Describe 'psfdx module' {
 {"status":0,"result":{"id":"001xx0000000001"}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $res = New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -Username me
+                $res = New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me
                 $res.id | Should -Be '001xx0000000001'
             }
 
@@ -86,7 +87,7 @@ Describe 'psfdx module' {
 {"status":0,"result":{"success":true}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $res = Set-SalesforceObject -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -Username me
+                $res = Set-SalesforceObject -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me
                 $res.success | Should -BeTrue
             }
         }
