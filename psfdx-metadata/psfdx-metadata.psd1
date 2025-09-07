@@ -7,6 +7,7 @@
     CompanyName           = 'psfdx'
     Copyright            = 'Copyright (c) psfdx contributors.'
     Description           = 'PowerShell helpers for retrieving, deploying, and describing Salesforce metadata.'
+    CmdletNameChecking    = $false
     PowerShellVersion     = '5.1'
     RequiredModules       = @()
     RequiredAssemblies    = @()
@@ -37,4 +38,3 @@
         }
     }
 }
-
