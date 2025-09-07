@@ -5,12 +5,36 @@ PowerShell module that wraps Salesforce SFDX command line interface
 You must install Salesforce SFDX
 https://developer.salesforce.com/tools/sfdxcli
 
-# Installation
+# Setup
+
+## Local
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
 Import-Module ./psfdx.psd1
 ```
+
+## Install Module
+
+### Bash
+```
+git clone https://github.com/tonygward/psfdx
+cd psfdx
+sudo mkdir /opt/microsoft/powershell/7/Modules/psfdx
+sudo cp -rf . /opt/microsoft/powershell/7/Modules/psfdx
+Import-Module psfdx
+```
+
+### Windows
+```
+git clone https://github.com/tonygward/psfdx
+cd psfdx
+New-Item -type Directory $Home\Documents\PowerShell\Modules\psfdx
+Copy-Item psfdx $Home\Documents\PowerShell\Modules -Recurse -Force
+Import-Module psfdx
+```
+
+
 # Examples
 **1. Connect to a Salesforce Sandbox Org**
 ```
