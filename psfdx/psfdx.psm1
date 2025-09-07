@@ -261,9 +261,9 @@ Target org username or alias.
 .PARAMETER UseToolingApi
 Use the Salesforce Tooling API for the request.
 .EXAMPLE
-Set-SalesforceObject -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me@example.com -UseToolingApi
+Set-SalesforceRecord -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me@example.com -UseToolingApi
 #>
-function Set-SalesforceObject {
+function Set-SalesforceRecord {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Id,
@@ -389,7 +389,7 @@ Export-ModuleMember Get-SalesforceApiUsage
 Export-ModuleMember Select-SalesforceRecords
 
 Export-ModuleMember New-SalesforceRecord
-Export-ModuleMember Set-SalesforceObject
+Export-ModuleMember Set-SalesforceRecord
 Export-ModuleMember Get-SalesforceRecordType
 
 Export-ModuleMember Invoke-SalesforceApexFile

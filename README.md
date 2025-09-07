@@ -61,7 +61,7 @@ Get-Command -Module psfdx
 ### Record Operations
 * `Select-SalesforceRecords` - SOQL queries with flexible output formats
 * `New-SalesforceRecord` - Create records
-* `Set-SalesforceObject` - Update records
+* `Set-SalesforceRecord` - Update records
 * `Get-SalesforceRecordType` - Retrieve record type metadata
 ### Org Management
 * `Open-Salesforce` - Open org in browser

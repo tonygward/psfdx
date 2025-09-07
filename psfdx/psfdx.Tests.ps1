@@ -82,12 +82,12 @@ Describe 'psfdx module' {
                 $res.id | Should -Be '001xx0000000001'
             }
 
-            It 'returns parsed result for Set-SalesforceObject' {
+            It 'returns parsed result for Set-SalesforceRecord' {
                 $json = @'
 {"status":0,"result":{"success":true}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $res = Set-SalesforceObject -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me
+                $res = Set-SalesforceRecord -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me
                 $res.success | Should -BeTrue
             }
         }
