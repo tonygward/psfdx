@@ -11,7 +11,7 @@ https://developer.salesforce.com/tools/sfdxcli
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-Import-Module ./psfdx.psd1
+Import-Module ./psfdx/psfdx.psd1
 ```
 
 ## Install Module
@@ -20,8 +20,7 @@ Import-Module ./psfdx.psd1
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-sudo mkdir /opt/microsoft/powershell/7/Modules/psfdx
-sudo cp -rf . /opt/microsoft/powershell/7/Modules/psfdx
+sudo cp -rf psfdx /opt/microsoft/powershell/7/Modules/
 Import-Module psfdx
 ```
 
@@ -29,7 +28,6 @@ Import-Module psfdx
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-New-Item -type Directory $Home\Documents\PowerShell\Modules\psfdx
 Copy-Item psfdx $Home\Documents\PowerShell\Modules -Recurse -Force
 Import-Module psfdx
 ```
