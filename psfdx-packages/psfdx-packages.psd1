@@ -7,7 +7,6 @@
     CompanyName           = 'psfdx'
     Copyright            = 'Copyright (c) psfdx contributors.'
     Description           = 'PowerShell helpers for Salesforce packages: list, create, version, promote, install.'
-    CmdletNameChecking    = $false
     PowerShellVersion     = '5.1'
     RequiredModules       = @()
     RequiredAssemblies    = @()
