@@ -1,11 +1,10 @@
 BeforeAll {
     $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-metadata.psd1'
-    $script:module = Import-Module $moduleManifest -Force -PassThru
-    $script:moduleName = $script:module.Name
+    Import-Module $moduleManifest -Force | Out-Null
 }
 
 Describe 'Retrieve-SalesforceOrg' {
-    InModuleScope $script:moduleName {
+    InModuleScope 'psfdx-metadata' {
         BeforeEach { Mock Invoke-Sf {} }
         It 'creates manifest from org and retrieves via manifest' {
             Retrieve-SalesforceOrg -TargetOrg 'user' | Out-Null
@@ -16,7 +15,7 @@ Describe 'Retrieve-SalesforceOrg' {
 }
 
 Describe 'Retrieve-SalesforceComponent' {
-    InModuleScope $script:moduleName {
+    InModuleScope 'psfdx-metadata' {
         BeforeEach { Mock Invoke-Sf {} }
         It 'retrieves a named ApexClass for target org' {
             Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' | Out-Null
@@ -26,7 +25,7 @@ Describe 'Retrieve-SalesforceComponent' {
 }
 
 Describe 'Describe-SalesforceObjects' {
-    InModuleScope $script:moduleName {
+    InModuleScope 'psfdx-metadata' {
         BeforeEach {
             Mock Invoke-Sf { '{"status":0,"result":[{"xmlName":"ApexClass"}]}' }
             Mock Show-SfResult { return @('Account','Contact') }
@@ -40,7 +39,7 @@ Describe 'Describe-SalesforceObjects' {
 }
 
 Describe 'Get-SalesforceApexClass' {
-    InModuleScope $script:moduleName {
+    InModuleScope 'psfdx-metadata' {
         BeforeEach {
             $json = '{"status":0,"result":{"records":[{"Id":"01pxx0000000001AAA","Name":"MyClass"}]}}'
             Mock Invoke-Sf { $json }
