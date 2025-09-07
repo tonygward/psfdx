@@ -187,7 +187,7 @@ function Get-SalesforceApiUsage {
     return $values
 }
 
-function Select-SalesforceObjects {
+function Select-SalesforceRecords {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $Query,
@@ -226,9 +226,9 @@ Target org username or alias.
 .PARAMETER UseToolingApi
 Use the Salesforce Tooling API for the request.
 .EXAMPLE
-New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me@example.com -UseToolingApi
+New-SalesforceRecord -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me@example.com -UseToolingApi
 #>
-function New-SalesforceObject {
+function New-SalesforceRecord {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
@@ -261,9 +261,9 @@ Target org username or alias.
 .PARAMETER UseToolingApi
 Use the Salesforce Tooling API for the request.
 .EXAMPLE
-Set-SalesforceObject -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me@example.com -UseToolingApi
+Set-SalesforceRecord -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me@example.com -UseToolingApi
 #>
-function Set-SalesforceObject {
+function Set-SalesforceRecord {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Id,
@@ -293,7 +293,7 @@ function Get-SalesforceRecordType {
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
     if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
-    $results = Select-SalesforceObjects -Query $query -TargetOrg $TargetOrg
+    $results = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
 
@@ -386,10 +386,10 @@ Export-ModuleMember Get-SalesforceLimits
 Export-ModuleMember Get-SalesforceDataStorage
 Export-ModuleMember Get-SalesforceApiUsage
 
-Export-ModuleMember Select-SalesforceObjects
+Export-ModuleMember Select-SalesforceRecords
 
-Export-ModuleMember New-SalesforceObject
-Export-ModuleMember Set-SalesforceObject
+Export-ModuleMember New-SalesforceRecord
+Export-ModuleMember Set-SalesforceRecord
 Export-ModuleMember Get-SalesforceRecordType
 
 Export-ModuleMember Invoke-SalesforceApexFile

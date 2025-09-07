@@ -60,34 +60,34 @@ Describe 'psfdx module' {
             }
         }
 
-        Context 'Select-SalesforceObjects' {
+        Context 'Select-SalesforceRecords' {
             It 'returns records from successful JSON result' {
                 $json = @'
 {"status":0,"result":{"records":[{"Id":"001xx0000000001"}]}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $rows = Select-SalesforceObjects -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
+                $rows = Select-SalesforceRecords -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
                 $rows.Count | Should -Be 1
                 $rows[0].Id | Should -Be '001xx0000000001'
             }
         }
 
         Context 'Object CRUD helpers' {
-            It 'returns parsed result for New-SalesforceObject' {
+            It 'returns parsed result for New-SalesforceRecord' {
                 $json = @'
 {"status":0,"result":{"id":"001xx0000000001"}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $res = New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me
+                $res = New-SalesforceRecord -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me
                 $res.id | Should -Be '001xx0000000001'
             }
 
-            It 'returns parsed result for Set-SalesforceObject' {
+            It 'returns parsed result for Set-SalesforceRecord' {
                 $json = @'
 {"status":0,"result":{"success":true}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $res = Set-SalesforceObject -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me
+                $res = Set-SalesforceRecord -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me
                 $res.success | Should -BeTrue
             }
         }
