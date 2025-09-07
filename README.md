@@ -36,14 +36,14 @@ Other psfdx commands require a target org (username or alias).
 **2. Retrieve first 10 Salesforce Accounts**
 ```
 Import-Module psfdx
-Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg my@email.com
+Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg my@email.com
 ```
 NB you only need to Import-Module psfdx once per PowerShell session
 
 **3. Create and use a Salesforce Alias**
 ```
 Add-SalesforceAlias -TargetOrg my@email.com -Alias myalias
-Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg myalias
+Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg myalias
 ```
 
 **4. Retrieve every psfdx cmdlet**
@@ -59,7 +59,7 @@ Get-Command -Module psfdx
 * `Get-SalesforceConnections` - List connected orgs
 * `Repair-SalesforceConnections` - Clean up stale connections
 ### Record Operations
-* `Select-SalesforceObjects` - SOQL queries with flexible output formats
+* `Select-SalesforceRecords` - SOQL queries with flexible output formats
 * `New-SalesforceObject` - Create records
 * `Set-SalesforceObject` - Update records
 * `Get-SalesforceRecordType` - Retrieve record type metadata

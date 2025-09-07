@@ -187,7 +187,7 @@ function Get-SalesforceApiUsage {
     return $values
 }
 
-function Select-SalesforceObjects {
+function Select-SalesforceRecords {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $Query,
@@ -293,7 +293,7 @@ function Get-SalesforceRecordType {
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
     if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
-    $results = Select-SalesforceObjects -Query $query -TargetOrg $TargetOrg
+    $results = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
 
@@ -386,7 +386,7 @@ Export-ModuleMember Get-SalesforceLimits
 Export-ModuleMember Get-SalesforceDataStorage
 Export-ModuleMember Get-SalesforceApiUsage
 
-Export-ModuleMember Select-SalesforceObjects
+Export-ModuleMember Select-SalesforceRecords
 
 Export-ModuleMember New-SalesforceObject
 Export-ModuleMember Set-SalesforceObject

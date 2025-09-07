@@ -60,13 +60,13 @@ Describe 'psfdx module' {
             }
         }
 
-        Context 'Select-SalesforceObjects' {
+        Context 'Select-SalesforceRecords' {
             It 'returns records from successful JSON result' {
                 $json = @'
 {"status":0,"result":{"records":[{"Id":"001xx0000000001"}]}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $rows = Select-SalesforceObjects -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
+                $rows = Select-SalesforceRecords -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
                 $rows.Count | Should -Be 1
                 $rows[0].Id | Should -Be '001xx0000000001'
             }
