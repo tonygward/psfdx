@@ -65,7 +65,7 @@ function New-SalesforcePackage {
     if ($NoNamespace) {
         $command += " --no-namespace"
     }
-    $command += " --targetdev-hub $DevHubUsername"
+    $command += " --target-dev-hub $DevHubUsername"
     $command += " --json"
     $result = Invoke-Sf -Command $command
     $resultSfdx = Show-SfResult -Result $result
@@ -114,7 +114,8 @@ function New-SalesforcePackageVersion {
         $PackageId = $package.Id
     }
 
-    $command += "sf package version create --package $PackageId"
+    $command = "sf package version create --package $PackageId"
+    $command += " --target-dev-hub $DevHubUsername"
     if ($Name) {
         $command += " --version-name $Name"
     }
@@ -143,7 +144,9 @@ function New-SalesforcePackageVersion {
         $command += " --wait $WaitMinutes"
     }
 
-    Invoke-Sf -Command $command
+    $command += " --json"
+    $result = Invoke-Sf -Command $command
+    return Show-SfResult -Result $result
 }
 
 function Get-SalesforcePackageVersions {
@@ -226,14 +229,14 @@ function Install-SalesforcePackageVersion {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
+        [Parameter(Mandatory = $true)][Alias('DevHubUsername')][string] $Username,
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][int] $WaitMinutes = 10
     )
 
     $command = "sf package install"
     $command += " --package $PackageVersionId"
-    $command += " --target-org $DevHubUsername"
+    $command += " --target-org $Username"
     if ($NoPrompt) {
         $command += " --no-prompt"
     }
