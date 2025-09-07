@@ -1,6 +1,15 @@
 # psfdx
 [![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
-PowerShell module that wraps Salesforce SFDX command line interface
+PowerShell modules that wrap the Salesforce SFDX command line interface.
+
+## Modules
+| Module | Description |
+| --- | --- |
+| `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
+| `psfdx-development` | Helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy). |
+| `psfdx-logs` | Tools for working with Salesforce DX Apex logs. |
+| `psfdx-metadata` | Commands for retrieving, deploying, and describing Salesforce metadata. |
+| `psfdx-packages` | Helpers for managing Salesforce packages: list, create, version, promote, install. |
 # Pre-Requisites
 You must install Salesforce SFDX
 https://developer.salesforce.com/tools/sfdxcli
@@ -52,7 +61,7 @@ Get-Command -Module psfdx
 ```
 
 ## Cmdlet Reference
-## Authentication & Connection Management
+### Authentication & Connection Management
 * `Connect-Salesforce` - Web-based org authentication
 * `Disconnect-Salesforce` - Logout from orgs
 * `Connect-SalesforceJwt` - JWT-based authentication
@@ -72,7 +81,33 @@ Get-Command -Module psfdx
 * `Add-SalesforceAlias` / `Remove-SalesforceAlias` -  Alias management
 * `Invoke-SalesforceApexFile` - Execute Apex code
 * `Connect-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
-Plugin management functions
+
+### Development
+* `New-SalesforceProject` - Scaffold a new SFDX project
+* `Get-SalesforceScratchOrgs` - List existing scratch orgs
+* `New-SalesforceScratchOrg` - Create a new scratch org
+* `Set-SalesforceDefaultDevHub` - Set the default Dev Hub
+* `Install-SalesforceLwcDevServer` - Install the LWC development server
+
+### Logs
+* `Watch-SalesforceLogs` - Stream Apex logs in real time
+* `Get-SalesforceLogs` - Retrieve available logs
+* `Export-SalesforceLogs` - Save logs to disk
+* `Convert-SalesforceLog` - Convert logs to a readable format
+
+### Metadata
+* `Retrieve-SalesforceOrg` - Pull metadata from an org
+* `Retrieve-SalesforceComponent` - Retrieve a specific component
+* `Deploy-SalesforceComponent` - Deploy metadata to an org
+* `Describe-SalesforceObject` - Inspect object metadata
+* `Get-SalesforceMetaTypes` - List available metadata types
+
+### Packages
+* `Get-SalesforcePackages` - List packages in the org
+* `New-SalesforcePackage` - Create a package
+* `New-SalesforcePackageVersion` - Create a package version
+* `Promote-SalesforcePackageVersion` - Promote a package version
+* `Install-SalesforcePackageVersion` - Install a package version
 
 ## Breaking Changes
 - All cmdlets now use `-TargetOrg` instead of `-Username` to specify the org (username or alias). Update scripts accordingly.
