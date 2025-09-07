@@ -23,13 +23,13 @@ Describe 'psfdx module' {
             It 'sets alias using equals syntax' {
                 Mock Invoke-Sf {} -ModuleName $module.Name
                 Add-SalesforceAlias -Alias 'my' -Username 'user@example.com'
-                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf alias set my=user@example.com' }
+                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias set my=user@example.com' }
             }
 
             It 'unsets alias without stray leading space' {
                 Mock Invoke-Sf {} -ModuleName $module.Name
                 Remove-SalesforceAlias -Alias 'my'
-                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf alias unset my' }
+                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias unset my' }
             }
         }
 
@@ -37,25 +37,25 @@ Describe 'psfdx module' {
             It 'includes --set-default-dev-hub when requested' {
                 Mock Invoke-Sf { '{"status":0,"result":{}}' } -ModuleName $module.Name
                 Connect-Salesforce -SetDefaultDevHub
-                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -like '* --set-default-dev-hub *' }
+                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -like '* --set-default-dev-hub*' }
             }
         }
 
-        Context 'Grant-SalesforceJWT' {
+        Context 'Connect-SalesforceJwt' {
             BeforeAll {
                 Mock Test-Path { $true }
             }
 
             It 'uses login URL for production' {
                 Mock Invoke-Sf { '{"status":0,"result":{}}' }
-                Grant-SalesforceJWT -ConsumerKey 'ck' -Username 'u' -JwtKeyfile 'key.pem'
-                Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Command -like '* --instance-url https://login.salesforce.com*' }
+                Connect-SalesforceJwt -ConsumerKey 'ck' -Username 'u' -JwtKeyfile 'key.pem'
+                Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://login.salesforce.com*' }
             }
 
             It 'uses test URL for sandbox' {
                 Mock Invoke-Sf { '{"status":0,"result":{}}' }
-                Grant-SalesforceJWT -ConsumerKey 'ck' -Username 'u' -JwtKeyfile 'key.pem' -IsSandbox
-                Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Command -like '* --instance-url https://test.salesforce.com*' }
+                Connect-SalesforceJwt -ConsumerKey 'ck' -Username 'u' -JwtKeyfile 'key.pem' -Sandbox
+                Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://test.salesforce.com*' }
             }
         }
 
@@ -64,7 +64,7 @@ Describe 'psfdx module' {
                 $json = @'
 {"status":0,"result":{"records":[{"Id":"001xx0000000001"}]}}
 '@
-                Mock Invoke-Expression { $json } -ModuleName $module.Name
+                Mock Invoke-Sf { $json } -ModuleName $module.Name
                 $rows = Select-SalesforceObjects -Query 'SELECT Id FROM Account LIMIT 1' -Username 'me'
                 $rows.Count | Should -Be 1
                 $rows[0].Id | Should -Be '001xx0000000001'

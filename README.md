@@ -15,7 +15,7 @@ Import-Module ./psfdx.psm1
 **1. Connect to a Salesforce Sandbox Org**
 ```
 Import-Module psfdx
-Connect-Salesforce -IsSandbox
+Connect-Salesforce -Sandbox
 ```
 A web browser will appear, login to Salesforce as you would normally.
 
@@ -45,7 +45,7 @@ Get-Command -Module psfdx
 ## Authentication & Connection Management
 * `Connect-Salesforce` - Web-based org authentication
 * `Disconnect-Salesforce` - Logout from orgs
-* `Grant-SalesforceJWT` - JWT-based authentication
+* `Connect-SalesforceJwt` - JWT-based authentication
 * `Get-SalesforceConnections` - List connected orgs
 * `Clean-SalesforceConnections` - Clean up stale connections
 ### Record Operations
@@ -61,5 +61,5 @@ Get-Command -Module psfdx
 ### Utilities
 * `Add-SalesforceAlias` / `Remove-SalesforceAlias` -  Alias management
 * `Invoke-SalesforceApexFile` - Execute Apex code
-* `Login-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
+* `Connect-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
 Plugin management functions
