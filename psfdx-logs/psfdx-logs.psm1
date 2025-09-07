@@ -1,23 +1,19 @@
 function Invoke-Sf {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string[]] $Command)
-    Write-Verbose ($Command -join ' ')
-    if ($Command.Length -eq 0) { throw 'No command specified' }
-    $exe = $Command[0]
-    $args = @()
-    if ($Command.Length -gt 1) { $args = $Command[1..($Command.Length-1)] }
-    return & $exe @args
+    [CmdletBinding(DefaultParameterSetName='Array')]
+    Param(
+        [Parameter(ParameterSetName='String')][Alias('Arguments')][string] $StringCommand,
+        [Parameter(ParameterSetName='Array')][Alias('Command')][string[]] $ArrayCommand
+    )
+    if ($PSCmdlet.ParameterSetName -eq 'Array') {
+        return psfdx-common\Invoke-Sf -Command $ArrayCommand
+    }
+    return psfdx-common\Invoke-Sf -Arguments $StringCommand
 }
 
 function Show-SfResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
-    $result = $Result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        Write-Debug $result
-        throw ($result.message)
-    }
-    return $result.result
+    return psfdx-common\Show-SfResult -Result $Result
 }
 
 function Watch-SalesforceLogs {

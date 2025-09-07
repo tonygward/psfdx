@@ -8,7 +8,7 @@
     Copyright            = 'Copyright (c) psfdx contributors.'
     Description           = 'PowerShell helpers for retrieving, deploying, and describing Salesforce metadata.'
     PowerShellVersion     = '5.1'
-    RequiredModules       = @()
+    RequiredModules       = @(@{ ModuleName = 'psfdx-common'; ModuleVersion = '0.1.0' })
     RequiredAssemblies    = @()
     ScriptsToProcess      = @()
     TypesToProcess        = @()

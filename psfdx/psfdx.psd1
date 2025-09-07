@@ -5,6 +5,7 @@
     Author = 'Tony Ward'
     Description = 'PowerShell module that wraps Salesforce SFDX command line interface'
     FunctionsToExport = '*'
+    RequiredModules   = @(@{ ModuleName = 'psfdx-common'; ModuleVersion = '0.1.0' })
     CmdletsToExport = @()
     AliasesToExport = @()
 }

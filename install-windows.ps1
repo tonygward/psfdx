@@ -8,6 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 # Modules to install
 $modules = @(
+    'psfdx-common',
     'psfdx',
     'psfdx-logs',
     'psfdx-development',

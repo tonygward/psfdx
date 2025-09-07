@@ -1,32 +1,19 @@
 function Invoke-Sf {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Arguments)
-    Write-Verbose $Arguments
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    $psi.FileName = "sf"
-    $psi.Arguments = $Arguments
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError = $true
-    $psi.UseShellExecute = $false
-    $process = [System.Diagnostics.Process]::Start($psi)
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
-    $process.WaitForExit()
-    if ($process.ExitCode -ne 0 -and $stderr) {
-        Write-Debug $stderr
+    [CmdletBinding(DefaultParameterSetName='String')]
+    Param(
+        [Parameter(ParameterSetName='String')][Alias('Arguments')][string] $StringCommand,
+        [Parameter(ParameterSetName='Array')][Alias('Command')][string[]] $ArrayCommand
+    )
+    if ($PSCmdlet.ParameterSetName -eq 'Array') {
+        return psfdx-common\Invoke-Sf -Command $ArrayCommand
     }
-    return $stdout
+    return psfdx-common\Invoke-Sf -Arguments $StringCommand
 }
 
 function Show-SfResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
-    $result = $Result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        Write-Debug $result
-        throw ($result.message)
-    }
-    return $result.result
+    return psfdx-common\Show-SfResult -Result $Result
 }
 
 function Get-SalesforceDateTime {
