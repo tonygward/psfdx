@@ -1,7 +1,6 @@
-BeforeAll {
-    $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-metadata.psd1'
-    Import-Module $moduleManifest -Force | Out-Null
-}
+# Import module at discovery time so InModuleScope can find it
+$moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-metadata.psd1'
+Import-Module $moduleManifest -Force | Out-Null
 
 Describe 'Retrieve-SalesforceOrg' {
     InModuleScope 'psfdx-metadata' {

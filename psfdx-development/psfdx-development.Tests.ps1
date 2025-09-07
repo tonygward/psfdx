@@ -1,7 +1,6 @@
-BeforeAll {
-    $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-development.psd1'
-    Import-Module $moduleManifest -Force | Out-Null
-}
+# Import module at discovery time so InModuleScope can find it
+$moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-development.psd1'
+Import-Module $moduleManifest -Force | Out-Null
 
 Describe 'psfdx-development basics' {
     InModuleScope 'psfdx-development' {
