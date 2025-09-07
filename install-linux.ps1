@@ -1,3 +1,9 @@
+[CmdletBinding()]
+Param(
+    [ValidateSet('CurrentUser','AllUsers')][string] $Scope = 'CurrentUser',
+    [switch] $IncludeTests
+)
+
 $ErrorActionPreference = 'Stop'
 
 # Modules to install
@@ -9,7 +15,13 @@ $modules = @(
     'psfdx-packages'
 )
 
-$dest = Join-Path $PSHOME 'Modules'
+if ($Scope -eq 'AllUsers') {
+    $dest = Join-Path $PSHOME 'Modules'
+} else {
+    $xdg = if ($env:XDG_DATA_HOME) { $env:XDG_DATA_HOME } else { Join-Path $HOME '.local/share' }
+    $dest = Join-Path $xdg 'powershell/Modules'
+}
+
 if (-not (Test-Path -Path $dest)) {
     New-Item -Path $dest -ItemType Directory -Force | Out-Null
 }
@@ -25,6 +37,13 @@ foreach ($m in $modules) {
         Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
     }
     Copy-Item -Path $src -Destination $dest -Recurse -Force
+
+    if (-not $IncludeTests) {
+        # Remove test files from installed module
+        Get-ChildItem -Path $target -Recurse -Filter '*Tests.ps1' -ErrorAction SilentlyContinue | ForEach-Object {
+            Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 Write-Host "Installed modules to: $dest" -ForegroundColor Green
