@@ -71,7 +71,7 @@ Get-Command -Module psfdx
 * `Disconnect-Salesforce` - Logout from orgs
 * `Connect-SalesforceJwt` - JWT-based authentication
 * `Get-SalesforceConnections` - List connected orgs
-* `Clean-SalesforceConnections` - Clean up stale connections
+* `Repair-SalesforceConnections` - Clean up stale connections
 ### Record Operations
 * `Select-SalesforceObjects` - SOQL queries with flexible output formats
 * `New-SalesforceObject` - Create records

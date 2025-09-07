@@ -131,7 +131,7 @@ function Get-SalesforceConnections {
     return $result
 }
 
-function Clean-SalesforceConnections {
+function Repair-SalesforceConnections {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
     $arguments = "org list --clean"
@@ -370,7 +370,7 @@ Export-ModuleMember Disconnect-Salesforce
 Export-ModuleMember Connect-SalesforceJwt
 Export-ModuleMember Open-Salesforce
 Export-ModuleMember Get-SalesforceConnections
-Export-ModuleMember Clean-SalesforceConnections
+Export-ModuleMember Repair-SalesforceConnections
 
 Export-ModuleMember Get-SalesforceAlias
 Export-ModuleMember Add-SalesforceAlias
