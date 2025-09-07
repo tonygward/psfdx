@@ -26,12 +26,12 @@ function Retrieve-SalesforceOrg {
     $command = "sf force source manifest create --from-org $Username"
     $command += " --name=allMetadata"
     $command += " --output-dir ."
-    if ($IncludePackages) { $command += " --include-packages=unlocked"}
-    Invoke-Expression -Command $command
+    if ($IncludePackages) { $command += " --include-packages=unlocked" }
+    Invoke-Sf -Command $command
 
     $command = "sf project retrieve start --target-org $Username"
     $command += " --manifest allMetadata.xml"
-    Invoke-Expression -Command $command
+    Invoke-Sf -Command $command
 }
 
 function Retrieve-SalesforceComponent {
@@ -362,8 +362,8 @@ function Deploy-SalesforceComponent {
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $true)][string] $Username
     )
-    $command = "project deploy start"
-    $command += "--metadata $Type"
+    $command = "sf project deploy start"
+    $command += " --metadata $Type"
     if ($Name) {
         $command += ":$Name"
     }
@@ -381,7 +381,7 @@ function Describe-SalesforceObjects {
         [Parameter(Mandatory = $false)][string][ValidateSet('all', 'custom', 'standard')] $ObjectTypeCategory = 'all'
     )
     $command = "sf sobject list"
-    $command += " --sobject all"
+    $command += " --category $ObjectTypeCategory"
     $command += " --target-org $Username"
     $command += " --json"
     $result = Invoke-Sf -Command $command
@@ -441,12 +441,13 @@ function Get-SalesforceApexClass {
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $true)][string] $Username
     )
-    $query = "SELECT Id, Name "
-    $query += "FROM ApexClass "
-    $query += "WHERE Name = '$Name'"
-    $result = Select-SalesforceObjects -Query $query -Username $Username
-    $result = $result | Select-Object Id, name
-    return $result
+    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
+    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $Username --json"
+    $parsed = $result | ConvertFrom-Json
+    if ($parsed.status -ne 0) {
+        throw ($parsed.message)
+    }
+    return $parsed.result.records | Select-Object -First 1 -Property Id, Name
 }
 
 function Build-SalesforceQuery {
