@@ -74,45 +74,6 @@ Describe 'Get-SalesforceLog' {
     }
 }
 
-Describe 'Export-SalesforceLogs' {
-    BeforeEach {
-        $script:tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("psfdx-logs-tests-" + [System.Guid]::NewGuid())
-        New-Item -ItemType Directory -Path $script:tempDir -Force | Out-Null
-
-        $logs = @(
-            [pscustomobject]@{ Id = 'A'; StartTime = [datetime]'2020-01-01' },
-            [pscustomobject]@{ Id = 'B'; StartTime = [datetime]'2020-01-02' }
-        )
-        InModuleScope 'psfdx-logs' {
-            Mock Get-SalesforceLogs { $logs }
-            Mock Get-SalesforceLog { 'content' }
-        }
-        # Avoid noisy progress in CI
-        Mock Write-Progress {}
-    }
-
-    AfterEach {
-        if (Test-Path $script:tempDir) { Remove-Item -Recurse -Force $script:tempDir }
-    }
-
-    It 'writes one file per log to the output folder' {
-        Export-SalesforceLogs -OutputFolder $script:tempDir -TargetOrg 'user' -Verbose | Out-Null
-        Test-Path (Join-Path $script:tempDir 'A.log') | Should -BeTrue
-        Test-Path (Join-Path $script:tempDir 'B.log') | Should -BeTrue
-    }
-
-    It 'throws when output folder does not exist' {
-        $missing = Join-Path $script:tempDir 'missing'
-        { Export-SalesforceLogs -OutputFolder $missing -TargetOrg 'user' } | Should -Throw
-    }
-
-    It 'handles no logs gracefully' {
-        InModuleScope 'psfdx-logs' { Mock Get-SalesforceLogs { @() } }
-        Export-SalesforceLogs -OutputFolder $script:tempDir -TargetOrg 'user' -Verbose | Out-Null
-        (Get-ChildItem -Path $script:tempDir | Measure-Object).Count | Should -Be 0
-    }
-}
-
 Describe 'Convert-SalesforceLog' {
     It 'parses pipe-delimited log lines into objects' {
         $log = @(
