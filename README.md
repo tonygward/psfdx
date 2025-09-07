@@ -9,7 +9,7 @@ https://developer.salesforce.com/tools/sfdxcli
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-Import-Module ./psfdx.psm1
+Import-Module ./psfdx.psd1
 ```
 # Examples
 **1. Connect to a Salesforce Sandbox Org**
