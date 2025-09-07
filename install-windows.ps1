@@ -1,8 +1,30 @@
-Remove-Item $Home\Documents\PowerShell\Modules\psfdx -Recurse -Force
-Copy-Item psfdx $Home\Documents\PowerShell\Modules -Recurse -Force
+$ErrorActionPreference = 'Stop'
 
-Remove-Item $Home\Documents\PowerShell\Modules\psfdx-logs -Recurse -Force
-Copy-Item psfdx-logs $Home\Documents\PowerShell\Modules -Recurse -Force
+# Modules to install
+$modules = @(
+    'psfdx',
+    'psfdx-logs',
+    'psfdx-development',
+    'psfdx-metadata',
+    'psfdx-packages'
+)
 
-Remove-Item $Home\Documents\PowerShell\Modules\psfdx-development -Recurse -Force
-Copy-Item psfdx-development $Home\Documents\PowerShell\Modules -Recurse -Force
+$dest = Join-Path $HOME 'Documents/PowerShell/Modules'
+if (-not (Test-Path -Path $dest)) {
+    New-Item -Path $dest -ItemType Directory -Force | Out-Null
+}
+
+foreach ($m in $modules) {
+    $src = Join-Path (Get-Location) $m
+    if (-not (Test-Path -Path $src)) {
+        Write-Verbose "Skipping missing module source: $src"
+        continue
+    }
+    $target = Join-Path $dest $m
+    if (Test-Path -Path $target) {
+        Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    Copy-Item -Path $src -Destination $dest -Recurse -Force
+}
+
+Write-Host "Installed modules to: $dest" -ForegroundColor Green
