@@ -1,5 +1,5 @@
 BeforeAll {
-    $moduleManifest = Join-Path $PSScriptRoot '..' 'psfdx-logs.psd1'
+    $moduleManifest = Join-Path $PSScriptRoot 'psfdx-logs.psd1'
     Import-Module $moduleManifest -Force
 }
 
