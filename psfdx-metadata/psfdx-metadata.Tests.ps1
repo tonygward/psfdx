@@ -32,7 +32,14 @@ Describe 'Describe-SalesforceObjects' {
         It 'passes category and returns Show-SfResult output' {
             $out = Describe-SalesforceObjects -TargetOrg 'me' -ObjectTypeCategory all
             $out | Should -Contain 'Account'
-            Assert-MockCalled -ModuleName 'psfdx-metadata' Invoke-Sf -Times 1 -ParameterFilter { $Command -like 'sf sobject list * --category all*' }
+            Assert-MockCalled -ModuleName 'psfdx-metadata' Invoke-Sf -Times 1 -ParameterFilter {
+                $cmd = $null
+                if ($PSBoundParameters.ContainsKey('Command')) { $cmd = $Command }
+                elseif ($PSBoundParameters.ContainsKey('ArrayCommand')) { $cmd = ($ArrayCommand -join ' ') }
+                elseif ($PSBoundParameters.ContainsKey('StringCommand')) { $cmd = $StringCommand }
+                elseif ($PSBoundParameters.ContainsKey('Arguments')) { $cmd = $Arguments }
+                $cmd -like 'sf sobject list * --category all*'
+            }
         }
     }
 }
