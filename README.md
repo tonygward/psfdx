@@ -60,7 +60,7 @@ Get-Command -Module psfdx
 * `Repair-SalesforceConnections` - Clean up stale connections
 ### Record Operations
 * `Select-SalesforceRecords` - SOQL queries with flexible output formats
-* `New-SalesforceObject` - Create records
+* `New-SalesforceRecord` - Create records
 * `Set-SalesforceObject` - Update records
 * `Get-SalesforceRecordType` - Retrieve record type metadata
 ### Org Management

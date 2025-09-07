@@ -73,12 +73,12 @@ Describe 'psfdx module' {
         }
 
         Context 'Object CRUD helpers' {
-            It 'returns parsed result for New-SalesforceObject' {
+            It 'returns parsed result for New-SalesforceRecord' {
                 $json = @'
 {"status":0,"result":{"id":"001xx0000000001"}}
 '@
                 Mock Invoke-Sf { $json } -ModuleName $module.Name
-                $res = New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me
+                $res = New-SalesforceRecord -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me
                 $res.id | Should -Be '001xx0000000001'
             }
 
