@@ -26,13 +26,13 @@ Describe 'Retrieve-SalesforceComponent' {
 Describe 'Describe-SalesforceObjects' {
     InModuleScope 'psfdx-metadata' {
         BeforeEach {
-            Mock Invoke-Sf { '{"status":0,"result":[{"xmlName":"ApexClass"}]}' }
-            Mock Show-SfResult { return @('Account','Contact') }
+            Mock -ModuleName 'psfdx-metadata' Invoke-Sf { '{"status":0,"result":[{"xmlName":"ApexClass"}]}' }
+            Mock -ModuleName 'psfdx-metadata' Show-SfResult { return @('Account','Contact') }
         }
         It 'passes category and returns Show-SfResult output' {
             $out = Describe-SalesforceObjects -TargetOrg 'me' -ObjectTypeCategory all
             $out | Should -Contain 'Account'
-            Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Command -like 'sf sobject list * --category all*' }
+            Assert-MockCalled -ModuleName 'psfdx-metadata' Invoke-Sf -Times 1 -ParameterFilter { $Command -like 'sf sobject list * --category all*' }
         }
     }
 }
