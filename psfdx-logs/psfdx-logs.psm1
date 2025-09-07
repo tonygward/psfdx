@@ -50,14 +50,16 @@ function Get-SalesforceLog {
     Param(
         [Parameter(ParameterSetName='ById', Mandatory = $true)][string] $LogId,
         [Parameter(ParameterSetName='ByLast', Mandatory = $true)][switch] $Last,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'ByLast') {
         $LogId = (Get-SalesforceLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
     }
 
-    $command = @('sf','apex','log','get','--log-id', $LogId, '--target-org', $TargetOrg, '--json')
+    $command = @('sf','apex','log','get','--log-id', $LogId)
+    if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
+    $command += @('--json')
     $raw = Invoke-Sf -Command $command
     $parsed = Show-SfResult -Result $raw
     return $parsed.log
@@ -68,7 +70,7 @@ function Export-SalesforceLogs {
     Param(
         [Parameter(Mandatory = $false)][int] $Limit = 50,
         [Parameter(Mandatory = $false)][string] $OutputFolder = $null,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     if (($OutputFolder -eq $null) -or ($OutputFolder -eq "") ) {

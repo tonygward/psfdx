@@ -162,14 +162,17 @@ function Remove-SalesforceAlias {
 
 function Get-SalesforceLimits {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
-    $result = Invoke-Sf -Arguments "limits api display --target-org $TargetOrg --json"
+    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
+    $arguments = "limits api display"
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
+    $arguments += " --json"
+    $result = Invoke-Sf -Arguments $arguments
     return Show-SfResult -Result $result
 }
 
 function Get-SalesforceDataStorage {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DataStorageMB"
     $values | Add-Member -NotePropertyName InUse -NotePropertyValue ($values.max + ($values.remaining * -1))
     $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
@@ -178,7 +181,7 @@ function Get-SalesforceDataStorage {
 
 function Get-SalesforceApiUsage {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DailyApiRequests"
     $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
     return $values
@@ -230,7 +233,7 @@ function New-SalesforceObject {
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
-        [Parameter(Mandatory = $true)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
@@ -238,7 +241,7 @@ function New-SalesforceObject {
     $arguments += " --sobject $Type"
     $arguments += " --values `"$FieldUpdates`""
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    $arguments += " --target-org $TargetOrg"
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
     $result = Invoke-Sf -Arguments $arguments
     return Show-SfResult -Result $result
@@ -266,7 +269,7 @@ function Set-SalesforceObject {
         [Parameter(Mandatory = $true)][string] $Id,
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
-        [Parameter(Mandatory = $true)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
@@ -275,7 +278,7 @@ function Set-SalesforceObject {
     $arguments += " --record-id $Id"
     $arguments += " --values `"$FieldUpdates`""
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    $arguments += " --target-org $TargetOrg"
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
     $result = Invoke-Sf -Arguments $arguments
     return Show-SfResult -Result $result
@@ -285,7 +288,7 @@ function Get-SalesforceRecordType {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectType,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
     $query += " FROM RecordType"
@@ -298,9 +301,12 @@ function Invoke-SalesforceApexFile {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ApexFile,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $result = Invoke-Sf -Arguments "apex run --file $ApexFile --target-org $TargetOrg --json"
+    $arguments = "apex run --file $ApexFile"
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
+    $arguments += " --json"
+    $result = Invoke-Sf -Arguments $arguments
     return Show-SfResult -Result $result
 }
 
