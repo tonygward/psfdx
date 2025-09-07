@@ -7,7 +7,7 @@ pwsh -NoLogo -NoProfile -Command "Invoke-Pester -Path . -CI"
 #>
 
 $here = Split-Path -Parent $PSCommandPath
-$moduleManifest = Join-Path $here '..' 'psfdx.psd1'
+$moduleManifest = Join-Path $here '..' 'psfdx' 'psfdx.psd1'
 $module = Import-Module $moduleManifest -Force -PassThru
 
 Describe 'psfdx module' {

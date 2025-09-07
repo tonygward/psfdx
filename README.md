@@ -11,7 +11,7 @@ https://developer.salesforce.com/tools/sfdxcli
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-Import-Module ./psfdx.psd1
+Import-Module ./psfdx/psfdx.psd1
 ```
 
 ## Install Module
@@ -20,8 +20,7 @@ Import-Module ./psfdx.psd1
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-sudo mkdir /opt/microsoft/powershell/7/Modules/psfdx
-sudo cp -rf . /opt/microsoft/powershell/7/Modules/psfdx
+sudo cp -rf psfdx /opt/microsoft/powershell/7/Modules/
 Import-Module psfdx
 ```
 
@@ -29,7 +28,6 @@ Import-Module psfdx
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-New-Item -type Directory $Home\Documents\PowerShell\Modules\psfdx
 Copy-Item psfdx $Home\Documents\PowerShell\Modules -Recurse -Force
 Import-Module psfdx
 ```
@@ -45,19 +43,19 @@ A web browser will appear, login to Salesforce as you would normally.
 
 Uses Salesforce SFDX's standard authentication, credentials are encrypted and stored locally.
 
-Other psfdx commands require a username, typically email address or alias.
+Other psfdx commands require a target org (username or alias).
 
 **2. Retrieve first 10 Salesforce Accounts**
 ```
 Import-Module psfdx
-Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -Username my@email.com
+Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg my@email.com
 ```
 NB you only need to Import-Module psfdx once per PowerShell session
 
 **3. Create and use a Salesforce Alias**
 ```
-Add-SalesforceAlias -Username my@email.com -Alias myalias
-Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -Username myalias
+Add-SalesforceAlias -TargetOrg my@email.com -Alias myalias
+Select-SalesforceObjects -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg myalias
 ```
 
 **4. Retrieve every psfdx cmdlet**
@@ -87,3 +85,6 @@ Get-Command -Module psfdx
 * `Invoke-SalesforceApexFile` - Execute Apex code
 * `Connect-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
 Plugin management functions
+ 
+## Breaking Changes
+- All cmdlets now use `-TargetOrg` instead of `-Username` to specify the org (username or alias). Update scripts accordingly.

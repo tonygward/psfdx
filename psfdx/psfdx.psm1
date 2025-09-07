@@ -58,10 +58,10 @@ function Connect-Salesforce {
 }
 
 function Disconnect-Salesforce {
-    [CmdletBinding(DefaultParameterSetName = 'Username')]
+    [CmdletBinding(DefaultParameterSetName = 'TargetOrg')]
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'All')][switch] $All,
-        [Parameter(Mandatory = $true, ParameterSetName = 'Username')][string] $TargetOrg,
+        [Parameter(Mandatory = $true, ParameterSetName = 'TargetOrg')][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
     $arguments = "org logout"
@@ -218,12 +218,12 @@ Creates a new Salesforce record.
 The sObject type to create.
 .PARAMETER FieldUpdates
 Comma-separated field=value pairs for the new record.
-.PARAMETER Username
+.PARAMETER TargetOrg
 Target org username or alias.
 .PARAMETER UseToolingApi
 Use the Salesforce Tooling API for the request.
 .EXAMPLE
-New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -Username me@example.com -UseToolingApi
+New-SalesforceObject -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me@example.com -UseToolingApi
 #>
 function New-SalesforceObject {
     [CmdletBinding()]
@@ -253,12 +253,12 @@ The record identifier to update.
 The sObject type of the record.
 .PARAMETER FieldUpdates
 Comma-separated field=value pairs for the update.
-.PARAMETER Username
+.PARAMETER TargetOrg
 Target org username or alias.
 .PARAMETER UseToolingApi
 Use the Salesforce Tooling API for the request.
 .EXAMPLE
-Set-SalesforceObject -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -Username me@example.com -UseToolingApi
+Set-SalesforceObject -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me@example.com -UseToolingApi
 #>
 function Set-SalesforceObject {
     [CmdletBinding()]
