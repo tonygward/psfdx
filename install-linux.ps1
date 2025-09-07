@@ -16,10 +16,10 @@ $modules = @(
 )
 
 if ($Scope -eq 'AllUsers') {
-    $dest = Join-Path $PSHOME 'Modules'
+    $dest = Join-Path -Path $PSHOME -ChildPath 'Modules'
 } else {
-    $xdg = if ($env:XDG_DATA_HOME) { $env:XDG_DATA_HOME } else { Join-Path $HOME '.local/share' }
-    $dest = Join-Path $xdg 'powershell/Modules'
+    $xdg = if ($env:XDG_DATA_HOME) { $env:XDG_DATA_HOME } else { Join-Path -Path $HOME -ChildPath '.local/share' }
+    $dest = Join-Path -Path $xdg -ChildPath 'powershell/Modules'
 }
 
 if (-not (Test-Path -Path $dest)) {
@@ -27,12 +27,12 @@ if (-not (Test-Path -Path $dest)) {
 }
 
 foreach ($m in $modules) {
-    $src = Join-Path (Get-Location) $m
+    $src = Join-Path -Path (Get-Location).Path -ChildPath $m
     if (-not (Test-Path -Path $src)) {
         Write-Verbose "Skipping missing module source: $src"
         continue
     }
-    $target = Join-Path $dest $m
+    $target = Join-Path -Path $dest -ChildPath $m
     if (Test-Path -Path $target) {
         Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
     }

@@ -16,9 +16,9 @@ $modules = @(
 )
 
 if ($Scope -eq 'AllUsers') {
-    $dest = Join-Path $PSHOME 'Modules'
+    $dest = Join-Path -Path $PSHOME -ChildPath 'Modules'
 } else {
-    $dest = Join-Path $HOME 'Documents/PowerShell/Modules'
+    $dest = Join-Path -Path $HOME -ChildPath 'Documents/PowerShell/Modules'
 }
 
 if (-not (Test-Path -Path $dest)) {
@@ -26,12 +26,12 @@ if (-not (Test-Path -Path $dest)) {
 }
 
 foreach ($m in $modules) {
-    $src = Join-Path (Get-Location) $m
+    $src = Join-Path -Path (Get-Location).Path -ChildPath $m
     if (-not (Test-Path -Path $src)) {
         Write-Verbose "Skipping missing module source: $src"
         continue
     }
-    $target = Join-Path $dest $m
+    $target = Join-Path -Path $dest -ChildPath $m
     if (Test-Path -Path $target) {
         Remove-Item -Path $target -Recurse -Force -ErrorAction SilentlyContinue
     }
