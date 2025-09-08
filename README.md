@@ -108,12 +108,3 @@ Get-Command -Module psfdx
 * `New-SalesforcePackageVersion` - Create a package version
 * `Promote-SalesforcePackageVersion` - Promote a package version
 * `Install-SalesforcePackageVersion` - Install a package version
-
-## Shared Helpers
-- `psfdx-shared/Invoke-Salesforce.ps1`:
-  - Use `-Arguments` when invoking the Salesforce CLI (`sf ...`). Pass the part after `sf`; the helper prepends `sf` automatically.
-  - Use `-Command` for non-`sf` commands (e.g., `npm`, `yarn`) or when supplying a string array for precise argument handling.
-- `psfdx-shared/Show-SalesforceResult.ps1`: Parses JSON output from `sf` commands and throws on non-zero `status`.
-
-## Breaking Changes
-- All cmdlets now use `-TargetOrg` instead of `-Username` to specify the org (username or alias). Update scripts accordingly.
