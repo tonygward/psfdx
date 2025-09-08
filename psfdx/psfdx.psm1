@@ -1,7 +1,7 @@
 function Invoke-Salesforce {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Arguments)
-    Write-Verbose $Arguments
+    Write-Verbose "sf $Arguments"
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "sf"
     $psi.Arguments = $Arguments
