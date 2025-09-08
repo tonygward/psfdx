@@ -1,4 +1,4 @@
-function Invoke-Sf {
+function Invoke-Salesforce {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string[]] $Command)
     Write-Verbose ($Command -join ' ')
@@ -32,7 +32,7 @@ function Watch-SalesforceLogs {
     if ($SkipTraceFlag) { $command += @('--skip-trace-flag') }
     if ($DebugLevel) { $command += @('--debug-level', $DebugLevel) }
     $command += @('--color')
-    return Invoke-Sf -Command $command
+    return Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforceLogs {
@@ -41,7 +41,7 @@ function Get-SalesforceLogs {
     $command = @('sf','apex','log','list')
     if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
@@ -60,7 +60,7 @@ function Get-SalesforceLog {
     $command = @('sf','apex','log','get','--log-id', $LogId)
     if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
-    $raw = Invoke-Sf -Command $command
+    $raw = Invoke-Salesforce -Command $command
     $parsed = Show-SfResult -Result $raw
     return $parsed.log
 }

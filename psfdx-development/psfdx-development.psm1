@@ -1,4 +1,4 @@
-function Invoke-Sf {
+function Invoke-Salesforce {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Command)
     Write-Verbose $Command
@@ -19,15 +19,15 @@ function Show-SfResult {
 function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "npm install -g node-gyp"
-    Invoke-Sf -Command "sf plugins install @salesforce/lwc-dev-server"
-    Invoke-Sf -Command "sf plugins update"
+    Invoke-Salesforce -Command "npm install -g node-gyp"
+    Invoke-Salesforce -Command "sf plugins install @salesforce/lwc-dev-server"
+    Invoke-Salesforce -Command "sf plugins update"
 }
 
 function Start-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "sf lightning lwc start"
+    Invoke-Salesforce -Command "sf lightning lwc start"
 }
 
 function Set-SalesforceDefaultDevHub {
@@ -35,20 +35,20 @@ function Set-SalesforceDefaultDevHub {
     Param(
         [Parameter(Mandatory = $true)][string] $DevhubUsername
     )
-    Invoke-Sf -Command "sf config set target-dev-hub=$DevhubUsername --global"
+    Invoke-Salesforce -Command "sf config set target-dev-hub=$DevhubUsername --global"
 }
 
 function Remove-SalesforceDefaultDevHub {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "sf config unset target-dev-hub --global"
+    Invoke-Salesforce -Command "sf config unset target-dev-hub --global"
 }
 
 function Get-SalesforceConfig {
     [CmdletBinding()]
     Param()
     $command = "sf config list --json"
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     Show-SfResult -Result $result
 }
 
@@ -64,7 +64,7 @@ function Get-SalesforceScratchOrgs {
         $command += " --skip-connection-status"
     }
     $command += " --json"
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.scratchOrgs
@@ -97,7 +97,7 @@ function New-SalesforceScratchOrg {
     }
     $command += " --json"
 
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     Show-SfResult -Result $result
 
     $scratchOrgUsername = $result.username
@@ -116,7 +116,7 @@ function Remove-SalesforceScratchOrg {
     if ($NoPrompt) {
         $command += " --no-prompt"
     }
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
 
 function Remove-SalesforceScratchOrgs {
@@ -159,7 +159,7 @@ function New-SalesforceProject {
     $command += " --template $Template"
     $command += " --json"
 
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     $result = Show-SfResult -Result $result
 
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
@@ -282,7 +282,7 @@ function Get-SalesforceProjectUser {
 function Set-SalesforceProjectUser {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $TargetOrg)
-    Invoke-Sf -Command "sf config set target-org=$TargetOrg"
+    Invoke-Salesforce -Command "sf config set target-org=$TargetOrg"
 }
 
 function DeployAndTest-SalesforceApex {
@@ -298,7 +298,7 @@ function DeployAndTest-SalesforceApex {
     $command += " --test-level RunSpecifiedTests"
     $command += " --tests $TestClassName"
 
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
 
 function Test-Salesforce {
@@ -345,7 +345,7 @@ function Test-Salesforce {
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     $result = $result | ConvertFrom-Json
 
     Write-Verbose $result
@@ -380,7 +380,7 @@ function Get-SalesforceCodeCoverage {
         $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
     }
 
-    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
+    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
     $result = $result | ConvertFrom-Json
     if ($result.status -ne 0) {
         throw ($result.message)
@@ -419,7 +419,7 @@ function Get-SalesforceApexClass {
         [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $result = Invoke-Sf -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
+    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
     $parsed = $result | ConvertFrom-Json
     if ($parsed.status -ne 0) {
         throw ($parsed.message)
@@ -431,9 +431,9 @@ function Install-SalesforceJest {
     [CmdletBinding()]
     Param()
     if (Get-Command yarn -ErrorAction SilentlyContinue) {
-        Invoke-Sf -Command "yarn add -D @salesforce/sfdx-lwc-jest"
+        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest"
     } else {
-        Invoke-Sf -Command "npm install -D @salesforce/sfdx-lwc-jest"
+        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest"
     }
 }
 
@@ -442,26 +442,26 @@ function New-SalesforceJestTest {
     Param([Parameter(Mandatory = $true)][string] $LwcName)
     $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
     $command = "sf force lightning lwc test create --filepath $filePath --json"
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
 function Test-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "npm run test:unit"
+    Invoke-Salesforce -Command "npm run test:unit"
 }
 
 function Debug-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "npm run test:unit:debug"
+    Invoke-Salesforce -Command "npm run test:unit:debug"
 }
 
 function Watch-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Sf -Command "npm run test:unit:watch"
+    Invoke-Salesforce -Command "npm run test:unit:watch"
 }
 
 function Deploy-SalesforceComponent {
@@ -478,7 +478,7 @@ function Deploy-SalesforceComponent {
     $command += " --targetusername $TargetOrg"
     $command += " --json"
 
-    $response = Invoke-Sf -Command $command | ConvertFrom-Json
+    $response = Invoke-Salesforce -Command $command | ConvertFrom-Json
     if ($response.result.success -ne $true) {
         Write-Verbose $result
         throw ("Failed to Deploy ")
@@ -586,7 +586,7 @@ function Push-Salesforce {
 
     if ($Test) { $command += " --test-level RunLocalTests" }
 
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
 
 function Pull-Salesforce {
@@ -603,7 +603,7 @@ function Pull-Salesforce {
     if ($PackageNames) { $command += " --package-name $PackageNames"}
     if ($IgnoreConflicts) { $command += " --ignore-conflicts"}
     if ($IgnoreWarnings) { $command += " --ignore-warnings"}
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
 
 function New-SalesforceApexClass {
@@ -626,7 +626,7 @@ function New-SalesforceApexClass {
     if ($OutputDirectory) {
         $command += " --output-dir $OutputDirectory"
     }
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
 
 function New-SalesforceApexTrigger {
@@ -652,5 +652,5 @@ function New-SalesforceApexTrigger {
     if ($OutputDirectory) {
         $command += " --output-dir $OutputDirectory"
     }
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
