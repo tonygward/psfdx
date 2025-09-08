@@ -5,7 +5,7 @@ function Invoke-Salesforce {
     return Invoke-Expression -Command $Command
 }
 
-function Show-SalesforceResult {
+function Show-SfResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
     $result = $Result | ConvertFrom-Json
@@ -28,7 +28,7 @@ function Get-SalesforcePackages {
     }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return Show-SfResult -Result $result
 }
 
 function Get-SalesforcePackage {
@@ -68,7 +68,7 @@ function New-SalesforcePackage {
     $command += " --target-dev-hub $DevHubUsername"
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
-    $resultSfdx = Show-SalesforceResult -Result $result
+    $resultSfdx = Show-SfResult -Result $result
     return $resultSfdx.Id
 }
 
@@ -146,7 +146,7 @@ function New-SalesforcePackageVersion {
 
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return Show-SfResult -Result $result
 }
 
 function Get-SalesforcePackageVersions {
@@ -182,7 +182,7 @@ function Get-SalesforcePackageVersions {
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return Show-SfResult -Result $result
 }
 
 function Promote-SalesforcePackageVersion {
@@ -202,7 +202,7 @@ function Promote-SalesforcePackageVersion {
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return Show-SfResult -Result $result
 }
 
 function Remove-SalesforcePackageVersion {
@@ -222,7 +222,7 @@ function Remove-SalesforcePackageVersion {
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return Show-SfResult -Result $result
 }
 
 function Install-SalesforcePackageVersion {

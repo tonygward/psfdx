@@ -28,13 +28,13 @@ Describe 'Get-SalesforceLogs' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":[{"Id":"1"}]}' }
-            Mock Show-SalesforceResult { return @(@{ Id = '1' }) }
+            Mock Show-SfResult { return @(@{ Id = '1' }) }
         }
         It 'lists logs with json' {
             $out = Get-SalesforceLogs
             $out | Should -Not -BeNullOrEmpty
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --json' }
-            Assert-MockCalled Show-SalesforceResult -Times 1
+            Assert-MockCalled Show-SfResult -Times 1
         }
         It 'adds username when provided' {
             Get-SalesforceLogs -TargetOrg 'user@example' | Out-Null

@@ -9,7 +9,7 @@ function Invoke-Salesforce {
     return & $exe @args
 }
 
-function Show-SalesforceResult {
+function Show-SfResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
     $result = $Result | ConvertFrom-Json
@@ -42,7 +42,7 @@ function Get-SalesforceLogs {
     if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return Show-SfResult -Result $result
 }
 
 function Get-SalesforceLog {
@@ -61,7 +61,7 @@ function Get-SalesforceLog {
     if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
     $raw = Invoke-Salesforce -Command $command
-    $parsed = Show-SalesforceResult -Result $raw
+    $parsed = Show-SfResult -Result $raw
     return $parsed.log
 }
 
