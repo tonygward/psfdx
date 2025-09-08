@@ -38,9 +38,8 @@ Connect-Salesforce -Sandbox
 ```
 A web browser will appear, login to Salesforce as you would normally.
 
-Uses Salesforce SFDX's standard authentication, credentials are encrypted and stored locally.
-
-Other psfdx commands require a target org (username or alias).
+**-Verbose** switch reveals the underlying Salesfore CLI
+![Alt text](images/connect-verbose.png)
 
 **2. Retrieve first 10 Salesforce Accounts**
 ```
