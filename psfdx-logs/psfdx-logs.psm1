@@ -1,24 +1,7 @@
-function Invoke-Salesforce {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string[]] $Command)
-    Write-Verbose ($Command -join ' ')
-    if ($Command.Length -eq 0) { throw 'No command specified' }
-    $exe = $Command[0]
-    $args = @()
-    if ($Command.Length -gt 1) { $args = $Command[1..($Command.Length-1)] }
-    return & $exe @args
-}
+. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
+. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-function Show-SalesforceResult {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][psobject] $Result)
-    $result = $Result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        Write-Debug $result
-        throw ($result.message)
-    }
-    return $result.result
-}
+## Show-SalesforceResult moved to psfdx-shared/Show-SalesforceResult.ps1
 
 function Watch-SalesforceLogs {
     [CmdletBinding()]
