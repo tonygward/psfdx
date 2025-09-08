@@ -22,23 +22,23 @@ Describe 'psfdx module' {
     InModuleScope $module.Name {
         Context 'Alias commands' {
             It 'sets alias using equals syntax' {
-                Mock Invoke-Sf {} -ModuleName $module.Name
+                Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Add-SalesforceAlias -Alias 'my' -TargetOrg 'user@example.com'
-                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias set my=user@example.com' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias set my=user@example.com' }
             }
 
             It 'unsets alias without stray leading space' {
-                Mock Invoke-Sf {} -ModuleName $module.Name
+                Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Remove-SalesforceAlias -Alias 'my'
-                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias unset my' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -eq 'alias unset my' }
             }
         }
 
         Context 'Connect-Salesforce' {
             It 'includes --set-default-dev-hub when requested' {
-                Mock Invoke-Sf { '{"status":0,"result":{}}' } -ModuleName $module.Name
+                Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
                 Connect-Salesforce -SetDefaultDevHub
-                Assert-MockCalled Invoke-Sf -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -like '* --set-default-dev-hub*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Arguments -like '* --set-default-dev-hub*' }
             }
         }
 
@@ -48,15 +48,15 @@ Describe 'psfdx module' {
             }
 
             It 'uses login URL for production' {
-                Mock Invoke-Sf { '{"status":0,"result":{}}' }
+                Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
                 Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem'
-                Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://login.salesforce.com*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://login.salesforce.com*' }
             }
 
             It 'uses test URL for sandbox' {
-                Mock Invoke-Sf { '{"status":0,"result":{}}' }
+                Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
                 Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem' -Sandbox
-                Assert-MockCalled Invoke-Sf -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://test.salesforce.com*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments -like '* --instance-url https://test.salesforce.com*' }
             }
         }
 
@@ -65,7 +65,7 @@ Describe 'psfdx module' {
                 $json = @'
 {"status":0,"result":{"records":[{"Id":"001xx0000000001"}]}}
 '@
-                Mock Invoke-Sf { $json } -ModuleName $module.Name
+                Mock Invoke-Salesforce { $json } -ModuleName $module.Name
                 $rows = Select-SalesforceRecords -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
                 $rows.Count | Should -Be 1
                 $rows[0].Id | Should -Be '001xx0000000001'
@@ -77,7 +77,7 @@ Describe 'psfdx module' {
                 $json = @'
 {"status":0,"result":{"id":"001xx0000000001"}}
 '@
-                Mock Invoke-Sf { $json } -ModuleName $module.Name
+                Mock Invoke-Salesforce { $json } -ModuleName $module.Name
                 $res = New-SalesforceRecord -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me
                 $res.id | Should -Be '001xx0000000001'
             }
@@ -86,7 +86,7 @@ Describe 'psfdx module' {
                 $json = @'
 {"status":0,"result":{"success":true}}
 '@
-                Mock Invoke-Sf { $json } -ModuleName $module.Name
+                Mock Invoke-Salesforce { $json } -ModuleName $module.Name
                 $res = Set-SalesforceRecord -Id '001xx0000000001' -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me
                 $res.success | Should -BeTrue
             }

@@ -1,4 +1,4 @@
-function Invoke-Sf {
+function Invoke-Salesforce {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Command)
     Write-Verbose $Command
@@ -27,7 +27,7 @@ function Get-SalesforcePackages {
         $command += " --verbose"
     }
     $command += " --json"
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
@@ -67,7 +67,7 @@ function New-SalesforcePackage {
     }
     $command += " --target-dev-hub $DevHubUsername"
     $command += " --json"
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     $resultSfdx = Show-SfResult -Result $result
     return $resultSfdx.Id
 }
@@ -84,7 +84,7 @@ function Remove-SalesforcePackage {
         $command += " --no-prompt"
     }
     $command += " --target-dev-hub $DevHubUsername"
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
 function New-SalesforcePackageVersion {
     [CmdletBinding()]
@@ -145,7 +145,7 @@ function New-SalesforcePackageVersion {
     }
 
     $command += " --json"
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
@@ -181,7 +181,7 @@ function Get-SalesforcePackageVersions {
     }
     $command += " --json"
 
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
@@ -201,7 +201,7 @@ function Promote-SalesforcePackageVersion {
     }
     $command += " --json"
 
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
@@ -221,7 +221,7 @@ function Remove-SalesforcePackageVersion {
     }
     $command += " --json"
 
-    $result = Invoke-Sf -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SfResult -Result $result
 }
 
@@ -244,5 +244,5 @@ function Install-SalesforcePackageVersion {
         $command += " --wait $WaitMinutes"
         $command += " --publish-wait $WaitMinutes"
     }
-    Invoke-Sf -Command $command
+    Invoke-Salesforce -Command $command
 }
