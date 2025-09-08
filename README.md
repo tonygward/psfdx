@@ -1,4 +1,4 @@
-# psfdx
+![PSFDX](images/psfdx-logo.png)
 [![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
 PowerShell modules that wraps the Salesforce CLI.
 
@@ -39,7 +39,7 @@ Connect-Salesforce -Sandbox
 A web browser will appear, login to Salesforce as you would normally.
 
 **-Verbose** switch reveals the underlying Salesfore CLI
-![Alt text](images/connect-verbose.png)
+![Connect-Salesforce with Verbose](images/connect-verbose.png)
 
 **2. Retrieve first 10 Salesforce Accounts**
 ```
