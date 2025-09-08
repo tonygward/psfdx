@@ -18,7 +18,12 @@ $modules = @(
 if ($Scope -eq 'AllUsers') {
     $dest = Join-Path -Path $PSHOME -ChildPath 'Modules'
 } else {
-    $dest = Join-Path -Path $HOME -ChildPath 'Documents/PowerShell/Modules'
+    $dest = $env:PSModulePath -split [System.IO.Path]::PathSeparator |
+        Where-Object { $_.StartsWith($HOME, [System.StringComparison]::OrdinalIgnoreCase) } |
+        Select-Object -First 1
+    if (-not $dest) {
+        $dest = Join-Path -Path $HOME -ChildPath 'Documents/PowerShell/Modules'
+    }
 }
 
 if (-not (Test-Path -Path $dest)) {
