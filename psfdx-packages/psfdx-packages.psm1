@@ -14,7 +14,7 @@ function Get-SalesforcePackages {
         $arguments += " --verbose"
     }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Arguments $arguments
+    $result = Invoke-Salesforce -Command ("sf " + $arguments)
     return Show-SalesforceResult -Result $result
 }
 
@@ -54,7 +54,7 @@ function New-SalesforcePackage {
     }
     $arguments += " --target-dev-hub $DevHubUsername"
     $arguments += " --json"
-    $result = Invoke-Salesforce -Arguments $arguments
+    $result = Invoke-Salesforce -Command ("sf " + $arguments)
     $resultSfdx = Show-SalesforceResult -Result $result
     return $resultSfdx.Id
 }
@@ -71,7 +71,7 @@ function Remove-SalesforcePackage {
         $arguments += " --no-prompt"
     }
     $arguments += " --target-dev-hub $DevHubUsername"
-    Invoke-Salesforce -Arguments $arguments
+    Invoke-Salesforce -Command ("sf " + $arguments)
 }
 function New-SalesforcePackageVersion {
     [CmdletBinding()]
@@ -132,7 +132,7 @@ function New-SalesforcePackageVersion {
     }
 
     $arguments += " --json"
-    $result = Invoke-Salesforce -Arguments $arguments
+    $result = Invoke-Salesforce -Command ("sf " + $arguments)
     return Show-SalesforceResult -Result $result
 }
 
@@ -168,7 +168,7 @@ function Get-SalesforcePackageVersions {
     }
     $arguments += " --json"
 
-    $result = Invoke-Salesforce -Arguments $arguments
+    $result = Invoke-Salesforce -Command ("sf " + $arguments)
     return Show-SalesforceResult -Result $result
 }
 
@@ -188,7 +188,7 @@ function Promote-SalesforcePackageVersion {
     }
     $arguments += " --json"
 
-    $result = Invoke-Salesforce -Arguments $arguments
+    $result = Invoke-Salesforce -Command ("sf " + $arguments)
     return Show-SalesforceResult -Result $result
 }
 
@@ -208,7 +208,7 @@ function Remove-SalesforcePackageVersion {
     }
     $arguments += " --json"
 
-    $result = Invoke-Salesforce -Arguments $arguments
+    $result = Invoke-Salesforce -Command ("sf " + $arguments)
     return Show-SalesforceResult -Result $result
 }
 
@@ -231,5 +231,5 @@ function Install-SalesforcePackageVersion {
         $arguments += " --wait $WaitMinutes"
         $arguments += " --publish-wait $WaitMinutes"
     }
-    Invoke-Salesforce -Arguments $arguments
+    Invoke-Salesforce -Command ("sf " + $arguments)
 }
