@@ -12,7 +12,8 @@ $modules = @(
     'psfdx-logs',
     'psfdx-development',
     'psfdx-metadata',
-    'psfdx-packages'
+    'psfdx-packages',
+    'psfdx-shared'
 )
 
 if ($Scope -eq 'AllUsers') {
