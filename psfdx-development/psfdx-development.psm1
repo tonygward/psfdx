@@ -20,9 +20,9 @@ function Start-SalesforceLwcDevServer {
 function Set-SalesforceDefaultDevHub {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $DevhubUsername
+        [Parameter(Mandatory = $true)][string] $TargetDevHub
     )
-    Invoke-Salesforce -Command "sf config set target-dev-hub=$DevhubUsername --global"
+    Invoke-Salesforce -Command "sf config set target-dev-hub=$TargetDevHub --global"
 }
 
 function Remove-SalesforceDefaultDevHub {
@@ -65,15 +65,15 @@ function Get-SalesforceScratchOrgs {
 function New-SalesforceScratchOrg {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $DevhubUsername,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $Set,
         [Parameter(Mandatory = $false)][int] $DurationDays,
         [Parameter(Mandatory = $false)][string] $DefinitionFile = 'config/project-scratch-def.json',
         [Parameter(Mandatory = $false)][int] $WaitMinutes
     )
     $command = "sf org create scratch"
-    if ($DevhubUsername) {
-        $command += " --target-dev-hub $DevhubUsername"
+    if ($TargetDevHub) {
+        $command += " --target-dev-hub $TargetDevHub"
     }
     if ($DurationDays) {
         $command += " --duration-days $DurationDays"
@@ -161,12 +161,12 @@ function New-SalesforceProjectAndScratchOrg {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $DevhubUsername
+        [Parameter(Mandatory = $true)][string] $TargetDevHub
     )
     New-SalesforceProject -Name $Name
     Push-Location -Path $Name
     Remove-SalesforceScratchOrgs
-    $scratchOrg = New-SalesforceScratchOrg -DevhubUsername $DevhubUsername
+    $scratchOrg = New-SalesforceScratchOrg -TargetDevHub $TargetDevHub
     Set-SalesforceProjectUser -TargetOrg ($scratchOrg.username)
 }
 
