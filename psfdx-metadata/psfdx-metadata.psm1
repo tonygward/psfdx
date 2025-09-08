@@ -5,7 +5,7 @@ function Invoke-Salesforce {
     return Invoke-Expression -Command $Command
 }
 
-function Show-SfResult {
+function Show-SalesforceResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
     $result = $Result | ConvertFrom-Json
@@ -452,7 +452,7 @@ function Deploy-SalesforceComponent {
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Describe-SalesforceObjects {
@@ -466,7 +466,7 @@ function Describe-SalesforceObjects {
     $command += " --target-org $TargetOrg"
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Describe-SalesforceObject {
@@ -486,7 +486,7 @@ function Describe-SalesforceObject {
     }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Describe-SalesforceFields {
