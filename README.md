@@ -7,7 +7,7 @@ PowerShell modules that wrap the Salesforce SFDX command line interface.
 | --- | --- |
 | `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
 | `psfdx-development` | Helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy). |
-| `psfdx-logs` | Tools for working with Salesforce DX Apex logs. |
+| `psfdx-logs` | Tools for working with Salesforce Apex logs. |
 | `psfdx-metadata` | Commands for retrieving, deploying, and describing Salesforce metadata. |
 | `psfdx-packages` | Helpers for managing Salesforce packages: list, create, version, promote, install. |
 # Pre-Requisites
@@ -60,51 +60,91 @@ Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOr
 Get-Command -Module psfdx
 ```
 
-## Cmdlet Reference
-### Authentication & Connection Management
-* `Connect-Salesforce` - Web-based org authentication
-* `Disconnect-Salesforce` - Logout from orgs
-* `Connect-SalesforceJwt` - JWT-based authentication
-* `Get-SalesforceConnections` - List connected orgs
-* `Repair-SalesforceConnections` - Clean up stale connections
-### Record Operations
-* `Select-SalesforceRecords` - SOQL queries with flexible output formats
-* `New-SalesforceRecord` - Create records
-* `Set-SalesforceRecord` - Update records
-* `Get-SalesforceRecordType` - Retrieve record type metadata
-### Org Management
-* `Open-Salesforce` - Open org in browser
-* `Get-SalesforceLimits` - API and storage limits
-* `Get-SalesforceDataStorage` - Data storage usage analysis
-* `Get-SalesforceApiUsage` - API usage tracking
-### Utilities
-* `Add-SalesforceAlias` / `Remove-SalesforceAlias` -  Alias management
-* `Invoke-SalesforceApexFile` - Execute Apex code
-* `Connect-SalesforceApi` / `Invoke-SalesforceApi` - Direct REST API access
+## Cmdlets by Module
 
-### Development
-* `New-SalesforceProject` - Scaffold a new SFDX project
-* `Get-SalesforceScratchOrgs` - List existing scratch orgs
-* `New-SalesforceScratchOrg` - Create a new scratch org
-* `Set-SalesforceDefaultDevHub` - Set the default Dev Hub
-* `Install-SalesforceLwcDevServer` - Install the LWC development server
+### psfdx
+- `Get-SalesforceDateTime`: Format current/custom datetime in Salesforce sortable UTC.
+- `Connect-Salesforce`: Web-based org authentication.
+- `Disconnect-Salesforce`: Logout from orgs.
+- `Connect-SalesforceJwt`: JWT-based authentication.
+- `Open-Salesforce`: Open org in a browser or get URL.
+- `Get-SalesforceConnections`: List connected orgs (non-scratch by default).
+- `Repair-SalesforceConnections`: Clean up stale connections.
+- `Get-SalesforceAlias`: List configured aliases.
+- `Add-SalesforceAlias`: Create/update an alias.
+- `Remove-SalesforceAlias`: Remove an alias.
+- `Get-SalesforceLimits`: Retrieve org limits (API, storage, etc.).
+- `Get-SalesforceDataStorage`: Calculate data storage usage and percent.
+- `Get-SalesforceApiUsage`: Calculate API usage percent.
+- `Select-SalesforceRecords`: Run SOQL and return records.
+- `New-SalesforceRecord`: Create a record.
+- `Set-SalesforceRecord`: Update a record.
+- `Get-SalesforceRecordType`: List record types (optionally by object).
+- `Invoke-SalesforceApexFile`: Execute Apex from a file.
+- `Connect-SalesforceApi`: OAuth2 password flow (non-SFDX REST).
+- `Invoke-SalesforceApi`: Invoke REST API with bearer token.
+- `Install-SalesforcePlugin`: Install an `sf` plugin.
+- `Get-SalesforcePlugins`: List installed plugins (optionally core).
+- `Update-SalesforcePlugins`: Update installed plugins.
 
-### Logs
-* `Watch-SalesforceLogs` - Stream Apex logs in real time
-* `Get-SalesforceLogs` - Retrieve available logs
-* `Export-SalesforceLogs` - Save logs to disk
-* `Convert-SalesforceLog` - Convert logs to a readable format
+### psfdx-development
+- `Install-SalesforceLwcDevServer`: Install LWC dev server dependencies.
+- `Start-SalesforceLwcDevServer`: Start LWC dev server.
+- `Set-SalesforceDefaultDevHub`: Set default Dev Hub (`--global`).
+- `Remove-SalesforceDefaultDevHub`: Unset default Dev Hub.
+- `Get-SalesforceConfig`: Show SFDX config (JSON).
+- `Get-SalesforceScratchOrgs`: List scratch orgs (optionally last-used).
+- `New-SalesforceScratchOrg`: Create scratch org (supports wait/duration/def file).
+- `Remove-SalesforceScratchOrg`: Delete a scratch org.
+- `Remove-SalesforceScratchOrgs`: Delete all scratch orgs found.
+- `New-SalesforceProject`: Create a new SFDX project.
+- `Set-SalesforceProject`: Write `.sfdx/sfdx-config.json` default username.
+- `Get-SalesforceDefaultUserName`: Read project default username.
+- `Get-SalesforceProjectUser`: Read project default username (current folder).
+- `Set-SalesforceProjectUser`: Set `target-org` for the project.
+- `New-SalesforceProjectAndScratchOrg`: Scaffold project and create scratch org.
+- `Test-Salesforce`: Run Apex tests (sync/async, coverage, output dir).
+- `DeployAndTest-SalesforceApex`: Deploy class/trigger and run specified tests.
+- `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
+- `Install-SalesforceJest`: Add `@salesforce/sfdx-lwc-jest` via yarn/npm.
+- `New-SalesforceJestTest`: Create Jest test for an LWC.
+- `Test-SalesforceJest`: Run Jest tests.
+- `Debug-SalesforceJest`: Run Jest in debug mode.
+- `Watch-SalesforceJest`: Run Jest in watch mode.
+- `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
+- `Push-Salesforce`: Deploy project metadata (supports flags like ignore-conflicts, async, test level).
+- `Pull-Salesforce`: Retrieve project metadata or specific packages.
+- `New-SalesforceApexClass`: Generate an Apex class from a template.
+- `New-SalesforceApexTrigger`: Generate an Apex trigger from a template.
 
-### Metadata
-* `Retrieve-SalesforceOrg` - Pull metadata from an org
-* `Retrieve-SalesforceComponent` - Retrieve a specific component
-* `Deploy-SalesforceComponent` - Deploy metadata to an org
-* `Describe-SalesforceObject` - Inspect object metadata
-* `Get-SalesforceMetaTypes` - List available metadata types
+### psfdx-logs
+- `Watch-SalesforceLogs`: Tail Apex logs (with color, debug level, skip trace flag).
+- `Get-SalesforceLogs`: List Apex logs (JSON).
+- `Get-SalesforceLog`: Get a specific or most recent log text.
+- `Export-SalesforceLogs`: Export logs to files.
+- `Convert-SalesforceLog`: Parse pipe-delimited logs into objects.
+- `Out-Notepad`: Convenience helper to open a temp file (Windows).
 
-### Packages
-* `Get-SalesforcePackages` - List packages in the org
-* `New-SalesforcePackage` - Create a package
-* `New-SalesforcePackageVersion` - Create a package version
-* `Promote-SalesforcePackageVersion` - Promote a package version
-* `Install-SalesforcePackageVersion` - Install a package version
+### psfdx-metadata
+- `Retrieve-SalesforceOrg`: Create manifest from org and retrieve via manifest.
+- `Retrieve-SalesforceComponent`: Retrieve specific metadata by type/name.
+- `Retrieve-SalesforceField`: Retrieve a specific custom field.
+- `Retrieve-SalesforceValidationRule`: Retrieve a specific validation rule.
+- `Deploy-SalesforceComponent`: Deploy specific metadata by type/name.
+- `Describe-SalesforceObjects`: List sObjects (all/custom/standard).
+- `Describe-SalesforceObject`: Describe a specific sObject (supports tooling API).
+- `Describe-SalesforceFields`: List fields for an sObject.
+- `Get-SalesforceMetaTypes`: List available metadata types.
+- `Get-SalesforceApexClass`: Lookup ApexClass by name (tooling API SOQL).
+- `Build-SalesforceQuery`: Build a SELECT for all fields on an sObject.
+
+### psfdx-packages
+- `Get-SalesforcePackages`: List packages in a Dev Hub.
+- `Get-SalesforcePackage`: Get a specific package by name.
+- `New-SalesforcePackage`: Create a package (managed/unlocked, org-dependent, path, description, no-namespace).
+- `Remove-SalesforcePackage`: Delete a package by name.
+- `Get-SalesforcePackageVersions`: List versions (filters: released/concise/verbose).
+- `New-SalesforcePackageVersion`: Create a new package version (options include coverage, tag, def file, waits, installation key).
+- `Promote-SalesforcePackageVersion`: Promote a version (optional no-prompt).
+- `Remove-SalesforcePackageVersion`: Delete a version (optional no-prompt).
+- `Install-SalesforcePackageVersion`: Install a version to a target org (waits/publish-wait, no-prompt).
