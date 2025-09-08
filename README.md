@@ -1,6 +1,6 @@
 # psfdx
 [![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
-PowerShell modules that wrap the Salesforce SFDX command line interface.
+PowerShell modules that wraps the Salesforce CLI.
 
 ## Modules
 | Module | Description |
