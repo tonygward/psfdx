@@ -25,3 +25,4 @@ function Invoke-Salesforce {
         throw "Unsupported -Command type: $($Command.GetType().FullName)"
     }
 }
+
