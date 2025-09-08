@@ -1,6 +1,6 @@
 @{
     RootModule            = 'psfdx-packages.psm1'
-    ModuleVersion         = '0.1.0'
+    ModuleVersion         = '0.5'
     CompatiblePSEditions  = @('Desktop','Core')
     GUID                  = '0d7f0c6c-8f1b-4eb6-9f6a-55f7a7c3f2b1'
     Author                = 'Tony Ward'
