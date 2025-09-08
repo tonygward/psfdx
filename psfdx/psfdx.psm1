@@ -18,7 +18,7 @@ function Invoke-Salesforce {
     return $stdout
 }
 
-function Show-SfResult {
+function Show-SalesforceResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
     $result = $Result | ConvertFrom-Json
@@ -54,7 +54,7 @@ function Connect-Salesforce {
     if ($Browser) { $arguments += " --browser $Browser" }
     $arguments += " --json"
     $result = Invoke-Salesforce -Arguments $arguments
-    Show-SfResult -Result $result
+    Show-SalesforceResult -Result $result
 }
 
 function Disconnect-Salesforce {
@@ -74,7 +74,7 @@ function Disconnect-Salesforce {
     if ($NoPrompt) { $arguments += " --no-prompt" }
     $arguments += " --json"
     $result = Invoke-Salesforce -Arguments $arguments
-    Show-SfResult -Result $result
+    Show-SalesforceResult -Result $result
 }
 
 function Connect-SalesforceJwt {
@@ -98,7 +98,7 @@ function Connect-SalesforceJwt {
     $arguments += " --json"
 
     $result = Invoke-Salesforce -Arguments $arguments
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Open-Salesforce {
@@ -142,7 +142,7 @@ function Repair-SalesforceConnections {
 function Get-SalesforceAlias {
     [CmdletBinding()]
     $result = Invoke-Salesforce -Arguments "alias list --json"
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Add-SalesforceAlias {
@@ -167,7 +167,7 @@ function Get-SalesforceLimits {
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
     $result = Invoke-Salesforce -Arguments $arguments
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Get-SalesforceDataStorage {
@@ -245,7 +245,7 @@ function New-SalesforceRecord {
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
     $result = Invoke-Salesforce -Arguments $arguments
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 <#
@@ -282,7 +282,7 @@ function Set-SalesforceRecord {
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
     $result = Invoke-Salesforce -Arguments $arguments
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Get-SalesforceRecordType {
@@ -308,7 +308,7 @@ function Invoke-SalesforceApexFile {
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
     $result = Invoke-Salesforce -Arguments $arguments
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Connect-SalesforceApi {

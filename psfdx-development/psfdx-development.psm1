@@ -5,7 +5,7 @@ function Invoke-Salesforce {
     return Invoke-Expression -Command $Command
 }
 
-function Show-SfResult {
+function Show-SalesforceResult {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][psobject] $Result)
     $result = $Result | ConvertFrom-Json
@@ -49,7 +49,7 @@ function Get-SalesforceConfig {
     Param()
     $command = "sf config list --json"
     $result = Invoke-Salesforce -Command $command
-    Show-SfResult -Result $result
+    Show-SalesforceResult -Result $result
 }
 
 function Get-SalesforceScratchOrgs {
@@ -98,7 +98,7 @@ function New-SalesforceScratchOrg {
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
-    Show-SfResult -Result $result
+    Show-SalesforceResult -Result $result
 
     $scratchOrgUsername = $result.username
     if ($Set) {
@@ -160,7 +160,7 @@ function New-SalesforceProject {
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
-    $result = Show-SfResult -Result $result
+    $result = Show-SalesforceResult -Result $result
 
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
         $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
@@ -443,7 +443,7 @@ function New-SalesforceJestTest {
     $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
     $command = "sf force lightning lwc test create --filepath $filePath --json"
     $result = Invoke-Salesforce -Command $command
-    return Show-SfResult -Result $result
+    return Show-SalesforceResult -Result $result
 }
 
 function Test-SalesforceJest {
