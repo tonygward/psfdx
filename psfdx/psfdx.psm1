@@ -1,57 +1,9 @@
 function Invoke-Salesforce {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Arguments)
-
-    # Determine Windows reliably across PS 5.1 and 7+
-    $isWin = ($PSVersionTable.PSEdition -eq 'Desktop') -or ($IsWindows -eq $true)
-
-    # Resolve the full path to 'sf' and prefer native exe where available
-    $sfPath = $null
-    $sfExePath = $null
-    try { $sfPath = (Get-Command 'sf' -ErrorAction Stop).Path } catch {}
-    if ($isWin) {
-        try { $sfExePath = (Get-Command 'sf.exe' -ErrorAction Stop).Path } catch {}
-    }
-
-    $psi = New-Object System.Diagnostics.ProcessStartInfo
-    if ($isWin -and $sfExePath) {
-        # Use native sf.exe directly (no cmd.exe), supports redirection
-        $psi.FileName  = $sfExePath
-        $psi.Arguments = $Arguments
-        Write-Verbose ('sf ' + $Arguments)
-    }
-    elseif ($isWin) {
-        # Fallback: use cmd.exe to execute sf.cmd shim
-        $sfDisplay = if ($sfPath) { '"' + $sfPath + '"' } else { 'sf' }
-        $psi.FileName  = 'cmd.exe'
-        $psi.Arguments = '/c ' + $sfDisplay + ' ' + $Arguments
-        Write-Verbose ('sf ' + $Arguments)
-    }
-    else {
-        $psi.FileName  = if ($sfPath) { $sfPath } else { 'sf' }
-        $psi.Arguments = $Arguments
-        Write-Verbose ('sf ' + $Arguments)
-    }
-
-    $psi.RedirectStandardOutput = $true
-    $psi.RedirectStandardError  = $true
-    $psi.UseShellExecute        = $false
-
-    try {
-        $process = [System.Diagnostics.Process]::Start($psi)
-    }
-    catch {
-        $hint = if ($sfCmd) { " (resolved path: $sfCmd)" } else { '' }
-        throw "Failed to start Salesforce CLI 'sf'$hint. Ensure it is installed and on PATH. Details: $($_.Exception.Message)"
-    }
-
-    $stdout = $process.StandardOutput.ReadToEnd()
-    $stderr = $process.StandardError.ReadToEnd()
-    $process.WaitForExit()
-    if ($process.ExitCode -ne 0 -and $stderr) {
-        Write-Debug $stderr
-    }
-    return $stdout
+    $Command = "sf $Arguments"
+    Write-Verbose $Command
+    return Invoke-Expression -Command $Command
 }
 
 function Show-SalesforceResult {
