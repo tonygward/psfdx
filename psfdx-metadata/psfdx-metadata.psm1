@@ -10,15 +10,15 @@ function Retrieve-SalesforceOrg {
         [Parameter(Mandatory = $false)][switch] $IncludePackages
     )
 
-    $command = "sf force source manifest create --from-org $TargetOrg"
-    $command += " --name=allMetadata"
-    $command += " --output-dir ."
-    if ($IncludePackages) { $command += " --include-packages=unlocked" }
-    Invoke-Salesforce -Command $command
+    $arguments = "force source manifest create --from-org $TargetOrg"
+    $arguments += " --name=allMetadata"
+    $arguments += " --output-dir ."
+    if ($IncludePackages) { $arguments += " --include-packages=unlocked" }
+    Invoke-Salesforce -Arguments $arguments
 
-    $command = "sf project retrieve start --target-org $TargetOrg"
-    $command += " --manifest allMetadata.xml"
-    Invoke-Salesforce -Command $command
+    $arguments = "project retrieve start --target-org $TargetOrg"
+    $arguments += " --manifest allMetadata.xml"
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Retrieve-SalesforceComponent {
@@ -212,10 +212,10 @@ function Retrieve-SalesforceComponent {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $command = "sf project retrieve start --metadata $Type"
-    if ($Name) { $command += ":$Name" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    $arguments = "project retrieve start --metadata $Type"
+    if ($Name) { $arguments += ":$Name" }
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Retrieve-SalesforceField {
@@ -224,9 +224,9 @@ function Retrieve-SalesforceField {
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $FieldName,
         [Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = "sf project retrieve start --metadata CustomField:$ObjectName.$FieldName"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    $arguments = "project retrieve start --metadata CustomField:$ObjectName.$FieldName"
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Retrieve-SalesforceValidationRule {
@@ -235,9 +235,9 @@ function Retrieve-SalesforceValidationRule {
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $RuleName,
         [Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = "sf project retrieve start --metadata ValidationRule:$ObjectName.$RuleName"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    $arguments = "project retrieve start --metadata ValidationRule:$ObjectName.$RuleName"
+    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Deploy-SalesforceComponent {
@@ -430,15 +430,15 @@ function Deploy-SalesforceComponent {
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $true)][string] $TargetOrg
     )
-    $command = "sf project deploy start"
-    $command += " --metadata $Type"
+    $arguments = "project deploy start"
+    $arguments += " --metadata $Type"
     if ($Name) {
-        $command += ":$Name"
+        $arguments += ":$Name"
     }
-    $command += " --target-org $TargetOrg"
-    $command += " --json"
+    $arguments += " --target-org $TargetOrg"
+    $arguments += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -448,11 +448,11 @@ function Describe-SalesforceObjects {
         [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][string][ValidateSet('all', 'custom', 'standard')] $ObjectTypeCategory = 'all'
     )
-    $command = "sf sobject list"
-    $command += " --category $ObjectTypeCategory"
-    $command += " --target-org $TargetOrg"
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $arguments = "sobject list"
+    $arguments += " --category $ObjectTypeCategory"
+    $arguments += " --target-org $TargetOrg"
+    $arguments += " --json"
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -463,16 +463,16 @@ function Describe-SalesforceObject {
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    $command = "sf sobject describe"
+    $arguments = "sobject describe"
     if ($TargetOrg) {
-        $command += " --target-org $TargetOrg"
+        $arguments += " --target-org $TargetOrg"
     }
-    $command += " --sobject $Name"
+    $arguments += " --sobject $Name"
     if ($UseToolingApi) {
-        $command += " --use-tooling-api"
+        $arguments += " --use-tooling-api"
     }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $arguments += " --json"
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -492,11 +492,11 @@ function Describe-SalesforceFields {
 function Get-SalesforceMetaTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $TargetOrg)
-    $command = "sf org list metadata-types"
-    $command += " --target-org $TargetOrg"
-    $command += " --json"
+    $arguments = "org list metadata-types"
+    $arguments += " --target-org $TargetOrg"
+    $arguments += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Arguments $arguments
     $result = $result | ConvertFrom-Json
     $result = $result.result.metadataObjects
     $result = $result | Select-Object xmlName
@@ -510,7 +510,7 @@ function Get-SalesforceApexClass {
         [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
+    $result = Invoke-Salesforce -Arguments "data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
     $parsed = $result | ConvertFrom-Json
     if ($parsed.status -ne 0) {
         throw ($parsed.message)
