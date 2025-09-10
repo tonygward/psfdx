@@ -20,14 +20,14 @@ function Connect-Salesforce {
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
 
-    $arguments = "org login web"
-    if ($Sandbox) { $arguments += " --instance-url https://test.salesforce.com" }
-    if ($CustomUrl) { $arguments += " --instance-url $CustomUrl" }
-    if ($SetDefaultDevHub) { $arguments += " --set-default-dev-hub" }
-    if ($OAuthClientId) { $arguments += " --client-id $OAuthClientId" }
-    if ($Browser) { $arguments += " --browser $Browser" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf org login web"
+    if ($Sandbox) { $command += " --instance-url https://test.salesforce.com" }
+    if ($CustomUrl) { $command += " --instance-url $CustomUrl" }
+    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
+    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
+    if ($Browser) { $command += " --browser $Browser" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     Show-SalesforceResult -Result $result
 }
 
@@ -38,16 +38,15 @@ function Disconnect-Salesforce {
         [Parameter(Mandatory = $true, ParameterSetName = 'TargetOrg')][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
-    $arguments = "org logout"
+    $command = "sf org logout"
     if ($PSCmdlet.ParameterSetName -eq 'All') {
-        $arguments += " --all"
+        $command += " --all"
+    } else {
+        $command += " --target-org $TargetOrg"
     }
-    else {
-        $arguments += " --target-org $TargetOrg"
-    }
-    if ($NoPrompt) { $arguments += " --no-prompt" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    if ($NoPrompt) { $command += " --no-prompt" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     Show-SalesforceResult -Result $result
 }
 
@@ -67,11 +66,10 @@ function Connect-SalesforceJwt {
     $url = "https://login.salesforce.com"
     if ($Sandbox) { $url = "https://test.salesforce.com" }
 
-    $arguments = "org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file $JwtKeyfile --instance-url $url"
-    if ($SetDefaultUsername) { $arguments += " --set-default" }
-    $arguments += " --json"
-
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file $JwtKeyfile --instance-url $url"
+    if ($SetDefaultUsername) { $command += " --set-default" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -82,11 +80,11 @@ function Open-Salesforce {
         [Parameter(Mandatory = $false)][switch] $UrlOnly,
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
     )
-    $arguments = "org open"
-    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    if ($Browser) { $arguments += " --browser $Browser" }
-    if ($UrlOnly) { $arguments += " --url-only" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf org open"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($Browser) { $command += " --browser $Browser" }
+    if ($UrlOnly) { $command += " --url-only" }
+    Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforceConnections {
@@ -94,10 +92,10 @@ function Get-SalesforceConnections {
     Param(
         [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails
     )
-    $arguments = "org list"
-    if ($ShowVerboseDetails) { $arguments += " --verbose" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf org list"
+    if ($ShowVerboseDetails) { $command += " --verbose" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.nonScratchOrgs # Exclude Scratch Orgs
@@ -108,14 +106,15 @@ function Get-SalesforceConnections {
 function Repair-SalesforceConnections {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
-    $arguments = "org list --clean"
-    if ($NoPrompt) { $arguments += " --no-prompt" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf org list --clean"
+    if ($NoPrompt) { $command += " --no-prompt" }
+    Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforceAlias {
     [CmdletBinding()]
-    $result = Invoke-Salesforce -Command "sf alias list --json"
+    $command = "sf alias list --json"
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -125,22 +124,24 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $Alias,
         [Parameter(Mandatory = $true)][string] $TargetOrg
     )
-    Invoke-Salesforce -Command "sf alias set $Alias=$TargetOrg"
+    $command = "sf alias set $Alias=$TargetOrg"
+    Invoke-Salesforce -Command $command
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)
-    Invoke-Salesforce -Command "sf alias unset $Alias"
+    $command = "sf alias unset $Alias"
+    Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforceLimits {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
-    $arguments = "limits api display"
-    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf limits api display"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -171,16 +172,16 @@ function Select-SalesforceRecords {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
         [Parameter(Mandatory = $false)][switch] $IncludeDeletedRows
     )
-    $arguments = "data query"
-    if ($Query) { $arguments += " --query `"$Query`"" }
-    if ($File) { $arguments += " --file $File" }
-    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    if ($IncludeDeletedRows) { $arguments += " --all-rows" }
-    $arguments += " --result-format $ResultFormat"
+    $command = "sf data query"
+    if ($Query) { $command += " --query `"$Query`"" }
+    if ($File) { $command += " --file $File" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($UseToolingApi) { $command += " --use-tooling-api" }
+    if ($IncludeDeletedRows) { $command += " --all-rows" }
+    $command += " --result-format $ResultFormat"
     Write-Verbose ("Query: " + $Query)
-    Write-Verbose $arguments
-    $result = Invoke-Salesforce -Command ("sf " + $arguments) | ConvertFrom-Json
+    Write-Verbose $command
+    $result = Invoke-Salesforce -Command $command | ConvertFrom-Json
     if ($result.status -ne 0) {
         $result
         throw $result.message
@@ -212,13 +213,13 @@ function New-SalesforceRecord {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
-    $arguments = "data create record"
-    $arguments += " --sobject $Type"
-    $arguments += " --values `"$FieldUpdates`""
-    if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf data create record"
+    $command += " --sobject $Type"
+    $command += " --values `"$FieldUpdates`""
+    if ($UseToolingApi) { $command += " --use-tooling-api" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -248,14 +249,14 @@ function Set-SalesforceRecord {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
-    $arguments = "data update record"
-    $arguments += " --sobject $Type"
-    $arguments += " --record-id $Id"
-    $arguments += " --values `"$FieldUpdates`""
-    if ($UseToolingApi) { $arguments += " --use-tooling-api" }
-    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf data update record"
+    $command += " --sobject $Type"
+    $command += " --record-id $Id"
+    $command += " --values `"$FieldUpdates`""
+    if ($UseToolingApi) { $command += " --use-tooling-api" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -278,10 +279,10 @@ function Invoke-SalesforceApexFile {
         [Parameter(Mandatory = $true)][string] $ApexFile,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $arguments = "apex run --file $ApexFile"
-    if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf apex run --file $ApexFile"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -325,8 +326,8 @@ function Install-SalesforcePlugin {
     Param(
         [Parameter(Mandatory = $true)][string] $Name
     )
-    $arguments = "plugins install $Name"
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf plugins install $Name"
+    Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforcePlugins {
@@ -334,13 +335,14 @@ function Get-SalesforcePlugins {
     Param(
         [Parameter(Mandatory = $false)][switch] $IncludeCore
     )
-    $arguments = "plugins"
-    if ($IncludeCore) { $arguments += " --core" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    $command = "sf plugins"
+    if ($IncludeCore) { $command += " --core" }
+    Invoke-Salesforce -Command $command
 }
 
 function Update-SalesforcePlugins {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "sf plugins update"
+    $command = "sf plugins update"
+    Invoke-Salesforce -Command $command
 }
