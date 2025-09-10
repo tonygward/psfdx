@@ -129,20 +129,10 @@ function New-SalesforceProject {
         [Parameter(Mandatory = $false)][switch] $GenerateManifest
     )
     $command = "sf force project create --name $Name"
-
-    if ($OutputDirectory) {
-        $command += " --output-dir $OutputDirectory"
-    }
-    if ($DefaultPackageDirectory) {
-        $command += " --default-package-dir $DefaultPackageDirectory"
-    }
-    if ($Namespace) {
-        $command += " --namespace $Namespace"
-    }
-    if ($GenerateManifest) {
-        $command += " --manifest"
-    }
-
+    if ($OutputDirectory) { $command += " --output-dir $OutputDirectory" }
+    if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
+    if ($Namespace) { $command += " --namespace $Namespace" }
+    if ($GenerateManifest) { $command += " --manifest" }
     $command += " --template $Template"
     $command += " --json"
 
@@ -179,8 +169,7 @@ function Set-SalesforceProject {
 
     if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
         $sfdxFolder = (Get-Location).Path
-    }
-    else {
+    } else {
         $sfdxFolder = $ProjectFolder
     }
 
