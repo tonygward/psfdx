@@ -24,13 +24,19 @@ Describe 'psfdx module' {
             It 'sets alias using equals syntax' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Add-SalesforceAlias -Alias 'my' -TargetOrg 'user@example.com'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf alias set my=user@example.com' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                    $cmd -eq 'sf alias set my=user@example.com'
+                }
             }
 
             It 'unsets alias without stray leading space' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Remove-SalesforceAlias -Alias 'my'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf alias unset my' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                    $cmd -eq 'sf alias unset my'
+                }
             }
         }
 
@@ -38,7 +44,10 @@ Describe 'psfdx module' {
             It 'includes --set-default-dev-hub when requested' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
                 Connect-Salesforce -SetDefaultDevHub
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -like 'sf * --set-default-dev-hub*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                    $cmd -like 'sf * --set-default-dev-hub*'
+                }
             }
         }
 
@@ -50,13 +59,19 @@ Describe 'psfdx module' {
             It 'uses login URL for production' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
                 Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf * --instance-url https://login.salesforce.com*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                    $cmd -like 'sf * --instance-url https://login.salesforce.com*'
+                }
             }
 
             It 'uses test URL for sandbox' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
                 Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem' -Sandbox
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf * --instance-url https://test.salesforce.com*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                    $cmd -like 'sf * --instance-url https://test.salesforce.com*'
+                }
             }
         }
 

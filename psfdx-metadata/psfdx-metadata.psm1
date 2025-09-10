@@ -14,11 +14,11 @@ function Retrieve-SalesforceOrg {
     $arguments += " --name=allMetadata"
     $arguments += " --output-dir ."
     if ($IncludePackages) { $arguments += " --include-packages=unlocked" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 
     $arguments = "project retrieve start --target-org $TargetOrg"
     $arguments += " --manifest allMetadata.xml"
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Retrieve-SalesforceComponent {
@@ -215,7 +215,7 @@ function Retrieve-SalesforceComponent {
     $arguments = "project retrieve start --metadata $Type"
     if ($Name) { $arguments += ":$Name" }
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Retrieve-SalesforceField {
@@ -226,7 +226,7 @@ function Retrieve-SalesforceField {
         [Parameter(Mandatory = $false)][string] $TargetOrg)
     $arguments = "project retrieve start --metadata CustomField:$ObjectName.$FieldName"
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Retrieve-SalesforceValidationRule {
@@ -438,7 +438,7 @@ function Deploy-SalesforceComponent {
     $arguments += " --target-org $TargetOrg"
     $arguments += " --json"
 
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -452,7 +452,7 @@ function Describe-SalesforceObjects {
     $arguments += " --category $ObjectTypeCategory"
     $arguments += " --target-org $TargetOrg"
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -472,7 +472,7 @@ function Describe-SalesforceObject {
         $arguments += " --use-tooling-api"
     }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 

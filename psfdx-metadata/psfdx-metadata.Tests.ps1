@@ -7,8 +7,14 @@ Describe 'Retrieve-SalesforceOrg' {
         BeforeEach { Mock Invoke-Salesforce {} }
         It 'creates manifest from org and retrieves via manifest' {
             Retrieve-SalesforceOrg -TargetOrg 'user' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf force source manifest create --from-org user*' }
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf project retrieve start --target-org user*' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                $cmd -like 'sf force source manifest create --from-org user*'
+            }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                $cmd -like 'sf project retrieve start --target-org user*'
+            }
         }
     }
 }
@@ -18,7 +24,10 @@ Describe 'Retrieve-SalesforceComponent' {
         BeforeEach { Mock Invoke-Salesforce {} }
         It 'retrieves a named ApexClass for target org' {
             Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                $cmd = if ($Command) { $Command } else { "sf $Arguments" }
+                $cmd -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me'
+            }
         }
     }
 }

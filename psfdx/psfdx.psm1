@@ -27,7 +27,7 @@ function Connect-Salesforce {
     if ($OAuthClientId) { $arguments += " --client-id $OAuthClientId" }
     if ($Browser) { $arguments += " --browser $Browser" }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     Show-SalesforceResult -Result $result
 }
 
@@ -47,7 +47,7 @@ function Disconnect-Salesforce {
     }
     if ($NoPrompt) { $arguments += " --no-prompt" }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     Show-SalesforceResult -Result $result
 }
 
@@ -71,7 +71,7 @@ function Connect-SalesforceJwt {
     if ($SetDefaultUsername) { $arguments += " --set-default" }
     $arguments += " --json"
 
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -86,7 +86,7 @@ function Open-Salesforce {
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     if ($Browser) { $arguments += " --browser $Browser" }
     if ($UrlOnly) { $arguments += " --url-only" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Get-SalesforceConnections {
@@ -97,7 +97,7 @@ function Get-SalesforceConnections {
     $arguments = "org list"
     if ($ShowVerboseDetails) { $arguments += " --verbose" }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.nonScratchOrgs # Exclude Scratch Orgs
@@ -110,7 +110,7 @@ function Repair-SalesforceConnections {
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
     $arguments = "org list --clean"
     if ($NoPrompt) { $arguments += " --no-prompt" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Get-SalesforceAlias {
@@ -180,7 +180,7 @@ function Select-SalesforceRecords {
     $arguments += " --result-format $ResultFormat"
     Write-Verbose ("Query: " + $Query)
     Write-Verbose $arguments
-    $result = Invoke-Salesforce -Command ("sf " + $arguments) | ConvertFrom-Json
+    $result = Invoke-Salesforce -Arguments $arguments | ConvertFrom-Json
     if ($result.status -ne 0) {
         $result
         throw $result.message
@@ -218,7 +218,7 @@ function New-SalesforceRecord {
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -255,7 +255,7 @@ function Set-SalesforceRecord {
     if ($UseToolingApi) { $arguments += " --use-tooling-api" }
     if ($TargetOrg) { $arguments += " --target-org $TargetOrg" }
     $arguments += " --json"
-    $result = Invoke-Salesforce -Command ("sf " + $arguments)
+    $result = Invoke-Salesforce -Arguments $arguments
     return Show-SalesforceResult -Result $result
 }
 
@@ -326,7 +326,7 @@ function Install-SalesforcePlugin {
         [Parameter(Mandatory = $true)][string] $Name
     )
     $arguments = "plugins install $Name"
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Get-SalesforcePlugins {
@@ -336,7 +336,7 @@ function Get-SalesforcePlugins {
     )
     $arguments = "plugins"
     if ($IncludeCore) { $arguments += " --core" }
-    Invoke-Salesforce -Command ("sf " + $arguments)
+    Invoke-Salesforce -Arguments $arguments
 }
 
 function Update-SalesforcePlugins {
