@@ -1,6 +1,7 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
+
 ## Show-SalesforceResult moved to psfdx-shared/Show-SalesforceResult.ps1
 
 function Install-SalesforceLwcDevServer {
@@ -261,21 +262,7 @@ function Set-SalesforceProjectUser {
     Invoke-Salesforce -Command "sf config set target-org=$TargetOrg"
 }
 
-function DeployAndTest-SalesforceApex {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $ClassName,
-        [Parameter(Mandatory = $false)][string] $TestClassName
-    )
 
-    $command = "sf project deploy start"
-    $command += " --metadata ApexClass:$ClassName*"
-    $command += " --ignore-conflicts"
-    $command += " --test-level RunSpecifiedTests"
-    $command += " --tests $TestClassName"
-
-    Invoke-Salesforce -Command $command
-}
 
 function Test-Salesforce {
     [CmdletBinding()]
@@ -440,26 +427,7 @@ function Watch-SalesforceJest {
     Invoke-Salesforce -Command "npm run test:unit:watch"
 }
 
-function Deploy-SalesforceComponent {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string][ValidateSet('ApexClass', 'ApexTrigger')] $Type = 'ApexClass',
-        [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
-    )
-    $command = "sfdx force:source:deploy --metadata $Type"
-    if ($Name) {
-        $command += ":$Name"
-    }
-    $command += " --targetusername $TargetOrg"
-    $command += " --json"
 
-    $response = Invoke-Salesforce -Command $command | ConvertFrom-Json
-    if ($response.result.success -ne $true) {
-        Write-Verbose $result
-        throw ("Failed to Deploy ")
-    }
-}
 
 function Get-SalesforceType {
     [CmdletBinding()]
@@ -535,52 +503,9 @@ function Watch-SalesforceApex {
     }
 }
 
-function Push-Salesforce {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
-        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
-        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
 
-        [Parameter(Mandatory = $false)][switch] $Async,
-        [Parameter(Mandatory = $false)][switch] $Concise,
-        [Parameter(Mandatory = $false)][switch] $DryRun,
 
-        [Parameter(Mandatory = $false)][switch] $Test
-    )
 
-    $command = "sf project deploy start"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    if ($IgnoreErrors) { $command += " --ignore-errors" }
-    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
-    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
-
-    if ($Async) { $command += " --async" }
-    if ($Concise) { $command += " --concise" }
-    if ($DryRun) { $command += " --dry-run" }
-
-    if ($Test) { $command += " --test-level RunLocalTests" }
-
-    Invoke-Salesforce -Command $command
-}
-
-function Pull-Salesforce {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][string] $PackageNames,
-        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
-        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings
-    )
-
-    $command = "sf project retrieve start"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg"}
-    if ($PackageNames) { $command += " --package-name $PackageNames"}
-    if ($IgnoreConflicts) { $command += " --ignore-conflicts"}
-    if ($IgnoreWarnings) { $command += " --ignore-warnings"}
-    Invoke-Salesforce -Command $command
-}
 
 function New-SalesforceApexClass {
     [CmdletBinding()]

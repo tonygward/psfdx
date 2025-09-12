@@ -27,7 +27,7 @@
     PowerShellVersion = '5.1'
 
     # Modules that must be imported into the global environment prior to importing this module
-    RequiredModules   = @()
+    RequiredModules   = @('psfdx-metadata')
 
     # Assemblies that must be loaded prior to importing this module
     RequiredAssemblies = @()
@@ -59,7 +59,6 @@
         'Set-SalesforceProjectUser',
         'New-SalesforceProjectAndScratchOrg',
         'Test-Salesforce',
-        'DeployAndTest-SalesforceApex',
         'Get-SalesforceCodeCoverage',
         'Install-SalesforceJest',
         'New-SalesforceJestTest',
@@ -67,8 +66,6 @@
         'Debug-SalesforceJest',
         'Watch-SalesforceJest',
         'Watch-SalesforceApex',
-        'Push-Salesforce',
-        'Pull-Salesforce',
         'New-SalesforceApexClass',
         'New-SalesforceApexTrigger'
     )

@@ -103,7 +103,6 @@ Get-Command -Module psfdx
 - `Set-SalesforceProjectUser`: Set `target-org` for the project.
 - `New-SalesforceProjectAndScratchOrg`: Scaffold project and create scratch org.
 - `Test-Salesforce`: Run Apex tests (sync/async, coverage, output dir).
-- `DeployAndTest-SalesforceApex`: Deploy class/trigger and run specified tests.
 - `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
 - `Install-SalesforceJest`: Add `@salesforce/sfdx-lwc-jest` via yarn/npm.
 - `New-SalesforceJestTest`: Create Jest test for an LWC.
@@ -111,8 +110,6 @@ Get-Command -Module psfdx
 - `Debug-SalesforceJest`: Run Jest in debug mode.
 - `Watch-SalesforceJest`: Run Jest in watch mode.
 - `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
-- `Push-Salesforce`: Deploy project metadata (supports flags like ignore-conflicts, async, test level).
-- `Pull-Salesforce`: Retrieve project metadata or specific packages.
 - `New-SalesforceApexClass`: Generate an Apex class from a template.
 - `New-SalesforceApexTrigger`: Generate an Apex trigger from a template.
 
