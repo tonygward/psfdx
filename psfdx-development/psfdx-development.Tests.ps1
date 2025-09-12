@@ -1,4 +1,13 @@
-# Import module at discovery time so InModuleScope can find it
+# Ensure clean slate and load local dependency module first
+Get-Module -Name 'psfdx-development','psfdx-metadata' -All | ForEach-Object {
+    try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
+}
+
+# Import local psfdx-metadata so RequiredModules resolves from repo
+$metadataManifest = Join-Path -Path $PSScriptRoot -ChildPath '..\psfdx-metadata\psfdx-metadata.psd1'
+Import-Module $metadataManifest -Force | Out-Null
+
+# Import module under test so InModuleScope can find it
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-development.psd1'
 Import-Module $moduleManifest -Force | Out-Null
 
