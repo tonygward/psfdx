@@ -152,6 +152,9 @@ Get-Command -Module psfdx
 #### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).
 
+#### Flows
+- `Get-SalesforceFlowInterviews`: Query FlowInterview by status and start time.
+
 ### psfdx-metadata
 
 #### Retrieve

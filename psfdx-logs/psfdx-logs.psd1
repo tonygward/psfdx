@@ -48,6 +48,7 @@
         'Get-SalesforceLog',
         'Export-SalesforceLogs',
         'Convert-SalesforceLog',
+        'Get-SalesforceFlowInterviews',
         'Out-Notepad'
     )
 

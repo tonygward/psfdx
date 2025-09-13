@@ -1,8 +1,6 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-## Show-SalesforceResult moved to psfdx-shared/Show-SalesforceResult.ps1
-
 function Watch-SalesforceLogs {
     [CmdletBinding()]
     Param(
@@ -109,6 +107,34 @@ function Convert-SalesforceLog {
         $results += $result
     }
     return $results
+}
+
+function Get-SalesforceFlowInterviews {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateSet('Failed','Paused','Finished')] [string] $Type,
+        [Parameter(Mandatory = $true)][datetime] $After,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    # Build SOQL
+    $afterIso = $After.ToString('s') + 'Z'
+    $query = ""
+    $query += "SELECT Id, InterviewLabel, Status, CreatedDate "
+    $query += "FROM FlowInterview "
+    $query += "WHERE Status = '$Type' "
+    $query += "AND CreatedDate >= $afterIso "
+    $query += "ORDER BY CreatedDate DESC"
+
+    # Execute via sf data query
+    $command = "sf data query --query `"$query`" --result-format json"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    $raw = Invoke-Salesforce -Command $command
+    $res = Show-SalesforceResult -Result $raw
+    $records = $res.records
+    if ($null -eq $records) { return @() }
+    return ($records | Select-Object -ExcludeProperty attributes)
 }
 
 function Out-Notepad {
