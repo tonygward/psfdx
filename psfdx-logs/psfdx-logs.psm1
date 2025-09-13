@@ -112,23 +112,28 @@ function Convert-SalesforceDebugLog {
 function Get-SalesforceFlowInterviews {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidateSet('Failed','Paused','Finished', 'All')] [string] $Type,
+        [Parameter(Mandatory = $true)][ValidateSet('Error','Paused','Running', 'Completed', 'VersionPaused', 'Autosaved', 'Expired', 'All')] [string] $Type = 'All',
         [Parameter(Mandatory = $false)][datetime] $After,
+        [Parameter(Mandatory = $false)][int] $Limit = 200,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    if ($Type -eq 'All') { $Type = "'Failed','Paused','Finished'" }
-
     # Build SOQL
     $query = ""
-    $query += "SELECT Id, InterviewLabel, Status, CreatedDate "
+    $query += "SELECT Id, CreatedDate, InterviewLabel, InterviewStatus, Error "
     $query += "FROM FlowInterview "
-    $query += "WHERE Status IN ('$Type') "
+    if ($Type -eq 'All') {
+        $InterviewStatus = "'Error','Paused','Running','Completed','VersionPaused','Autosaved','Expired'"
+    } else {
+        $InterviewStatus = "'$Type'"
+    }
+    $query += "WHERE InterviewStatus IN ($InterviewStatus) "
     if ($After) {
         $afterIso = $After.ToString('s') + 'Z'
         $query += "AND CreatedDate >= $afterIso "
     }
-    $query += "ORDER BY CreatedDate DESC"
+    $query += "ORDER BY CreatedDate DESC "
+    $query += "LIMIT $Limit"
 
     # Execute via sf data query
     $command = "sf data query --query `"$query`" --result-format json"
