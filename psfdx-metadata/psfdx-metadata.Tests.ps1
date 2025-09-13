@@ -28,16 +28,4 @@ Describe 'Retrieve-SalesforceComponent' {
     }
 }
 
-Describe 'Get-SalesforceApexClass' {
-    InModuleScope 'psfdx-metadata' {
-        BeforeEach {
-            $json = '{"status":0,"result":{"records":[{"Id":"01pxx0000000001AAA","Name":"MyClass"}]}}'
-            Mock Invoke-Salesforce { $json }
-        }
-        It 'returns first record by name' {
-            $rec = Get-SalesforceApexClass -Name 'MyClass' -TargetOrg 'me'
-            $rec.Id   | Should -Be '01pxx0000000001AAA'
-            $rec.Name | Should -Be 'MyClass'
-        }
-    }
-}
+## Get-SalesforceApexClass moved to psfdx-development; tests relocated there
