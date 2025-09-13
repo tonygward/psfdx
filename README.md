@@ -135,6 +135,7 @@ Get-Command -Module psfdx
 - `Watch-SalesforceJest`: Run Jest in watch mode.
 
 #### Apex Execution
+- Note: moved from `psfdx` to `psfdx-development` in Unreleased to keep Apex workflows with development tooling.
 - `Invoke-SalesforceApexFile`: Execute Apex from a file.
 
 #### Apex Scaffolding
