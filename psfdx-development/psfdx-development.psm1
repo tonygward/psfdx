@@ -264,7 +264,7 @@ function Set-SalesforceProjectUser {
 
 
 
-function Test-Salesforce {
+function Test-SalesforceApex {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $ClassName,
@@ -499,7 +499,7 @@ function Watch-SalesforceApex {
 
         $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
         $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
-        Test-Salesforce -TargetOrg $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
+        Test-SalesforceApex -TargetOrg $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
     }
 }
 

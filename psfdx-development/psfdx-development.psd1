@@ -58,7 +58,7 @@
         'Get-SalesforceProjectUser',
         'Set-SalesforceProjectUser',
         'New-SalesforceProjectAndScratchOrg',
-        'Test-Salesforce',
+        'Test-SalesforceApex',
         'Get-SalesforceCodeCoverage',
         'Install-SalesforceJest',
         'New-SalesforceJestTest',

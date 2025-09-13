@@ -119,7 +119,7 @@ Get-Command -Module psfdx
 - `Remove-SalesforceScratchOrgs`: Delete all scratch orgs found.
 
 #### Apex Testing & Automation
-- `Test-Salesforce`: Run Apex tests (sync/async, coverage, output dir).
+- `Test-SalesforceApex`: Run Apex tests (sync/async, coverage, output dir).
 - `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
 - `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
 
