@@ -47,7 +47,7 @@
         'Get-SalesforceDebugLogs',
         'Get-SalesforceDebugLog',
         'Export-SalesforceDebugLogs',
-        'Convert-SalesforceLog',
+        'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
         'Out-Notepad'
     )

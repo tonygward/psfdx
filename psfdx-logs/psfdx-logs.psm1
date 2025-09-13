@@ -80,7 +80,7 @@ function Export-SalesforceDebugLogs {
     }
 }
 
-function Convert-SalesforceLog {
+function Convert-SalesforceDebugLog {
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline, Mandatory = $true)][string] $Log
@@ -117,11 +117,13 @@ function Get-SalesforceFlowInterviews {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
+    if ($Type -eq 'All') { $Type = "'Failed','Paused','Finished'" }
+
     # Build SOQL
     $query = ""
     $query += "SELECT Id, InterviewLabel, Status, CreatedDate "
     $query += "FROM FlowInterview "
-    $query += "WHERE Status = '$Type' "
+    $query += "WHERE Status IN ('$Type') "
     if ($After) {
         $afterIso = $After.ToString('s') + 'Z'
         $query += "AND CreatedDate >= $afterIso "

@@ -74,7 +74,7 @@ Describe 'Get-SalesforceDebugLog' {
     }
 }
 
-Describe 'Convert-SalesforceLog' {
+Describe 'Convert-SalesforceDebugLog' {
     It 'parses pipe-delimited log lines into objects' {
         $log = @(
             'Timestamp|LogType|SubType|Detail',
@@ -82,7 +82,7 @@ Describe 'Convert-SalesforceLog' {
             '2024-01-01T00:00:01.000Z|SYSTEM_METHOD_ENTRY|method|Class.Method'
         ) -join [Environment]::NewLine
 
-        $results = Convert-SalesforceLog -Log $log
+        $results = Convert-SalesforceDebugLog -Log $log
         $results.Count | Should -Be 2
         $results[0].DateTime | Should -Be '2024-01-01T00:00:00.000Z'
         $results[0].LogType  | Should -Be 'USER_DEBUG'

@@ -147,7 +147,7 @@ Get-Command -Module psfdx
  - `Get-SalesforceDebugLogs`: List Apex logs (JSON).
  - `Get-SalesforceDebugLog`: Get a specific or most recent log text.
 - `Export-SalesforceDebugLogs`: Export logs to files.
-- `Convert-SalesforceLog`: Parse pipe-delimited logs into objects.
+- `Convert-SalesforceDebugLog`: Parse pipe-delimited logs into objects.
 
 #### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).
