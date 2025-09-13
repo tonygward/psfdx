@@ -99,3 +99,46 @@ Describe 'Out-Notepad' {
         InModuleScope 'psfdx-logs' { Assert-MockCalled Start-Process -Times 1 }
     }
 }
+
+Describe 'Get-SalesforceEventLogFiles' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            # Mock SF query pipeline
+            Mock Invoke-Salesforce { '{"status":0}' }
+            Mock Show-SalesforceResult { @{ records = @(@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z'; attributes = @{} }) } }
+        }
+        It 'builds SOQL with filters and returns objects' {
+            $out = Get-SalesforceEventLogFiles -EventType 'Login' -Limit 10 -TargetOrg 'me'
+            $out | Should -Not -BeNullOrEmpty
+            $out[0].EventType | Should -Be 'Login'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Command -like 'sf data query --query *FROM EventLogFile*') -and
+                ($Command -like "*EventType = 'Login'*") -and
+                ($Command -like '* ORDER BY LogDate DESC*') -and
+                ($Command -like '* LIMIT 10*') -and
+                ($Command -like '* --target-org me*') -and
+                ($Command -like '* --result-format json*')
+            }
+        }
+    }
+}
+
+Describe 'Export-SalesforceEventFiles' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0}' }
+            Mock Show-SalesforceResult { @{ records = @(@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z'; attributes = @{} }) } }
+            Mock Set-Content {}
+        }
+        It 'writes CSV to disk and uses filters' {
+            Export-SalesforceEventFiles -EventType 'Login' -Limit 2 -TargetOrg 'me' -Verbose | Out-Null
+            Assert-MockCalled Set-Content -Times 1
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Command -like 'sf data query --query *FROM EventLogFile*') -and
+                ($Command -like "*EventType = 'Login'*") -and
+                ($Command -like '* LIMIT 2*') -and
+                ($Command -like '* --target-org me*')
+            }
+        }
+    }
+}
