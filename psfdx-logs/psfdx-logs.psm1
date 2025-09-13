@@ -111,6 +111,29 @@ function Convert-SalesforceLog {
     return $results
 }
 
+function Get-SalesforceFlowInterviews {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateSet('Failed','Paused','Finished')] [string] $Type,
+        [Parameter(Mandatory = $true)][datetime] $After,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    # Build SOQL
+    $afterIso = $After.ToString('s') + 'Z'
+    $query = "SELECT Id, InterviewLabel, Status, CreatedDate FROM FlowInterview WHERE Status = '$Type' AND CreatedDate >= $afterIso ORDER BY CreatedDate DESC"
+
+    # Execute via sf data query
+    $command = "sf data query --query `"$query`" --result-format json"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    $raw = Invoke-Salesforce -Command $command
+    $res = Show-SalesforceResult -Result $raw
+    $records = $res.records
+    if ($null -eq $records) { return @() }
+    return ($records | Select-Object -ExcludeProperty attributes)
+}
+
 function Out-Notepad {
     [CmdletBinding()]
     Param([Parameter(ValueFromPipeline, Mandatory = $true)][string] $Content)
