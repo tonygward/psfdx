@@ -273,29 +273,7 @@ function Get-SalesforceRecordType {
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
 
-function Invoke-SalesforceApexFile {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ApexFile,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
-    )
-    Write-Warning "Invoke-SalesforceApexFile has moved to module 'psfdx-development'. This shim will be removed in a future release. Consider: Import-Module psfdx-development."
-
-    # Ensure psfdx-development is available
-    if (-not (Get-Module -ListAvailable -Name psfdx-development)) {
-        # Try importing from local repo structure (sibling folder)
-        $manifest = Join-Path $PSScriptRoot '..' 'psfdx-development' 'psfdx-development.psd1'
-        if (Test-Path $manifest) {
-            try { Import-Module $manifest -Force -ErrorAction Stop } catch { throw $_ }
-        } else {
-            throw "Required module 'psfdx-development' not found. Please install or Import-Module psfdx-development."
-        }
-    } elseif (-not (Get-Module -Name psfdx-development)) {
-        Import-Module psfdx-development -ErrorAction Stop | Out-Null
-    }
-
-    Microsoft.PowerShell.Core\Invoke-Command -ScriptBlock { param($file,$org) psfdx-development\Invoke-SalesforceApexFile -ApexFile $file -TargetOrg $org } -ArgumentList $ApexFile,$TargetOrg
-}
+## moved to psfdx-development/psfdx-development.psm1
 
 function Connect-SalesforceApi {
     [CmdletBinding()]

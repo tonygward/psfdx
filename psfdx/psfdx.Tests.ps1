@@ -100,22 +100,6 @@ Describe 'psfdx module' {
             }
         }
 
-        Context 'Shim: Invoke-SalesforceApexFile forwarding' {
-            It 'warns and forwards call to psfdx-development' {
-                # Ensure target module is available and mock the real implementation
-                $devManifest = Join-Path $here '..' 'psfdx-development' 'psfdx-development.psd1'
-                Import-Module $devManifest -Force | Out-Null
-
-                Mock -ModuleName 'psfdx-development' Invoke-SalesforceApexFile { 'FORWARDED' }
-
-                $warn = @()
-                $result = Invoke-SalesforceApexFile -ApexFile 'dummy.apex' -TargetOrg 'me' -WarningVariable warn
-
-                # Asserts
-                $result | Should -Be 'FORWARDED'
-                $warn -join ' ' | Should -Match 'has moved to module .*psfdx-development'
-                Assert-MockCalled -ModuleName 'psfdx-development' Invoke-SalesforceApexFile -Times 1 -ParameterFilter { $ApexFile -eq 'dummy.apex' -and $TargetOrg -eq 'me' }
-            }
-        }
+        # Note: Invoke-SalesforceApexFile has been moved to psfdx-development; no shim remains in psfdx.
     }
 }
