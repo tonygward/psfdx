@@ -273,18 +273,7 @@ function Get-SalesforceRecordType {
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
 
-function Invoke-SalesforceApexFile {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ApexFile,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
-    )
-    $command = "sf apex run --file $ApexFile"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
-}
+## moved to psfdx-development/psfdx-development.psm1
 
 function Connect-SalesforceApi {
     [CmdletBinding()]

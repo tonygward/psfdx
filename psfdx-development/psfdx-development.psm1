@@ -506,6 +506,19 @@ function Watch-SalesforceApex {
 
 
 
+function Invoke-SalesforceApexFile {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $ApexFile,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $command = "sf apex run --file $ApexFile"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
+}
+
 
 function New-SalesforceApexClass {
     [CmdletBinding()]
