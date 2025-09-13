@@ -2,42 +2,42 @@
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-logs.psd1'
 Import-Module $moduleManifest -Force | Out-Null
 
-Describe 'Watch-SalesforceLogs' {
+Describe 'Watch-SalesforceDebugLogs' {
     InModuleScope 'psfdx-logs' {
         BeforeEach { Mock Invoke-Salesforce {} }
         It 'builds base command with color' {
-            Watch-SalesforceLogs | Out-Null
+            Watch-SalesforceDebugLogs | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --color' }
         }
         It 'adds username when provided' {
-            Watch-SalesforceLogs -TargetOrg 'user@example' | Out-Null
+            Watch-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --target-org user@example --color' }
         }
         It 'adds skip trace flag' {
-            Watch-SalesforceLogs -SkipTraceFlag | Out-Null
+            Watch-SalesforceDebugLogs -SkipTraceFlag | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --skip-trace-flag --color' }
         }
         It 'adds debug level when provided' {
-            Watch-SalesforceLogs -DebugLevel 'SFDC_DevConsole' | Out-Null
+            Watch-SalesforceDebugLogs -DebugLevel 'SFDC_DevConsole' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --debug-level SFDC_DevConsole --color' }
         }
     }
 }
 
-Describe 'Get-SalesforceLogs' {
+Describe 'Get-SalesforceDebugLogs' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":[{"Id":"1"}]}' }
             Mock Show-SalesforceResult { return @(@{ Id = '1' }) }
         }
         It 'lists logs with json' {
-            $out = Get-SalesforceLogs
+            $out = Get-SalesforceDebugLogs
             $out | Should -Not -BeNullOrEmpty
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --json' }
             Assert-MockCalled Show-SalesforceResult -Times 1
         }
         It 'adds username when provided' {
-            Get-SalesforceLogs -TargetOrg 'user@example' | Out-Null
+            Get-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --target-org user@example --json' }
         }
     }
@@ -63,7 +63,7 @@ Describe 'Get-SalesforceLog' {
                 [pscustomobject]@{ Id = '2'; StartTime = [datetime]'2020-01-02' },
                 [pscustomobject]@{ Id = '1'; StartTime = [datetime]'2020-01-01' }
             )
-            Mock Get-SalesforceLogs { $logs }
+            Mock Get-SalesforceDebugLogs { $logs }
             $null = Get-SalesforceLog -Last -TargetOrg 'user'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -match '--log-id 2 ' }
         }
