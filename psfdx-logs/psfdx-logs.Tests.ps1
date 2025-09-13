@@ -43,7 +43,7 @@ Describe 'Get-SalesforceDebugLogs' {
     }
 }
 
-Describe 'Get-SalesforceLog' {
+Describe 'Get-SalesforceDebugLog' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             # Default successful response from sf
@@ -51,10 +51,10 @@ Describe 'Get-SalesforceLog' {
             Mock Invoke-Salesforce { $jsonOk }
         }
         It 'requires either LogId or Last' {
-            { Get-SalesforceLog -TargetOrg 'user' } | Should -Throw
+            { Get-SalesforceDebugLog -TargetOrg 'user' } | Should -Throw
         }
         It 'fetches by LogId and returns log text' {
-            $log = Get-SalesforceLog -LogId '07Lxx0000000001' -TargetOrg 'user'
+            $log = Get-SalesforceDebugLog -LogId '07Lxx0000000001' -TargetOrg 'user'
             $log | Should -Be 'LOGDATA'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log get --log-id 07Lxx0000000001 --target-org user --json' }
         }
@@ -64,12 +64,12 @@ Describe 'Get-SalesforceLog' {
                 [pscustomobject]@{ Id = '1'; StartTime = [datetime]'2020-01-01' }
             )
             Mock Get-SalesforceDebugLogs { $logs }
-            $null = Get-SalesforceLog -Last -TargetOrg 'user'
+            $null = Get-SalesforceDebugLog -Last -TargetOrg 'user'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -match '--log-id 2 ' }
         }
         It 'throws when sf returns error' {
             Mock Invoke-Salesforce { '{"status":1,"message":"failure"}' }
-            { Get-SalesforceLog -LogId 'X' -TargetOrg 'user' } | Should -Throw
+            { Get-SalesforceDebugLog -LogId 'X' -TargetOrg 'user' } | Should -Throw
         }
     }
 }
