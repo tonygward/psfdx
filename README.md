@@ -153,7 +153,7 @@ Get-Command -Module psfdx
 - `Get-SalesforceFlowInterviews`: Query FlowInterview by status and start time.
 
 #### Events
-- `Export-SalesforceEvents`: Query EventLogFile and export results to CSV.
+- `Export-SalesforceEventFiles`: Query EventLogFile and export results to CSV.
 
 #### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).

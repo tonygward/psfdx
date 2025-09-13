@@ -146,7 +146,7 @@ function Get-SalesforceFlowInterviews {
     return ($records | Select-Object -ExcludeProperty attributes)
 }
 
-function Export-SalesforceEvents {
+function Export-SalesforceEventFiles {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $EventType,
