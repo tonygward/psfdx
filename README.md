@@ -142,18 +142,18 @@ Get-Command -Module psfdx
 
 ### psfdx-logs
 
-#### Logs
+#### Debug Logs
 - `Watch-SalesforceDebugLogs`: Tail Apex logs (with color, debug level, skip trace flag).
  - `Get-SalesforceDebugLogs`: List Apex logs (JSON).
  - `Get-SalesforceDebugLog`: Get a specific or most recent log text.
 - `Export-SalesforceDebugLogs`: Export logs to files.
 - `Convert-SalesforceDebugLog`: Parse pipe-delimited logs into objects.
 
-#### Utilities
-- `Out-Notepad`: Convenience helper to open a temp file (Windows).
-
 #### Flows
 - `Get-SalesforceFlowInterviews`: Query FlowInterview by status and start time.
+
+#### Utilities
+- `Out-Notepad`: Convenience helper to open a temp file (Windows).
 
 ### psfdx-metadata
 
