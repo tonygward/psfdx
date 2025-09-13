@@ -99,7 +99,5 @@ Describe 'psfdx module' {
                 $out.ok | Should -BeTrue
             }
         }
-
-        # Note: Invoke-SalesforceApexFile has been moved to psfdx-development; no shim remains in psfdx.
     }
 }

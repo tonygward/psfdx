@@ -58,7 +58,7 @@
         'Get-SalesforceProjectUser',
         'Set-SalesforceProjectUser',
         'New-SalesforceProjectAndScratchOrg',
-        'Test-Salesforce',
+        'Test-SalesforceApex',
         'Get-SalesforceCodeCoverage',
         'Install-SalesforceJest',
         'New-SalesforceJestTest',
@@ -66,7 +66,7 @@
         'Debug-SalesforceJest',
         'Watch-SalesforceJest',
         'Watch-SalesforceApex',
-        'Invoke-SalesforceApexFile',
+        'Invoke-SalesforceApex',
         'New-SalesforceApexClass',
         'New-SalesforceApexTrigger'
     )
