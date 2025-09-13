@@ -26,7 +26,7 @@ function Get-SalesforceDebugLogs {
     return Show-SalesforceResult -Result $result
 }
 
-function Get-SalesforceLog {
+function Get-SalesforceDebugLog {
     [CmdletBinding(DefaultParameterSetName='ById')]
     Param(
         [Parameter(ParameterSetName='ById', Mandatory = $true)][string] $LogId,
@@ -73,14 +73,14 @@ function Export-SalesforceDebugLogs {
         $fileName = $log.Id + ".log"
         $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
         Write-Verbose "Exporting file: $filePath"
-        Get-SalesforceLog -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
+        Get-SalesforceDebugLog -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
         $i = $i + 1
         $percentCompleted = ($i / $logsCount) * 100
         Write-Progress -Activity "Export Salesforce Debug Logs" -Status "Completed $fileName" -PercentComplete $percentCompleted
     }
 }
 
-function Convert-SalesforceLog {
+function Convert-SalesforceDebugLog {
     [CmdletBinding()]
     Param(
         [Parameter(ValueFromPipeline, Mandatory = $true)][string] $Log
@@ -112,18 +112,22 @@ function Convert-SalesforceLog {
 function Get-SalesforceFlowInterviews {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidateSet('Failed','Paused','Finished')] [string] $Type,
-        [Parameter(Mandatory = $true)][datetime] $After,
+        [Parameter(Mandatory = $true)][ValidateSet('Failed','Paused','Finished', 'All')] [string] $Type,
+        [Parameter(Mandatory = $false)][datetime] $After,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
+    if ($Type -eq 'All') { $Type = "'Failed','Paused','Finished'" }
+
     # Build SOQL
-    $afterIso = $After.ToString('s') + 'Z'
     $query = ""
     $query += "SELECT Id, InterviewLabel, Status, CreatedDate "
     $query += "FROM FlowInterview "
-    $query += "WHERE Status = '$Type' "
-    $query += "AND CreatedDate >= $afterIso "
+    $query += "WHERE Status IN ('$Type') "
+    if ($After) {
+        $afterIso = $After.ToString('s') + 'Z'
+        $query += "AND CreatedDate >= $afterIso "
+    }
     $query += "ORDER BY CreatedDate DESC"
 
     # Execute via sf data query
