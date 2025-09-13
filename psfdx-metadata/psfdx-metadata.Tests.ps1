@@ -27,5 +27,3 @@ Describe 'Retrieve-SalesforceComponent' {
         }
     }
 }
-
-## Get-SalesforceApexClass moved to psfdx-development; tests relocated there
