@@ -66,6 +66,7 @@
         'Debug-SalesforceJest',
         'Watch-SalesforceJest',
         'Watch-SalesforceApex',
+        'Get-SalesforceApexClass',
         'Invoke-SalesforceApex',
         'New-SalesforceApexClass',
         'New-SalesforceApexTrigger'
