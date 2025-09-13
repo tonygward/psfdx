@@ -43,10 +43,10 @@
 
     # Functions to export from this module. Use @() to export nothing, or '*' to export all.
     FunctionsToExport = @(
-        'Watch-SalesforceLogs',
-        'Get-SalesforceLogs',
+        'Watch-SalesforceDebugLogs',
+        'Get-SalesforceDebugLogs',
         'Get-SalesforceLog',
-        'Export-SalesforceLogs',
+        'Export-SalesforceDebugLogs',
         'Convert-SalesforceLog',
         'Get-SalesforceFlowInterviews',
         'Out-Notepad'

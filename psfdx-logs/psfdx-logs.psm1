@@ -1,7 +1,7 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-function Watch-SalesforceLogs {
+function Watch-SalesforceDebugLogs {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg,
@@ -16,7 +16,7 @@ function Watch-SalesforceLogs {
     return Invoke-Salesforce -Command $command
 }
 
-function Get-SalesforceLogs {
+function Get-SalesforceDebugLogs {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = @('sf','apex','log','list')
@@ -35,7 +35,7 @@ function Get-SalesforceLog {
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'ByLast') {
-        $LogId = (Get-SalesforceLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
+        $LogId = (Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
     }
 
     $command = @('sf','apex','log','get','--log-id', $LogId)
@@ -46,7 +46,7 @@ function Get-SalesforceLog {
     return $parsed.log
 }
 
-function Export-SalesforceLogs {
+function Export-SalesforceDebugLogs {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][int] $Limit = 50,
@@ -61,7 +61,7 @@ function Export-SalesforceLogs {
     if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
     Write-Verbose "Output Folder: $OutputFolder"
 
-    $logs = Get-SalesforceLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
+    $logs = Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
     if (-not $logs -or (($logs | Measure-Object).Count -eq 0)) {
         Write-Verbose "No Logs"
         return
@@ -76,7 +76,7 @@ function Export-SalesforceLogs {
         Get-SalesforceLog -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
         $i = $i + 1
         $percentCompleted = ($i / $logsCount) * 100
-        Write-Progress -Activity "Export Salesforce Logs" -Status "Completed $fileName" -PercentComplete $percentCompleted
+        Write-Progress -Activity "Export Salesforce Debug Logs" -Status "Completed $fileName" -PercentComplete $percentCompleted
     }
 }
 
