@@ -49,6 +49,7 @@
         'Export-SalesforceDebugLogs',
         'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
+        'Export-SalesforceEvents',
         'Out-Notepad'
     )
 
