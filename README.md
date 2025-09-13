@@ -62,83 +62,127 @@ Get-Command -Module psfdx
 ## Cmdlets by Module
 
 ### psfdx
-- `Get-SalesforceDateTime`: Format current/custom datetime in Salesforce sortable UTC.
+
+#### Authentication & Orgs
 - `Connect-Salesforce`: Web-based org authentication.
 - `Disconnect-Salesforce`: Logout from orgs.
 - `Connect-SalesforceJwt`: JWT-based authentication.
 - `Open-Salesforce`: Open org in a browser or get URL.
 - `Get-SalesforceConnections`: List connected orgs (non-scratch by default).
 - `Repair-SalesforceConnections`: Clean up stale connections.
+
+#### Aliases
 - `Get-SalesforceAlias`: List configured aliases.
 - `Add-SalesforceAlias`: Create/update an alias.
 - `Remove-SalesforceAlias`: Remove an alias.
+
+#### Limits & Usage
 - `Get-SalesforceLimits`: Retrieve org limits (API, storage, etc.).
 - `Get-SalesforceDataStorage`: Calculate data storage usage and percent.
 - `Get-SalesforceApiUsage`: Calculate API usage percent.
+
+#### Data & SOQL
 - `Select-SalesforceRecords`: Run SOQL and return records.
 - `New-SalesforceRecord`: Create a record.
 - `Set-SalesforceRecord`: Update a record.
 - `Get-SalesforceRecordType`: List record types (optionally by object).
+
+#### Apex
 - `Invoke-SalesforceApexFile`: Execute Apex from a file.
+
+#### REST API
 - `Connect-SalesforceApi`: OAuth2 password flow (non-SFDX REST).
 - `Invoke-SalesforceApi`: Invoke REST API with bearer token.
+
+#### Plugins
 - `Install-SalesforcePlugin`: Install an `sf` plugin.
 - `Get-SalesforcePlugins`: List installed plugins (optionally core).
 - `Update-SalesforcePlugins`: Update installed plugins.
 
+#### Utilities
+- `Get-SalesforceDateTime`: Format current/custom datetime in Salesforce sortable UTC.
+
 ### psfdx-development
-- `Install-SalesforceLwcDevServer`: Install LWC dev server dependencies.
-- `Start-SalesforceLwcDevServer`: Start LWC dev server.
-- `Set-SalesforceDefaultDevHub`: Set default Dev Hub (`--global`).
-- `Remove-SalesforceDefaultDevHub`: Unset default Dev Hub.
-- `Get-SalesforceConfig`: Show SFDX config (JSON).
-- `Get-SalesforceScratchOrgs`: List scratch orgs (optionally last-used).
-- `New-SalesforceScratchOrg`: Create scratch org (supports wait/duration/def file).
-- `Remove-SalesforceScratchOrg`: Delete a scratch org.
-- `Remove-SalesforceScratchOrgs`: Delete all scratch orgs found.
+
+#### Projects & Config
 - `New-SalesforceProject`: Create a new SFDX project.
 - `Set-SalesforceProject`: Write `.sfdx/sfdx-config.json` default username.
 - `Get-SalesforceDefaultUserName`: Read project default username.
 - `Get-SalesforceProjectUser`: Read project default username (current folder).
 - `Set-SalesforceProjectUser`: Set `target-org` for the project.
 - `New-SalesforceProjectAndScratchOrg`: Scaffold project and create scratch org.
+- `Get-SalesforceConfig`: Show SFDX config (JSON).
+- `Set-SalesforceDefaultDevHub`: Set default Dev Hub (`--global`).
+- `Remove-SalesforceDefaultDevHub`: Unset default Dev Hub.
+
+#### Scratch Orgs
+- `Get-SalesforceScratchOrgs`: List scratch orgs (optionally last-used).
+- `New-SalesforceScratchOrg`: Create scratch org (supports wait/duration/def file).
+- `Remove-SalesforceScratchOrg`: Delete a scratch org.
+- `Remove-SalesforceScratchOrgs`: Delete all scratch orgs found.
+
+#### Apex Testing & Automation
 - `Test-Salesforce`: Run Apex tests (sync/async, coverage, output dir).
 - `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
+- `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
+
+#### LWC Dev Server
+- `Install-SalesforceLwcDevServer`: Install LWC dev server dependencies.
+- `Start-SalesforceLwcDevServer`: Start LWC dev server.
+
+#### LWC/Jest Testing
 - `Install-SalesforceJest`: Add `@salesforce/sfdx-lwc-jest` via yarn/npm.
 - `New-SalesforceJestTest`: Create Jest test for an LWC.
 - `Test-SalesforceJest`: Run Jest tests.
 - `Debug-SalesforceJest`: Run Jest in debug mode.
 - `Watch-SalesforceJest`: Run Jest in watch mode.
-- `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
+
+#### Apex Scaffolding
 - `New-SalesforceApexClass`: Generate an Apex class from a template.
 - `New-SalesforceApexTrigger`: Generate an Apex trigger from a template.
 
 ### psfdx-logs
+
+#### Logs
 - `Watch-SalesforceLogs`: Tail Apex logs (with color, debug level, skip trace flag).
 - `Get-SalesforceLogs`: List Apex logs (JSON).
 - `Get-SalesforceLog`: Get a specific or most recent log text.
 - `Export-SalesforceLogs`: Export logs to files.
 - `Convert-SalesforceLog`: Parse pipe-delimited logs into objects.
+
+#### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).
 
 ### psfdx-metadata
+
+#### Retrieve
 - `Retrieve-SalesforceOrg`: Create manifest from org and retrieve via manifest.
 - `Retrieve-SalesforceComponent`: Retrieve specific metadata by type/name.
 - `Retrieve-SalesforceField`: Retrieve a specific custom field.
 - `Retrieve-SalesforceValidationRule`: Retrieve a specific validation rule.
+
+#### Deploy
 - `Deploy-SalesforceComponent`: Deploy specific metadata by type/name.
+
+#### Describe
 - `Describe-SalesforceObjects`: List sObjects (all/custom/standard).
 - `Describe-SalesforceObject`: Describe a specific sObject (supports tooling API).
 - `Describe-SalesforceFields`: List fields for an sObject.
+
+#### Types & Helpers
 - `Get-SalesforceMetaTypes`: List available metadata types.
 - `Get-SalesforceApexClass`: Lookup ApexClass by name (tooling API SOQL).
 - `Build-SalesforceQuery`: Build a SELECT for all fields on an sObject.
 
 ### psfdx-packages
+
+#### Packages
 - `Get-SalesforcePackages`: List packages in a Dev Hub.
 - `Get-SalesforcePackage`: Get a specific package by name.
 - `New-SalesforcePackage`: Create a package (managed/unlocked, org-dependent, path, description, no-namespace).
 - `Remove-SalesforcePackage`: Delete a package by name.
+
+#### Versions
 - `Get-SalesforcePackageVersions`: List versions (filters: released/concise/verbose).
 - `New-SalesforcePackageVersion`: Create a new package version (options include coverage, tag, def file, waits, installation key).
 - `Promote-SalesforcePackageVersion`: Promote a version (optional no-prompt).
