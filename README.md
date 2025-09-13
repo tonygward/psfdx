@@ -154,10 +154,10 @@ Get-Command -Module psfdx
 ### psfdx-metadata
 
 #### Retrieve
-- `Retrieve-SalesforceOrg`: Create manifest from org and retrieve via manifest.
-- `Retrieve-SalesforceComponent`: Retrieve specific metadata by type/name.
+- `Retrieve-SalesforceComponent`: Retrieve specific metadata component by type/name.
 - `Retrieve-SalesforceField`: Retrieve a specific custom field.
 - `Retrieve-SalesforceValidationRule`: Retrieve a specific validation rule.
+- `Retrieve-SalesforceOrg`: Retrieve entire Salesforce Org
 
 #### Deploy
 - `Deploy-SalesforceComponent`: Deploy specific metadata by type/name.
