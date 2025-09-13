@@ -1,8 +1,6 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-## Show-SalesforceResult moved to psfdx-shared/Show-SalesforceResult.ps1
-
 function Watch-SalesforceLogs {
     [CmdletBinding()]
     Param(
@@ -121,7 +119,12 @@ function Get-SalesforceFlowInterviews {
 
     # Build SOQL
     $afterIso = $After.ToString('s') + 'Z'
-    $query = "SELECT Id, InterviewLabel, Status, CreatedDate FROM FlowInterview WHERE Status = '$Type' AND CreatedDate >= $afterIso ORDER BY CreatedDate DESC"
+    $query = ""
+    $query += "SELECT Id, InterviewLabel, Status, CreatedDate "
+    $query += "FROM FlowInterview "
+    $query += "WHERE Status = '$Type' "
+    $query += "AND CreatedDate >= $afterIso "
+    $query += "ORDER BY CreatedDate DESC"
 
     # Execute via sf data query
     $command = "sf data query --query `"$query`" --result-format json"
