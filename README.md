@@ -180,7 +180,7 @@ Get-Command -Module psfdx
 - `New-SalesforcePackage`: Create a package (managed/unlocked, org-dependent, path, description, no-namespace).
 - `Remove-SalesforcePackage`: Delete a package by name.
 
-#### Versions
+#### Package Versions
 - `Get-SalesforcePackageVersions`: List versions (filters: released/concise/verbose).
 - `New-SalesforcePackageVersion`: Create a new package version (options include coverage, tag, def file, waits, installation key).
 - `Promote-SalesforcePackageVersion`: Promote a version (optional no-prompt).
