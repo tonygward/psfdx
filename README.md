@@ -87,9 +87,6 @@ Get-Command -Module psfdx
 - `Set-SalesforceRecord`: Update a record.
 - `Get-SalesforceRecordType`: List record types (optionally by object).
 
-#### Apex
-- `Invoke-SalesforceApexFile`: Execute Apex from a file.
-
 #### REST API
 - `Connect-SalesforceApi`: OAuth2 password flow (non-SFDX REST).
 - `Invoke-SalesforceApi`: Invoke REST API with bearer token.
@@ -136,6 +133,10 @@ Get-Command -Module psfdx
 - `Test-SalesforceJest`: Run Jest tests.
 - `Debug-SalesforceJest`: Run Jest in debug mode.
 - `Watch-SalesforceJest`: Run Jest in watch mode.
+
+#### Apex Execution
+- Note: moved from `psfdx` to `psfdx-development` in Unreleased to keep Apex workflows with development tooling.
+- `Invoke-SalesforceApexFile`: Execute Apex from a file.
 
 #### Apex Scaffolding
 - `New-SalesforceApexClass`: Generate an Apex class from a template.
