@@ -121,7 +121,12 @@ Get-Command -Module psfdx
 #### Apex Testing & Automation
 - `Test-SalesforceApex`: Run Apex tests (sync/async, coverage, output dir).
 - `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
+- `Invoke-SalesforceApexFile`: Execute Apex from a file.
 - `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
+
+#### Apex Scaffolding
+- `New-SalesforceApexClass`: Generate an Apex class from a template.
+- `New-SalesforceApexTrigger`: Generate an Apex trigger from a template.
 
 #### LWC Dev Server
 - `Install-SalesforceLwcDevServer`: Install LWC dev server dependencies.
@@ -133,14 +138,6 @@ Get-Command -Module psfdx
 - `Test-SalesforceJest`: Run Jest tests.
 - `Debug-SalesforceJest`: Run Jest in debug mode.
 - `Watch-SalesforceJest`: Run Jest in watch mode.
-
-#### Apex Execution
-- Note: moved from `psfdx` to `psfdx-development` in Unreleased to keep Apex workflows with development tooling.
-- `Invoke-SalesforceApexFile`: Execute Apex from a file.
-
-#### Apex Scaffolding
-- `New-SalesforceApexClass`: Generate an Apex class from a template.
-- `New-SalesforceApexTrigger`: Generate an Apex trigger from a template.
 
 ### psfdx-logs
 

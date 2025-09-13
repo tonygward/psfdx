@@ -22,7 +22,6 @@
         'New-SalesforceRecord',
         'Set-SalesforceRecord',
         'Get-SalesforceRecordType',
-        'Invoke-SalesforceApexFile',
         'Connect-SalesforceApi',
         'Invoke-SalesforceApi',
         'Install-SalesforcePlugin',
