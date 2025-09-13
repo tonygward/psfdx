@@ -294,7 +294,7 @@ function Invoke-SalesforceApexFile {
         Import-Module psfdx-development -ErrorAction Stop | Out-Null
     }
 
-    Microsoft.PowerShell.Core\Invoke-Command -ScriptBlock { param($file,$org) Invoke-SalesforceApexFile -ApexFile $file -TargetOrg $org } -ArgumentList $ApexFile,$TargetOrg
+    Microsoft.PowerShell.Core\Invoke-Command -ScriptBlock { param($file,$org) psfdx-development\Invoke-SalesforceApexFile -ApexFile $file -TargetOrg $org } -ArgumentList $ApexFile,$TargetOrg
 }
 
 function Connect-SalesforceApi {
