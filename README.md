@@ -154,6 +154,7 @@ Get-Command -Module psfdx
 
 #### Events
 - `Export-SalesforceEventFiles`: Query EventLogFile and export results to CSV.
+- `Get-SalesforceEventLogFiles`: Query EventLogFile and return objects to the pipeline.
 
 #### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).

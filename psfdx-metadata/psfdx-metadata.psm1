@@ -478,7 +478,7 @@ function Describe-SalesforceFields {
     )
     $result = Describe-SalesforceObject -Name $ObjectName -TargetOrg $TargetOrg -UseToolingApi:$UseToolingApi
     $result = $result.fields
-    $result = $result | Select-Object name, label, type, byteLength
+    $result = $result | Select-Object name, label, type, byteLength | Sort-Object name
     return $result
 }
 

@@ -189,6 +189,36 @@ function Export-SalesforceEventFiles {
     Write-Verbose ("Exported EventLogFile records to: " + $filePath)
 }
 
+function Get-SalesforceEventLogFiles {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $EventType,
+        [Parameter(Mandatory = $false)][datetime] $After,
+        [Parameter(Mandatory = $false)][datetime] $Before,
+        [Parameter(Mandatory = $false)][int] $Limit,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    # Build SOQL for Event Monitoring (EventLogFile)
+    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile"
+    $where = @()
+    if ($EventType) { $where += "EventType = '$EventType'" }
+    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
+    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
+    $query += " ORDER BY LogDate DESC"
+    if ($Limit -gt 0) { $query += " LIMIT $Limit" }
+
+    $command = "sf data query --query `"$query`" --result-format json"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    $raw = Invoke-Salesforce -Command $command
+    $res = Show-SalesforceResult -Result $raw
+    $records = $res.records
+    if ($null -eq $records) { return @() }
+    return ($records | Select-Object -ExcludeProperty attributes)
+}
+
 function Out-Notepad {
     [CmdletBinding()]
     Param([Parameter(ValueFromPipeline, Mandatory = $true)][string] $Content)
