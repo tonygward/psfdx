@@ -503,7 +503,7 @@ function Watch-SalesforceApex {
     }
 }
 
-function Invoke-SalesforceApexFile {
+function Invoke-SalesforceApex {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ApexFile,

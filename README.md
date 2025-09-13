@@ -121,7 +121,7 @@ Get-Command -Module psfdx
 #### Apex Testing & Automation
 - `Test-SalesforceApex`: Run Apex tests (sync/async, coverage, output dir).
 - `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
-- `Invoke-SalesforceApexFile`: Execute Apex from a file.
+- `Invoke-SalesforceApex`: Execute Apex from a file.
 - `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
 
 #### Apex Scaffolding
