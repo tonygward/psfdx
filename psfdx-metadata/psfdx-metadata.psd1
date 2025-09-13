@@ -23,7 +23,6 @@
         'Describe-SalesforceObject',
         'Describe-SalesforceFields',
         'Get-SalesforceMetaTypes',
-        'Get-SalesforceApexClass',
         'Build-SalesforceQuery'
     )
     CmdletsToExport       = @()

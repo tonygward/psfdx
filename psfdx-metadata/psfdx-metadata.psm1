@@ -496,21 +496,7 @@ function Get-SalesforceMetaTypes {
     return $result
 }
 
-function Get-SalesforceApexClass {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
-    )
-    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $command = "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
-    $result = Invoke-Salesforce -Command $command
-    $parsed = $result | ConvertFrom-Json
-    if ($parsed.status -ne 0) {
-        throw ($parsed.message)
-    }
-    return $parsed.result.records | Select-Object -First 1 -Property Id, Name
-}
+## moved to psfdx-development/psfdx-development.psm1
 
 function Build-SalesforceQuery {
     [CmdletBinding()]

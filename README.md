@@ -123,6 +123,7 @@ Get-Command -Module psfdx
 - `Get-SalesforceCodeCoverage`: Compute coverage per class/test method.
 - `Invoke-SalesforceApex`: Execute Apex from a file.
 - `Watch-SalesforceApex`: On-save deploy/test Apex from a project.
+ - `Get-SalesforceApexClass`: Lookup ApexClass by name (tooling API SOQL).
 
 #### Apex Scaffolding
 - `New-SalesforceApexClass`: Generate an Apex class from a template.
@@ -169,7 +170,6 @@ Get-Command -Module psfdx
 
 #### Types & Helpers
 - `Get-SalesforceMetaTypes`: List available metadata types.
-- `Get-SalesforceApexClass`: Lookup ApexClass by name (tooling API SOQL).
 - `Build-SalesforceQuery`: Build a SELECT for all fields on an sObject.
 
 ### psfdx-packages
