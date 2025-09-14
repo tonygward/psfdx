@@ -161,6 +161,8 @@ Get-Command -Module psfdx
 #### Events
 - `Export-SalesforceEventFiles`: Query EventLogFile and export results to CSV.
 - `Get-SalesforceEventFiles`: Query EventLogFile and return objects to the pipeline.
+- `Get-SalesforceEventFile`: Download a single EventLogFile by Id and return its CSV content.
+- `Export-SalesforceEventFile`: Download a single EventLogFile by Id and write `<Id>.csv` to disk.
 
 #### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).
