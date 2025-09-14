@@ -245,10 +245,16 @@ function Export-SalesforceEventFiles {
         return
     }
 
+    $total = ($records | Measure-Object).Count
+    $i = 0
     foreach ($record in $records) {
+        $i++
         Export-SalesforceEventFile -Id $record.Id -OutputFolder $OutputFolder -TargetOrg $TargetOrg
+        $percent = [int](($i / $total) * 100)
+        Write-Progress -Activity "Export Salesforce Event Files" -Status "Exported $i of $total" -PercentComplete $percent
     }
-    Write-Verbose ("Exported EventLogFile records to: " + $filePath)
+    Write-Progress -Activity "Export Salesforce Event Files" -Completed
+    Write-Verbose ("Exported $i EventLogFile record(s) to: " + $OutputFolder)
 }
 
 function Out-Notepad {
