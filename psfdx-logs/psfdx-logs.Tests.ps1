@@ -129,11 +129,11 @@ Describe 'Export-SalesforceEventFiles' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0}' }
             Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
-            Mock Set-Content {}
+            Mock Export-SalesforceEventFile {}
         }
         It 'writes CSV to disk and uses filters' {
             Export-SalesforceEventFiles -EventType 'Login' -Limit 2 -TargetOrg 'me' -Verbose | Out-Null
-            Assert-MockCalled Set-Content -Times 1
+            Assert-MockCalled Export-SalesforceEventFile -Times 1
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Command -like 'sf data query --query *FROM EventLogFile*') -and
                 ($Command -like "*EventType = 'Login'*") -and
