@@ -158,14 +158,12 @@ function Get-SalesforceLoginHistory {
     )
 
     # Build SOQL for LoginHistory
-    $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status"
-    $query += " FROM LoginHistory"
+    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Application, Status FROM LoginHistory"
     $conditions = @()
+    if ($Username) { $conditions += "Username = '$Username'" }
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
-    if ($conditions.Count -gt 0) {
-        $query += (" WHERE " + ($conditions -join " AND "))
-    }
+    if ($conditions.Count -gt 0) { $query += (" WHERE " + ($conditions -join " AND ")) }
     $query += " ORDER BY LoginTime DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
 
@@ -181,23 +179,31 @@ function Get-SalesforceLoginHistory {
         return @()
     }
 
-    # Enrich with usernames
-    $usernames = Get-SalesforceUsers -TargetOrg $TargetOrg
-    foreach ($record in $records) {
-        $userId = $record.UserId
-        $user = $usernames | Where-Object { $_.Id -eq $userId } | Select-Object -First 1
-        if (-not $user) {
-            continue
+    # Enrich with user details from psfdx:Get-SalesforceUsers (distinct usernames)
+    $distinctUsernames = ($records | Where-Object { $_.Username } | Select-Object -ExpandProperty Username -Unique)
+    if ($distinctUsernames) {
+        $userMap = @{}
+        foreach ($u in $distinctUsernames) {
+            try {
+                $uRec = Get-SalesforceUsers -Username $u -Limit 1 -TargetOrg $TargetOrg | Select-Object -First 1
+                if ($uRec) { $userMap[$u] = $uRec }
+            } catch { }
         }
-        if ($null -ne $user.Username) {
-            $record | Add-Member -NotePropertyName Username -NotePropertyValue $user.Username -Force
+        foreach ($rec in $records) {
+            $u = $rec.Username
+            if ($u -and $userMap.ContainsKey($u)) {
+                $user = $userMap[$u]
+                if ($null -ne $user.Name)   { $rec | Add-Member -NotePropertyName Name   -NotePropertyValue $user.Name   -Force }
+                if ($null -ne $user.Email)  { $rec | Add-Member -NotePropertyName Email  -NotePropertyValue $user.Email  -Force }
+                if ($null -ne $user.IsActive) { $rec | Add-Member -NotePropertyName IsActive -NotePropertyValue $user.IsActive -Force }
+                if ($user.PSObject.Properties.Name -contains 'LastLoginDate') {
+                    $rec | Add-Member -NotePropertyName UserLastLoginDate -NotePropertyValue $user.LastLoginDate -Force
+                }
+            }
         }
     }
 
-    # Filter by Username if provided
-    if ($Username) {
-        $records = $records | Where-Object { $_.Username -like "*$Username*" }
-    }
+    # Already filtered in SOQL when -Username is provided
     return $records
 }
 
