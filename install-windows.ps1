@@ -6,15 +6,9 @@ Param(
 
 $ErrorActionPreference = 'Stop'
 
-# Modules to install
-$modules = @(
-    'psfdx',
-    'psfdx-logs',
-    'psfdx-development',
-    'psfdx-metadata',
-    'psfdx-packages',
-    'psfdx-shared'
-)
+# Load shared module list
+. (Join-Path -Path $PSScriptRoot -ChildPath 'modules.ps1')
+$modules = Get-PsfdxModules
 
 if ($Scope -eq 'AllUsers') {
     $dest = Join-Path -Path $PSHOME -ChildPath 'Modules'
