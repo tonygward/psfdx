@@ -212,13 +212,16 @@ function Get-SalesforceEventFiles {
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
-function Export-SalesforceEventFile {
+function Get-SalesforceEventFile {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Id,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
+    $command = "sf api request rest /services/data/v64.0/sobjects/EventLogFile/$Id/Logfile"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    Invoke-Salesforce -Command $command
 }
 
 function Out-Notepad {
