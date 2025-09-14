@@ -154,10 +154,9 @@ function Get-SalesforceLoginHistory {
     )
 
     # Build SOQL for LoginHistory
-    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status FROM LoginHistory"
+    $query = "SELECT Id, LoginTime, UserId, SourceIp, Status FROM LoginHistory"
 
     $conditions = @()
-    if ($Username) { $conditions += "Username = '$Username'" }
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
     if ($conditions.Count -gt 0) {
