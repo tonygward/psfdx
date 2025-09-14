@@ -154,7 +154,8 @@ function Get-SalesforceLoginHistory {
     )
 
     # Build SOQL for LoginHistory
-    $query = "SELECT Id, LoginTime, UserId, SourceIp, Status FROM LoginHistory"
+    $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status"
+    $query += " FROM LoginHistory"
 
     $conditions = @()
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
@@ -173,38 +174,20 @@ function Get-SalesforceLoginHistory {
     $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
-    # Always return a collection (empty array when no results)
-    if ($null -eq $records) {
-        $records = @()
-    } elseif ($records -isnot [System.Array]) {
-        $records = @($records)
+    if ((-not $records) -or (($records | Measure-Object).Count -eq 0)) {
+        Write-Verbose "No LoginHistory records found"
+        return @()
     }
 
-    # Enrich with user details from psfdx:Get-SalesforceUsers (distinct usernames)
-    if ($records.Count -gt 0) {
-        $usernames = ($records | Where-Object { $_.Username } | Select-Object -ExpandProperty Username -Unique)
-        if ($usernames) {
-            $userMap = @{}
-            foreach ($u in $usernames) {
-                try {
-                    $uRec = Get-SalesforceUsers -Username $u -Limit 1 -TargetOrg $TargetOrg | Select-Object -First 1
-                    if ($uRec) { $userMap[$u] = $uRec }
-                } catch {
-                    # Ignore enrichment errors and proceed with base records
-                }
-            }
-            foreach ($rec in $records) {
-                $u = $rec.Username
-                if ($u -and $userMap.ContainsKey($u)) {
-                    $user = $userMap[$u]
-                    if ($null -ne $user.Name) { $rec | Add-Member -NotePropertyName Name -NotePropertyValue $user.Name -Force }
-                    if ($null -ne $user.Email) { $rec | Add-Member -NotePropertyName Email -NotePropertyValue $user.Email -Force }
-                    if ($null -ne $user.IsActive) { $rec | Add-Member -NotePropertyName IsActive -NotePropertyValue $user.IsActive -Force }
-                    if ($user.PSObject.Properties.Name -contains 'LastLoginDate') {
-                        $rec | Add-Member -NotePropertyName UserLastLoginDate -NotePropertyValue $user.LastLoginDate -Force
-                    }
-                }
-            }
+    $usernames = Get-SalesforceUsers -TargetOrg $TargetOrg
+    foreach ($record in $records) {
+        $userId = $record.UserId
+        $user = $usernames | Where-Object { $_.Id -eq $userId } | Select-Object -First 1
+        if (-not $user) {
+            continue
+        }
+        if ($null -ne $user.Username) {
+            $record | Add-Member -NotePropertyName Username -NotePropertyValue $user.Username -Force
         }
     }
 
