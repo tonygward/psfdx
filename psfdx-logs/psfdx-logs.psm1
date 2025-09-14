@@ -212,6 +212,15 @@ function Get-SalesforceEventFiles {
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
+function Export-SalesforceEventFile {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Id,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+}
+
 function Out-Notepad {
     [CmdletBinding()]
     Param([Parameter(ValueFromPipeline, Mandatory = $true)][string] $Content)
