@@ -1,9 +1,6 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-
-## Show-SalesforceResult moved to psfdx-shared/Show-SalesforceResult.ps1
-
 function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
