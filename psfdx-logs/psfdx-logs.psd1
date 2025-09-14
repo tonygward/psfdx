@@ -49,7 +49,7 @@
         'Export-SalesforceDebugLogs',
         'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
-        'Get-SalesforceLoginFailures',
+        'Get-SalesforceLoginHistory',
         'Export-SalesforceEventFiles',
         'Get-SalesforceEventFile',
         'Export-SalesforceEventFile',

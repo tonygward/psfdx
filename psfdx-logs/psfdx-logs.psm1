@@ -143,7 +143,7 @@ function Get-SalesforceFlowInterviews {
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
-function Get-SalesforceLoginFailures {
+function Get-SalesforceLoginHistory {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][datetime] $After,

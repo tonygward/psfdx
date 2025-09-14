@@ -144,7 +144,7 @@ Describe 'Export-SalesforceEventFiles' {
     }
 }
 
-Describe 'Get-SalesforceLoginFailures' {
+Describe 'Get-SalesforceLoginHistory' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0}' }
@@ -153,7 +153,7 @@ Describe 'Get-SalesforceLoginFailures' {
         It 'builds SOQL with filters and returns objects' {
             $after = [datetime]'2024-01-01T00:00:00Z'
             $before = [datetime]'2024-01-02T00:00:00Z'
-            $out = Get-SalesforceLoginFailures -Username 'user' -After $after -Before $before -Limit 5 -TargetOrg 'me'
+            $out = Get-SalesforceLoginHistory -Username 'user' -After $after -Before $before -Limit 5 -TargetOrg 'me'
             $out | Should -Not -BeNullOrEmpty
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Command -like 'sf data query --query *FROM LoginHistory*') -and
