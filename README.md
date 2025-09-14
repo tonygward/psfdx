@@ -4,7 +4,7 @@ PowerShell modules that wraps the Salesforce CLI.
 
 ## Modules
 | Module | Description |
-| --- | --- |
+| :--- | :--- |
 | `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
 | `psfdx-development` | Helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy). |
 | `psfdx-logs` | Tools for working with Salesforce Apex logs. |
@@ -66,7 +66,7 @@ Get-Command -Module psfdx
 `Import-Module psfdx`
 
 | Category | Cmdlet | Description |
-| --- | --- | --- |
+| :--- | :--- | :--- |
 | Authentication & Orgs | `Connect-Salesforce` | Web-based org authentication. |
 |  | `Disconnect-Salesforce` | Logout from orgs. |
 |  | `Connect-SalesforceJwt` | JWT-based authentication. |
@@ -96,7 +96,7 @@ Get-Command -Module psfdx
 `Import-Module psfdx-development`
 
 | Category | Cmdlet | Description |
-| --- | --- | --- |
+| :--- | :--- | :--- |
 | Projects & Config | `New-SalesforceProject` | Create a new SFDX project. |
 |  | `Set-SalesforceProject` | Write `.sfdx/sfdx-config.json` default username. |
 |  | `Get-SalesforceDefaultUserName` | Read project default username. |
@@ -130,7 +130,7 @@ Get-Command -Module psfdx
 `Import-Module psfdx-logs`
 
 | Category | Cmdlet | Description |
-| --- | --- | --- |
+| :--- | :--- | :--- |
 | Debug Logs | `Watch-SalesforceDebugLogs` | Tail Apex logs (color, debug level, skip trace flag). |
 |  | `Get-SalesforceDebugLogs` | List Apex logs (JSON). |
 |  | `Get-SalesforceDebugLog` | Get a specific or most recent log text. |
@@ -150,7 +150,7 @@ Get-Command -Module psfdx
 `Import-Module psfdx-metadata`
 
 | Category | Cmdlet | Description |
-| --- | --- | --- |
+| :--- | :--- | :--- |
 | Retrieve | `Retrieve-SalesforceComponent` | Retrieve specific metadata component by type/name. |
 |  | `Retrieve-SalesforceField` | Retrieve a specific custom field. |
 |  | `Retrieve-SalesforceValidationRule` | Retrieve a specific validation rule. |
@@ -167,7 +167,7 @@ Get-Command -Module psfdx
 `Import-Module psfdx-packages`
 
 | Category | Cmdlet | Description |
-| --- | --- | --- |
+| :--- | :--- | :--- |
 | Packages | `Get-SalesforcePackages` | List packages in a Dev Hub. |
 |  | `Get-SalesforcePackage` | Get a specific package by name. |
 |  | `New-SalesforcePackage` | Create a package (managed/unlocked, org-dependent, path, description, no-namespace). |
