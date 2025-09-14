@@ -160,7 +160,7 @@ Get-Command -Module psfdx
 - `Get-SalesforceFlowInterviews`: Query FlowInterview by status and start time.
 
 #### Logins
-- `Get-SalesforceLoginHistory`: Query LoginHistory failures with optional username/time filters.
+- `Get-SalesforceLoginHistory`: Query LoginHistory with optional username/time filters.
 
 #### Events
 - `Get-SalesforceEventFiles`: Query EventLogFile and return objects to the pipeline.

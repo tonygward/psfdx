@@ -27,14 +27,18 @@ function Get-SalesforceDebugLogs {
 }
 
 function Get-SalesforceDebugLog {
-    [CmdletBinding(DefaultParameterSetName='ById')]
+    [CmdletBinding()]
     Param(
-        [Parameter(ParameterSetName='ById', Mandatory = $true)][string] $LogId,
-        [Parameter(ParameterSetName='ByLast', Mandatory = $true)][switch] $Last,
+        [Parameter(Mandatory = $false)][string] $LogId,
+        [Parameter(Mandatory = $false)][switch] $Last,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    if ($PSCmdlet.ParameterSetName -eq 'ByLast') {
+    if (-not $Last -and ([string]::IsNullOrWhiteSpace($LogId))) {
+        throw 'Specify -LogId or -Last.'
+    }
+
+    if ($Last) {
         $LogId = (Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
     }
 
@@ -148,25 +152,76 @@ function Get-SalesforceLoginHistory {
     Param(
         [Parameter(Mandatory = $false)][datetime] $After,
         [Parameter(Mandatory = $false)][datetime] $Before,
-        [Parameter(Mandatory = $false)][int] $Limit = 200,
+        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][int] $Limit,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    # Build SOQL for LoginHistory
+    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Application, Status FROM LoginHistory"
+    $conditions = @()
+    if ($Username) { $conditions += "Username = '$Username'" }
+    if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    if ($conditions.Count -gt 0) { $query += (" WHERE " + ($conditions -join " AND ")) }
+    $query += " ORDER BY LoginTime DESC"
+    if ($Limit -gt 0) { $query += " LIMIT $Limit" }
+
+    # Query LoginHistory
+    $command = "sf data query --query `"$query`" --result-format json"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $raw = Invoke-Salesforce -Command $command
+    $records = Show-SalesforceResult -Result $raw -ReturnRecords
+
+    # No LoginHistory records found
+    if ((-not $records) -or (($records | Measure-Object).Count -eq 0)) {
+        Write-Verbose "No LoginHistory records found"
+        return @()
+    }
+
+    # Enrich with user details from psfdx:Get-SalesforceUsers (distinct usernames)
+    $distinctUsernames = ($records | Where-Object { $_.Username } | Select-Object -ExpandProperty Username -Unique)
+    if ($distinctUsernames) {
+        $userMap = @{}
+        foreach ($u in $distinctUsernames) {
+            try {
+                $uRec = Get-SalesforceUsers -Username $u -Limit 1 -TargetOrg $TargetOrg | Select-Object -First 1
+                if ($uRec) { $userMap[$u] = $uRec }
+            } catch { }
+        }
+        foreach ($rec in $records) {
+            $u = $rec.Username
+            if ($u -and $userMap.ContainsKey($u)) {
+                $user = $userMap[$u]
+                if ($null -ne $user.Name)   { $rec | Add-Member -NotePropertyName Name   -NotePropertyValue $user.Name   -Force }
+                if ($null -ne $user.Email)  { $rec | Add-Member -NotePropertyName Email  -NotePropertyValue $user.Email  -Force }
+                if ($null -ne $user.IsActive) { $rec | Add-Member -NotePropertyName IsActive -NotePropertyValue $user.IsActive -Force }
+                if ($user.PSObject.Properties.Name -contains 'LastLoginDate') {
+                    $rec | Add-Member -NotePropertyName UserLastLoginDate -NotePropertyValue $user.LastLoginDate -Force
+                }
+            }
+        }
+    }
+
+    # Already filtered in SOQL when -Username is provided
+    return $records
+}
+
+function Get-SalesforceLoginFailures {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][datetime] $After,
+        [Parameter(Mandatory = $false)][datetime] $Before,
+        [Parameter(Mandatory = $false)][int] $Limit,
         [Parameter(Mandatory = $false)][string] $Username,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    # Build SOQL for LoginHistory failures
-    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status FROM LoginHistory WHERE Status = 'Failure'"
-    if ($Username) { $query += " AND Username = '$Username'" }
-    if ($After)    { $query += (" AND LoginTime >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)   { $query += (" AND LoginTime <= " + ($Before.ToString('s') + 'Z')) }
-    $query += " ORDER BY LoginTime DESC"
-    $query += " LIMIT $Limit"
-
-    # Execute via sf data query
-    $command = "sf data query --query `"$query`" --result-format json"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-
-    $raw = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $raw -ReturnRecords
+    $records = Get-SalesforceLoginHistory @PSBoundParameters
+    if ((-not $records) -or (($records | Measure-Object).Count -eq 0)) {
+        return @()
+    }
+    $records | Where-Object { $_.Status -ne 'Success' }
 }
 
 function Get-SalesforceEventFiles {
