@@ -100,7 +100,7 @@ Describe 'Out-Notepad' {
     }
 }
 
-Describe 'Get-SalesforceEventLogFiles' {
+Describe 'Get-SalesforceEventFiles' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             # Mock SF query pipeline
@@ -109,7 +109,7 @@ Describe 'Get-SalesforceEventLogFiles' {
             Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
         }
         It 'builds SOQL with filters and returns objects' {
-            $out = Get-SalesforceEventLogFiles -EventType 'Login' -Limit 10 -TargetOrg 'me'
+            $out = Get-SalesforceEventFiles -EventType 'Login' -Limit 10 -TargetOrg 'me'
             $out | Should -Not -BeNullOrEmpty
             $out[0].EventType | Should -Be 'Login'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {

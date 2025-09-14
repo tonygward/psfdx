@@ -50,7 +50,7 @@
         'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
         'Export-SalesforceEventFiles',
-        'Get-SalesforceEventLogFiles',
+        'Get-SalesforceEventFiles',
         'Out-Notepad'
     )
 

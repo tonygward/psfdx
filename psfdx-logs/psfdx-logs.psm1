@@ -185,7 +185,7 @@ function Export-SalesforceEventFiles {
     Write-Verbose ("Exported EventLogFile records to: " + $filePath)
 }
 
-function Get-SalesforceEventLogFiles {
+function Get-SalesforceEventFiles {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $EventType,

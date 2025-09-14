@@ -63,6 +63,8 @@ Get-Command -Module psfdx
 
 ### psfdx
 
+`Import-Module psfdx`
+
 #### Authentication & Orgs
 - `Connect-Salesforce`: Web-based org authentication.
 - `Disconnect-Salesforce`: Logout from orgs.
@@ -100,6 +102,8 @@ Get-Command -Module psfdx
 - `Get-SalesforceDateTime`: Format current/custom datetime in Salesforce sortable UTC.
 
 ### psfdx-development
+
+`Import-Module psfdx-development`
 
 #### Projects & Config
 - `New-SalesforceProject`: Create a new SFDX project.
@@ -142,6 +146,8 @@ Get-Command -Module psfdx
 
 ### psfdx-logs
 
+`Import-Module psfdx-logs`
+
 #### Debug Logs
 - `Watch-SalesforceDebugLogs`: Tail Apex logs (with color, debug level, skip trace flag).
 - `Get-SalesforceDebugLogs`: List Apex logs (JSON).
@@ -154,12 +160,14 @@ Get-Command -Module psfdx
 
 #### Events
 - `Export-SalesforceEventFiles`: Query EventLogFile and export results to CSV.
-- `Get-SalesforceEventLogFiles`: Query EventLogFile and return objects to the pipeline.
+- `Get-SalesforceEventFiles`: Query EventLogFile and return objects to the pipeline.
 
 #### Utilities
 - `Out-Notepad`: Convenience helper to open a temp file (Windows).
 
 ### psfdx-metadata
+
+`Import-Module psfdx-metadata`
 
 #### Retrieve
 - `Retrieve-SalesforceComponent`: Retrieve specific metadata component by type/name.
@@ -180,6 +188,8 @@ Get-Command -Module psfdx
 - `Build-SalesforceQuery`: Build a SELECT for all fields on an sObject.
 
 ### psfdx-packages
+
+`Import-Module psfdx-packages`
 
 #### Packages
 - `Get-SalesforcePackages`: List packages in a Dev Hub.
