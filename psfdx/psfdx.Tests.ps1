@@ -72,6 +72,27 @@ Describe 'psfdx module' {
             }
         }
 
+        Context 'Get-SalesforceUsers' {
+            It 'builds SOQL with filters and returns users' {
+                $json = @'
+{"status":0,"result":{"records":[{"Id":"005xx0000000001","Username":"user@example.com","IsActive":true}]}}
+'@
+                Mock Invoke-Salesforce { $json } -ModuleName $module.Name
+                $rows = Get-SalesforceUsers -Username 'user@example.com' -ActiveOnly -Limit 5 -TargetOrg 'me'
+                $rows.Count | Should -Be 1
+                $rows[0].Id | Should -Be '005xx0000000001'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    ($Command -like 'sf data query --query *FROM User*') -and
+                    ($Command -like "*Username = 'user@example.com'*") -and
+                    ($Command -like '*IsActive = true*') -and
+                    ($Command -like '* ORDER BY LastLoginDate DESC*') -and
+                    ($Command -like '* LIMIT 5*') -and
+                    ($Command -like '* --target-org me*') -and
+                    ($Command -like '* --result-format json*')
+                }
+            }
+        }
+
         Context 'Object CRUD helpers' {
             It 'returns parsed result for New-SalesforceRecord' {
                 $json = @'

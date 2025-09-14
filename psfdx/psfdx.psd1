@@ -19,6 +19,7 @@
         'Get-SalesforceDataStorage',
         'Get-SalesforceApiUsage',
         'Select-SalesforceRecords',
+        'Get-SalesforceUsers',
         'New-SalesforceRecord',
         'Set-SalesforceRecord',
         'Get-SalesforceRecordType',

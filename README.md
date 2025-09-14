@@ -85,6 +85,7 @@ Get-Command -Module psfdx
 
 #### Data & SOQL
 - `Select-SalesforceRecords`: Run SOQL and return records.
+- `Get-SalesforceUsers`: List users with optional filters (username, active only, limit).
 - `New-SalesforceRecord`: Create a record.
 - `Set-SalesforceRecord`: Update a record.
 - `Get-SalesforceRecordType`: List record types (optionally by object).
