@@ -65,9 +65,9 @@ Get-Command -Module psfdx
 
 `Import-Module psfdx`
 
-Authentication & Orgs
+### Authentication & Orgs
 
-| Cmdlet | Description |
+| Cmdlet | Descript### ion |
 | :--- | :--- |
 | `Connect-Salesforce` | Web-based org authentication. |
 | `Disconnect-Salesforce` | Logout from orgs. |
@@ -76,7 +76,7 @@ Authentication & Orgs
 | `Get-SalesforceConnections` | List connected orgs (non-scratch by default). |
 | `Repair-SalesforceConnections` | Clean up stale connections. |
 
-Aliases
+### Aliases
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -84,7 +84,7 @@ Aliases
 | `Add-SalesforceAlias` | Create/update an alias. |
 | `Remove-SalesforceAlias` | Remove an alias. |
 
-Limits & Usage
+### Limits & Usage
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -92,7 +92,7 @@ Limits & Usage
 | `Get-SalesforceDataStorage` | Calculate data storage usage and percent. |
 | `Get-SalesforceApiUsage` | Calculate API usage percent. |
 
-Data & SOQL
+### Data & SOQL
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -102,14 +102,14 @@ Data & SOQL
 | `Set-SalesforceRecord` | Update a record. |
 | `Get-SalesforceRecordType` | List record types (optionally by object). |
 
-REST API
+### REST API
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Connect-SalesforceApi` | OAuth2 password flow (non-SFDX REST). |
 | `Invoke-SalesforceApi` | Invoke REST API with bearer token. |
 
-Plugins
+### Plugins
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -117,7 +117,7 @@ Plugins
 | `Get-SalesforcePlugins` | List installed plugins (optionally core). |
 | `Update-SalesforcePlugins` | Update installed plugins. |
 
-Utilities
+### Utilities
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -127,7 +127,7 @@ Utilities
 
 `Import-Module psfdx-development`
 
-Projects & Config
+### Projects & Config
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -141,7 +141,7 @@ Projects & Config
 | `Set-SalesforceDefaultDevHub` | Set default Dev Hub (`--global`). |
 | `Remove-SalesforceDefaultDevHub` | Unset default Dev Hub. |
 
-Scratch Orgs
+### Scratch Orgs
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -150,7 +150,7 @@ Scratch Orgs
 | `Remove-SalesforceScratchOrg` | Delete a scratch org. |
 | `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found. |
 
-Apex Testing & Automation
+### Apex Testing & Automation
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -160,21 +160,21 @@ Apex Testing & Automation
 | `Watch-SalesforceApex` | On-save deploy/test Apex from a project. |
 | `Get-SalesforceApexClass` | Lookup ApexClass by name (tooling API SOQL). |
 
-Apex Scaffolding
+### Apex Scaffolding
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `New-SalesforceApexClass` | Generate an Apex class from a template. |
 | `New-SalesforceApexTrigger` | Generate an Apex trigger from a template. |
 
-LWC Dev Server
+### LWC Dev Server
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Install-SalesforceLwcDevServer` | Install LWC dev server dependencies. |
 | `Start-SalesforceLwcDevServer` | Start LWC dev server. |
 
-LWC/Jest Testing
+### LWC/Jest Testing
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -188,7 +188,7 @@ LWC/Jest Testing
 
 `Import-Module psfdx-logs`
 
-Debug Logs
+### Debug Logs
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -198,20 +198,20 @@ Debug Logs
 | `Export-SalesforceDebugLogs` | Export logs to files. |
 | `Convert-SalesforceDebugLog` | Parse pipe-delimited logs into objects. |
 
-Flows
+### Flows
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceFlowInterviews` | Query FlowInterview by status and start time. |
 
-Logins
+### Logins
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceLoginHistory` | Query LoginHistory with optional username/time filters. |
 | `Get-SalesforceLoginFailures` | Filter LoginHistory results to failed statuses. |
 
-Events
+### Events
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -220,7 +220,7 @@ Events
 | `Get-SalesforceEventFile` | Download a single EventLogFile by Id and return CSV content. |
 | `Export-SalesforceEventFile` | Download a single EventLogFile by Id and write `<Id>.csv`. |
 
-Utilities
+### Utilities
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -230,7 +230,7 @@ Utilities
 
 `Import-Module psfdx-metadata`
 
-Retrieve
+### Retrieve
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -239,13 +239,13 @@ Retrieve
 | `Retrieve-SalesforceValidationRule` | Retrieve a specific validation rule. |
 | `Retrieve-SalesforceOrg` | Retrieve entire Salesforce Org. |
 
-Deploy
+### Deploy
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
 
-Describe
+### Describe
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -253,7 +253,7 @@ Describe
 | `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
 | `Describe-SalesforceFields` | List fields for an sObject. |
 
-Types & Helpers
+### Types & Helpers
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -264,7 +264,7 @@ Types & Helpers
 
 `Import-Module psfdx-packages`
 
-Packages
+### Packages
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -273,7 +273,7 @@ Packages
 | `New-SalesforcePackage` | Create a package (managed/unlocked, org-dependent, path, description, no-namespace). |
 | `Remove-SalesforcePackage` | Delete a package by name. |
 
-Package Versions
+### Package Versions
 
 | Cmdlet | Description |
 | :--- | :--- |
