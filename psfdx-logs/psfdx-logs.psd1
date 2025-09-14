@@ -54,7 +54,7 @@
         'Export-SalesforceEventFiles',
         'Get-SalesforceEventFile',
         'Export-SalesforceEventFile',
-        'Get-SalesforceEventFiles',
+        'Select-SalesforceEventFiles',
         'Out-Notepad'
     )
 

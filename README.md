@@ -163,7 +163,7 @@ Get-Command -Module psfdx
 - `Get-SalesforceLoginHistory`: Query LoginHistory with optional username/time filters.
 
 #### Events
-- `Get-SalesforceEventFiles`: Query EventLogFile and return objects to the pipeline.
+- `Select-SalesforceEventFiles`: Query EventLogFile and return objects to the pipeline.
 - `Export-SalesforceEventFiles`: Query EventLogFile and export results to CSV.
 - `Get-SalesforceEventFile`: Download a single EventLogFile by Id and return its CSV content.
 - `Export-SalesforceEventFile`: Download a single EventLogFile by Id and write `<Id>.csv` to disk.

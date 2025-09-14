@@ -224,7 +224,7 @@ function Get-SalesforceLoginFailures {
     $records | Where-Object { $_.Status -ne 'Success' }
 }
 
-function Get-SalesforceEventFiles {
+function Select-SalesforceEventFiles {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $EventType,
