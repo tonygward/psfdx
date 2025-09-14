@@ -143,6 +143,32 @@ function Get-SalesforceFlowInterviews {
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
+function Get-SalesforceLoginFailures {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][datetime] $After,
+        [Parameter(Mandatory = $false)][datetime] $Before,
+        [Parameter(Mandatory = $false)][int] $Limit = 200,
+        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    # Build SOQL for LoginHistory failures
+    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status FROM LoginHistory WHERE Status = 'Failure'"
+    if ($Username) { $query += " AND Username = '$Username'" }
+    if ($After)    { $query += (" AND LoginTime >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)   { $query += (" AND LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    $query += " ORDER BY LoginTime DESC"
+    $query += " LIMIT $Limit"
+
+    # Execute via sf data query
+    $command = "sf data query --query `"$query`" --result-format json"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    $raw = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $raw -ReturnRecords
+}
+
 function Get-SalesforceEventFiles {
     [CmdletBinding()]
     Param(
