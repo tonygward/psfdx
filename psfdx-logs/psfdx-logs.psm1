@@ -143,48 +143,6 @@ function Get-SalesforceFlowInterviews {
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
-function Export-SalesforceEventFiles {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $EventType,
-        [Parameter(Mandatory = $false)][datetime] $After,
-        [Parameter(Mandatory = $false)][datetime] $Before,
-        [Parameter(Mandatory = $false)][int] $Limit,
-        [Parameter(Mandatory = $false)][string] $OutputFolder = $null,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
-    )
-
-    if (($OutputFolder -eq $null) -or ($OutputFolder -eq "")) {
-        $OutputFolder = (Get-Location).Path
-    }
-    if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
-
-    # Build SOQL for Event Monitoring (EventLogFile)
-    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile"
-    $where = @()
-    if ($EventType) { $where += "EventType = '$EventType'" }
-    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
-    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
-    $query += " ORDER BY LogDate DESC"
-    if ($Limit -gt 0) { $query += " LIMIT $Limit" }
-
-    $command = "sf data query --query `"$query`" --result-format json"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-
-    $raw = Invoke-Salesforce -Command $command
-    $records = Show-SalesforceResult -Result $raw -ReturnRecords
-    if (-not $records -or (($records | Measure-Object).Count -eq 0)) {
-        Write-Verbose "No EventLogFile records found"
-        return
-    }
-
-    $fileName = "EventLogFile-" + (Get-Date -AsUTC).ToString('yyyyMMddTHHmmssZ') + ".csv"
-    $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
-    ($records | Select-Object -ExcludeProperty attributes | ConvertTo-Csv -NoTypeInformation) | Set-Content -Path $filePath -Encoding utf8
-    Write-Verbose ("Exported EventLogFile records to: " + $filePath)
-}
-
 function Get-SalesforceEventFiles {
     [CmdletBinding()]
     Param(
@@ -227,7 +185,7 @@ function Get-SalesforceEventFile {
 function Export-SalesforceEventFile {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $LogId,
+        [Parameter(Mandatory = $true)][string] $Id,
         [Parameter(Mandatory = $false)][string] $OutputFolder = $null,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
@@ -237,16 +195,60 @@ function Export-SalesforceEventFile {
     }
     if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
 
-    $record = Get-SalesforceEventFile -Id $LogId -TargetOrg $TargetOrg
+    $record = Get-SalesforceEventFile -Id $Id -TargetOrg $TargetOrg
     if (-not $record) {
-        Write-Verbose "No EventLogFile record found for Id $LogId"
+        Write-Verbose "No EventLogFile record found for Id $Id"
         return
     }
 
-    $fileName = "$LogId.csv"
+    $fileName = "$Id.csv"
     $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
-    ($record | Select-Object -ExcludeProperty attributes | ConvertTo-Csv -NoTypeInformation) | Set-Content -Path $filePath -Encoding utf8
+    $record | Out-File -FilePath $filePath -Encoding utf8
     Write-Verbose ("Exported EventLogFile record to: " + $filePath)
+}
+
+function Export-SalesforceEventFiles {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $EventType,
+        [Parameter(Mandatory = $false)][datetime] $After,
+        [Parameter(Mandatory = $false)][datetime] $Before,
+        [Parameter(Mandatory = $false)][int] $Limit = 200,
+        [Parameter(Mandatory = $false)][string] $OutputFolder = $null,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (($OutputFolder -eq $null) -or ($OutputFolder -eq "")) {
+        $OutputFolder = (Get-Location).Path
+    }
+    if ((Test-Path -Path $OutputFolder) -eq $false) {
+        throw "Folder $OutputFolder does not exist"
+    }
+
+    # Build SOQL for Event Monitoring (EventLogFile)
+    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile"
+    $where = @()
+    if ($EventType) { $where += "EventType = '$EventType'" }
+    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
+    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
+    $query += " ORDER BY LogDate DESC"
+    $query += " LIMIT $Limit"
+
+    $command = "sf data query --query `"$query`" --result-format json"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    $raw = Invoke-Salesforce -Command $command
+    $records = Show-SalesforceResult -Result $raw -ReturnRecords
+    if (-not $records -or (($records | Measure-Object).Count -eq 0)) {
+        Write-Verbose "No EventLogFile records found"
+        return
+    }
+
+    foreach ($record in $records) {
+        Export-SalesforceEventFile -Id $record.Id -OutputFolder $OutputFolder -TargetOrg $TargetOrg
+    }
+    Write-Verbose ("Exported EventLogFile records to: " + $filePath)
 }
 
 function Out-Notepad {
