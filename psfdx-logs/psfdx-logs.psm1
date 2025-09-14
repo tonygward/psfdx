@@ -13,7 +13,7 @@ function Watch-SalesforceDebugLogs {
     if ($SkipTraceFlag) { $command += @('--skip-trace-flag') }
     if ($DebugLevel) { $command += @('--debug-level', $DebugLevel) }
     $command += @('--color')
-    return $script:Invoke-Salesforce -Command $command
+    return Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforceDebugLogs {
@@ -22,7 +22,7 @@ function Get-SalesforceDebugLogs {
     $command = @('sf','apex','log','list')
     if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
-    $result = $script:Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -41,7 +41,7 @@ function Get-SalesforceDebugLog {
     $command = @('sf','apex','log','get','--log-id', $LogId)
     if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
     $command += @('--json')
-    $raw = $script:Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Command $command
     $parsed = Show-SalesforceResult -Result $raw
     return $parsed.log
 }
@@ -139,7 +139,7 @@ function Get-SalesforceFlowInterviews {
     $command = "sf data query --query `"$query`" --result-format json"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
-    $raw = $script:Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
@@ -168,7 +168,7 @@ function Get-SalesforceLoginHistory {
     # Query LoginHistory
     $command = "sf data query --query `"$query`" --result-format json"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    $raw = $script:Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
     # No LoginHistory records found
@@ -237,7 +237,7 @@ function Get-SalesforceEventFiles {
     $command = "sf data query --query `"$query`" --result-format json"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
-    $raw = $script:Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
@@ -250,7 +250,7 @@ function Get-SalesforceEventFile {
 
     $command = "sf api request rest /services/data/v64.0/sobjects/EventLogFile/$Id/Logfile"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    $script:Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Command $command
 }
 
 function Export-SalesforceEventFile {
@@ -309,7 +309,7 @@ function Export-SalesforceEventFiles {
     $command = "sf data query --query `"$query`" --result-format json"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
-    $raw = $script:Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
     if (-not $records -or (($records | Measure-Object).Count -eq 0)) {
         Write-Verbose "No EventLogFile records found"
