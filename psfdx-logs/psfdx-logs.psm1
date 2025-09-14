@@ -197,6 +197,29 @@ function Get-SalesforceLoginHistory {
     return $records
 }
 
+function Get-SalesforceLoginFailed {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][datetime] $After,
+        [Parameter(Mandatory = $false)][datetime] $Before,
+        [Parameter(Mandatory = $false)][int] $Limit,
+        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $records = Get-SalesforceLoginHistory @PSBoundParameters
+    if ($null -eq $records) { return @() }
+    if ($records -isnot [System.Array]) { $records = @($records) }
+
+    # Filter to failed statuses (handle 'Failed' and 'Failure' variants)
+    $records | Where-Object {
+        $status = [string]$_.Status
+        if ([string]::IsNullOrWhiteSpace($status)) { return $false }
+        $s = $status.ToLowerInvariant()
+        return $s -eq 'failed' -or $s -eq 'failure'
+    }
+}
+
 function Get-SalesforceEventFiles {
     [CmdletBinding()]
     Param(

@@ -169,3 +169,23 @@ Describe 'Get-SalesforceLoginHistory' {
         }
     }
 }
+
+Describe 'Get-SalesforceLoginFailed' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            # Bypass direct SF call; just validate filtering behavior
+            Mock Get-SalesforceLoginHistory {
+                @(
+                    [pscustomobject]@{ Id='1'; Username='user'; Status='Success'; LoginTime='2024-01-01T00:00:00.000Z' },
+                    [pscustomobject]@{ Id='2'; Username='user'; Status='Failure'; LoginTime='2024-01-01T01:00:00.000Z' }
+                )
+            }
+        }
+        It 'returns only failed login history' {
+            $rows = Get-SalesforceLoginFailed -Username 'user'
+            $rows.Count | Should -Be 1
+            $rows[0].Id   | Should -Be '2'
+            Assert-MockCalled Get-SalesforceLoginHistory -Times 1
+        }
+    }
+}
