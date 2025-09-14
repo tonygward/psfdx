@@ -158,6 +158,9 @@ Get-Command -Module psfdx
 #### Flows
 - `Get-SalesforceFlowInterviews`: Query FlowInterview by status and start time.
 
+#### Logins
+- `Get-SalesforceLoginFailures`: Query LoginHistory failures with optional username/time filters.
+
 #### Events
 - `Get-SalesforceEventFiles`: Query EventLogFile and return objects to the pipeline.
 - `Export-SalesforceEventFiles`: Query EventLogFile and export results to CSV.

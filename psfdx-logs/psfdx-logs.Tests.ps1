@@ -143,3 +143,27 @@ Describe 'Export-SalesforceEventFiles' {
         }
     }
 }
+
+Describe 'Get-SalesforceLoginFailures' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0}' }
+            Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; Username = 'user'; Status = 'Failure'; LoginTime = '2024-01-01T00:00:00.000Z' }) }
+        }
+        It 'builds SOQL with filters and returns objects' {
+            $after = [datetime]'2024-01-01T00:00:00Z'
+            $before = [datetime]'2024-01-02T00:00:00Z'
+            $out = Get-SalesforceLoginFailures -Username 'user' -After $after -Before $before -Limit 5 -TargetOrg 'me'
+            $out | Should -Not -BeNullOrEmpty
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Command -like 'sf data query --query *FROM LoginHistory*') -and
+                ($Command -like "*Status = 'Failure'*") -and
+                ($Command -like "*Username = 'user'*") -and
+                ($Command -like '* ORDER BY LoginTime DESC*') -and
+                ($Command -like '* LIMIT 5*') -and
+                ($Command -like '* --target-org me*') -and
+                ($Command -like '* --result-format json*')
+            }
+        }
+    }
+}
