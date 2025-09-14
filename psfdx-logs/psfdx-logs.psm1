@@ -140,10 +140,7 @@ function Get-SalesforceFlowInterviews {
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
-    $res = Show-SalesforceResult -Result $raw
-    $records = $res.records
-    if ($null -eq $records) { return @() }
-    return ($records | Select-Object -ExcludeProperty attributes)
+    return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
 function Export-SalesforceEventFiles {
@@ -176,8 +173,7 @@ function Export-SalesforceEventFiles {
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
-    $res = Show-SalesforceResult -Result $raw
-    $records = $res.records
+    $records = Show-SalesforceResult -Result $raw -ReturnRecords
     if (-not $records -or (($records | Measure-Object).Count -eq 0)) {
         Write-Verbose "No EventLogFile records found"
         return
@@ -213,10 +209,7 @@ function Get-SalesforceEventLogFiles {
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
-    $res = Show-SalesforceResult -Result $raw
-    $records = $res.records
-    if ($null -eq $records) { return @() }
-    return ($records | Select-Object -ExcludeProperty attributes)
+    return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
 function Out-Notepad {
