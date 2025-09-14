@@ -27,14 +27,18 @@ function Get-SalesforceDebugLogs {
 }
 
 function Get-SalesforceDebugLog {
-    [CmdletBinding(DefaultParameterSetName='ById')]
+    [CmdletBinding()]
     Param(
-        [Parameter(ParameterSetName='ById', Mandatory = $true)][string] $LogId,
-        [Parameter(ParameterSetName='ByLast', Mandatory = $true)][switch] $Last,
+        [Parameter(Mandatory = $false)][string] $LogId,
+        [Parameter(Mandatory = $false)][switch] $Last,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    if ($PSCmdlet.ParameterSetName -eq 'ByLast') {
+    if (-not $Last -and ([string]::IsNullOrWhiteSpace($LogId))) {
+        throw 'Specify -LogId or -Last.'
+    }
+
+    if ($Last) {
         $LogId = (Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
     }
 
