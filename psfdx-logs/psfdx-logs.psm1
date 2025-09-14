@@ -148,8 +148,8 @@ function Get-SalesforceLoginHistory {
     Param(
         [Parameter(Mandatory = $false)][datetime] $After,
         [Parameter(Mandatory = $false)][datetime] $Before,
-        [Parameter(Mandatory = $false)][int] $Limit,
         [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][int] $Limit,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
