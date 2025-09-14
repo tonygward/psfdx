@@ -19,7 +19,7 @@ Describe 'psfdx module' {
         }
     }
 
-    InModuleScope $module.Name {
+    InModuleScope $module {
         Context 'Alias commands' {
             It 'sets alias using equals syntax' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
