@@ -153,10 +153,10 @@ function Get-SalesforceLoginHistory {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    # Build SOQL for LoginHistory failures
+    # Build SOQL for LoginHistory
     $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status FROM LoginHistory"
 
-    $conditions = @("Status = 'Failure'")
+    $conditions = @()
     if ($Username) { $conditions += "Username = '$Username'" }
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
@@ -172,7 +172,37 @@ function Get-SalesforceLoginHistory {
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $raw -ReturnRecords
+    $records = Show-SalesforceResult -Result $raw -ReturnRecords
+
+    # Enrich with user details from psfdx:Get-SalesforceUsers (distinct usernames)
+    if ($records) {
+        $usernames = ($records | Where-Object { $_.Username } | Select-Object -ExpandProperty Username -Unique)
+        if ($usernames) {
+            $userMap = @{}
+            foreach ($u in $usernames) {
+                try {
+                    $uRec = Get-SalesforceUsers -Username $u -Limit 1 -TargetOrg $TargetOrg | Select-Object -First 1
+                    if ($uRec) { $userMap[$u] = $uRec }
+                } catch {
+                    # Ignore enrichment errors and proceed with base records
+                }
+            }
+            foreach ($rec in $records) {
+                $u = $rec.Username
+                if ($u -and $userMap.ContainsKey($u)) {
+                    $user = $userMap[$u]
+                    if ($null -ne $user.Name) { $rec | Add-Member -NotePropertyName Name -NotePropertyValue $user.Name -Force }
+                    if ($null -ne $user.Email) { $rec | Add-Member -NotePropertyName Email -NotePropertyValue $user.Email -Force }
+                    if ($null -ne $user.IsActive) { $rec | Add-Member -NotePropertyName IsActive -NotePropertyValue $user.IsActive -Force }
+                    if ($user.PSObject.Properties.Name -contains 'LastLoginDate') {
+                        $rec | Add-Member -NotePropertyName UserLastLoginDate -NotePropertyValue $user.LastLoginDate -Force
+                    }
+                }
+            }
+        }
+    }
+
+    return $records
 }
 
 function Get-SalesforceEventFiles {

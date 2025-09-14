@@ -149,6 +149,7 @@ Describe 'Get-SalesforceLoginHistory' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0}' }
             Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; Username = 'user'; Status = 'Failure'; LoginTime = '2024-01-01T00:00:00.000Z' }) }
+            Mock Get-SalesforceUsers { @([pscustomobject]@{ Username = 'user'; Name = 'User Name'; Email = 'user@example.com'; IsActive = $true; LastLoginDate = '2024-01-01T00:00:00.000Z' }) }
         }
         It 'builds SOQL with filters and returns objects' {
             $after = [datetime]'2024-01-01T00:00:00Z'
@@ -163,6 +164,8 @@ Describe 'Get-SalesforceLoginHistory' {
                 ($Command -like '* --target-org me*') -and
                 ($Command -like '* --result-format json*')
             }
+            Assert-MockCalled Get-SalesforceUsers -Times 1 -ParameterFilter { $Username -eq 'user' -and $Limit -eq 1 -and $TargetOrg -eq 'me' }
+            $out[0].Email | Should -Be 'user@example.com'
         }
     }
 }
