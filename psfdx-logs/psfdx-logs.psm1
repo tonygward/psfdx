@@ -154,13 +154,15 @@ function Get-SalesforceLoginHistory {
     )
 
     # Build SOQL for LoginHistory failures
-    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status "
-    $query += "FROM LoginHistory "
+    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status FROM LoginHistory"
 
-    $where = @()
-    if ($After)     { $where += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)    { $where += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
-    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
+    $conditions = @("Status = 'Failure'")
+    if ($Username) { $conditions += "Username = '$Username'" }
+    if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    if ($conditions.Count -gt 0) {
+        $query += (" WHERE " + ($conditions -join " AND "))
+    }
 
     $query += " ORDER BY LoginTime DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
