@@ -173,8 +173,15 @@ function Get-SalesforceLoginHistory {
     $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
+    # Always return a collection (empty array when no results)
+    if ($null -eq $records) {
+        $records = @()
+    } elseif ($records -isnot [System.Array]) {
+        $records = @($records)
+    }
+
     # Enrich with user details from psfdx:Get-SalesforceUsers (distinct usernames)
-    if ($records) {
+    if ($records.Count -gt 0) {
         $usernames = ($records | Where-Object { $_.Username } | Select-Object -ExpandProperty Username -Unique)
         if ($usernames) {
             $userMap = @{}
