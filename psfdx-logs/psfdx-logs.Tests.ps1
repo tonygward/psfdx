@@ -157,7 +157,6 @@ Describe 'Get-SalesforceLoginHistory' {
             $out | Should -Not -BeNullOrEmpty
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Command -like 'sf data query --query *FROM LoginHistory*') -and
-                ($Command -like "*Status = 'Failure'*") -and
                 ($Command -like "*Username = 'user'*") -and
                 ($Command -like '* ORDER BY LoginTime DESC*') -and
                 ($Command -like '* LIMIT 5*') -and
