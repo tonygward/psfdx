@@ -188,6 +188,27 @@ function Select-SalesforceRecords {
     return ($result.result.records | Select-Object -ExcludeProperty attributes)
 }
 
+function Get-SalesforceUsers {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $Username,
+        [Parameter(Mandatory = $false)][switch] $ActiveOnly,
+        [Parameter(Mandatory = $false)][int] $Limit = 200,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $fields = 'Id, Name, Username, Email, IsActive, LastLoginDate'
+    $query = "SELECT $fields FROM User"
+    $filters = @()
+    if ($ActiveOnly) { $filters += 'IsActive = true' }
+    if ($Username)   { $filters += "Username = '$Username'" }
+    if ($filters.Count -gt 0) { $query += ' WHERE ' + ($filters -join ' AND ') }
+    $query += ' ORDER BY LastLoginDate DESC'
+    $query += " LIMIT $Limit"
+
+    return Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -ResultFormat json
+}
+
 <#
 .SYNOPSIS
 Creates a new Salesforce record.
