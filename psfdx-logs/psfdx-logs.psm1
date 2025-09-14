@@ -148,18 +148,22 @@ function Get-SalesforceLoginHistory {
     Param(
         [Parameter(Mandatory = $false)][datetime] $After,
         [Parameter(Mandatory = $false)][datetime] $Before,
-        [Parameter(Mandatory = $false)][int] $Limit = 200,
+        [Parameter(Mandatory = $false)][int] $Limit,
         [Parameter(Mandatory = $false)][string] $Username,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     # Build SOQL for LoginHistory failures
-    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status FROM LoginHistory WHERE Status = 'Failure'"
-    if ($Username) { $query += " AND Username = '$Username'" }
-    if ($After)    { $query += (" AND LoginTime >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)   { $query += (" AND LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    $query = "SELECT Id, LoginTime, UserId, Username, SourceIp, Status "
+    $query += "FROM LoginHistory "
+
+    $where = @()
+    if ($After)     { $where += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)    { $where += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
+
     $query += " ORDER BY LoginTime DESC"
-    $query += " LIMIT $Limit"
+    if ($Limit -gt 0) { $query += " LIMIT $Limit" }
 
     # Execute via sf data query
     $command = "sf data query --query `"$query`" --result-format json"
