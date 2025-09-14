@@ -106,7 +106,7 @@ Describe 'Get-SalesforceEventLogFiles' {
             # Mock SF query pipeline
             Mock Invoke-Salesforce { '{"status":0}' }
             # With -ReturnRecords, the helper returns an array of records
-            Mock Show-SalesforceResult { @(@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
+            Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
         }
         It 'builds SOQL with filters and returns objects' {
             $out = Get-SalesforceEventLogFiles -EventType 'Login' -Limit 10 -TargetOrg 'me'
@@ -128,7 +128,7 @@ Describe 'Export-SalesforceEventFiles' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0}' }
-            Mock Show-SalesforceResult { @(@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
+            Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
             Mock Set-Content {}
         }
         It 'writes CSV to disk and uses filters' {
