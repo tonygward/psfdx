@@ -208,16 +208,10 @@ function Get-SalesforceLoginFailed {
     )
 
     $records = Get-SalesforceLoginHistory @PSBoundParameters
-    if ($null -eq $records) { return @() }
-    if ($records -isnot [System.Array]) { $records = @($records) }
-
-    # Filter to failed statuses (handle 'Failed' and 'Failure' variants)
-    $records | Where-Object {
-        $status = [string]$_.Status
-        if ([string]::IsNullOrWhiteSpace($status)) { return $false }
-        $s = $status.ToLowerInvariant()
-        return $s -eq 'failed' -or $s -eq 'failure'
+    if ((-not $records) -or (($records | Measure-Object).Count -eq 0)) {
+        return @()
     }
+    $records | Where-Object { $_.Status -ne 'Success' }
 }
 
 function Get-SalesforceEventFiles {
