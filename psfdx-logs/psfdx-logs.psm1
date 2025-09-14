@@ -156,29 +156,28 @@ function Get-SalesforceLoginHistory {
     # Build SOQL for LoginHistory
     $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status"
     $query += " FROM LoginHistory"
-
     $conditions = @()
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
     if ($conditions.Count -gt 0) {
         $query += (" WHERE " + ($conditions -join " AND "))
     }
-
     $query += " ORDER BY LoginTime DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
 
-    # Execute via sf data query
+    # Query LoginHistory
     $command = "sf data query --query `"$query`" --result-format json"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-
     $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
+    # No LoginHistory records found
     if ((-not $records) -or (($records | Measure-Object).Count -eq 0)) {
         Write-Verbose "No LoginHistory records found"
         return @()
     }
 
+    # Enrich with usernames
     $usernames = Get-SalesforceUsers -TargetOrg $TargetOrg
     foreach ($record in $records) {
         $userId = $record.UserId
@@ -191,6 +190,7 @@ function Get-SalesforceLoginHistory {
         }
     }
 
+    # Filter by Username if provided
     if ($Username) {
         $records = $records | Where-Object { $_.Username -like "*$Username*" }
     }
