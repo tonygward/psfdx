@@ -50,7 +50,7 @@
         'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
         'Get-SalesforceLoginHistory',
-        'Get-SalesforceLoginFailed',
+        'Get-SalesforceLoginFailures',
         'Export-SalesforceEventFiles',
         'Get-SalesforceEventFile',
         'Export-SalesforceEventFile',

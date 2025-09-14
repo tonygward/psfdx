@@ -197,7 +197,7 @@ function Get-SalesforceLoginHistory {
     return $records
 }
 
-function Get-SalesforceLoginFailed {
+function Get-SalesforceLoginFailures {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][datetime] $After,

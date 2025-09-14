@@ -170,7 +170,7 @@ Describe 'Get-SalesforceLoginHistory' {
     }
 }
 
-Describe 'Get-SalesforceLoginFailed' {
+Describe 'Get-SalesforceLoginFailures' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             # Bypass direct SF call; just validate filtering behavior
@@ -182,7 +182,7 @@ Describe 'Get-SalesforceLoginFailed' {
             }
         }
         It 'returns only failed login history' {
-            $rows = Get-SalesforceLoginFailed -Username 'user'
+            $rows = Get-SalesforceLoginFailures -Username 'user'
             $rows.Count | Should -Be 1
             $rows[0].Id   | Should -Be '2'
             Assert-MockCalled Get-SalesforceLoginHistory -Times 1
