@@ -191,6 +191,9 @@ function Get-SalesforceLoginHistory {
         }
     }
 
+    if ($Username) {
+        $records = $records | Where-Object { $_.Username -like "*$Username*" }
+    }
     return $records
 }
 
