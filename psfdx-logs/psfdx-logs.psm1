@@ -224,6 +224,31 @@ function Get-SalesforceEventFile {
     Invoke-Salesforce -Command $command
 }
 
+function Export-SalesforceEventFile {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $LogId,
+        [Parameter(Mandatory = $false)][string] $OutputFolder = $null,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (($OutputFolder -eq $null) -or ($OutputFolder -eq "")) {
+        $OutputFolder = (Get-Location).Path
+    }
+    if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
+
+    $record = Get-SalesforceEventFile -Id $LogId -TargetOrg $TargetOrg
+    if (-not $record) {
+        Write-Verbose "No EventLogFile record found for Id $LogId"
+        return
+    }
+
+    $fileName = "$LogId.csv"
+    $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
+    ($record | Select-Object -ExcludeProperty attributes | ConvertTo-Csv -NoTypeInformation) | Set-Content -Path $filePath -Encoding utf8
+    Write-Verbose ("Exported EventLogFile record to: " + $filePath)
+}
+
 function Out-Notepad {
     [CmdletBinding()]
     Param([Parameter(ValueFromPipeline, Mandatory = $true)][string] $Content)
