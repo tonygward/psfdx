@@ -158,10 +158,11 @@ function Get-SalesforceLoginHistory {
     )
 
     # Build SOQL for LoginHistory
-    $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status FROM LoginHistory"
+    $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status, Username FROM LoginHistory"
     $conditions = @()
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    if ($Username) { $conditions += ("Username = '" + ($Username -replace "'", "''") + "'") }
     if ($conditions.Count -gt 0) { $query += (" WHERE " + ($conditions -join " AND ")) }
     $query += " ORDER BY LoginTime DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
@@ -178,12 +179,25 @@ function Get-SalesforceLoginHistory {
         return @()
     }
 
-    $users = Get-SalesforceUsers -TargetOrg $TargetOrg
+    $userParams = @{ TargetOrg = $TargetOrg }
+    if ($Username) {
+        $userParams.Username = $Username
+        $userParams.Limit = 1
+    }
+    $users = Get-SalesforceUsers @userParams
     foreach ($record in $records) {
-        $user = $users | Where-Object { $_.Id -eq $record.UserId } | Select-Object -First 1
+        $user = $null
+        if ($users) {
+            $user = $users | Where-Object { ($_.Id -eq $record.UserId) -or ($_.Username -eq $record.Username) } | Select-Object -First 1
+        }
         if ($user) {
-            $record | Add-Member -NotePropertyName Username -NotePropertyValue $user.Username -Force
-        } else {
+            foreach ($prop in 'Username','Name','Email','IsActive','LastLoginDate') {
+                $userProperty = $user.PSObject.Properties[$prop]
+                if ($userProperty) {
+                    $record | Add-Member -NotePropertyName $prop -NotePropertyValue $userProperty.Value -Force
+                }
+            }
+        } elseif (-not $record.PSObject.Properties['Username']) {
             $record | Add-Member -NotePropertyName Username -NotePropertyValue $null -Force
         }
     }
