@@ -513,7 +513,8 @@ function Build-SalesforceQuery {
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+        [Parameter(Mandatory = $false)][switch] $ExcludeAuditFields
     )
     $fields = Describe-SalesforceFields -ObjectName $ObjectName -TargetOrg $TargetOrg -UseToolingApi:$UseToolingApi
     if ($null -eq $fields) {
@@ -523,6 +524,17 @@ function Build-SalesforceQuery {
     $fieldNames = @()
     foreach ($field in $fields) {
         $fieldNames += $field.name
+    }
+    if ($ExcludeAuditFields) {
+        $auditFields = @(
+            'CreatedById',
+            'CreatedDate',
+            'LastModifiedById',
+            'LastModifiedDate',
+            'SystemModstamp',
+            'IsDeleted'
+        )
+        $fieldNames = $fieldNames | Where-Object { $auditFields -notcontains $_ }
     }
     $value = "SELECT "
     foreach ($fieldName in $fieldNames) {
