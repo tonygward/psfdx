@@ -1,12 +1,7 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-function Get-SalesforceDateTime {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][datetime] $Datetime)
-    if ($null -eq $Datetime) { $Datetime = Get-Date }
-    return $Datetime.ToString('s') + 'Z'
-}
+#region Authentication & Orgs
 
 function Connect-Salesforce {
     [CmdletBinding()]
@@ -109,6 +104,10 @@ function Repair-SalesforceConnections {
     Invoke-Salesforce -Command $command
 }
 
+#endregion
+
+#region Aliases & Limits
+
 function Get-SalesforceAlias {
     [CmdletBinding()]
     $command = "sf alias list --json"
@@ -132,6 +131,10 @@ function Remove-SalesforceAlias {
     $command = "sf alias unset $Alias"
     Invoke-Salesforce -Command $command
 }
+
+#endregion
+
+#region Limits & Usage
 
 function Get-SalesforceLimits {
     [CmdletBinding()]
@@ -159,6 +162,10 @@ function Get-SalesforceApiUsage {
     $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
     return $values
 }
+
+#endregion
+
+#region Data Management
 
 function Select-SalesforceRecords {
     [CmdletBinding()]
@@ -209,20 +216,6 @@ function Get-SalesforceUsers {
     return Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -ResultFormat json
 }
 
-<#
-.SYNOPSIS
-Creates a new Salesforce record.
-.PARAMETER Type
-The sObject type to create.
-.PARAMETER FieldUpdates
-Comma-separated field=value pairs for the new record.
-.PARAMETER TargetOrg
-Target org username or alias.
-.PARAMETER UseToolingApi
-Use the Salesforce Tooling API for the request.
-.EXAMPLE
-New-SalesforceRecord -Type Account -FieldUpdates 'Name=Acme' -TargetOrg me@example.com -UseToolingApi
-#>
 function New-SalesforceRecord {
     [CmdletBinding()]
     Param(
@@ -242,22 +235,6 @@ function New-SalesforceRecord {
     return Show-SalesforceResult -Result $result
 }
 
-<#
-.SYNOPSIS
-Updates an existing Salesforce record.
-.PARAMETER Id
-The record identifier to update.
-.PARAMETER Type
-The sObject type of the record.
-.PARAMETER FieldUpdates
-Comma-separated field=value pairs for the update.
-.PARAMETER TargetOrg
-Target org username or alias.
-.PARAMETER UseToolingApi
-Use the Salesforce Tooling API for the request.
-.EXAMPLE
-Set-SalesforceRecord -Id 001xx000003DGbV -Type Account -FieldUpdates 'Name=Updated' -TargetOrg me@example.com -UseToolingApi
-#>
 function Set-SalesforceRecord {
     [CmdletBinding()]
     Param(
@@ -292,7 +269,9 @@ function Get-SalesforceRecordType {
     return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
 }
 
-## moved to psfdx-development/psfdx-development.psm1
+#endregion
+
+#region Salesforce REST API
 
 function Connect-SalesforceApi {
     [CmdletBinding()]
@@ -329,6 +308,10 @@ function Invoke-SalesforceApi {
     return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "Bearer " + $AccessToken }
 }
 
+#endregion
+
+#region Plugins
+
 function Install-SalesforcePlugin {
     [CmdletBinding()]
     Param(
@@ -354,3 +337,16 @@ function Update-SalesforcePlugins {
     $command = "sf plugins update"
     Invoke-Salesforce -Command $command
 }
+
+#endregion
+
+#region Utilities
+
+function Get-SalesforceDateTime {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $false)][datetime] $Datetime)
+    if ($null -eq $Datetime) { $Datetime = Get-Date }
+    return $Datetime.ToString('s') + 'Z'
+}
+
+#endregion
