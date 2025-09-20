@@ -25,5 +25,9 @@ Describe 'Retrieve-SalesforceComponent' {
             Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me' }
         }
+        It 'adds ignore conflicts when requested' {
+            Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' -IgnoreConflicts | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me --ignore-conflicts' }
+        }
     }
 }
