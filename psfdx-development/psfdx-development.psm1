@@ -1,18 +1,148 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-function Install-SalesforceLwcDevServer {
+#region Projects & Config
+
+function New-SalesforceProject {
     [CmdletBinding()]
-    Param()
-    Invoke-Salesforce -Command "npm install -g node-gyp"
-    Invoke-Salesforce -Command "sf plugins install @salesforce/lwc-dev-server"
-    Invoke-Salesforce -Command "sf plugins update"
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $false)][string][ValidateSet('standard', 'empty', 'analytics')] $Template = 'standard',
+        [Parameter(Mandatory = $false)][string] $DefaultUserName = $null,
+
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][string] $DefaultPackageDirectory,
+        [Parameter(Mandatory = $false)][string] $Namespace,
+        [Parameter(Mandatory = $false)][switch] $GenerateManifest
+    )
+    $command = "sf force project create --name $Name"
+    if ($OutputDirectory) { $command += " --output-dir $OutputDirectory" }
+    if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
+    if ($Namespace) { $command += " --namespace $Namespace" }
+    if ($GenerateManifest) { $command += " --manifest" }
+    $command += " --template $Template"
+    $command += " --json"
+
+    $result = Invoke-Salesforce -Command $command
+    $result = Show-SalesforceResult -Result $result
+
+    if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
+        $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
+        New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
+        Set-SalesforceProject -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
+    }
+    return $result
 }
 
-function Start-SalesforceLwcDevServer {
+function Set-SalesforceProject {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DefaultUserName,
+        [Parameter(Mandatory = $false)][string] $ProjectFolder
+    )
+
+    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
+        $sfdxFolder = (Get-Location).Path
+    } else {
+        $sfdxFolder = $ProjectFolder
+    }
+
+    if ($sfdxFolder.EndsWith(".sfdx") -eq $false) {
+        $sfdxFolder = Join-Path -Path $sfdxFolder -ChildPath ".sfdx"
+    }
+
+    if ((Test-Path -Path $sfdxFolder) -eq $false) {
+        throw ".sfdx folder does not exist in $sfdxFolder"
+    }
+
+    $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
+    if (-not (Test-Path -Path $sfdxFile)) {
+        throw "File already exists $sfdxFile"
+    }
+    $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
+    Set-Content -Path $sfdxFile -Value $json
+}
+
+function Get-SalesforceDefaultUserName {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $false)][string] $ProjectFolder)
+
+    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
+        $sfdxFolder = (Get-Location).Path
+    } else {
+        $sfdxFolder = $ProjectFolder
+    }
+
+    $sfdxConfigFile = ""
+    $files = Get-ChildItem -Path $sfdxFolder -Recurse -Filter "sfdx-config.json"
+    foreach ($file in $files) {
+        if ($file.FullName -like "*.sfdx*") {
+            $sfdxConfigFile = $file
+            break
+        }
+    }
+
+    if (!(Test-Path -Path $sfdxConfigFile)) {
+        throw "Missing Salesforce Project File (sfdx-config.json)"
+    }
+    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
+
+    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
+    return $salesforceSettings.defaultusername
+}
+
+function Get-SalesforceProjectUser {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "sf lightning lwc start"
+    $sfdxConfigFile = Get-SalesforceProjectConfig
+    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
+    return $salesforceSettings.defaultusername
+}
+
+function Get-SalesforceProjectConfig {
+    [CmdletBinding()]
+    Param()
+    $sfdxConfigFile = ""
+    $files = Get-ChildItem -Recurse -Filter "sfdx-config.json"
+    foreach ($file in $files) {
+        if ($file.FullName -like "*.sfdx*") {
+            $sfdxConfigFile = $file
+            break
+        }
+    }
+
+    if (!(Test-Path -Path $sfdxConfigFile)) {
+        throw "Missing Salesforce Project File (sfdx-config.json)"
+    }
+    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
+    return $sfdxConfigFile
+}
+
+function Set-SalesforceProjectUser {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    Invoke-Salesforce -Command "sf config set target-org=$TargetOrg"
+}
+
+function New-SalesforceProjectAndScratchOrg {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $TargetDevHub
+    )
+    New-SalesforceProject -Name $Name
+    Push-Location -Path $Name
+    Remove-SalesforceScratchOrgs
+    $scratchOrg = New-SalesforceScratchOrg -TargetDevHub $TargetDevHub
+    Set-SalesforceProjectUser -TargetOrg ($scratchOrg.username)
+}
+
+function Get-SalesforceConfig {
+    [CmdletBinding()]
+    Param()
+    $command = "sf config list --json"
+    $result = Invoke-Salesforce -Command $command
+    Show-SalesforceResult -Result $result
 }
 
 function Set-SalesforceDefaultDevHub {
@@ -29,13 +159,9 @@ function Remove-SalesforceDefaultDevHub {
     Invoke-Salesforce -Command "sf config unset target-dev-hub --global"
 }
 
-function Get-SalesforceConfig {
-    [CmdletBinding()]
-    Param()
-    $command = "sf config list --json"
-    $result = Invoke-Salesforce -Command $command
-    Show-SalesforceResult -Result $result
-}
+#endregion
+
+#region Scratch Orgs
 
 function Get-SalesforceScratchOrgs {
     [CmdletBinding()]
@@ -114,152 +240,9 @@ function Remove-SalesforceScratchOrgs {
     }
 }
 
-function New-SalesforceProject {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $false)][string][ValidateSet('standard', 'empty', 'analytics')] $Template = 'standard',
-        [Parameter(Mandatory = $false)][string] $DefaultUserName = $null,
+#endregion
 
-        [Parameter(Mandatory = $false)][string] $OutputDirectory,
-        [Parameter(Mandatory = $false)][string] $DefaultPackageDirectory,
-        [Parameter(Mandatory = $false)][string] $Namespace,
-        [Parameter(Mandatory = $false)][switch] $GenerateManifest
-    )
-    $command = "sf force project create --name $Name"
-    if ($OutputDirectory) { $command += " --output-dir $OutputDirectory" }
-    if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
-    if ($Namespace) { $command += " --namespace $Namespace" }
-    if ($GenerateManifest) { $command += " --manifest" }
-    $command += " --template $Template"
-    $command += " --json"
-
-    $result = Invoke-Salesforce -Command $command
-    $result = Show-SalesforceResult -Result $result
-
-    if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
-        $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
-        New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
-        Set-SalesforceProject -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
-    }
-    return $result
-}
-
-function New-SalesforceProjectAndScratchOrg {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetDevHub
-    )
-    New-SalesforceProject -Name $Name
-    Push-Location -Path $Name
-    Remove-SalesforceScratchOrgs
-    $scratchOrg = New-SalesforceScratchOrg -TargetDevHub $TargetDevHub
-    Set-SalesforceProjectUser -TargetOrg ($scratchOrg.username)
-}
-
-function Set-SalesforceProject {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $DefaultUserName,
-        [Parameter(Mandatory = $false)][string] $ProjectFolder
-    )
-
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }
-
-    if ($sfdxFolder.EndsWith(".sfdx") -eq $false) {
-        $sfdxFolder = Join-Path -Path $sfdxFolder -ChildPath ".sfdx"
-    }
-
-    if ((Test-Path -Path $sfdxFolder) -eq $false) {
-        throw ".sfdx folder does not exist in $sfdxFolder"
-    }
-
-    $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
-    if (-not (Test-Path -Path $sfdxFile)) {
-        throw "File already exists $sfdxFile"
-    }
-    $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
-    Set-Content -Path $sfdxFile -Value $json
-}
-
-function Get-IsSalesforceProject {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
-
-    $sfdxProjectFile = Join-Path -Path $ProjectFolder -ChildPath "sfdx-project.json"
-    if (Test-Path -Path $sfdxProjectFile) {
-        return $true
-    }
-    return $false
-}
-
-function Get-SalesforceDefaultUserName {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][string] $ProjectFolder)
-
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }
-
-    $sfdxConfigFile = ""
-    $files = Get-ChildItem -Path $sfdxFolder -Recurse -Filter "sfdx-config.json"
-    foreach ($file in $files) {
-        if ($file.FullName -like "*.sfdx*") {
-            $sfdxConfigFile = $file
-            break
-        }
-    }
-
-    if (!(Test-Path -Path $sfdxConfigFile)) {
-        throw "Missing Salesforce Project File (sfdx-config.json)"
-    }
-    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
-
-    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
-    return $salesforceSettings.defaultusername
-}
-
-function Get-SalesforceProjectConfig {
-    [CmdletBinding()]
-    Param()
-    $sfdxConfigFile = ""
-    $files = Get-ChildItem -Recurse -Filter "sfdx-config.json"
-    foreach ($file in $files) {
-        if ($file.FullName -like "*.sfdx*") {
-            $sfdxConfigFile = $file
-            break
-        }
-    }
-
-    if (!(Test-Path -Path $sfdxConfigFile)) {
-        throw "Missing Salesforce Project File (sfdx-config.json)"
-    }
-    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
-    return $sfdxConfigFile
-}
-
-function Get-SalesforceProjectUser {
-    [CmdletBinding()]
-    Param()
-    $sfdxConfigFile = Get-SalesforceProjectConfig
-    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
-    return $salesforceSettings.defaultusername
-}
-
-function Set-SalesforceProjectUser {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
-    Invoke-Salesforce -Command "sf config set target-org=$TargetOrg"
-}
-
-
+#region Apex Testing
 
 function Test-SalesforceApex {
     [CmdletBinding()]
@@ -372,59 +355,53 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
-function Get-SalesforceApexClass {
+function Invoke-SalesforceApex {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $true)][string] $ApexFile,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
-    $parsed = $result | ConvertFrom-Json
-    if ($parsed.status -ne 0) {
-        throw ($parsed.message)
-    }
-    return $parsed.result.records | Select-Object -First 1
-}
-
-function Install-SalesforceJest {
-    [CmdletBinding()]
-    Param()
-    if (Get-Command yarn -ErrorAction SilentlyContinue) {
-        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest"
-    } else {
-        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest"
-    }
-}
-
-function New-SalesforceJestTest {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $LwcName)
-    $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
-    $command = "sf force lightning lwc test create --filepath $filePath --json"
+    $command = "sf apex run --file $ApexFile"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
 
-function Test-SalesforceJest {
+function Watch-SalesforceApex {
     [CmdletBinding()]
-    Param()
-    Invoke-Salesforce -Command "npm run test:unit"
+    Param(
+        [Parameter(Mandatory = $true)][string] $ProjectFolder,
+        [Parameter(Mandatory = $true)][string] $FileName
+    )
+
+    if ((Get-IsSalesforceProject -ProjectFolder $ProjectFolder) -eq $false) {
+        Write-Verbose "Not a Salesforce Project"
+        return
+    }
+    $username = Get-SalesforceDefaultUserName -ProjectFolder $ProjectFolder
+
+    $type = Get-SalesforceType -FileName $FileName
+    if (($type -eq "ApexClass") -or ($type -eq "ApexTrigger")) {
+        $name = Get-SalesforceName -FileName $FileName
+        Deploy-SalesforceComponent -Type $type -Name $name -TargetOrg $username
+
+        $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
+        $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
+        Test-SalesforceApex -TargetOrg $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
+    }
 }
 
-function Debug-SalesforceJest {
+function Get-IsSalesforceProject {
     [CmdletBinding()]
-    Param()
-    Invoke-Salesforce -Command "npm run test:unit:debug"
+    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
+
+    $sfdxProjectFile = Join-Path -Path $ProjectFolder -ChildPath "sfdx-project.json"
+    if (Test-Path -Path $sfdxProjectFile) {
+        return $true
+    }
+    return $false
 }
-
-function Watch-SalesforceJest {
-    [CmdletBinding()]
-    Param()
-    Invoke-Salesforce -Command "npm run test:unit:watch"
-}
-
-
 
 function Get-SalesforceType {
     [CmdletBinding()]
@@ -476,43 +453,24 @@ function Get-SalesforceApexTestsClasses {
     return $testClassNames
 }
 
-function Watch-SalesforceApex {
+function Get-SalesforceApexClass {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $ProjectFolder,
-        [Parameter(Mandatory = $true)][string] $FileName
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
-
-    if ((Get-IsSalesforceProject -ProjectFolder $ProjectFolder) -eq $false) {
-        Write-Verbose "Not a Salesforce Project"
-        return
+    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
+    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
+    $parsed = $result | ConvertFrom-Json
+    if ($parsed.status -ne 0) {
+        throw ($parsed.message)
     }
-    $username = Get-SalesforceDefaultUserName -ProjectFolder $ProjectFolder
-
-    $type = Get-SalesforceType -FileName $FileName
-    if (($type -eq "ApexClass") -or ($type -eq "ApexTrigger")) {
-        $name = Get-SalesforceName -FileName $FileName
-        Deploy-SalesforceComponent -Type $type -Name $name -TargetOrg $username
-
-        $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
-        $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
-        Test-SalesforceApex -TargetOrg $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
-    }
+    return $parsed.result.records | Select-Object -First 1
 }
 
-function Invoke-SalesforceApex {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $true)][string] $ApexFile,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
-    )
-    $command = "sf apex run --file $ApexFile"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
-}
+#endregion
 
+#region Apex Scaffolding
 
 function New-SalesforceApexClass {
     [CmdletBinding()]
@@ -562,3 +520,64 @@ function New-SalesforceApexTrigger {
     }
     Invoke-Salesforce -Command $command
 }
+
+#endregion
+
+#region LWC Dev Server
+
+function Install-SalesforceLwcDevServer {
+    [CmdletBinding()]
+    Param()
+    Invoke-Salesforce -Command "npm install -g node-gyp"
+    Invoke-Salesforce -Command "sf plugins install @salesforce/lwc-dev-server"
+    Invoke-Salesforce -Command "sf plugins update"
+}
+
+function Start-SalesforceLwcDevServer {
+    [CmdletBinding()]
+    Param()
+    Invoke-Salesforce -Command "sf lightning lwc start"
+}
+
+#endregion
+
+#region LWC / Jest Testing
+
+function Install-SalesforceJest {
+    [CmdletBinding()]
+    Param()
+    if (Get-Command yarn -ErrorAction SilentlyContinue) {
+        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest"
+    } else {
+        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest"
+    }
+}
+
+function New-SalesforceJestTest {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $LwcName)
+    $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
+    $command = "sf force lightning lwc test create --filepath $filePath --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
+}
+
+function Test-SalesforceJest {
+    [CmdletBinding()]
+    Param()
+    Invoke-Salesforce -Command "npm run test:unit"
+}
+
+function Debug-SalesforceJest {
+    [CmdletBinding()]
+    Param()
+    Invoke-Salesforce -Command "npm run test:unit:debug"
+}
+
+function Watch-SalesforceJest {
+    [CmdletBinding()]
+    Param()
+    Invoke-Salesforce -Command "npm run test:unit:watch"
+}
+
+#endregion
