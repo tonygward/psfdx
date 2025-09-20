@@ -112,30 +112,160 @@ function Export-SalesforceDebugLogs {
 function Convert-SalesforceDebugLog {
     [CmdletBinding()]
     Param(
-        [Parameter(ValueFromPipeline, Mandatory = $true)][string] $Log
+        [Parameter(ValueFromPipeline, ValueFromPipelineByPropertyName, Mandatory = $true)][Alias('FullName','Path')][string[]] $Log
     )
 
-    Write-Warning "Function still in Development"
+    begin {
+        $parseContent = {
+        param([string] $Content)
 
-    $results = @()
-    $lines = ($Log -split "`r?`n") | Select-Object -Skip 1 # Skip Header
-    foreach ($line in $lines) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        $statements = $line.Split('|')
+        if ([string]::IsNullOrWhiteSpace($Content)) {
+            return @()
+        }
 
-        $result = New-Object -TypeName PSObject
-        $dt = if ($statements.Count -ge 1) { ($statements[0]).Trim() } else { $null }
-        $lt = if ($statements.Count -ge 2) { ($statements[1]).Trim() } else { $null }
-        $st = if ($statements.Count -ge 3) { ($statements[2]).Trim() } else { $null }
-        $de = if ($statements.Count -ge 4) { ($statements[3]).Trim() } else { $null }
-        foreach ($v in @('dt','lt','st','de')) { if ((Get-Variable $v -ValueOnly) -eq 'NULL') { Set-Variable -Name $v -Value $null } }
-        $result | Add-Member -MemberType NoteProperty -Name 'DateTime' -Value $dt
-        $result | Add-Member -MemberType NoteProperty -Name 'LogType' -Value $lt
-        if ($st -ne $null -and $st -ne '') { $result | Add-Member -MemberType NoteProperty -Name 'SubType' -Value $st }
-        if ($de -ne $null -and $de -ne '') { $result | Add-Member -MemberType NoteProperty -Name 'Detail' -Value $de }
-        $results += $result
+        $lines = @($Content -split "`r?`n")
+        $headerIndex = -1
+        for ($i = 0; $i -lt $lines.Length; $i++) {
+            $candidate = $lines[$i]
+            if ([string]::IsNullOrWhiteSpace($candidate)) { continue }
+            if ($candidate -notlike '*|*') { continue }
+            if ($candidate.TrimStart() -notmatch '^[0-9]') {
+                $headerIndex = $i
+                break
+            }
+        }
+
+        $columnNames = @()
+        $startIndex = 0
+        $headerSignature = $null
+        if ($headerIndex -ge 0) {
+            $headerParts = $lines[$headerIndex].Split('|')
+            for ($i = 0; $i -lt $headerParts.Count; $i++) {
+                $name = $headerParts[$i].Trim()
+                if ([string]::IsNullOrEmpty($name)) {
+                    $name = "Column$($i + 1)"
+                }
+                $columnNames += $name
+            }
+            $headerSignature = ($columnNames -join '|')
+            $startIndex = $headerIndex + 1
+        } else {
+            $columnNames = @('DateTime', 'LogType', 'SubType', 'Detail')
+            for ($i = 0; $i -lt $lines.Length; $i++) {
+                if ($lines[$i] -like '*|*') {
+                    $startIndex = $i
+                    break
+                }
+            }
+        }
+
+        if ($columnNames.Count -eq 0) {
+            return @()
+        }
+
+        $results = @()
+        $detailColumn = $columnNames[$columnNames.Count - 1]
+        $current = $null
+
+        for ($i = $startIndex; $i -lt $lines.Length; $i++) {
+            $line = $lines[$i]
+            if ($headerIndex -ge 0 -and $i -eq $headerIndex) { continue }
+            if ($line -eq $null) { continue }
+
+            if ([string]::IsNullOrWhiteSpace($line)) {
+                if ($current -ne $null) {
+                    $existing = $current.PSObject.Properties[$detailColumn].Value
+                    if (-not [string]::IsNullOrEmpty($existing)) {
+                        $current | Add-Member -MemberType NoteProperty -Name $detailColumn -Value ($existing + "`n") -Force
+                    }
+                }
+                continue
+            }
+
+            if ($line -notlike '*|*') {
+                if ($current -ne $null) {
+                    $existing = $current.PSObject.Properties[$detailColumn].Value
+                    if ([string]::IsNullOrEmpty($existing)) {
+                        $newValue = $line
+                    } else {
+                        $newValue = "$existing`n$line"
+                    }
+                    $current | Add-Member -MemberType NoteProperty -Name $detailColumn -Value $newValue -Force
+                }
+                continue
+            }
+
+            $rawParts = $line.Split('|')
+            if ($headerSignature -ne $null) {
+                $normalizedHeader = ($rawParts | ForEach-Object { $_.Trim() }) -join '|'
+                if ($normalizedHeader -eq $headerSignature) {
+                    $current = $null
+                    continue
+                }
+            }
+            $normalized = @()
+            if ($columnNames.Count -eq 1) {
+                $normalized = @($line.Trim())
+            } elseif ($rawParts.Count -ge $columnNames.Count) {
+                for ($partIndex = 0; $partIndex -lt ($columnNames.Count - 1); $partIndex++) {
+                    $normalized += $rawParts[$partIndex]
+                }
+                $normalized += ($rawParts[($columnNames.Count - 1)..($rawParts.Count - 1)] -join '|')
+            } else {
+                $normalized = @($rawParts)
+                while ($normalized.Count -lt $columnNames.Count) {
+                    $normalized += ''
+                }
+            }
+
+            $record = [ordered]@{}
+            for ($partIndex = 0; $partIndex -lt $columnNames.Count; $partIndex++) {
+                $value = if ($partIndex -lt $normalized.Count) { $normalized[$partIndex] } else { $null }
+                if ($null -ne $value) {
+                    $value = $value.Trim()
+                    if ($value -match '^(?i)null$') {
+                        $value = $null
+                    } elseif ($value -eq '') {
+                        $value = $null
+                    }
+                }
+                $record[$columnNames[$partIndex]] = $value
+            }
+
+            $current = [pscustomobject]$record
+            $results += $current
+        }
+
+        foreach ($entry in $results) {
+            if ($entry.PSObject.Properties[$detailColumn]) {
+                $value = $entry.PSObject.Properties[$detailColumn].Value
+                if ($value -is [string]) {
+                    $trimmed = $value.TrimEnd("`r","`n")
+                    if ($trimmed -ne $value) {
+                        $entry | Add-Member -MemberType NoteProperty -Name $detailColumn -Value $trimmed -Force
+                    }
+                }
+            }
+        }
+
+        return $results
     }
-    return $results
+    }
+
+    process {
+        foreach ($item in @($Log)) {
+            if ([string]::IsNullOrWhiteSpace($item)) { continue }
+
+            $content = $item
+            if ((Test-Path -LiteralPath $item) -and -not (Test-Path -LiteralPath $item -PathType Container)) {
+                $content = Get-Content -LiteralPath $item -Raw
+            }
+
+            foreach ($parsed in & $parseContent $content) {
+                $parsed
+            }
+        }
+    }
 }
 
 #endregion

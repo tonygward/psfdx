@@ -75,19 +75,86 @@ Describe 'Get-SalesforceDebugLogs' {
 }
 
 Describe 'Convert-SalesforceDebugLog' {
-    It 'parses pipe-delimited log lines into objects' {
+    It 'uses the header to build dynamic properties and converts NULL values' {
         $log = @(
             'Timestamp|LogType|SubType|Detail',
             '2024-01-01T00:00:00.000Z|USER_DEBUG|NULL|Hello',
-            '2024-01-01T00:00:01.000Z|SYSTEM_METHOD_ENTRY|method|Class.Method'
+            '2024-01-01T00:00:01.000Z|SYSTEM_METHOD_ENTRY|method|NULL'
         ) -join [Environment]::NewLine
 
         $results = Convert-SalesforceDebugLog -Log $log
         $results.Count | Should -Be 2
-        $results[0].DateTime | Should -Be '2024-01-01T00:00:00.000Z'
-        $results[0].LogType  | Should -Be 'USER_DEBUG'
-        $results[0].Detail   | Should -Be 'Hello'
-        $results[1].SubType  | Should -Be 'method'
+        $results[0].Timestamp | Should -Be '2024-01-01T00:00:00.000Z'
+        $results[0].SubType   | Should -Be $null
+        $results[0].Detail    | Should -Be 'Hello'
+        $results[1].Detail    | Should -Be $null
+    }
+
+    It 'appends continuation lines to the final column value' {
+        $log = @(
+            'Timestamp|Event|Detail',
+            '2024-03-01T00:00:00.000Z|USER_DEBUG|First line',
+            'Second line',
+            '2024-03-01T00:00:01.000Z|SYSTEM|Another entry'
+        ) -join [Environment]::NewLine
+
+        $results = Convert-SalesforceDebugLog -Log $log
+        $results.Count | Should -Be 2
+        $results[0].Detail | Should -Be "First line`nSecond line"
+        $results[1].Detail | Should -Be 'Another entry'
+    }
+
+    It 'falls back to default columns when the header is missing' {
+        $log = @(
+            '64.0 APEX_CODE,FINEST;APEX_PROFILING,INFO',
+            '2024-04-01T12:00:00.000Z|USER_DEBUG|[1]|Detail text',
+            '2024-04-01T12:00:01.000Z|EXECUTION_FINISHED'
+        ) -join [Environment]::NewLine
+
+        $results = Convert-SalesforceDebugLog -Log $log
+        $results.Count | Should -Be 2
+        $results[0].DateTime | Should -Be '2024-04-01T12:00:00.000Z'
+        $results[0].SubType  | Should -Be '[1]'
+        $results[0].Detail   | Should -Be 'Detail text'
+        $results[1].Detail   | Should -Be $null
+    }
+
+    It 'skips repeated header rows in the log body' {
+        $log = @(
+            'Timestamp|LogType|Detail',
+            '2024-05-01T12:00:00.000Z|USER_DEBUG|Line 1',
+            'Timestamp|LogType|Detail',
+            '2024-05-01T12:00:01.000Z|SYSTEM|Line 2'
+        ) -join [Environment]::NewLine
+
+        $results = Convert-SalesforceDebugLog -Log $log
+        $results.Count | Should -Be 2
+        $results[0].Timestamp | Should -Be '2024-05-01T12:00:00.000Z'
+        $results[1].Detail    | Should -Be 'Line 2'
+    }
+
+    It 'reads log files passed via the pipeline' {
+        $temp1 = New-TemporaryFile
+        $temp2 = New-TemporaryFile
+        try {
+            Set-Content -LiteralPath $temp1.FullName -Value (@(
+                'Timestamp|LogType|Detail',
+                '2024-06-01T12:00:00.000Z|USER_DEBUG|File 1'
+            ) -join [Environment]::NewLine)
+            Set-Content -LiteralPath $temp2.FullName -Value (@(
+                'Timestamp|LogType|Detail',
+                '2024-06-01T12:01:00.000Z|SYSTEM|File 2'
+            ) -join [Environment]::NewLine)
+
+            $results = @($temp1.FullName, $temp2.FullName) | Convert-SalesforceDebugLog
+            $results.Count | Should -Be 2
+            $results[0].Detail | Should -Be 'File 1'
+            $results[1].Detail | Should -Be 'File 2'
+        }
+        finally {
+            Remove-Item -LiteralPath $temp1.FullName -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $temp2.FullName -ErrorAction SilentlyContinue
+        }
     }
 }
 
