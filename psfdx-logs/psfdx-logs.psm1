@@ -28,46 +28,34 @@ function Select-SalesforceDebugLogs {
     return Show-SalesforceResult -Result $result
 }
 
-function Get-SalesforceDebugLog {
+function Get-SalesforceDebugLogs {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][string] $LogId,
+        [Parameter(Mandatory = $false)][int] $Last,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    if (-not $LogId) {
-        throw "Specify -LogId to fetch a debug log."
+    if (-not $LogId -and -not $Last) {
+        throw "Specify -LogId or -Last to fetch a debug log."
+    }
+    if ($LogId -and $Last) {
+        throw "Provide only one of -LogId or -Last, not both."
     }
 
     $command = "sf apex log get"
-    if ($LogId) { $command += " --log-id $LogId" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($OutputDir) {
         if ((Test-Path -Path $OutputDir) -eq $false) {
             throw "Folder $OutputDir does not exist"
         }
         $command += " --output-dir `"$OutputDir`""
     }
-    $command += " --json"
+    if ($LogId) { $command += " --log-id $LogId" }
+    if ($Last) { $command += " --number $Last" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
-    $raw = Invoke-Salesforce -Command $command
-    if (-not $raw) {
-        return $null
-    }
-
-    try {
-        $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
-    } catch {
-        throw "Unexpected response while fetching debug log: $raw"
-    }
-
-    if ($parsed.status -ne 0) {
-        $message = if ($parsed.message) { $parsed.message } else { "Salesforce command failed." }
-        throw $message
-    }
-
-    return $parsed.result.log
+    Invoke-Salesforce -Command $command
 }
 
 function Export-SalesforceDebugLogs {
@@ -99,7 +87,7 @@ function Export-SalesforceDebugLogs {
         $fileName = $log.Id + ".log"
         $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
         Write-Verbose "Exporting file: $filePath"
-        Get-SalesforceDebugLog -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
+        Get-SalesforceDebugLogs -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
         $i = $i + 1
         $percentCompleted = ($i / $logsCount) * 100
         Write-Progress -Activity "Export Salesforce Debug Logs" -Status "Completed $fileName" -PercentComplete $percentCompleted

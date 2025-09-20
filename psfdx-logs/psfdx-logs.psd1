@@ -45,7 +45,7 @@
     FunctionsToExport = @(
         'Watch-SalesforceDebugLogs',
         'Select-SalesforceDebugLogs',
-        'Get-SalesforceDebugLog',
+        'Get-SalesforceDebugLogs',
         'Export-SalesforceDebugLogs',
         'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
