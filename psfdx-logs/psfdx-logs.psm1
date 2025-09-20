@@ -18,7 +18,7 @@ function Watch-SalesforceDebugLogs {
     return Invoke-Salesforce -Command $command
 }
 
-function Get-SalesforceDebugLogs {
+function Select-SalesforceDebugLogs {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf apex log list"
@@ -87,7 +87,7 @@ function Export-SalesforceDebugLogs {
     }
     Write-Verbose "Output Folder: $OutputFolder"
 
-    $logs = Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
+    $logs = Select-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
     if (-not $logs -or (($logs | Measure-Object).Count -eq 0)) {
         Write-Verbose "No Logs"
         return

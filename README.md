@@ -195,8 +195,8 @@ Get-Command -Module psfdx
 | Cmdlet | Description |
 | :--- | :--- |
 | `Watch-SalesforceDebugLogs` | Tail Apex logs (color, debug level, skip trace flag). |
-| `Get-SalesforceDebugLogs` | List Apex logs (JSON). |
-| `Get-SalesforceDebugLog` | Get a specific or most recent log text. |
+| `Select-SalesforceDebugLogs` | List Apex logs (JSON). |
+| `Get-SalesforceDebugLog` | Get a specific log's text by Id. |
 | `Export-SalesforceDebugLogs` | Export logs to files. |
 | `Convert-SalesforceDebugLog` | Parse pipe-delimited logs into objects. |
 

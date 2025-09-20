@@ -25,20 +25,20 @@ Describe 'Watch-SalesforceDebugLogs' {
     }
 }
 
-Describe 'Get-SalesforceDebugLogs' {
+Describe 'Select-SalesforceDebugLogs' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":[{"Id":"1"}]}' }
             Mock Show-SalesforceResult { return @(@{ Id = '1' }) }
         }
         It 'lists logs with json' {
-            $out = Get-SalesforceDebugLogs
+            $out = Select-SalesforceDebugLogs
             $out | Should -Not -BeNullOrEmpty
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --json' }
             Assert-MockCalled Show-SalesforceResult -Times 1
         }
         It 'adds username when provided' {
-            Get-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
+            Select-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --target-org user@example --json' }
         }
     }
