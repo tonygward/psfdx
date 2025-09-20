@@ -1,6 +1,8 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
+#region Debug Logs
+
 function Watch-SalesforceDebugLogs {
     [CmdletBinding()]
     Param(
@@ -113,6 +115,10 @@ function Convert-SalesforceDebugLog {
     return $results
 }
 
+#endregion
+
+#region Flows
+
 function Get-SalesforceFlowInterviews {
     [CmdletBinding()]
     Param(
@@ -146,6 +152,10 @@ function Get-SalesforceFlowInterviews {
     $raw = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
+
+#endregion
+
+#region Logins
 
 function Get-SalesforceLoginHistory {
     [CmdletBinding()]
@@ -222,6 +232,10 @@ function Get-SalesforceLoginFailures {
     }
     $records | Where-Object { $_.Status -ne 'Success' }
 }
+
+#endregion
+
+#region Event Monitoring
 
 function Select-SalesforceEventFiles {
     [CmdletBinding()]
@@ -337,6 +351,10 @@ function Export-SalesforceEventFiles {
     Write-Verbose ("Exported $i EventLogFile record(s) to: " + $OutputFolder)
 }
 
+#endregion
+
+#region Utilities
+
 function Out-Notepad {
     [CmdletBinding()]
     Param([Parameter(ValueFromPipeline, Mandatory = $true)][string] $Content)
@@ -346,3 +364,5 @@ function Out-Notepad {
         Start-Process -FilePath 'notepad' -ArgumentList $filename | Out-Null
     }
 }
+
+#endregion

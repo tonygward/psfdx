@@ -211,7 +211,7 @@ Get-Command -Module psfdx
 | `Get-SalesforceLoginHistory` | Query LoginHistory with optional username/time filters. |
 | `Get-SalesforceLoginFailures` | Filter LoginHistory results to failed statuses. |
 
-### Events
+### Event Monitoring
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -253,7 +253,7 @@ Get-Command -Module psfdx
 | `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
 | `Describe-SalesforceFields` | List fields for an sObject. |
 
-### Types & Helpers
+### Types & Utilities
 
 | Cmdlet | Description |
 | :--- | :--- |

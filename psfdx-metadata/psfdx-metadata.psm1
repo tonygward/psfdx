@@ -1,23 +1,7 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-function Retrieve-SalesforceOrg {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][switch] $IncludePackages
-    )
-
-    $command = "sf force source manifest create --from-org $TargetOrg"
-    $command += " --name=allMetadata"
-    $command += " --output-dir ."
-    if ($IncludePackages) { $command += " --include-packages=unlocked" }
-    Invoke-Salesforce -Command $command
-
-    $command = "sf project retrieve start --target-org $TargetOrg"
-    $command += " --manifest allMetadata.xml"
-    Invoke-Salesforce -Command $command
-}
+#region Retrieve
 
 function Retrieve-SalesforceComponent {
     [CmdletBinding()]
@@ -238,6 +222,28 @@ function Retrieve-SalesforceValidationRule {
     Invoke-Salesforce -Command $command
 }
 
+function Retrieve-SalesforceOrg {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][switch] $IncludePackages
+    )
+
+    $command = "sf force source manifest create --from-org $TargetOrg"
+    $command += " --name=allMetadata"
+    $command += " --output-dir ."
+    if ($IncludePackages) { $command += " --include-packages=unlocked" }
+    Invoke-Salesforce -Command $command
+
+    $command = "sf project retrieve start --target-org $TargetOrg"
+    $command += " --manifest allMetadata.xml"
+    Invoke-Salesforce -Command $command
+}
+
+#endregion
+
+#region Deploy
+
 function Deploy-SalesforceComponent {
     [CmdletBinding()]
     Param(
@@ -437,6 +443,10 @@ function Deploy-SalesforceComponent {
     return Show-SalesforceResult -Result $result
 }
 
+#endregion
+
+#region Describe
+
 function Describe-SalesforceObjects {
     [CmdletBinding()]
     Param(
@@ -480,6 +490,10 @@ function Describe-SalesforceFields {
     return $result
 }
 
+#endregion
+
+#region Types and Utilities
+
 function Get-SalesforceMetaTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $TargetOrg)
@@ -493,8 +507,6 @@ function Get-SalesforceMetaTypes {
     $result = $result | Select-Object xmlName
     return $result
 }
-
-## moved to psfdx-development/psfdx-development.psm1
 
 function Build-SalesforceQuery {
     [CmdletBinding()]
@@ -520,3 +532,5 @@ function Build-SalesforceQuery {
     $value += " FROM $ObjectName"
     return $value
 }
+
+#endregion

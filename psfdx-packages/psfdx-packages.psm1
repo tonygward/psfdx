@@ -1,7 +1,7 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
-## Show-SalesforceResult moved to psfdx-shared/Show-SalesforceResult.ps1
+#region Packages
 
 function Get-SalesforcePackages {
     [CmdletBinding()]
@@ -63,6 +63,39 @@ function Remove-SalesforcePackage {
     $command += " --target-dev-hub $DevHubUsername"
     Invoke-Salesforce -Command $command
 }
+
+#endregion
+
+#region Package Versions
+
+function Get-SalesforcePackageVersions {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $PackageId,
+        [Parameter(Mandatory = $false)][string] $PackageName,
+
+        [Parameter(Mandatory = $true)][string] $DevHubUsername,
+        [Parameter(Mandatory = $false)][switch] $Released,
+        [Parameter(Mandatory = $false)][switch] $Concise,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails
+    )
+    if ((! $PackageId ) -and ($PackageName) ) {
+        $package = Get-SalesforcePackage -Name $PackageName -DevHubUsername $DevHubUsername
+        $PackageId = $package.Id
+    }
+
+    $command = "sf package version list"
+    $command += " --target-dev-hub $DevHubUsername"
+    if ($PackageId) { $command += " --packages $PackageId" }
+    if ($Released) { $command += " --released" }
+    if ($Concise) { $command += " --concise" }
+    if ($ExtendedDetails) { $command += " --verbose" }
+    $command += " --json"
+
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
+}
+
 function New-SalesforcePackageVersion {
     [CmdletBinding()]
     Param(
@@ -109,34 +142,6 @@ function New-SalesforcePackageVersion {
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
 
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
-}
-
-function Get-SalesforcePackageVersions {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $PackageId,
-        [Parameter(Mandatory = $false)][string] $PackageName,
-
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
-        [Parameter(Mandatory = $false)][switch] $Released,
-        [Parameter(Mandatory = $false)][switch] $Concise,
-        [Parameter(Mandatory = $false)][switch] $ExtendedDetails
-    )
-    if ((! $PackageId ) -and ($PackageName) ) {
-        $package = Get-SalesforcePackage -Name $PackageName -DevHubUsername $DevHubUsername
-        $PackageId = $package.Id
-    }
-
-    $command = "sf package version list"
-    $command += " --target-dev-hub $DevHubUsername"
-    if ($PackageId) { $command += " --packages $PackageId" }
-    if ($Released) { $command += " --released" }
-    if ($Concise) { $command += " --concise" }
-    if ($ExtendedDetails) { $command += " --verbose" }
-    $command += " --json"
-
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
@@ -196,3 +201,5 @@ function Install-SalesforcePackageVersion {
     }
     Invoke-Salesforce -Command $command
 }
+
+#endregion
