@@ -33,17 +33,15 @@ function Get-SalesforceDebugLog {
     Param(
         [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][string] $LogId,
-        [Parameter(Mandatory = $false)][int] $Last,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    if ((-not $LogId) -and (-not $Last)) {
-        throw "Specify -LogId or -Last."
+    if (-not $LogId) {
+        throw "Specify -LogId to fetch a debug log."
     }
 
     $command = "sf apex log get"
     if ($LogId) { $command += " --log-id $LogId" }
-    if ($Last) { $command += " --number $Last" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($OutputDir) {
         if ((Test-Path -Path $OutputDir) -eq $false) {
@@ -51,7 +49,25 @@ function Get-SalesforceDebugLog {
         }
         $command += " --output-dir `"$OutputDir`""
     }
-    Invoke-Salesforce -Command $command
+    $command += " --json"
+
+    $raw = Invoke-Salesforce -Command $command
+    if (-not $raw) {
+        return $null
+    }
+
+    try {
+        $parsed = $raw | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "Unexpected response while fetching debug log: $raw"
+    }
+
+    if ($parsed.status -ne 0) {
+        $message = if ($parsed.message) { $parsed.message } else { "Salesforce command failed." }
+        throw $message
+    }
+
+    return $parsed.result.log
 }
 
 function Export-SalesforceDebugLogs {
