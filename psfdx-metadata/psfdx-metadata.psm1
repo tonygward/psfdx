@@ -513,7 +513,11 @@ function Build-SalesforceQuery {
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+
+        [Parameter(Mandatory = $false)][switch] $ExcludeAuditFields,
+        [Parameter(Mandatory = $false)][switch] $ExcludeNameFields,
+        [Parameter(Mandatory = $false)][switch] $ExcludeContextFields
     )
     $fields = Describe-SalesforceFields -ObjectName $ObjectName -TargetOrg $TargetOrg -UseToolingApi:$UseToolingApi
     if ($null -eq $fields) {
@@ -523,6 +527,35 @@ function Build-SalesforceQuery {
     $fieldNames = @()
     foreach ($field in $fields) {
         $fieldNames += $field.name
+    }
+    if ($ExcludeAuditFields) {
+        $auditFields = @(
+            'CreatedById',
+            'CreatedDate',
+            'LastModifiedById',
+            'LastModifiedDate',
+            'SystemModstamp',
+            'IsDeleted'
+        )
+        $fieldNames = $fieldNames | Where-Object { $auditFields -notcontains $_ }
+    }
+    if ($ExcludeNameFields) {
+        $nameFields = @(
+            'Name',
+            'FirstName',
+            'LastName',
+            'Subject'
+        )
+        $fieldNames = $fieldNames | Where-Object { $nameFields -notcontains $_ }
+    }
+    if ($ExcludeContextFields) {
+        $contextFields = @(
+            'OwnerId',
+            'RecordTypeId',
+            'CurrencyIsoCode',
+            'Division'
+        )
+        $fieldNames = $fieldNames | Where-Object { $contextFields -notcontains $_ }
     }
     $value = "SELECT "
     foreach ($fieldName in $fieldNames) {

@@ -1,4 +1,5 @@
 # Import module at discovery time so InModuleScope can find it
+Get-Module -Name 'psfdx-logs' -All | ForEach-Object { Remove-Module -ModuleInfo $_ -Force }
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-logs.psd1'
 Import-Module $moduleManifest -Force | Out-Null
 

@@ -10,7 +10,9 @@ $here = $PSScriptRoot
 $moduleManifest = Join-Path $here 'psfdx.psd1'
 
 # Ensure no duplicate 'psfdx' modules are loaded before importing this test instance
-Get-Module psfdx -All | ForEach-Object { Remove-Module $_.Name -Force -ErrorAction SilentlyContinue }
+Get-Module -Name 'psfdx' -All | ForEach-Object {
+    try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
+}
 
 $module = Import-Module $moduleManifest -Force -PassThru
 
