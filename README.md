@@ -108,6 +108,8 @@ Get-Command -Module psfdx
 | :--- | :--- |
 | `Connect-SalesforceApi` | OAuth2 password flow (non-SFDX REST). |
 | `Invoke-SalesforceApi` | Invoke REST API with bearer token. |
+| `Get-SalesforceApiVersions` | Current Salesforce API versions. |
+| `Get-SalesforceApiVersions` | Latest Salesforce API version. |
 
 ### Plugins
 
@@ -192,11 +194,11 @@ Get-Command -Module psfdx
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Watch-SalesforceDebugLogs` | Tail Apex logs (color, debug level, skip trace flag). |
-| `Get-SalesforceDebugLogs` | List Apex logs (JSON). |
-| `Get-SalesforceDebugLog` | Get a specific or most recent log text. |
-| `Export-SalesforceDebugLogs` | Export logs to files. |
-| `Convert-SalesforceDebugLog` | Parse pipe-delimited logs into objects. |
+| `Watch-SalesforceDebugLogs` | Watch for latest Debug logs. |
+| `Select-SalesforceDebugLogs` | List Debug logs. |
+| `Get-SalesforceDebugLogs` | Get most recent or specific Debug log. |
+| `Export-SalesforceDebugLogs` | Export Debug logs to files. |
+| `Convert-SalesforceDebugLog` | Parse Debug log. |
 
 ### Flows
 

@@ -327,6 +327,29 @@ function Invoke-SalesforceApi {
     return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "Bearer " + $AccessToken }
 }
 
+function Get-SalesforceApiVersions {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $command = "sf api request rest /services/data"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $result = Invoke-Salesforce -Command $command
+    return $result | ConvertFrom-Json
+}
+
+function Get-SalesforceLatestApiVersion {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $versions = Get-SalesforceApiVersions -TargetOrg $TargetOrg
+    if ($versions.Count -eq 0) { return $null }
+    $latest = $versions | Sort-Object -Property version -Descending | Select-Object
+    $version = $latest[0].version
+    return "v$version"
+}
+
 #endregion
 
 #region Plugins

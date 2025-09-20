@@ -44,8 +44,8 @@
     # Functions to export from this module. Use @() to export nothing, or '*' to export all.
     FunctionsToExport = @(
         'Watch-SalesforceDebugLogs',
+        'Select-SalesforceDebugLogs',
         'Get-SalesforceDebugLogs',
-        'Get-SalesforceDebugLog',
         'Export-SalesforceDebugLogs',
         'Convert-SalesforceDebugLog',
         'Get-SalesforceFlowInterviews',
