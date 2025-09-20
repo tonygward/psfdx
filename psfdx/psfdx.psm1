@@ -8,17 +8,26 @@ function Connect-Salesforce {
     Param(
         [Parameter(Mandatory = $false)][switch] $Sandbox,
         [Parameter(Mandatory = $false)][string] $CustomUrl,
+
+        [Parameter(Mandatory = $false)][string] $Alias,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
         [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub,
-        [Parameter(Mandatory = $false)][string] $OAuthClientId,
-        [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
+
+        [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser,
+        [Parameter(Mandatory = $false)][string] $OAuthClientId
     )
 
     $command = "sf org login web"
     if ($Sandbox) { $command += " --instance-url https://test.salesforce.com" }
     if ($CustomUrl) { $command += " --instance-url $CustomUrl" }
+
+    if ($Alias) { $command += " --alias $Alias" }
+    if ($SetDefault) { $command += " --set-default" }
     if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
-    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
+
     if ($Browser) { $command += " --browser $Browser" }
+    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
+
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     Show-SalesforceResult -Result $result
@@ -50,7 +59,10 @@ function Connect-SalesforceJwt {
         [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter(Mandatory = $true)][string] $JwtKeyfile,
         [Parameter(Mandatory = $false)][switch] $Sandbox,
-        [Parameter(Mandatory = $false)][switch] $SetDefaultUsername
+
+        [Parameter(Mandatory = $false)][string] $Alias,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
+        [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub
     )
     if (-not(Test-Path $JwtKeyfile)) {
         throw "File does not exist: $JwtKeyfile"
@@ -60,7 +72,9 @@ function Connect-SalesforceJwt {
     if ($Sandbox) { $url = "https://test.salesforce.com" }
 
     $command = "sf org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file $JwtKeyfile --instance-url $url"
-    if ($SetDefaultUsername) { $command += " --set-default" }
+    if ($Alias) { $command += " --alias $Alias" }
+    if ($SetDefault) { $command += " --set-default" }
+    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -71,11 +85,13 @@ function Open-Salesforce {
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UrlOnly,
-        [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser
+        [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser,
+        [Parameter(Mandatory = $false)][string] $BrowserPrivateMode
     )
     $command = "sf org open"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($Browser) { $command += " --browser $Browser" }
+    if ($BrowserPrivateMode) { $command += " --private $BrowserPrivateMode" }
     if ($UrlOnly) { $command += " --url-only" }
     Invoke-Salesforce -Command $command
 }
@@ -173,9 +189,10 @@ function Select-SalesforceRecords {
         [Parameter(Mandatory = $false)][string] $Query,
         [Parameter(Mandatory = $false)][string] $File,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][string][ValidateSet('human', 'json', 'csv')] $ResultFormat = 'json',
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
-        [Parameter(Mandatory = $false)][switch] $IncludeDeletedRows
+        [Parameter(Mandatory = $false)][switch] $IncludeDeletedRows,
+        [Parameter(Mandatory = $false)][string][ValidateSet('human', 'json', 'csv')] $ResultFormat = 'json',
+        [Parameter(Mandatory = $false)][string] $OutputFile
     )
     $command = "sf data query"
     if ($Query) { $command += " --query `"$Query`"" }
@@ -183,9 +200,10 @@ function Select-SalesforceRecords {
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     if ($IncludeDeletedRows) { $command += " --all-rows" }
+
     $command += " --result-format $ResultFormat"
-    Write-Verbose ("Query: " + $Query)
-    Write-Verbose $command
+    if ($OutputFile) { $command += " --output-file $OutputFile" }
+
     $result = Invoke-Salesforce -Command $command | ConvertFrom-Json
     if ($result.status -ne 0) {
         $result
@@ -262,11 +280,10 @@ function Get-SalesforceRecordType {
         [Parameter(Mandatory = $true)][string] $ObjectType,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType"
+    $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive"
     $query += " FROM RecordType"
     if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
-    $results = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg
-    return $results | Select-Object Id, SobjectType, Name, DeveloperName, IsActive, IsPersonType
+    return Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg
 }
 
 #endregion
@@ -281,11 +298,13 @@ function Connect-SalesforceApi {
         [Parameter(Mandatory = $true)][string] $Token,
         [Parameter(Mandatory = $true)][string] $ClientId,
         [Parameter(Mandatory = $true)][string] $ClientSecret,
-        [Parameter(Mandatory = $false)][switch] $Sandbox
+        [Parameter(Mandatory = $false)][switch] $Sandbox,
+        [Parameter(Mandatory = $false)][string] $CustomUrl
     )
 
     $loginUrl = "https://login.salesforce.com/services/oauth2/token"
     if ($Sandbox) { $loginUrl = "https://test.salesforce.com/services/oauth2/token" }
+    if ($CustomUrl) { $loginUrl = "$CustomUrl/services/oauth2/token" }
 
     return Invoke-RestMethod -Uri $loginUrl `
         -Method Post `
