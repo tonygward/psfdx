@@ -108,6 +108,8 @@ Get-Command -Module psfdx
 | :--- | :--- |
 | `Connect-SalesforceApi` | OAuth2 password flow (non-SFDX REST). |
 | `Invoke-SalesforceApi` | Invoke REST API with bearer token. |
+| `Get-SalesforceApiVersions` | Current Salesforce API versions. |
+| `Get-SalesforceApiVersions` | Latest Salesforce API version. |
 
 ### Plugins
 

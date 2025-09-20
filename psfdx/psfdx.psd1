@@ -23,6 +23,8 @@
         'New-SalesforceRecord',
         'Set-SalesforceRecord',
         'Get-SalesforceRecordType',
+        'Get-SalesforceApiVersions',
+        'Get-SalesforceLatestApiVersion',
         'Connect-SalesforceApi',
         'Invoke-SalesforceApi',
         'Install-SalesforcePlugin',

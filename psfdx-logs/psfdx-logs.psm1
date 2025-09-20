@@ -6,24 +6,24 @@
 function Watch-SalesforceDebugLogs {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $DebugLevel,
         [Parameter(Mandatory = $false)][switch] $SkipTraceFlag,
-        [Parameter(Mandatory = $false)][string] $DebugLevel
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $command = @('sf','apex','log','tail')
-    if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
-    if ($SkipTraceFlag) { $command += @('--skip-trace-flag') }
-    if ($DebugLevel) { $command += @('--debug-level', $DebugLevel) }
-    $command += @('--color')
+    $command = "sf apex log tail"
+    if ($DebugLevel) { $command += " --debug-level $DebugLevel" }
+    if ($SkipTraceFlag) { $command += " --skip-trace-flag" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --color"
     return Invoke-Salesforce -Command $command
 }
 
 function Get-SalesforceDebugLogs {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = @('sf','apex','log','list')
-    if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
-    $command += @('--json')
+    $command = "sf apex log list"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
@@ -31,25 +31,22 @@ function Get-SalesforceDebugLogs {
 function Get-SalesforceDebugLog {
     [CmdletBinding()]
     Param(
+        [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][string] $LogId,
-        [Parameter(Mandatory = $false)][switch] $Last,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-
-    if (-not $Last -and ([string]::IsNullOrWhiteSpace($LogId))) {
-        throw 'Specify -LogId or -Last.'
+    $command = "sf apex log get"
+    if ($OutputDir) {
+        if ((Test-Path -Path $OutputDir) -eq $false) {
+            throw "Folder $OutputDir does not exist"
+        }
+        $command += " --output-dir `"$OutputDir`""
     }
+    if ($LogId) { $command += " --log-id $LogId" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
 
-    if ($Last) {
-        $LogId = (Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object StartTime -Descending | Select-Object -First 1).Id
-    }
-
-    $command = @('sf','apex','log','get','--log-id', $LogId)
-    if ($TargetOrg) { $command += @('--target-org', $TargetOrg) }
-    $command += @('--json')
-    $raw = Invoke-Salesforce -Command $command
-    $parsed = Show-SalesforceResult -Result $raw
-    return $parsed.log
+    Invoke-Salesforce -Command $command
 }
 
 function Export-SalesforceDebugLogs {
@@ -64,7 +61,9 @@ function Export-SalesforceDebugLogs {
         $currentFolder = (Get-Location).Path
         $OutputFolder = $currentFolder
     }
-    if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
+    if ((Test-Path -Path $OutputFolder) -eq $false) {
+        throw "Folder $OutputFolder does not exist"
+    }
     Write-Verbose "Output Folder: $OutputFolder"
 
     $logs = Get-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
@@ -168,7 +167,7 @@ function Get-SalesforceLoginHistory {
     )
 
     # Build SOQL for LoginHistory
-    $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status, Username FROM LoginHistory"
+    $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status FROM LoginHistory"
     $conditions = @()
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
@@ -248,7 +247,8 @@ function Select-SalesforceEventFiles {
     )
 
     # Build SOQL for Event Monitoring (EventLogFile)
-    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile"
+    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate"
+    $query += " FROM EventLogFile"
     $where = @()
     if ($EventType) { $where += "EventType = '$EventType'" }
     if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
@@ -270,8 +270,8 @@ function Get-SalesforceEventFile {
         [Parameter(Mandatory = $true)][string] $Id,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-
-    $command = "sf api request rest /services/data/v64.0/sobjects/EventLogFile/$Id/Logfile"
+    $apiVersion = (Get-SalesforceLatestApiVersion -TargetOrg $TargetOrg)
+    $command = "sf api request rest /services/data/$apiVersion/sobjects/EventLogFile/$Id/Logfile"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     Invoke-Salesforce -Command $command
 }
@@ -287,7 +287,9 @@ function Export-SalesforceEventFile {
     if (($OutputFolder -eq $null) -or ($OutputFolder -eq "")) {
         $OutputFolder = (Get-Location).Path
     }
-    if ((Test-Path -Path $OutputFolder) -eq $false) { throw "Folder $OutputFolder does not exist" }
+    if ((Test-Path -Path $OutputFolder) -eq $false) {
+        throw "Folder $OutputFolder does not exist"
+    }
 
     $record = Get-SalesforceEventFile -Id $Id -TargetOrg $TargetOrg
     if (-not $record) {
@@ -320,7 +322,8 @@ function Export-SalesforceEventFiles {
     }
 
     # Build SOQL for Event Monitoring (EventLogFile)
-    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile"
+    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate"
+    $query = " FROM EventLogFile"
     $where = @()
     if ($EventType) { $where += "EventType = '$EventType'" }
     if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
