@@ -34,6 +34,7 @@ function Get-SalesforceDebugLogs {
         [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][string] $LogId,
         [Parameter(Mandatory = $false)][int] $Last,
+        [Parameter(Mandatory = $false)][switch] $Raw,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
@@ -55,7 +56,21 @@ function Get-SalesforceDebugLogs {
     if ($Last) { $command += " --number $Last" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
-    Invoke-Salesforce -Command $command
+    if (-not $Raw) {
+        return Invoke-Salesforce -Command $command
+    }
+
+    $command += " --json"
+    $response = Invoke-Salesforce -Command $command
+    $response = $response | ConvertFrom-Json
+    if ($response.status -ne 0) {
+        throw "Error retrieving log: $($response.message)"
+    }
+    $logs = ""
+    foreach ($log in $response.result.log) {
+        $logs += $log + "`n"
+    }
+    return $logs.TrimEnd("`n")
 }
 
 function Export-SalesforceDebugLogs {
@@ -75,7 +90,7 @@ function Export-SalesforceDebugLogs {
     }
     Write-Verbose "Output Folder: $OutputFolder"
 
-    $logs = Select-SalesforceDebugLogs -TargetOrg $TargetOrg | Sort-Object -Property StartTime -Descending | Select-Object -First $Limit
+    $logs = Select-SalesforceDebugLogs -TargetOrg $TargetOrg | Select-Object -First $Limit
     if (-not $logs -or (($logs | Measure-Object).Count -eq 0)) {
         Write-Verbose "No Logs"
         return
@@ -87,7 +102,7 @@ function Export-SalesforceDebugLogs {
         $fileName = $log.Id + ".log"
         $filePath = Join-Path -Path $OutputFolder -ChildPath $fileName
         Write-Verbose "Exporting file: $filePath"
-        Get-SalesforceDebugLogs -LogId $log.Id -TargetOrg $TargetOrg | Out-File -FilePath $filePath -Encoding utf8
+        Get-SalesforceDebugLogs -LogId $log.Id -Raw -TargetOrg $TargetOrg | Out-File -FilePath $filePath
         $i = $i + 1
         $percentCompleted = ($i / $logsCount) * 100
         Write-Progress -Activity "Export Salesforce Debug Logs" -Status "Completed $fileName" -PercentComplete $percentCompleted
