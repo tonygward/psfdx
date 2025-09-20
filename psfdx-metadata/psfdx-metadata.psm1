@@ -50,6 +50,7 @@ function Retrieve-SalesforceComponent {
             'CustomApplication',
             'CustomApplicationComponent',
             'CustomFeedFilter',
+            'CustomField',
             'CustomHelpMenuSection',
             'CustomIndex',
             'CustomLabels',
@@ -187,6 +188,7 @@ function Retrieve-SalesforceComponent {
             'TransactionSecurityPolicy',
             'UiFormatSpecificationSet',
             'UserProvisioningConfig',
+            'ValidationRule',
             'WaveAnalyticAssetCollection',
             'Workflow'
         )] $Type,
@@ -216,9 +218,7 @@ function Retrieve-SalesforceField {
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $FieldName,
         [Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = "sf project retrieve start --metadata CustomField:$ObjectName.$FieldName"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    Retrieve-SalesforceComponent -Type 'CustomField' -Name $ObjectName -ChildName $FieldName -TargetOrg $TargetOrg
 }
 
 function Retrieve-SalesforceValidationRule {
@@ -227,9 +227,7 @@ function Retrieve-SalesforceValidationRule {
         [Parameter(Mandatory = $true)][string] $ObjectName,
         [Parameter(Mandatory = $true)][string] $RuleName,
         [Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = "sf project retrieve start --metadata ValidationRule:$ObjectName.$RuleName"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    Retrieve-SalesforceComponent -Type 'ValidationRule' -Name $ObjectName -ChildName $RuleName -TargetOrg $TargetOrg
 }
 
 function Retrieve-SalesforceOrg {
