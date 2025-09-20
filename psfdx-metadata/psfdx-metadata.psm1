@@ -458,11 +458,9 @@ function Deploy-SalesforceComponent {
 function Describe-SalesforceObjects {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][string][ValidateSet('all', 'custom', 'standard')] $ObjectTypeCategory = 'all'
+        [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $command = "sf sobject list"
-    $command += " --category $ObjectTypeCategory"
     $command += " --target-org $TargetOrg"
     $command += " --json"
     $result = Invoke-Salesforce -Command $command

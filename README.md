@@ -251,7 +251,7 @@ Get-Command -Module psfdx
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Describe-SalesforceObjects` | List sObjects (all/custom/standard). |
+| `Describe-SalesforceObjects` | List sObjects for a target org. |
 | `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
 | `Describe-SalesforceFields` | List fields for an sObject. |
 
