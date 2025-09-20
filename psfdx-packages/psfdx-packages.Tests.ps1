@@ -1,3 +1,8 @@
+# Ensure no other instances of psfdx-packages are loaded (e.g., from PSModulePath)
+Get-Module -Name 'psfdx-packages' -All | ForEach-Object {
+    try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
+}
+
 # Import module at discovery time so InModuleScope can find it
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-packages.psd1'
 Import-Module $moduleManifest -Force | Out-Null
