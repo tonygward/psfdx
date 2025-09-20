@@ -191,12 +191,20 @@ function Retrieve-SalesforceComponent {
             'Workflow'
         )] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][string] $ChildName,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts
     )
 
+    if ($ChildName -and -not $Name) {
+        throw "Specify -Name when using -ChildName."
+    }
+
     $command = "sf project retrieve start --metadata $Type"
-    if ($Name) { $command += ":$Name" }
+    if ($Name) {
+        $command += ":$Name"
+        if ($ChildName) { $command += ".$ChildName" }
+    }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
     Invoke-Salesforce -Command $command

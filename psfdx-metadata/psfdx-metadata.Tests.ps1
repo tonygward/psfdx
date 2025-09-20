@@ -25,6 +25,13 @@ Describe 'Retrieve-SalesforceComponent' {
             Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me' }
         }
+        It 'requires Name when child name specified' {
+            { Retrieve-SalesforceComponent -Type Flow -ChildName 'Version1' -TargetOrg 'me' } | Should -Throw
+        }
+        It 'retrieves a child component when provided' {
+            Retrieve-SalesforceComponent -Type Flow -Name 'MyFlow' -ChildName 'Version1' -TargetOrg 'me' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata Flow:MyFlow.Version1 --target-org me' }
+        }
         It 'adds ignore conflicts when requested' {
             Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' -IgnoreConflicts | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me --ignore-conflicts' }
