@@ -195,6 +195,7 @@ function Retrieve-SalesforceComponent {
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ChildName,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts
     )
 
@@ -208,6 +209,12 @@ function Retrieve-SalesforceComponent {
         if ($ChildName) { $command += ".$ChildName" }
     }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($OutputDir) {
+        if (-not (Test-Path -Path $OutputDir -PathType Container)) {
+            throw "Output directory '$OutputDir' does not exist."
+        }
+        $command += " --output-dir `"$OutputDir`""
+    }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
     Invoke-Salesforce -Command $command
 }
