@@ -6,11 +6,12 @@
 function Get-SalesforcePackages {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
-        [Parameter(Mandatory = $false)][switch] $IncludeExtendedPackageDetails
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
+        [Parameter(Mandatory = $false)][switch] $ExtendedPackageDetails
     )
-    $command = "sf package list --target-dev-hub $DevHubUsername"
-    if ($IncludeExtendedPackageDetails) { $command += " --verbose" }
+    $command = "sf package list"
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
+    if ($ExtendedPackageDetails) { $command += " --verbose" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -20,10 +21,14 @@ function Get-SalesforcePackage {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
-        [Parameter(Mandatory = $false)][switch] $IncludeExtendedPackageDetails
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
+        [Parameter(Mandatory = $false)][switch] $ExtendedPackageDetails
     )
-    $packages = Get-SalesforcePackages -DevHubUsername $DevHubUsername -IncludeExtendedPackageDetails:$IncludeExtendedPackageDetails
+    if ($TargetDevHub) {
+        $packages = Get-SalesforcePackages -TargetDevHub $TargetDevHub -ExtendedPackageDetails:$ExtendedPackageDetails
+    } else {
+        $packages = Get-SalesforcePackages -ExtendedPackageDetails:$ExtendedPackageDetails
+    }
     return $packages | Where-Object Name -eq $Name
 }
 
@@ -31,20 +36,22 @@ function New-SalesforcePackage {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
-        [Parameter(Mandatory = $false)][string][ValidateSet("Managed", "Unlocked")] $PackageType,
+        [Parameter(Mandatory = $false)][string][ValidateSet("Managed", "Unlocked")] $PackageType = "Unlocked",
         [Parameter(Mandatory = $false)][switch] $IsOrgDependent,
         [Parameter(Mandatory = $false)][string] $Path = "force-app/main/default",
         [Parameter(Mandatory = $false)][string] $Description,
-        [Parameter(Mandatory = $false)][switch] $NoNamespace
+        [Parameter(Mandatory = $false)][string] $ErrorNotificationUsername,
+        [Parameter(Mandatory = $false)][switch] $NoNamespace,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
-    if (! $Description) { $Description = $Name }
-    $command = "sf package create --name $Name --description $Description"
-    $command += " --path $Path"
+    $command = "sf package create --name $Name"
     $command += " --package-type $PackageType"
+    $command += " --path $Path"
     if ($IsOrgDependent) { $command += " --org-dependent" }
+    if ($Description) { $command += " --description $Description" }
+    if ($ErrorNotificationUsername) { $command += " --error-notification-username $ErrorNotificationUsername" }
     if ($NoNamespace) { $command += " --no-namespace" }
-    $command += " --target-dev-hub $DevHubUsername"
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     $resultSfdx = Show-SalesforceResult -Result $result
@@ -55,12 +62,12 @@ function Remove-SalesforcePackage {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
     $command = "sf package delete --package $Name"
     if ($NoPrompt) { $command += " --no-prompt" }
-    $command += " --target-dev-hub $DevHubUsername"
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     Invoke-Salesforce -Command $command
 }
 
@@ -73,23 +80,30 @@ function Get-SalesforcePackageVersions {
     Param(
         [Parameter(Mandatory = $false)][string] $PackageId,
         [Parameter(Mandatory = $false)][string] $PackageName,
-
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
         [Parameter(Mandatory = $false)][switch] $Released,
         [Parameter(Mandatory = $false)][switch] $Concise,
-        [Parameter(Mandatory = $false)][switch] $ExtendedDetails
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][switch] $ConversionsOnly,
+        [Parameter(Mandatory = $false)][string] $Branch,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
     if ((! $PackageId ) -and ($PackageName) ) {
-        $package = Get-SalesforcePackage -Name $PackageName -DevHubUsername $DevHubUsername
+        if ($TargetDevHub) {
+            $package = Get-SalesforcePackage -Name $PackageName -TargetDevHub $TargetDevHub
+        } else {
+            $package = Get-SalesforcePackage -Name $PackageName
+        }
         $PackageId = $package.Id
     }
 
     $command = "sf package version list"
-    $command += " --target-dev-hub $DevHubUsername"
     if ($PackageId) { $command += " --packages $PackageId" }
     if ($Released) { $command += " --released" }
     if ($Concise) { $command += " --concise" }
     if ($ExtendedDetails) { $command += " --verbose" }
+    if ($ConversionsOnly) { $command += " --show-conversions-only" }
+    if ($Branch) { $command += " --branch $Branch" }
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
@@ -101,8 +115,6 @@ function New-SalesforcePackageVersion {
     Param(
         [Parameter(Mandatory = $false)][string] $PackageId,
         [Parameter(Mandatory = $false)][string] $PackageName,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
-
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $Description,
         [Parameter(Mandatory = $false)][string] $Tag,
@@ -113,19 +125,23 @@ function New-SalesforcePackageVersion {
         [Parameter(Mandatory = $false)][switch] $SkipValidation,
 
         [Parameter(Mandatory = $false)][int] $WaitMinutes,
-        [Parameter(Mandatory = $false)][string] $ScratchOrgDefinitionFile = "config/project-scratch-def.json"
+        [Parameter(Mandatory = $false)][string] $ScratchOrgDefinitionFile = "config/project-scratch-def.json",
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
 
     if ((! $PackageId ) -and (! $PackageName) ) {
         throw "Please provide a PackageId or Package Name"
     }
     if ((! $PackageId ) -and ($PackageName) ) {
-        $package = Get-SalesforcePackage -Name $PackageName -DevHubUsername $DevHubUsername
+        if ($TargetDevHub) {
+            $package = Get-SalesforcePackage -Name $PackageName -TargetDevHub $TargetDevHub
+        } else {
+            $package = Get-SalesforcePackage -Name $PackageName
+        }
         $PackageId = $package.Id
     }
 
     $command = "sf package version create --package $PackageId"
-    $command += " --target-dev-hub $DevHubUsername"
     if ($Name) { $command += " --version-name $Name" }
     if ($Description) { $command += " --version-description $Description" }
     if ($Tag) { $command += " --tag $Tag" }
@@ -140,6 +156,7 @@ function New-SalesforcePackageVersion {
 
     if ($SkipValidation) { $command += " --skip-validation" }
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
 
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
@@ -150,13 +167,13 @@ function Promote-SalesforcePackageVersion {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
 
     $command = "sf package version promote"
     $command += " --package $PackageVersionId"
-    $command += " --target-dev-hub $DevHubUsername"
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
 
@@ -168,13 +185,13 @@ function Remove-SalesforcePackageVersion {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
-        [Parameter(Mandatory = $true)][string] $DevHubUsername,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
 
     $command = "sf package version delete"
     $command += " --package $PackageVersionId"
-    $command += " --target-dev-hub $DevHubUsername"
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
 
@@ -186,15 +203,17 @@ function Install-SalesforcePackageVersion {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
-        [Parameter(Mandatory = $false)][Alias('Username','DevHubUsername')][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
-        [Parameter(Mandatory = $false)][int] $WaitMinutes = 10
+        [Parameter(Mandatory = $false)][int] $WaitMinutes = 10,
+        [Parameter(Mandatory = $false)][ValidateSet('AllUsers','AdminsOnly')][string] $SecurityType = 'AdminsOnly'
     )
 
     $command = "sf package install"
     $command += " --package $PackageVersionId"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($NoPrompt) { $command += " --no-prompt" }
+    if ($SecurityType) { $command += " --security-type $SecurityType" }
     if ($WaitMinutes) {
         $command += " --wait $WaitMinutes"
         $command += " --publish-wait $WaitMinutes"
