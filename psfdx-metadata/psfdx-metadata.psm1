@@ -243,6 +243,27 @@ function Retrieve-SalesforceMetadata {
     Invoke-Salesforce -Command $command
 }
 
+function Retrieve-SalesforcePackage {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (-not (Test-Path -Path $OutputDir -PathType Container)) {
+        throw "Output directory '$OutputDir' does not exist."
+    }
+
+    $command = "sf project retrieve start --package-name `"$Name`""
+    $command += " --output-dir `"$OutputDir`""
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    Invoke-Salesforce -Command $command
+}
+
 function Retrieve-SalesforceField {
     [CmdletBinding()]
     Param(

@@ -17,6 +17,7 @@
         'Retrieve-SalesforceOrg',
         'Retrieve-SalesforceComponent',
         'Retrieve-SalesforceMetadata',
+        'Retrieve-SalesforcePackage',
         'Retrieve-SalesforceField',
         'Retrieve-SalesforceValidationRule',
         'Deploy-SalesforceComponent',
