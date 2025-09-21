@@ -20,7 +20,21 @@ Describe 'Retrieve-SalesforceOrg' {
 
 Describe 'Retrieve-SalesforceComponent' {
     InModuleScope 'psfdx-metadata' {
-        BeforeEach { Mock Invoke-Salesforce {} }
+        BeforeAll {
+            $commandInfo = Get-Command -Name 'Retrieve-SalesforceComponent' -Module psfdx-metadata
+            $validateAttr = $commandInfo.Parameters['Type'].Attributes | Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] }
+            if ($validateAttr) {
+                $setMethod = $validateAttr.GetType().GetMethod('SetValidValues', [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::NonPublic)
+                if ($setMethod) {
+                    $setMethod.Invoke($validateAttr, @([string[]]@('ApexClass','Flow','CustomField','ValidationRule')))
+                }
+            }
+        }
+
+        BeforeEach {
+            Mock Invoke-Salesforce {} -ModuleName 'psfdx-metadata'
+            Mock Get-SalesforceMetaTypes { @('ApexClass','Flow') } -ModuleName 'psfdx-metadata'
+        }
         It 'retrieves a named ApexClass for target org' {
             Retrieve-SalesforceComponent -Type ApexClass -Name 'MyClass' -TargetOrg 'me' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me' }
@@ -41,7 +55,10 @@ Describe 'Retrieve-SalesforceComponent' {
 
 Describe 'Retrieve-SalesforceField' {
     InModuleScope 'psfdx-metadata' {
-        BeforeEach { Mock Invoke-Salesforce {} }
+        BeforeEach {
+            Mock Invoke-Salesforce {} -ModuleName 'psfdx-metadata'
+            Mock Get-SalesforceMetaTypes { @('CustomField','ValidationRule') } -ModuleName 'psfdx-metadata'
+        }
         It 'builds custom field retrieve command' {
             Retrieve-SalesforceField -ObjectName 'Account' -FieldName 'MyField__c' -TargetOrg 'me'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
@@ -53,7 +70,10 @@ Describe 'Retrieve-SalesforceField' {
 
 Describe 'Retrieve-SalesforceValidationRule' {
     InModuleScope 'psfdx-metadata' {
-        BeforeEach { Mock Invoke-Salesforce {} }
+        BeforeEach {
+            Mock Invoke-Salesforce {} -ModuleName 'psfdx-metadata'
+            Mock Get-SalesforceMetaTypes { @('CustomField','ValidationRule') } -ModuleName 'psfdx-metadata'
+        }
         It 'builds validation rule retrieve command' {
             Retrieve-SalesforceValidationRule -ObjectName 'Account' -RuleName 'MyRule' -TargetOrg 'me'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
