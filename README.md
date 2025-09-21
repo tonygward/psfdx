@@ -43,7 +43,6 @@ A web browser will appear, login to Salesforce as you would normally.
 
 **2. Retrieve first 10 Salesforce Accounts**
 ```
-Import-Module psfdx
 Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg my@email.com
 ```
 NB you only need to Import-Module psfdx once per PowerShell session
@@ -57,6 +56,9 @@ Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOr
 **4. Retrieve every psfdx cmdlet**
 ```
 Get-Command -Module psfdx
+Get-Command -Module psfdx-development
+Get-Command -Module psfdx-logs
+Get-Command -Module psfdx-metadata
 ```
 
 ## Cmdlets by Module
