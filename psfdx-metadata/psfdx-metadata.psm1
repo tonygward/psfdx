@@ -137,12 +137,35 @@ function Deploy-SalesforceComponent {
     Param(
         [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $DryRun,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
     )
+
+    if ($ConciseResults -and $DetailedResults) {
+        throw "Specify only one of -ConciseResults or -DetailedResults."
+    }
+
+    if (-not $Type) {
+        throw "Specify -Type when deploying metadata."
+    }
+
     $command = "sf project deploy start"
     $command += " --metadata $Type"
     if ($Name) { $command += ":$Name" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
+    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
+    if ($IgnoreErrors) { $command += " --ignore-errors" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($DryRun) { $command += " --dry-run" }
+    if ($ConciseResults) { $command += " --concise" }
+    if ($DetailedResults) { $command += " --verbose" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
