@@ -1,200 +1,26 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
 
+class SalesforceMetadataTypeGenerator : System.Management.Automation.IValidateSetValuesGenerator {
+    [string[]] GetValidValues() {
+        $types = Get-SalesforceMetaTypes
+        return (@($types) + 'CustomField', 'ValidationRule') |
+            Where-Object { $_ } |
+            Sort-Object -Unique
+    }
+}
+
 #region Retrieve
 
 function Retrieve-SalesforceComponent {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string][ValidateSet(
-            'AIApplication',
-            'AIApplicationConfig',
-            'ActionLauncherItemDef',
-            'ActionLinkGroupTemplate',
-            'AnalyticSnapshot',
-            'AnimationRule',
-            'ApexClass',
-            'ApexComponent',
-            'ApexEmailNotifications',
-            'ApexPage',
-            'ApexTestSuite',
-            'ApexTrigger',
-            'AppFrameworkTemplateBundle',
-            'AppMenu',
-            'AppointmentAssignmentPolicy',
-            'AppointmentSchedulingPolicy',
-            'ApprovalProcess',
-            'AssignmentRules',
-            'AuraDefinitionBundle',
-            'AuthProvider',
-            'AutoResponseRules',
-            'BlacklistedConsumer',
-            'BrandingSet',
-            'BriefcaseDefinition',
-            'CallCenter',
-            'CallCoachingMediaProvider',
-            'CanvasMetadata',
-            'Certificate',
-            'ChannelLayout',
-            'ChatterExtension',
-            'ChoiceList',
-            'CleanDataService',
-            'Community',
-            'ConnectedApp',
-            'ContentAsset',
-            'ContentTypeBundle',
-            'ConvIntelligenceSignalRule',
-            'ConversationMessageDefinition',
-            'CorsWhitelistOrigin',
-            'CspTrustedSite',
-            'CustomApplication',
-            'CustomApplicationComponent',
-            'CustomFeedFilter',
-            'CustomField',
-            'CustomHelpMenuSection',
-            'CustomIndex',
-            'CustomLabels',
-            'CustomMetadata',
-            'CustomNotificationType',
-            'CustomObject',
-            'CustomObjectTranslation',
-            'CustomPageWebLink',
-            'CustomPermission',
-            'CustomSite',
-            'CustomTab',
-            'Dashboard',
-            'DataCategoryGroup',
-            'DataWeaveResource',
-            'DelegateGroup',
-            'DigitalExperienceBundle',
-            'Document',
-            'DuplicateRule',
-            'EclairGeoData',
-            'EmailServicesFunction',
-            'EmailTemplate',
-            'EmbeddedServiceBranding',
-            'EmbeddedServiceConfig',
-            'EmbeddedServiceFlowConfig',
-            'EmbeddedServiceMenuSettings',
-            'EscalationRules',
-            'EventRelayConfig',
-            'ExperienceContainer',
-            'ExperiencePropertyTypeBundle',
-            'ExternalAuthIdentityProvider',
-            'ExternalClientApplication',
-            'ExternalCredential',
-            'ExternalDataSource',
-            'ExternalServiceRegistration',
-            'ExtlClntAppConfigurablePolicies',
-            'ExtlClntAppGlobalOauthSettings',
-            'ExtlClntAppMobileConfigurablePolicies',
-            'ExtlClntAppMobileSettings',
-            'ExtlClntAppNotificationSettings',
-            'ExtlClntAppOauthConfigurablePolicies',
-            'ExtlClntAppOauthSettings',
-            'ExtlClntAppPushConfigurablePolicies',
-            'ExtlClntAppPushSettings',
-            'ExtlClntAppSamlConfigurablePolicies',
-            'FieldRestrictionRule',
-            'FlexiPage',
-            'Flow',
-            'FlowCategory',
-            'FlowDefinition',
-            'FlowTest',
-            'ForecastingFilter',
-            'ForecastingFilterCondition',
-            'ForecastingGroup',
-            'ForecastingSourceDefinition',
-            'ForecastingType',
-            'ForecastingTypeSource',
-            'GatewayProviderPaymentMethodType',
-            'GlobalValueSet',
-            'GlobalValueSetTranslation',
-            'Group',
-            'HomePageComponent',
-            'HomePageLayout',
-            'IPAddressRange',
-            'IframeWhiteListUrlSettings',
-            'InboundNetworkConnection',
-            'InstalledPackage',
-            'Layout',
-            'LeadConvertSettings',
-            'Letterhead',
-            'LightningBolt',
-            'LightningComponentBundle',
-            'LightningExperienceTheme',
-            'LightningMessageChannel',
-            'LightningOnboardingConfig',
-            'LightningTypeBundle',
-            'LiveChatSensitiveDataRule',
-            'MLDataDefinition',
-            'MLPredictionDefinition',
-            'MLRecommendationDefinition',
-            'ManagedContentType',
-            'ManagedEventSubscription',
-            'MatchingRules',
-            'MessagingChannel',
-            'MobileApplicationDetail',
-            'MutingPermissionSet',
-            'MyDomainDiscoverableLogin',
-            'NamedCredential',
-            'NetworkBranding',
-            'NotificationTypeConfig',
-            'OauthCustomScope',
-            'OauthTokenExchangeHandler',
-            'OutboundNetworkConnection',
-            'PathAssistant',
-            'PaymentGatewayProvider',
-            'PermissionSet',
-            'PermissionSetGroup',
-            'PlatformCachePartition',
-            'PlatformEventChannel',
-            'PlatformEventChannelMember',
-            'PlatformEventSubscriberConfig',
-            'PostTemplate',
-            'ProcessFlowMigration',
-            'ProductAttributeSet',
-            'Profile',
-            'ProfilePasswordPolicy',
-            'ProfileSessionSetting',
-            'Prompt',
-            'PublicKeyCertificate',
-            'PublicKeyCertificateSet',
-            'Queue',
-            'QuickAction',
-            'RecommendationStrategy',
-            'RecordActionDeployment',
-            'RedirectWhitelistUrl',
-            'RemoteSiteSetting',
-            'Report',
-            'ReportType',
-            'RestrictionRule',
-            'Role',
-            'SamlSsoConfig',
-            'Scontrol',
-            'SearchCustomization',
-            'SearchOrgWideObjectConfig',
-            'Settings',
-            'SharingRules',
-            'SharingSet',
-            'SiteDotCom',
-            'Skill',
-            'SkillType',
-            'StandardValueSet',
-            'StandardValueSetTranslation',
-            'StaticResource',
-            'SynonymDictionary',
-            'TopicsForObjects',
-            'TransactionSecurityPolicy',
-            'UiFormatSpecificationSet',
-            'UserProvisioningConfig',
-            'ValidationRule',
-            'WaveAnalyticAssetCollection',
-            'Workflow'
-        )] $Type,
+        [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ChildName,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts
     )
 
@@ -208,7 +34,61 @@ function Retrieve-SalesforceComponent {
         if ($ChildName) { $command += ".$ChildName" }
     }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($OutputDir) {
+        if (-not (Test-Path -Path $OutputDir -PathType Container)) {
+            throw "Output directory '$OutputDir' does not exist."
+        }
+        $command += " --output-dir `"$OutputDir`""
+    }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
+    Invoke-Salesforce -Command $command
+}
+
+function Retrieve-SalesforceMetadata {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Manifest,
+        [Parameter(Mandatory = $true)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Unzip,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (-not (Test-Path -Path $Manifest -PathType Leaf)) {
+        throw "Manifest file '$Manifest' does not exist."
+    }
+    if (-not (Test-Path -Path $OutputDir -PathType Container)) {
+        throw "Output directory '$OutputDir' does not exist."
+    }
+
+    $command = "sf project retrieve start --manifest `"$Manifest`""
+    $command += " --target-metadata-dir `"$OutputDir`""
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($Unzip) { $command += " --unzip" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    Invoke-Salesforce -Command $command
+}
+
+function Retrieve-SalesforcePackage {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (-not (Test-Path -Path $OutputDir -PathType Container)) {
+        throw "Output directory '$OutputDir' does not exist."
+    }
+
+    $command = "sf project retrieve start --package-name `"$Name`""
+    $command += " --output-dir `"$OutputDir`""
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
     Invoke-Salesforce -Command $command
 }
 
@@ -255,198 +135,79 @@ function Retrieve-SalesforceOrg {
 function Deploy-SalesforceComponent {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string][ValidateSet(
-            'AIApplication',
-            'AIApplicationConfig',
-            'ActionLauncherItemDef',
-            'ActionLinkGroupTemplate',
-            'AnalyticSnapshot',
-            'AnimationRule',
-            'ApexClass',
-            'ApexComponent',
-            'ApexEmailNotifications',
-            'ApexPage',
-            'ApexTestSuite',
-            'ApexTrigger',
-            'AppFrameworkTemplateBundle',
-            'AppMenu',
-            'AppointmentAssignmentPolicy',
-            'AppointmentSchedulingPolicy',
-            'ApprovalProcess',
-            'AssignmentRules',
-            'AuraDefinitionBundle',
-            'AuthProvider',
-            'AutoResponseRules',
-            'BlacklistedConsumer',
-            'BrandingSet',
-            'BriefcaseDefinition',
-            'CallCenter',
-            'CallCoachingMediaProvider',
-            'CanvasMetadata',
-            'Certificate',
-            'ChannelLayout',
-            'ChatterExtension',
-            'ChoiceList',
-            'CleanDataService',
-            'Community',
-            'ConnectedApp',
-            'ContentAsset',
-            'ContentTypeBundle',
-            'ConvIntelligenceSignalRule',
-            'ConversationMessageDefinition',
-            'CorsWhitelistOrigin',
-            'CspTrustedSite',
-            'CustomApplication',
-            'CustomApplicationComponent',
-            'CustomFeedFilter',
-            'CustomHelpMenuSection',
-            'CustomIndex',
-            'CustomLabels',
-            'CustomMetadata',
-            'CustomNotificationType',
-            'CustomObject',
-            'CustomObjectTranslation',
-            'CustomPageWebLink',
-            'CustomPermission',
-            'CustomSite',
-            'CustomTab',
-            'Dashboard',
-            'DataCategoryGroup',
-            'DataWeaveResource',
-            'DelegateGroup',
-            'DigitalExperienceBundle',
-            'Document',
-            'DuplicateRule',
-            'EclairGeoData',
-            'EmailServicesFunction',
-            'EmailTemplate',
-            'EmbeddedServiceBranding',
-            'EmbeddedServiceConfig',
-            'EmbeddedServiceFlowConfig',
-            'EmbeddedServiceMenuSettings',
-            'EscalationRules',
-            'EventRelayConfig',
-            'ExperienceContainer',
-            'ExperiencePropertyTypeBundle',
-            'ExternalAuthIdentityProvider',
-            'ExternalClientApplication',
-            'ExternalCredential',
-            'ExternalDataSource',
-            'ExternalServiceRegistration',
-            'ExtlClntAppConfigurablePolicies',
-            'ExtlClntAppGlobalOauthSettings',
-            'ExtlClntAppMobileConfigurablePolicies',
-            'ExtlClntAppMobileSettings',
-            'ExtlClntAppNotificationSettings',
-            'ExtlClntAppOauthConfigurablePolicies',
-            'ExtlClntAppOauthSettings',
-            'ExtlClntAppPushConfigurablePolicies',
-            'ExtlClntAppPushSettings',
-            'ExtlClntAppSamlConfigurablePolicies',
-            'FieldRestrictionRule',
-            'FlexiPage',
-            'Flow',
-            'FlowCategory',
-            'FlowDefinition',
-            'FlowTest',
-            'ForecastingFilter',
-            'ForecastingFilterCondition',
-            'ForecastingGroup',
-            'ForecastingSourceDefinition',
-            'ForecastingType',
-            'ForecastingTypeSource',
-            'GatewayProviderPaymentMethodType',
-            'GlobalValueSet',
-            'GlobalValueSetTranslation',
-            'Group',
-            'HomePageComponent',
-            'HomePageLayout',
-            'IPAddressRange',
-            'IframeWhiteListUrlSettings',
-            'InboundNetworkConnection',
-            'InstalledPackage',
-            'Layout',
-            'LeadConvertSettings',
-            'Letterhead',
-            'LightningBolt',
-            'LightningComponentBundle',
-            'LightningExperienceTheme',
-            'LightningMessageChannel',
-            'LightningOnboardingConfig',
-            'LightningTypeBundle',
-            'LiveChatSensitiveDataRule',
-            'MLDataDefinition',
-            'MLPredictionDefinition',
-            'MLRecommendationDefinition',
-            'ManagedContentType',
-            'ManagedEventSubscription',
-            'MatchingRules',
-            'MessagingChannel',
-            'MobileApplicationDetail',
-            'MutingPermissionSet',
-            'MyDomainDiscoverableLogin',
-            'NamedCredential',
-            'NetworkBranding',
-            'NotificationTypeConfig',
-            'OauthCustomScope',
-            'OauthTokenExchangeHandler',
-            'OutboundNetworkConnection',
-            'PathAssistant',
-            'PaymentGatewayProvider',
-            'PermissionSet',
-            'PermissionSetGroup',
-            'PlatformCachePartition',
-            'PlatformEventChannel',
-            'PlatformEventChannelMember',
-            'PlatformEventSubscriberConfig',
-            'PostTemplate',
-            'ProcessFlowMigration',
-            'ProductAttributeSet',
-            'Profile',
-            'ProfilePasswordPolicy',
-            'ProfileSessionSetting',
-            'Prompt',
-            'PublicKeyCertificate',
-            'PublicKeyCertificateSet',
-            'Queue',
-            'QuickAction',
-            'RecommendationStrategy',
-            'RecordActionDeployment',
-            'RedirectWhitelistUrl',
-            'RemoteSiteSetting',
-            'Report',
-            'ReportType',
-            'RestrictionRule',
-            'Role',
-            'SamlSsoConfig',
-            'Scontrol',
-            'SearchCustomization',
-            'SearchOrgWideObjectConfig',
-            'Settings',
-            'SharingRules',
-            'SharingSet',
-            'SiteDotCom',
-            'Skill',
-            'SkillType',
-            'StandardValueSet',
-            'StandardValueSetTranslation',
-            'StaticResource',
-            'SynonymDictionary',
-            'TopicsForObjects',
-            'TransactionSecurityPolicy',
-            'UiFormatSpecificationSet',
-            'UserProvisioningConfig',
-            'WaveAnalyticAssetCollection',
-            'Workflow'
-        )] $Type = 'ApexClass',
+        [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $DryRun,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
     )
+
+    if ($ConciseResults -and $DetailedResults) {
+        throw "Specify only one of -ConciseResults or -DetailedResults."
+    }
+
+    if (-not $Type) {
+        throw "Specify -Type when deploying metadata."
+    }
+
     $command = "sf project deploy start"
     $command += " --metadata $Type"
     if ($Name) { $command += ":$Name" }
-    $command += " --target-org $TargetOrg"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
+    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
+    if ($IgnoreErrors) { $command += " --ignore-errors" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($DryRun) { $command += " --dry-run" }
+    if ($ConciseResults) { $command += " --concise" }
+    if ($DetailedResults) { $command += " --verbose" }
     $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
+}
+
+function Deploy-SalesforceMetadata {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $Manifest,
+        [Parameter(Mandatory = $false)][string] $InputDir,
+        [Parameter(Mandatory = $false)][switch] $ManifestPackage,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors
+    )
+
+    $optionsProvided = 0
+    if ($Manifest) { $optionsProvided++ }
+    if ($InputDir) { $optionsProvided++ }
+    if ($ManifestPackage) { $optionsProvided++ }
+    if ($optionsProvided -ne 1) {
+        throw "Specify exactly one of -Manifest, -InputDir, or -ManifestPackage."
+    }
+
+    if ($Manifest -and -not (Test-Path -Path $Manifest -PathType Leaf)) {
+        throw "Manifest file '$Manifest' does not exist."
+    }
+    if ($InputDir -and -not (Test-Path -Path $InputDir -PathType Container)) {
+        throw "Input directory '$InputDir' does not exist."
+    }
+
+    $command = "sf project deploy start"
+    if ($Manifest) { $command += " --manifest `"$Manifest`"" }
+    if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
+    if ($ManifestPackage) { $command += " --single-package" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
+    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
+    if ($IgnoreErrors) { $command += " --ignore-errors" }
+    $command += " --json"
+
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
@@ -458,10 +219,10 @@ function Deploy-SalesforceComponent {
 function Describe-SalesforceObjects {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf sobject list"
-    $command += " --target-org $TargetOrg"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -502,9 +263,9 @@ function Describe-SalesforceFields {
 
 function Get-SalesforceMetaTypes {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
+    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf org list metadata-types"
-    $command += " --target-org $TargetOrg"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
@@ -518,7 +279,7 @@ function Build-SalesforceQuery {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
-        [Parameter(Mandatory = $true)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
 
         [Parameter(Mandatory = $false)][switch] $ExcludeAuditFields,
