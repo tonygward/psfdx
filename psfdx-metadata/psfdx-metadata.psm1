@@ -171,6 +171,41 @@ function Deploy-SalesforceComponent {
     return Show-SalesforceResult -Result $result
 }
 
+function Deploy-SalesforceMetadata {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $Manifest,
+        [Parameter(Mandatory = $false)][string] $InputDir,
+        [Parameter(Mandatory = $false)][switch] $ManifestPackage,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $optionsProvided = 0
+    if ($Manifest) { $optionsProvided++ }
+    if ($InputDir) { $optionsProvided++ }
+    if ($ManifestPackage) { $optionsProvided++ }
+    if ($optionsProvided -ne 1) {
+        throw "Specify exactly one of -Manifest, -InputDir, or -ManifestPackage."
+    }
+
+    if ($Manifest -and -not (Test-Path -Path $Manifest -PathType Leaf)) {
+        throw "Manifest file '$Manifest' does not exist."
+    }
+    if ($InputDir -and -not (Test-Path -Path $InputDir -PathType Container)) {
+        throw "Input directory '$InputDir' does not exist."
+    }
+
+    $command = "sf project deploy start"
+    if ($Manifest) { $command += " --manifest `"$Manifest`"" }
+    if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
+    if ($ManifestPackage) { $command += " --single-package" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
+}
+
 #endregion
 
 #region Describe

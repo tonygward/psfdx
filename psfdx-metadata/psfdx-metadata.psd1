@@ -21,6 +21,7 @@
         'Retrieve-SalesforceField',
         'Retrieve-SalesforceValidationRule',
         'Deploy-SalesforceComponent',
+        'Deploy-SalesforceMetadata',
         'Describe-SalesforceObjects',
         'Describe-SalesforceObject',
         'Describe-SalesforceFields',

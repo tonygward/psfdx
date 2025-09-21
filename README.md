@@ -240,7 +240,7 @@ Get-Command -Module psfdx-metadata
 | :--- | :--- |
 | `Retrieve-SalesforceComponent` | Retrieve specific metadata component by type/name. |
 | `Retrieve-SalesforceMetadata` | Retrieve metadata using a package.xml manifest. |
-| `Retrieve-SalesforcePackage` | Retrieve metadata for unlocked package. |
+| `Retrieve-SalesforcePackage` | Retrieve metadata for an unlocked package. |
 | `Retrieve-SalesforceField` | Retrieve a specific custom field. |
 | `Retrieve-SalesforceValidationRule` | Retrieve a specific validation rule. |
 | `Retrieve-SalesforceOrg` | Retrieve entire Salesforce Org. |
@@ -249,7 +249,8 @@ Get-Command -Module psfdx-metadata
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
+| `Deploy-SalesforceComponent` | Deploy specific metadata by type/name with conflict/warning controls, wait, dry-run, and result detail switches. |
+| `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
 
 ### Describe
 
