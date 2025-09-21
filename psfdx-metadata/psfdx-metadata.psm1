@@ -137,12 +137,12 @@ function Deploy-SalesforceComponent {
     Param(
         [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf project deploy start"
     $command += " --metadata $Type"
     if ($Name) { $command += ":$Name" }
-    $command += " --target-org $TargetOrg"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -155,10 +155,10 @@ function Deploy-SalesforceComponent {
 function Describe-SalesforceObjects {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf sobject list"
-    $command += " --target-org $TargetOrg"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -215,7 +215,7 @@ function Build-SalesforceQuery {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectName,
-        [Parameter(Mandatory = $true)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
 
         [Parameter(Mandatory = $false)][switch] $ExcludeAuditFields,
