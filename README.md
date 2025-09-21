@@ -56,9 +56,9 @@ Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOr
 **4. Retrieve every psfdx cmdlet**
 ```
 Get-Command -Module psfdx
+Get-Command -Module psfdx-metadata
 Get-Command -Module psfdx-development
 Get-Command -Module psfdx-logs
-Get-Command -Module psfdx-metadata
 ```
 
 ## Cmdlets by Module
@@ -126,6 +126,44 @@ Get-Command -Module psfdx-metadata
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceDateTime` | Format current/custom datetime in Salesforce sortable UTC. |
+
+
+### psfdx-metadata
+
+`Import-Module psfdx-metadata`
+
+### Retrieve
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Retrieve-SalesforceComponent` | Retrieve specific metadata component by type/name. |
+| `Retrieve-SalesforceMetadata` | Retrieve metadata using a package.xml manifest. |
+| `Retrieve-SalesforcePackage` | Retrieve metadata for an unlocked package. |
+| `Retrieve-SalesforceField` | Retrieve a specific custom field. |
+| `Retrieve-SalesforceValidationRule` | Retrieve a specific validation rule. |
+| `Retrieve-SalesforceOrg` | Retrieve entire Salesforce Org. |
+
+### Deploy
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
+| `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
+
+### Describe
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Describe-SalesforceObjects` | List sObjects for a target org. |
+| `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
+| `Describe-SalesforceFields` | List fields for an sObject. |
+
+### Types & Utilities
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Get-SalesforceMetaTypes` | List available metadata types. |
+| `Build-SalesforceQuery` | Build a SELECT for all fields on an sObject. |
 
 ### psfdx-development
 
@@ -229,43 +267,6 @@ Get-Command -Module psfdx-metadata
 | Cmdlet | Description |
 | :--- | :--- |
 | `Out-Notepad` | Convenience helper to open a temp file (Windows). |
-
-### psfdx-metadata
-
-`Import-Module psfdx-metadata`
-
-### Retrieve
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Retrieve-SalesforceComponent` | Retrieve specific metadata component by type/name. |
-| `Retrieve-SalesforceMetadata` | Retrieve metadata using a package.xml manifest. |
-| `Retrieve-SalesforcePackage` | Retrieve metadata for an unlocked package. |
-| `Retrieve-SalesforceField` | Retrieve a specific custom field. |
-| `Retrieve-SalesforceValidationRule` | Retrieve a specific validation rule. |
-| `Retrieve-SalesforceOrg` | Retrieve entire Salesforce Org. |
-
-### Deploy
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
-| `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
-
-### Describe
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Describe-SalesforceObjects` | List sObjects for a target org. |
-| `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
-| `Describe-SalesforceFields` | List fields for an sObject. |
-
-### Types & Utilities
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Get-SalesforceMetaTypes` | List available metadata types. |
-| `Build-SalesforceQuery` | Build a SELECT for all fields on an sObject. |
 
 ### psfdx-packages
 
