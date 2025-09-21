@@ -177,7 +177,10 @@ function Deploy-SalesforceMetadata {
         [Parameter(Mandatory = $false)][string] $Manifest,
         [Parameter(Mandatory = $false)][string] $InputDir,
         [Parameter(Mandatory = $false)][switch] $ManifestPackage,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors
     )
 
     $optionsProvided = 0
@@ -200,6 +203,9 @@ function Deploy-SalesforceMetadata {
     if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
     if ($ManifestPackage) { $command += " --single-package" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
+    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
+    if ($IgnoreErrors) { $command += " --ignore-errors" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command

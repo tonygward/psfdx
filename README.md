@@ -249,7 +249,7 @@ Get-Command -Module psfdx-metadata
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Deploy-SalesforceComponent` | Deploy specific metadata by type/name with conflict/warning controls, wait, dry-run, and result detail switches. |
+| `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
 | `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
 
 ### Describe
