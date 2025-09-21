@@ -195,6 +195,7 @@ function Retrieve-SalesforceComponent {
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ChildName,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts
     )
@@ -209,6 +210,7 @@ function Retrieve-SalesforceComponent {
         if ($ChildName) { $command += ".$ChildName" }
     }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($OutputDir) {
         if (-not (Test-Path -Path $OutputDir -PathType Container)) {
             throw "Output directory '$OutputDir' does not exist."
@@ -224,6 +226,7 @@ function Retrieve-SalesforceMetadata {
     Param(
         [Parameter(Mandatory = $true)][string] $Manifest,
         [Parameter(Mandatory = $true)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][switch] $Unzip,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
@@ -237,6 +240,7 @@ function Retrieve-SalesforceMetadata {
 
     $command = "sf project retrieve start --manifest `"$Manifest`""
     $command += " --target-metadata-dir `"$OutputDir`""
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($Unzip) { $command += " --unzip" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
 
