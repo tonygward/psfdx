@@ -219,6 +219,30 @@ function Retrieve-SalesforceComponent {
     Invoke-Salesforce -Command $command
 }
 
+function Retrieve-SalesforceMetadata {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Manifest,
+        [Parameter(Mandatory = $true)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][switch] $Unzip,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (-not (Test-Path -Path $Manifest -PathType Leaf)) {
+        throw "Manifest file '$Manifest' does not exist."
+    }
+    if (-not (Test-Path -Path $OutputDir -PathType Container)) {
+        throw "Output directory '$OutputDir' does not exist."
+    }
+
+    $command = "sf project retrieve start --manifest `"$Manifest`""
+    $command += " --target-metadata-dir `"$OutputDir`""
+    if ($Unzip) { $command += " --unzip" }
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+
+    Invoke-Salesforce -Command $command
+}
+
 function Retrieve-SalesforceField {
     [CmdletBinding()]
     Param(

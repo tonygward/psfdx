@@ -16,6 +16,7 @@
     FunctionsToExport     = @(
         'Retrieve-SalesforceOrg',
         'Retrieve-SalesforceComponent',
+        'Retrieve-SalesforceMetadata',
         'Retrieve-SalesforceField',
         'Retrieve-SalesforceValidationRule',
         'Deploy-SalesforceComponent',
