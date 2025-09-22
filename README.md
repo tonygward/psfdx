@@ -65,6 +65,7 @@ Get-Command -Module psfdx
 | `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
+| `psfdx-sandbox` | Salesforce sandbox lifecycle management. |
 | `psfdx-packages` | Salesforce packages: create, version, promote, install. |
 
 
@@ -230,6 +231,19 @@ Get-Command -Module psfdx
 | `Test-SalesforceJest` | Run Jest tests. |
 | `Debug-SalesforceJest` | Run Jest in debug mode. |
 | `Watch-SalesforceJest` | Run Jest in watch mode. |
+
+### psfdx-sandbox
+
+`Import-Module psfdx-sandbox`
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Get-SalesforceSandboxes` | List sandboxes that belong to the production org. |
+| `New-SalesforceSandbox` | Request creation of a sandbox using a definition file or license type. |
+| `Get-SalesforceSandboxRefreshStatus` | Show the most recent refresh details and next eligible refresh date for a sandbox. |
+| `Copy-SalesforceSandbox` | Clone an existing sandbox into a new sandbox. |
+| `Resume-SalesforceSandbox` | Resume a pending or paused sandbox copy. |
+| `Remove-SalesforceSandbox` | Delete a sandbox from the production org, optionally specifying the target org. |
 
 ### psfdx-logs
 
