@@ -2,14 +2,6 @@
 [![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
 PowerShell modules that wraps the Salesforce CLI.
 
-## Modules
-| Module | Description |
-| :--- | :--- |
-| `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
-| `psfdx-development` | Helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy). |
-| `psfdx-logs` | Tools for working with Salesforce Apex logs. |
-| `psfdx-metadata` | Commands for retrieving, deploying, and describing Salesforce metadata. |
-| `psfdx-packages` | Helpers for managing Salesforce packages: list, create, version, promote, install. |
 # Pre-Requisites
 You must install Salesforce SFDX
 https://developer.salesforce.com/tools/sfdxcli
@@ -61,7 +53,15 @@ Get-Command -Module psfdx-development
 Get-Command -Module psfdx-logs
 ```
 
-## Cmdlets by Module
+## Modules
+| Module | Description |
+| :--- | :--- |
+| `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
+| `psfdx-development` | Helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy). |
+| `psfdx-logs` | Tools for working with Salesforce Apex logs. |
+| `psfdx-metadata` | Commands for retrieving, deploying, and describing Salesforce metadata. |
+| `psfdx-packages` | Helpers for managing Salesforce packages: list, create, version, promote, install. |
+
 
 ### psfdx
 
@@ -69,7 +69,7 @@ Get-Command -Module psfdx-logs
 
 ### Authentication & Orgs
 
-| Cmdlet | Descript### ion |
+| Cmdlet | Description |
 | :--- | :--- |
 | `Connect-Salesforce` | Web-based org authentication. |
 | `Disconnect-Salesforce` | Logout from orgs. |
