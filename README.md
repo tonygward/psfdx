@@ -162,12 +162,12 @@ Get-Command -Module psfdx
 | `Describe-SalesforceObjects` | List sObjects for a target org. |
 | `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
 | `Describe-SalesforceFields` | List fields for an sObject. |
+| `Describe-SalesforceMetadataTypes` | List available metadata types. |
 
-### Types & Utilities
+### Utilities
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Get-SalesforceMetaTypes` | List available metadata types. |
 | `Build-SalesforceQuery` | Build a SELECT for all fields on an sObject. |
 
 ### psfdx-development

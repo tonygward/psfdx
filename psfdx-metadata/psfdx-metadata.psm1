@@ -3,7 +3,7 @@
 
 class SalesforceMetadataTypeGenerator : System.Management.Automation.IValidateSetValuesGenerator {
     [string[]] GetValidValues() {
-        $types = Get-SalesforceMetaTypes
+        $types = Describe-SalesforceMetadataTypes
         return (@($types) + 'CustomField', 'ValidationRule') |
             Where-Object { $_ } |
             Sort-Object -Unique
@@ -261,7 +261,7 @@ function Describe-SalesforceFields {
 
 #region Types and Utilities
 
-function Get-SalesforceMetaTypes {
+function Describe-SalesforceMetadataTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf org list metadata-types"
