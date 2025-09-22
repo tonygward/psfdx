@@ -1,10 +1,13 @@
 ![PSFDX](images/psfdx-logo.png)
 [![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
-PowerShell modules that wraps the Salesforce CLI.
+Cross platform PowerShell modules that wrap the Salesforce CLI.
 
 # Pre-Requisites
-You must install Salesforce SFDX
+1. Salesforce SFDX
 https://developer.salesforce.com/tools/sfdxcli
+
+2. PowerShell for Windows or Linux
+https://github.com/PowerShell/PowerShell/releases
 
 # Installation
 
@@ -33,34 +36,36 @@ A web browser will appear, login to Salesforce as you would normally.
 **-Verbose** switch reveals the underlying Salesfore CLI
 ![Connect-Salesforce with Verbose](images/connect-verbose.png)
 
-**2. Retrieve first 10 Salesforce Accounts**
+**2. Create and use a Salesforce Alias**
+```
+Add-SalesforceAlias -TargetOrg my@email.com -Alias myalias
+Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg myalias
+```
+**3. Retrieve first 10 Salesforce Accounts**
 ```
 Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg my@email.com
 ```
 NB you only need to Import-Module psfdx once per PowerShell session
 
-**3. Create and use a Salesforce Alias**
+**4. Export Salesforce Debug Logs to Files**
 ```
-Add-SalesforceAlias -TargetOrg my@email.com -Alias myalias
-Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg myalias
+Import-Module psfdx-logs
+Export-SalesforceDebugLogs -TargetOrg my@email.com
 ```
 
-**4. Retrieve every psfdx cmdlet**
+**5. List every cmdlet in the psfdx module**
 ```
 Get-Command -Module psfdx
-Get-Command -Module psfdx-metadata
-Get-Command -Module psfdx-development
-Get-Command -Module psfdx-logs
 ```
 
 ## Modules
 | Module | Description |
 | :--- | :--- |
 | `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
-| `psfdx-development` | Helpers for Salesforce DX development workflows (projects, scratch orgs, tests, deploy). |
-| `psfdx-logs` | Tools for working with Salesforce Apex logs. |
-| `psfdx-metadata` | Commands for retrieving, deploying, and describing Salesforce metadata. |
-| `psfdx-packages` | Helpers for managing Salesforce packages: list, create, version, promote, install. |
+| `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
+| `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
+| `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
+| `psfdx-packages` | Salesforce packages: create, version, promote, install. |
 
 
 ### psfdx
