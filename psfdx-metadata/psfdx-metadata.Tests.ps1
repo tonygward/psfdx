@@ -17,14 +17,14 @@ Describe 'psfdx-metadata module' {
             }
 
             It 'builds retrieve command with child metadata and options' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomObject' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
                 Mock Test-Path { $true }
                 Mock Invoke-Salesforce { 'ok' }
 
-                Retrieve-SalesforceComponent -Type 'CustomObject' -Name 'Account' -ChildName 'Field__c' -TargetOrg 'me' -Wait 7 -OutputDir 'outdir' -IgnoreConflicts
+                Retrieve-SalesforceComponent -Type 'CustomField' -Name 'Account' -ChildName 'Field__c' -TargetOrg 'me' -Wait 7 -OutputDir 'outdir' -IgnoreConflicts
 
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf project retrieve start --metadata CustomObject:Account.Field__c*') -and
+                    ($Command -like 'sf project retrieve start --metadata CustomField:Account.Field__c*') -and
                     ($Command -like '* --target-org me*') -and
                     ($Command -like '* --wait 7*') -and
                     ($Command -like '* --output-dir "outdir"*') -and
@@ -33,10 +33,10 @@ Describe 'psfdx-metadata module' {
             }
 
             It 'validates output directory existence' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomObject' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
                 Mock Test-Path { param($Path, $PathType) if ($Path -eq 'missing' -and $PathType -eq 'Container') { return $false } else { return $true } }
 
-                $action = { Retrieve-SalesforceComponent -Type 'CustomObject' -Name 'Account' -OutputDir 'missing' }
+                $action = { Retrieve-SalesforceComponent -Type 'CustomField' -Name 'Account' -OutputDir 'missing' }
                 $action | Should -Throw
                 try { & $action } catch { $_.Exception.Message | Should -Be "Output directory 'missing' does not exist." }
             }
@@ -73,30 +73,32 @@ Describe 'psfdx-metadata module' {
 
         Context 'Deploy-SalesforceComponent' {
             It 'requires a metadata type' {
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
+
                 $action = { Deploy-SalesforceComponent }
                 $action | Should -Throw
                 try { & $action } catch { $_.Exception.Message | Should -Be 'Specify -Type when deploying metadata.' }
             }
 
             It 'rejects conflicting result verbosity switches' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomObject' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
 
-                $action = { Deploy-SalesforceComponent -Type 'CustomObject' -ConciseResults -DetailedResults }
+                $action = { Deploy-SalesforceComponent -Type 'CustomField' -ConciseResults -DetailedResults }
                 $action | Should -Throw
                 try { & $action } catch { $_.Exception.Message | Should -Be 'Specify only one of -ConciseResults or -DetailedResults.' }
             }
 
             It 'builds deploy command and returns processed result' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomObject' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
                 Mock Invoke-Salesforce { '{"status":0}' }
                 Mock Show-SalesforceResult { param($Result) @{ fromShow = $Result } }
 
-                $out = Deploy-SalesforceComponent -Type 'CustomObject' -Name 'Account' -TargetOrg 'me' -IgnoreConflicts -IgnoreWarnings -IgnoreErrors -Wait 10 -DryRun -ConciseResults
+                $out = Deploy-SalesforceComponent -Type 'CustomField' -Name 'Account.Field__c' -TargetOrg 'me' -IgnoreConflicts -IgnoreWarnings -IgnoreErrors -Wait 10 -DryRun -ConciseResults
 
                 $out.fromShow | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                     ($Command -like 'sf project deploy start*') -and
-                    ($Command -like '* --metadata CustomObject:Account*') -and
+                    ($Command -like '* --metadata CustomField:Account.Field__c*') -and
                     ($Command -like '* --target-org me*') -and
                     ($Command -like '* --ignore-conflicts*') -and
                     ($Command -like '* --ignore-warnings*') -and
