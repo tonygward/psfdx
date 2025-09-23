@@ -4,26 +4,27 @@ Get-Module -Name 'psfdx-metadata' -All | ForEach-Object {
 }
 
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-metadata.psd1'
-Import-Module $moduleManifest -Force | Out-Null
+$module = Import-Module $moduleManifest -Force -PassThru
+$moduleName = $module.Name
 
 Describe 'psfdx-metadata module' {
-    InModuleScope 'psfdx-metadata' {
+    InModuleScope $module {
         Context 'Retrieve-SalesforceComponent' {
             It 'throws when ChildName is provided without Name' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' } -ModuleName $moduleName
                 $action = { Retrieve-SalesforceComponent -Type 'CustomField' -ChildName 'Field__c' }
                 $action | Should -Throw
                 try { & $action } catch { $_.Exception.Message | Should -Be "Specify -Name when using -ChildName." }
             }
 
             It 'builds retrieve command with child metadata and options' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' } -ModuleName $moduleName
                 Mock Test-Path { $true }
-                Mock Invoke-Salesforce { 'ok' }
+                Mock Invoke-Salesforce { 'ok' } -ModuleName $moduleName
 
                 Retrieve-SalesforceComponent -Type 'CustomField' -Name 'Account' -ChildName 'Field__c' -TargetOrg 'me' -Wait 7 -OutputDir 'outdir' -IgnoreConflicts
 
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                Assert-MockCalled Invoke-Salesforce -ModuleName $moduleName -Times 1 -ParameterFilter {
                     ($Command -like 'sf project retrieve start --metadata CustomField:Account.Field__c*') -and
                     ($Command -like '* --target-org me*') -and
                     ($Command -like '* --wait 7*') -and
@@ -33,7 +34,7 @@ Describe 'psfdx-metadata module' {
             }
 
             It 'validates output directory existence' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' } -ModuleName $moduleName
                 Mock Test-Path { param($Path, $PathType) if ($Path -eq 'missing' -and $PathType -eq 'Container') { return $false } else { return $true } }
 
                 $action = { Retrieve-SalesforceComponent -Type 'CustomField' -Name 'Account' -OutputDir 'missing' }
@@ -57,11 +58,11 @@ Describe 'psfdx-metadata module' {
 
             It 'builds manifest retrieve command' {
                 Mock Test-Path { $true }
-                Mock Invoke-Salesforce { 'ok' }
+                Mock Invoke-Salesforce { 'ok' } -ModuleName $moduleName
 
                 Retrieve-SalesforceMetadata -Manifest 'package.xml' -OutputDir 'mdapi' -Wait 5 -Unzip -TargetOrg 'me'
 
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                Assert-MockCalled Invoke-Salesforce -ModuleName $moduleName -Times 1 -ParameterFilter {
                     ($Command -like 'sf project retrieve start --manifest "package.xml"*') -and
                     ($Command -like '* --target-metadata-dir "mdapi"*') -and
                     ($Command -like '* --wait 5*') -and
@@ -73,7 +74,7 @@ Describe 'psfdx-metadata module' {
 
         Context 'Deploy-SalesforceComponent' {
             It 'requires a metadata type' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' } -ModuleName $moduleName
 
                 $action = { Deploy-SalesforceComponent }
                 $action | Should -Throw
@@ -81,7 +82,7 @@ Describe 'psfdx-metadata module' {
             }
 
             It 'rejects conflicting result verbosity switches' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' } -ModuleName $moduleName
 
                 $action = { Deploy-SalesforceComponent -Type 'CustomField' -ConciseResults -DetailedResults }
                 $action | Should -Throw
@@ -89,14 +90,14 @@ Describe 'psfdx-metadata module' {
             }
 
             It 'builds deploy command and returns processed result' {
-                Mock Describe-SalesforceMetadataTypes { 'CustomField' }
-                Mock Invoke-Salesforce { '{"status":0}' }
-                Mock Show-SalesforceResult { param($Result) @{ fromShow = $Result } }
+                Mock Describe-SalesforceMetadataTypes { 'CustomField' } -ModuleName $moduleName
+                Mock Invoke-Salesforce { '{"status":0}' } -ModuleName $moduleName
+                Mock Show-SalesforceResult { param($Result) @{ fromShow = $Result } } -ModuleName $moduleName
 
                 $out = Deploy-SalesforceComponent -Type 'CustomField' -Name 'Account.Field__c' -TargetOrg 'me' -IgnoreConflicts -IgnoreWarnings -IgnoreErrors -Wait 10 -DryRun -ConciseResults
 
                 $out.fromShow | Should -Be '{"status":0}'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                Assert-MockCalled Invoke-Salesforce -ModuleName $moduleName -Times 1 -ParameterFilter {
                     ($Command -like 'sf project deploy start*') -and
                     ($Command -like '* --metadata CustomField:Account.Field__c*') -and
                     ($Command -like '* --target-org me*') -and
@@ -144,13 +145,13 @@ Describe 'psfdx-metadata module' {
 
             It 'builds deploy command from manifest' {
                 Mock Test-Path { $true }
-                Mock Invoke-Salesforce { '{"status":0}' }
-                Mock Show-SalesforceResult { param($Result) @{ fromShow = $Result } }
+                Mock Invoke-Salesforce { '{"status":0}' } -ModuleName $moduleName
+                Mock Show-SalesforceResult { param($Result) @{ fromShow = $Result } } -ModuleName $moduleName
 
                 $out = Deploy-SalesforceMetadata -Manifest 'package.xml' -TargetOrg 'me' -IgnoreConflicts -IgnoreWarnings -IgnoreErrors
 
                 $out.fromShow | Should -Be '{"status":0}'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                Assert-MockCalled Invoke-Salesforce -ModuleName $moduleName -Times 1 -ParameterFilter {
                     ($Command -like 'sf project deploy start*') -and
                     ($Command -like '* --manifest "package.xml"*') -and
                     ($Command -like '* --target-org me*') -and
@@ -164,7 +165,7 @@ Describe 'psfdx-metadata module' {
 
         Context 'Describe-SalesforceMetadataTypes' {
             BeforeEach {
-                Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[{"xmlName":"ApexClass"},{"xmlName":"CustomObject"}]}}' }
+                Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[{"xmlName":"ApexClass"},{"xmlName":"CustomObject"}]}}' } -ModuleName $moduleName
             }
 
             It 'requests metadata types and parses json result' {
@@ -172,7 +173,7 @@ Describe 'psfdx-metadata module' {
                 $types | Should -HaveCount 2
                 $types[0].xmlName | Should -Be 'ApexClass'
 
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                Assert-MockCalled Invoke-Salesforce -ModuleName $moduleName -Times 1 -ParameterFilter {
                     ($Command -like 'sf org list metadata-types*') -and
                     ($Command -like '* --target-org me*') -and
                     ($Command -like '* --json*')
@@ -190,7 +191,7 @@ Describe 'psfdx-metadata module' {
                             [pscustomobject]@{ name = 'A__c'; label = 'A'; type = 'Number'; byteLength = 18 }
                         )
                     }
-                }
+                } -ModuleName $moduleName
             }
 
             It 'returns sorted field metadata and forwards tooling switch' {
@@ -199,7 +200,7 @@ Describe 'psfdx-metadata module' {
                 $fields[0].name | Should -Be 'A__c'
                 $fields[1].name | Should -Be 'B__c'
 
-                Assert-MockCalled Describe-SalesforceObject -Times 1 -ParameterFilter {
+                Assert-MockCalled Describe-SalesforceObject -ModuleName $moduleName -Times 1 -ParameterFilter {
                     ($Name -eq 'Sample__c') -and
                     ($TargetOrg -eq 'me') -and
                     $UseToolingApi
@@ -217,7 +218,7 @@ Describe 'psfdx-metadata module' {
                         [pscustomobject]@{ name = 'OwnerId' },
                         [pscustomobject]@{ name = 'Custom__c' }
                     )
-                }
+                } -ModuleName $moduleName
             }
 
             It 'builds field list and removes excluded categories' {
@@ -226,7 +227,7 @@ Describe 'psfdx-metadata module' {
             }
 
             It 'returns empty string when no fields are returned' {
-                Mock Describe-SalesforceFields { $null }
+                Mock Describe-SalesforceFields { $null } -ModuleName $moduleName
                 $query = Build-SalesforceQuery -ObjectName 'Contact'
                 $query | Should -Be ''
             }
