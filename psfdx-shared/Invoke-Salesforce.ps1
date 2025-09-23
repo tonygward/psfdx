@@ -1,13 +1,8 @@
 function Invoke-Salesforce {
-    [CmdletBinding(DefaultParameterSetName = 'Arguments')]
+    [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true, ParameterSetName = 'Arguments')][string] $Arguments,
-        [Parameter(Mandatory = $true, ParameterSetName = 'Command')][object] $Command
+        [Parameter(Mandatory = $true)][object] $Command
     )
-
-    if ($PSCmdlet.ParameterSetName -eq 'Arguments') {
-        $Command = "sf $Arguments"
-    }
 
     if ($Command -is [string[]]) {
         Write-Verbose ($Command -join ' ')
@@ -25,4 +20,3 @@ function Invoke-Salesforce {
         throw "Unsupported -Command type: $($Command.GetType().FullName)"
     }
 }
-
