@@ -16,7 +16,12 @@ function New-SalesforceProject {
         [Parameter(Mandatory = $false)][switch] $GenerateManifest
     )
     $command = "sf project generate --name $Name"
-    if ($OutputDirectory) { $command += " --output-dir $OutputDirectory" }
+    if ($OutputDirectory) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
+        $command += " --output-dir $OutputDirectory"
+    }
     if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
     if ($Namespace) { $command += " --namespace $Namespace" }
     if ($GenerateManifest) { $command += " --manifest" }
@@ -214,63 +219,79 @@ function Test-SalesforceApex {
     Param(
         [Parameter(Mandatory = $false)][string] $ClassName,
         [Parameter(Mandatory = $false)][string] $TestName,
-        [Parameter(Mandatory = $false)][string] $TargetOrg,
 
         [Parameter(Mandatory = $false)][string][ValidateSet('human', 'tap', 'junit', 'json')] $ResultFormat = 'json',
 
-        [Parameter(Mandatory = $false)][switch] $RunAsynchronously,
+        [Parameter(Mandatory = $false)][switch] $Concise,
         [Parameter(Mandatory = $false)][switch] $CodeCoverage,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverageDetailed,
         [Parameter(Mandatory = $false)][int] $WaitMinutes = 10,
 
-        [Parameter(Mandatory = $false)][string] $OutputDirectory
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $TestsInProject,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     $command = "sf apex run test"
-    if ($ClassName -and $TestName) {
-        # Run specific Test in a Class
-        $command += " --tests $ClassName.$TestName"
-        if ($RunAsynchronously) { $command += "" }
-        else { $command += " --synchronous" }
+    $collectedTests = @()
 
+    if ($TestsInProject.IsPresent) {
+        $searchRoot = Get-Location
+        $testFiles = Get-ChildItem -Path $searchRoot.Path -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+        $testFiles = $testFiles | Where-Object {
+            Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+        }
+        $collectedTests = $testFiles | ForEach-Object {
+            [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+        } | Sort-Object -Unique
+
+        if (-not $collectedTests) {
+            throw "No Apex test classes found in '$($searchRoot.Path)'."
+        }
+        foreach ($testName in $collectedTests) {
+            $command += " --tests $testName"
+        }
+    } elseif ($ClassName -and $TestName) {
+        $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
     } elseif ((-not $TestName) -and ($ClassName)) {
-        # Run Test Class
-        $command += " --class-names $ClassName"
-        if ($RunAsynchronously) { $command += "" }
-        else { $command += " --synchronous" }
-    } else {
-        $command += " --test-level RunLocalTests" # Run all Tests
+        $command += " --class-names $ClassName"     # Run Test Class
     }
 
     if ($OutputDirectory) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
         $command += " --output-dir $OutputDirectory"
-    } else {
-        $command += " --output-dir $PSScriptRoot"
     }
-
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
 
-    if ($CodeCoverage) { $command += " --detailed-coverage" }
+    if ($Concise) { $command += " --concise" }
+    if ($CodeCoverage) { $command += " --code-coverage" }
+    if ($CodeCoverageDetailed) { $command += " --detailed-coverage" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
+    if ($ResultFormat -ne 'json') {
+        Invoke-Salesforce -Command $command
+        return
+    }
+
     $result = Invoke-Salesforce -Command $command
     $result = $result | ConvertFrom-Json
-
-    Write-Verbose $result
 
     $result.result.tests
     if ($result.result.summary.outcome -ne 'Passed') {
         throw ($result.result.summary.failing.tostring() + " Tests Failed")
     }
 
-    if (-not $CodeCoverage) {
+    if ((-not $CodeCoverage) -and (-not $CodeCoverageDetailed)) {
         return
     }
 
     [int]$codeCoverage = ($result.result.summary.testRunCoverage -replace '%')
     if ($codeCoverage -lt 75) {
         $result.result.coverage.coverage
-        throw 'Insufficient code coverage'
+        throw "Insufficient code coverage ${codeCoverage}%"
     }
 }
 
@@ -288,12 +309,8 @@ function Get-SalesforceCodeCoverage {
         $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
     }
 
-    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
-    $result = $result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        throw ($result.message)
-    }
-    $result = $result.result.records
+    $result = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -UseToolingApi
+    $result = (Show-SalesforceResult -Result $result).records
 
     $values = @()
     foreach ($item in $result) {
