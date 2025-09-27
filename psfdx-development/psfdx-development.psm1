@@ -82,8 +82,23 @@ function Get-SalesforceConfig {
 function Set-SalesforceTargetDevHub {
     [CmdletBinding()]
     Param(
+        [Parameter(Mandatory = $true)][string] $Value,
         [Parameter(Mandatory = $false)][switch] $Global
     )
+
+    $command = "sf config set target-dev-hub=$Value"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return (Show-SalesforceResult -Result $result).successes
+}
+
+function Get-SalesforceTargetDevHub {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $Global
+    )
+
     $command = "sf config get target-dev-hub"
     if ($Global) { $command += " --global" }
     $command += " --json"
@@ -100,7 +115,7 @@ function Remove-SalesforceTargetDevHub {
     if ($Global) { $command += " --global" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
-    return Show-SalesforceResult -Result $result
+    return (Show-SalesforceResult -Result $result).successes
 }
 
 #endregion

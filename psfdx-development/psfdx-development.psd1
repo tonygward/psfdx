@@ -67,7 +67,8 @@
         'Get-SalesforceApexClass',
         'Invoke-SalesforceApex',
         'New-SalesforceApexClass',
-        'New-SalesforceApexTrigger'
+        'New-SalesforceApexTrigger',
+        'Get-SalesforceTargetDevHub'
     )
 
     # Cmdlets to export from this module

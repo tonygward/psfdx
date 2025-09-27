@@ -13,7 +13,19 @@ Import-Module $moduleManifest -Force | Out-Null
 
 Describe 'psfdx-development basics' {
     InModuleScope 'psfdx-development' {
-    BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"successes":[{"name":"target-org"}]}}' } }
+        BeforeEach {
+            Mock Invoke-Salesforce {
+                param($Command)
+                switch -Regex ($Command) {
+                    'sf config get target-dev-hub' {
+                        return '{"status":0,"result":{"target-dev-hub":[{"name":"target-dev-hub","value":"DevHub"}]}}'
+                    }
+                    Default {
+                        return '{"status":0,"result":{"successes":[{"name":"target-config"}]}}'
+                    }
+                }
+            }
+        }
         It 'starts LWC dev server with sf command' {
             Start-SalesforceLwcDevServer | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning lwc start' }
@@ -29,6 +41,30 @@ Describe 'psfdx-development basics' {
         It 'removes project target org globally' {
             Remove-SalesforceTargetOrg -Global | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-org --global --json' }
+        }
+        It 'sets default dev hub with equals syntax' {
+            Set-SalesforceTargetDevHub -Value 'DevHubAlias' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-dev-hub=DevHubAlias --json' }
+        }
+        It 'sets default dev hub globally' {
+            Set-SalesforceTargetDevHub -Value 'DevHubAlias' -Global | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-dev-hub=DevHubAlias --global --json' }
+        }
+        It 'gets default dev hub' {
+            Get-SalesforceTargetDevHub | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --json' }
+        }
+        It 'gets default dev hub globally' {
+            Get-SalesforceTargetDevHub -Global | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --global --json' }
+        }
+        It 'removes default dev hub' {
+            Remove-SalesforceTargetDevHub | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-dev-hub --json' }
+        }
+        It 'removes default dev hub globally' {
+            Remove-SalesforceTargetDevHub -Global | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-dev-hub --global --json' }
         }
     }
 }

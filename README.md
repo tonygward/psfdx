@@ -179,20 +179,21 @@ Get-Command -Module psfdx*
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `New-SalesforceProject` | Create a new SFDX project. |
-| `Set-SalesforceTargetOrg` | Write `.sfdx/sfdx-config.json` default username. |
-| `Get-SalesforceTargetOrg` | Read project default username. |
-| `Remove-SalesforceTargetOrg` | Unset project default username. |
-| `Get-SalesforceConfig` | Show SFDX config (JSON). |
- | `Set-SalesforceTargetDevHub` | Set default Dev Hub (`--global`). |
-| `Remove-SalesforceTargetDevHub` | Unset default Dev Hub. |
-
+| `New-SalesforceProject` | Create a new Salesforce project. |
+| `Set-SalesforceTargetOrg` | Set project (or global) default Target Org. |
+| `Get-SalesforceTargetOrg` | Get project (or global) default Target Org. |
+| `Remove-SalesforceTargetOrg` | Unset project (or global) default Target Org. |
+| `Get-SalesforceConfig` | Get all Salesforce Config values per project or global. |
+| `Set-SalesforceTargetDevHub` | Set project (or global) default DevHub. |
+| `Set-SalesforceTargetDevHub` | Set default Dev Hub (project or global). |
+| `Get-SalesforceTargetDevHub` | Get default Dev Hub (project or global). |
+| `Remove-SalesforceTargetDevHub` | Unset default Dev Hub (project or global). |
 ### Scratch Orgs
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Get-SalesforceScratchOrgs` | List scratch orgs (optionally last-used). |
-| `New-SalesforceScratchOrg` | Create scratch org (wait/duration/def file). |
+| `Get-SalesforceScratchOrgs` | List scratch orgs. |
+| `New-SalesforceScratchOrg` | Create scratch org. |
 | `Remove-SalesforceScratchOrg` | Delete a scratch org. |
 | `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found. |
 
@@ -200,11 +201,11 @@ Get-Command -Module psfdx*
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Test-SalesforceApex` | Run Apex tests (sync/async, coverage, output dir). |
+| `Test-SalesforceApex` | Run Apex tests. |
 | `Get-SalesforceCodeCoverage` | Compute coverage per class/test method. |
 | `Invoke-SalesforceApex` | Execute Apex from a file. |
-| `Watch-SalesforceApex` | On-save deploy/test Apex from a project. |
-| `Get-SalesforceApexClass` | Lookup ApexClass by name (tooling API SOQL). |
+| `Watch-SalesforceApex` | On-save deploy and test Apex. |
+| `Get-SalesforceApexClass` | Get Apex Class details from Org. |
 
 ### Apex Scaffolding
 
