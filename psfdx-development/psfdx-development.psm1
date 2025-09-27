@@ -15,7 +15,7 @@ function New-SalesforceProject {
         [Parameter(Mandatory = $false)][string] $Namespace,
         [Parameter(Mandatory = $false)][switch] $GenerateManifest
     )
-    $command = "sf force project create --name $Name"
+    $command = "sf project generate --name $Name"
     if ($OutputDirectory) { $command += " --output-dir $OutputDirectory" }
     if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
     if ($Namespace) { $command += " --namespace $Namespace" }
@@ -29,74 +29,36 @@ function New-SalesforceProject {
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
         $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
         New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
-        Set-SalesforceProject -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
+    Set-SalesforceTargetOrg -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
     }
     return $result
 }
 
-function Set-SalesforceProject {
+function Set-SalesforceTargetOrg {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $DefaultUserName,
-        [Parameter(Mandatory = $false)][string] $ProjectFolder
+        [Parameter(Mandatory = $true)][string] $Value,
+        [Parameter(Mandatory = $false)][switch] $Global
     )
 
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }
-
-    if ($sfdxFolder.EndsWith(".sfdx") -eq $false) {
-        $sfdxFolder = Join-Path -Path $sfdxFolder -ChildPath ".sfdx"
-    }
-
-    if ((Test-Path -Path $sfdxFolder) -eq $false) {
-        throw ".sfdx folder does not exist in $sfdxFolder"
-    }
-
-    $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
-    if (-not (Test-Path -Path $sfdxFile)) {
-        throw "File already exists $sfdxFile"
-    }
-    $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
-    Set-Content -Path $sfdxFile -Value $json
+    $command = "sf config set target-org=$Value"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return (Show-SalesforceResult -Result $result).successes
 }
 
-function Get-SalesforceDefaultUserName {
+function Get-SalesforceTargetOrg {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][string] $ProjectFolder)
+    Param(
+        [Parameter(Mandatory = $false)][switch] $Global
+    )
 
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }
-
-    $sfdxConfigFile = ""
-    $files = Get-ChildItem -Path $sfdxFolder -Recurse -Filter "sfdx-config.json"
-    foreach ($file in $files) {
-        if ($file.FullName -like "*.sfdx*") {
-            $sfdxConfigFile = $file
-            break
-        }
-    }
-
-    if (!(Test-Path -Path $sfdxConfigFile)) {
-        throw "Missing Salesforce Project File (sfdx-config.json)"
-    }
-    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
-
-    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
-    return $salesforceSettings.defaultusername
-}
-
-function Get-SalesforceProjectUser {
-    [CmdletBinding()]
-    Param()
-    $sfdxConfigFile = Get-SalesforceProjectConfig
-    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
-    return $salesforceSettings.defaultusername
+    $command = "sf config get target-org"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
 }
 
 function Get-SalesforceProjectConfig {
@@ -213,7 +175,7 @@ function New-SalesforceScratchOrg {
 
     $scratchOrgUsername = $result.username
     if ($Set) {
-        Set-SalesforceProjectUser -TargetOrg $scratchOrgUsername
+    Set-SalesforceProjectUser -TargetOrg $scratchOrgUsername
     }
 }
 
@@ -379,7 +341,7 @@ function Watch-SalesforceApex {
         Write-Verbose "Not a Salesforce Project"
         return
     }
-    $username = Get-SalesforceDefaultUserName -ProjectFolder $ProjectFolder
+    $username = Get-SalesforceTargetOrg -ProjectFolder $ProjectFolder
 
     $type = Get-SalesforceType -FileName $FileName
     if (($type -eq "ApexClass") -or ($type -eq "ApexTrigger")) {
