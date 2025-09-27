@@ -201,7 +201,7 @@ Get-Command -Module psfdx*
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Test-SalesforceApex` | Run Apex tests. |
+| `Test-SalesforceApex` | Run Apex tests (use the `-TestsInProject` switch to auto-discover local `@isTest` classes). |
 | `Get-SalesforceCodeCoverage` | Compute coverage per class/test method. |
 | `Invoke-SalesforceApex` | Execute Apex from a file. |
 | `Watch-SalesforceApex` | On-save deploy and test Apex. |

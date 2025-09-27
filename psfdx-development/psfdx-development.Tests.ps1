@@ -71,10 +71,84 @@ Describe 'psfdx-development basics' {
 
 Describe 'Test-SalesforceApex command building' {
     InModuleScope 'psfdx-development' {
-        BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"tests":[],"summary":{"outcome":"Passed","testRunCoverage":"100%"}}}' } }
+        BeforeEach {
+            Mock Invoke-Salesforce {
+                param($Command)
+                '{"status":0,"result":{"tests":[],"summary":{"outcome":"Passed","testRunCoverage":"100%"}}}'
+            }
+        }
         It 'runs specified class synchronously with target org and json' {
             Test-SalesforceApex -ClassName 'MyClass' -TargetOrg 'me' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf apex run test *') -and ($Command -like '* --class-names MyClass*') -and ($Command -like '* --target-org me*') -and ($Command -like '* --result-format json*') }
+        }
+        It 'throws if output directory does not exist' {
+            $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
+            $threw = $false
+            try {
+                Test-SalesforceApex -OutputDirectory $missing | Out-Null
+            }
+            catch {
+                $threw = $true
+                $_.Exception.Message | Should -Be "Output directory '$missing' does not exist."
+            }
+            $threw | Should -BeTrue "Expected Test-SalesforceApex to throw when output directory is missing."
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'passes output directory when path exists' {
+            $existing = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                Test-SalesforceApex -OutputDirectory $existing.FullName | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like "sf apex run test* --output-dir $($existing.FullName)*" }
+            }
+            finally {
+                Remove-Item -LiteralPath $existing.FullName -Force -Recurse
+            }
+        }
+        It 'throws if TestsInProject has no apex tests' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            Push-Location $tempRoot.FullName
+            try {
+                $clsPath = Join-Path (Get-Location).Path 'NotATest.cls'
+                Set-Content -Path $clsPath -Value 'public class NotATest {}' -Encoding UTF8
+                $currentPath = (Get-Location).Path
+                $threw = $false
+                try {
+                    Test-SalesforceApex -TestsInProject | Out-Null
+                }
+                catch {
+                    $threw = $true
+                    $_.Exception.Message | Should -Be "No Apex test classes found in '$currentPath'."
+                }
+                $threw | Should -BeTrue "Expected Test-SalesforceApex to throw when no Apex tests found."
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            finally {
+                Pop-Location
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+        It 'adds tests from project folder as repeated --tests parameters' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            Push-Location $tempRoot.FullName
+            try {
+                $first = Join-Path (Get-Location).Path 'first.cls'
+                $secondFolder = Join-Path (Get-Location).Path 'sub'
+                $second = Join-Path $secondFolder 'second.cls'
+                New-Item -Path $secondFolder -ItemType Directory -Force | Out-Null
+                Set-Content -Path $first -Value '@isTest public class first {}' -Encoding UTF8
+                Set-Content -Path $second -Value '@isTest private class second {}' -Encoding UTF8
+
+                Test-SalesforceApex -TestsInProject | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    ($Command -like 'sf apex run test *') -and
+                    ($Command -like '* --tests first*') -and
+                    ($Command -like '* --tests second*')
+                }
+            }
+            finally {
+                Pop-Location
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
         }
     }
 }
