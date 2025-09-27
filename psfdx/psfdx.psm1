@@ -71,7 +71,7 @@ function Connect-SalesforceJwt {
     $url = "https://login.salesforce.com"
     if ($Sandbox) { $url = "https://test.salesforce.com" }
 
-    $command = "sf org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file $JwtKeyfile --instance-url $url"
+    $command = "sf org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file `"$JwtKeyfile`" --instance-url $url"
     if ($Alias) { $command += " --alias $Alias" }
     if ($SetDefault) { $command += " --set-default" }
     if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
@@ -196,7 +196,7 @@ function Select-SalesforceRecords {
     )
     $command = "sf data query"
     if ($Query) { $command += " --query `"$Query`"" }
-    if ($File) { $command += " --file $File" }
+    if ($File) { $command += " --file `"$File`"" }
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     if ($IncludeDeletedRows) { $command += " --all-rows" }
