@@ -13,14 +13,22 @@ Import-Module $moduleManifest -Force | Out-Null
 
 Describe 'psfdx-development basics' {
     InModuleScope 'psfdx-development' {
-        BeforeEach { Mock Invoke-Salesforce {} }
+    BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"successes":[{"name":"target-org"}]}}' } }
         It 'starts LWC dev server with sf command' {
             Start-SalesforceLwcDevServer | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning lwc start' }
         }
-        It 'sets project user with equals syntax' {
-            Set-SalesforceProjectUser -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-org=user@example' }
+        It 'sets project target org with equals syntax' {
+            Set-SalesforceTargetOrg -Value 'user@example' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-org=user@example --json' }
+        }
+        It 'removes project target org' {
+            Remove-SalesforceTargetOrg | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-org --json' }
+        }
+        It 'removes project target org globally' {
+            Remove-SalesforceTargetOrg -Global | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-org --global --json' }
         }
     }
 }

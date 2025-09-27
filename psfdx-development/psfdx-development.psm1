@@ -15,7 +15,7 @@ function New-SalesforceProject {
         [Parameter(Mandatory = $false)][string] $Namespace,
         [Parameter(Mandatory = $false)][switch] $GenerateManifest
     )
-    $command = "sf force project create --name $Name"
+    $command = "sf project generate --name $Name"
     if ($OutputDirectory) { $command += " --output-dir $OutputDirectory" }
     if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
     if ($Namespace) { $command += " --namespace $Namespace" }
@@ -29,112 +29,46 @@ function New-SalesforceProject {
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
         $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
         New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
-        Set-SalesforceProject -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
+        Set-SalesforceTargetOrg -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
     }
     return $result
 }
 
-function Set-SalesforceProject {
+function Set-SalesforceTargetOrg {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $DefaultUserName,
-        [Parameter(Mandatory = $false)][string] $ProjectFolder
+        [Parameter(Mandatory = $true)][string] $Value,
+        [Parameter(Mandatory = $false)][switch] $Global
     )
-
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }
-
-    if ($sfdxFolder.EndsWith(".sfdx") -eq $false) {
-        $sfdxFolder = Join-Path -Path $sfdxFolder -ChildPath ".sfdx"
-    }
-
-    if ((Test-Path -Path $sfdxFolder) -eq $false) {
-        throw ".sfdx folder does not exist in $sfdxFolder"
-    }
-
-    $sfdxFile = Join-Path -Path $sfdxFolder -ChildPath "sfdx-config.json"
-    if (-not (Test-Path -Path $sfdxFile)) {
-        throw "File already exists $sfdxFile"
-    }
-    $json = "{ `"defaultusername`": `"$DefaultUserName`" }"
-    Set-Content -Path $sfdxFile -Value $json
+    $command = "sf config set target-org=$Value"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return (Show-SalesforceResult -Result $result).successes
 }
 
-function Get-SalesforceDefaultUserName {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][string] $ProjectFolder)
-
-    if (($null -eq $ProjectFolder) -or ($ProjectFolder -eq '')) {
-        $sfdxFolder = (Get-Location).Path
-    } else {
-        $sfdxFolder = $ProjectFolder
-    }
-
-    $sfdxConfigFile = ""
-    $files = Get-ChildItem -Path $sfdxFolder -Recurse -Filter "sfdx-config.json"
-    foreach ($file in $files) {
-        if ($file.FullName -like "*.sfdx*") {
-            $sfdxConfigFile = $file
-            break
-        }
-    }
-
-    if (!(Test-Path -Path $sfdxConfigFile)) {
-        throw "Missing Salesforce Project File (sfdx-config.json)"
-    }
-    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
-
-    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
-    return $salesforceSettings.defaultusername
-}
-
-function Get-SalesforceProjectUser {
-    [CmdletBinding()]
-    Param()
-    $sfdxConfigFile = Get-SalesforceProjectConfig
-    $salesforceSettings = Get-Content -Raw -Path $sfdxConfigFile | ConvertFrom-Json
-    return $salesforceSettings.defaultusername
-}
-
-function Get-SalesforceProjectConfig {
-    [CmdletBinding()]
-    Param()
-    $sfdxConfigFile = ""
-    $files = Get-ChildItem -Recurse -Filter "sfdx-config.json"
-    foreach ($file in $files) {
-        if ($file.FullName -like "*.sfdx*") {
-            $sfdxConfigFile = $file
-            break
-        }
-    }
-
-    if (!(Test-Path -Path $sfdxConfigFile)) {
-        throw "Missing Salesforce Project File (sfdx-config.json)"
-    }
-    Write-Verbose "Found sfdx config ($sfdxConfigFile)"
-    return $sfdxConfigFile
-}
-
-function Set-SalesforceProjectUser {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $TargetOrg)
-    Invoke-Salesforce -Command "sf config set target-org=$TargetOrg"
-}
-
-function New-SalesforceProjectAndScratchOrg {
+function Get-SalesforceTargetOrg {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetDevHub
+        [Parameter(Mandatory = $false)][switch] $Global
     )
-    New-SalesforceProject -Name $Name
-    Push-Location -Path $Name
-    Remove-SalesforceScratchOrgs
-    $scratchOrg = New-SalesforceScratchOrg -TargetDevHub $TargetDevHub
-    Set-SalesforceProjectUser -TargetOrg ($scratchOrg.username)
+    $command = "sf config get target-org"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
+}
+
+function Remove-SalesforceTargetOrg {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $Global
+    )
+    $command = "sf config unset target-org"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return (Show-SalesforceResult -Result $result).successes
 }
 
 function Get-SalesforceConfig {
@@ -145,18 +79,28 @@ function Get-SalesforceConfig {
     Show-SalesforceResult -Result $result
 }
 
-function Set-SalesforceDefaultDevHub {
+function Set-SalesforceTargetDevHub {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $TargetDevHub
+        [Parameter(Mandatory = $false)][switch] $Global
     )
-    Invoke-Salesforce -Command "sf config set target-dev-hub=$TargetDevHub --global"
+    $command = "sf config get target-dev-hub"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
 }
 
-function Remove-SalesforceDefaultDevHub {
+function Remove-SalesforceTargetDevHub {
     [CmdletBinding()]
-    Param()
-    Invoke-Salesforce -Command "sf config unset target-dev-hub --global"
+    Param(
+        [Parameter(Mandatory = $false)][switch] $Global
+    )
+    $command = "sf config unset target-dev-hub"
+    if ($Global) { $command += " --global" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result
 }
 
 #endregion
@@ -190,40 +134,46 @@ function New-SalesforceScratchOrg {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
-        [Parameter(Mandatory = $false)][switch] $Set,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
         [Parameter(Mandatory = $false)][int] $DurationDays,
         [Parameter(Mandatory = $false)][string] $DefinitionFile = 'config/project-scratch-def.json',
-        [Parameter(Mandatory = $false)][int] $WaitMinutes
+        [Parameter(Mandatory = $false)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][string][ValidateSet('developer', 'enterprise', 'group', 'professional', 'partner-developer', 'partner-enterprise', 'partner-group', 'partner-professional')] $Edition,
+        [Parameter(Mandatory = $false)][string] $Snapshot,
+        [Parameter(Mandatory = $false)][string] $AdminEmail,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][string][ValidateSet('preview', 'previous')] $Release,
+        [Parameter(Mandatory = $false)][string] $SourceOrgId,
+        [Parameter(Mandatory = $false)][string] $AdminUsername
     )
     $command = "sf org create scratch"
-    if ($TargetDevHub) {
-        $command += " --target-dev-hub $TargetDevHub"
-    }
-    if ($DurationDays) {
-        $command += " --duration-days $DurationDays"
-    }
+    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
+    if ($SetDefault) { $command += " --set-default" }
+    if ($DurationDays) { $command += " --duration-days $DurationDays" }
     $command += " --definition-file $DefinitionFile"
-    if ($WaitMinutes) {
-        $command += " --wait $WaitMinutes"
-    }
+    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
+    if ($Edition) { $command += " --edition $Edition" }
+    if ($Snapshot) { $command += " --snapshot $Snapshot" }
+    if ($AdminEmail) { $command += " --admin-email $AdminEmail" }
+    if ($Description) { $command += " --description `"$Description`"" }
+    if ($Name) { $command += " --name `"$Name`"" }
+    if ($Release) { $command += " --release $Release" }
+    if ($SourceOrgId) { $command += " --source-org $SourceOrgId" }
+    if ($AdminUsername) { $command += " --username $AdminUsername" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
     Show-SalesforceResult -Result $result
-
-    $scratchOrgUsername = $result.username
-    if ($Set) {
-        Set-SalesforceProjectUser -TargetOrg $scratchOrgUsername
-    }
 }
 
 function Remove-SalesforceScratchOrg {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $ScratchOrgUserName,
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter()][switch] $NoPrompt
     )
-    $command = "sf org delete scratch --target-org $ScratchOrgUserName"
+    $command = "sf org delete scratch --target-org $TargetOrg"
     if ($NoPrompt) {
         $command += " --no-prompt"
     }
@@ -236,7 +186,7 @@ function Remove-SalesforceScratchOrgs {
 
     $scratchOrgs = Get-SalesforceScratchOrgs
     foreach ($scratchOrg in $scratchOrgs) {
-        Remove-SalesforceScratchOrg -ScratchOrgUserName ($scratchOrg.username) -NoPrompt
+        Remove-SalesforceScratchOrg -TargetOrg ($scratchOrg.username) -NoPrompt
     }
 }
 
@@ -371,36 +321,18 @@ function Invoke-SalesforceApex {
 function Watch-SalesforceApex {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $ProjectFolder,
         [Parameter(Mandatory = $true)][string] $FileName
     )
-
-    if ((Get-IsSalesforceProject -ProjectFolder $ProjectFolder) -eq $false) {
-        Write-Verbose "Not a Salesforce Project"
-        return
-    }
-    $username = Get-SalesforceDefaultUserName -ProjectFolder $ProjectFolder
 
     $type = Get-SalesforceType -FileName $FileName
     if (($type -eq "ApexClass") -or ($type -eq "ApexTrigger")) {
         $name = Get-SalesforceName -FileName $FileName
-        Deploy-SalesforceComponent -Type $type -Name $name -TargetOrg $username
+        Deploy-SalesforceComponent -Type $type -Name $name
 
         $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
         $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
-        Test-SalesforceApex -TargetOrg $username -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
+        Test-SalesforceApex -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
     }
-}
-
-function Get-IsSalesforceProject {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
-
-    $sfdxProjectFile = Join-Path -Path $ProjectFolder -ChildPath "sfdx-project.json"
-    if (Test-Path -Path $sfdxProjectFile) {
-        return $true
-    }
-    return $false
 }
 
 function Get-SalesforceType {
@@ -479,19 +411,12 @@ function New-SalesforceApexClass {
         [Parameter(Mandatory = $false)][string]
             [ValidateSet('DefaultApexClass', 'ApexUnitTest', 'ApexUnitTest', 'InboundEmailService')]
             $Template = 'DefaultApexClass',
-        [Parameter(Mandatory = $false)][string] $OutputDirectory = 'ForceAppDefault'
+        [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/classes'
     )
-
     $command = "sf apex generate class"
     $command += " --name $Name"
     $command += " --template $Template"
-
-    if ($OutputDirectory = 'ForceAppDefault') {
-        $OutputDirectory = "force-app/main/default/classes"
-    }
-    if ($OutputDirectory) {
-        $command += " --output-dir $OutputDirectory"
-    }
+    $command += " --output-dir $OutputDirectory"
     Invoke-Salesforce -Command $command
 }
 
@@ -503,21 +428,13 @@ function New-SalesforceApexTrigger {
             [ValidateSet('before insert', 'before update', 'before delete', 'after insert', 'after update', 'after delete', 'after undelete')]
             $Event = 'before insert',
         [Parameter(Mandatory = $false)][string] $SObject,
-        [Parameter(Mandatory = $false)][string] $OutputDirectory = 'ForceAppDefault'
+        [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/triggers'
     )
-
     $command = "sf apex generate trigger"
     $command += " --name $Name"
     $command += " --event $Event"
-    if ($SObject) {
-        $command += " --sobject $SObject"
-    }
-    if ($OutputDirectory = 'ForceAppDefault') {
-        $OutputDirectory = "force-app/main/default/triggers"
-    }
-    if ($OutputDirectory) {
-        $command += " --output-dir $OutputDirectory"
-    }
+    if ($SObject) { $command += " --sobject $SObject" }
+    $command += " --output-dir $OutputDirectory"
     Invoke-Salesforce -Command $command
 }
 
