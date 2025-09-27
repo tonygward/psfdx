@@ -182,11 +182,10 @@ Get-Command -Module psfdx*
 | `New-SalesforceProject` | Create a new SFDX project. |
 | `Set-SalesforceTargetOrg` | Write `.sfdx/sfdx-config.json` default username. |
 | `Get-SalesforceTargetOrg` | Read project default username. |
-| `Set-SalesforceProjectUser` | Set `target-org` for the project. |
-| `New-SalesforceProjectAndScratchOrg` | Scaffold project and create scratch org. |
+| `Remove-SalesforceTargetOrg` | Unset project default username. |
 | `Get-SalesforceConfig` | Show SFDX config (JSON). |
-| `Set-SalesforceDefaultDevHub` | Set default Dev Hub (`--global`). |
-| `Remove-SalesforceDefaultDevHub` | Unset default Dev Hub. |
+ | `Set-SalesforceTargetDevHub` | Set default Dev Hub (`--global`). |
+| `Remove-SalesforceTargetDevHub` | Unset default Dev Hub. |
 
 ### Scratch Orgs
 
