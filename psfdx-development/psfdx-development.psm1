@@ -29,7 +29,7 @@ function New-SalesforceProject {
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
         $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
         New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
-    Set-SalesforceTargetOrg -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
+        Set-SalesforceTargetOrg -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
     }
     return $result
 }

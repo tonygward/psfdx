@@ -182,7 +182,6 @@ Get-Command -Module psfdx*
 | `New-SalesforceProject` | Create a new SFDX project. |
 | `Set-SalesforceTargetOrg` | Write `.sfdx/sfdx-config.json` default username. |
 | `Get-SalesforceTargetOrg` | Read project default username. |
-| `Get-SalesforceProjectUser` | Read project default username (current folder). |
 | `Set-SalesforceProjectUser` | Set `target-org` for the project. |
 | `New-SalesforceProjectAndScratchOrg` | Scaffold project and create scratch org. |
 | `Get-SalesforceConfig` | Show SFDX config (JSON). |
