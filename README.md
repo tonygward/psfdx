@@ -53,9 +53,9 @@ Import-Module psfdx-logs
 Export-SalesforceDebugLogs -TargetOrg my@email.com
 ```
 
-**5. List every cmdlet in the psfdx module**
+**5. List every cmdlet**
 ```
-Get-Command -Module psfdx
+Get-Command -Module psfdx*
 ```
 
 ## Modules
