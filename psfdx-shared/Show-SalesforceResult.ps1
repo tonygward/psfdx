@@ -6,13 +6,13 @@ function Show-SalesforceResult {
         [Parameter(Mandatory = $false)][switch] $IncludeAttributes
     )
 
-    $result = $Result | ConvertFrom-Json
-    if ($result.status -ne 0) {
-        Write-Debug $result
-        throw ($result.message)
+    $converted = $Result | ConvertFrom-Json
+    if ($converted.status -ne 0) {
+        Write-Error $Result
+        throw ($converted.message)
     }
 
-    $out = $result.result
+    $out = $converted.result
     if ($ReturnRecords) {
         $records = $out.records
         if ($null -eq $records) { return @() }
