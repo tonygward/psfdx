@@ -235,6 +235,77 @@ Describe 'New-SalesforceApexTrigger' {
     }
 }
 
+Describe 'Invoke-SalesforceApexAutomation' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            Mock Describe-SalesforceMetadataTypes { @('ApexClass', 'ApexTrigger') } -ModuleName 'psfdx-metadata'
+        }
+
+        It 'deploys component and runs tests when apex class changes' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                $file = Join-Path $tempRoot.FullName 'Sample.cls'
+                Set-Content -Path $file -Value 'public class Sample {}' -Encoding UTF8
+
+                Mock Deploy-SalesforceComponent { return @{ Command = 'deploy' } }
+                Mock Get-SalesforceTestResultsApexFolder { param($ProjectFolder) return 'results' }
+                Mock Get-SalesforceApexTestClassNames { param($ProjectFolder) return @('SampleTest') }
+                Mock Test-SalesforceApex { return @{ Command = 'test' } }
+
+                $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
+
+                Assert-MockCalled Deploy-SalesforceComponent -Times 1 -ParameterFilter { $Type -eq 'ApexClass' -and $Name -eq 'Sample' }
+                Assert-MockCalled Test-SalesforceApex -Times 1 -ParameterFilter { ($ClassName -contains 'SampleTest') -and -not $CodeCoverage.IsPresent }
+                $result.Deploy.Command | Should -Be 'deploy'
+                $result.Test.Command    | Should -Be 'test'
+            }
+            finally {
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+
+        It 'skips non-apex files' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                $file = Join-Path $tempRoot.FullName 'README.txt'
+                Set-Content -Path $file -Value 'not apex' -Encoding UTF8
+
+                Mock Deploy-SalesforceComponent { throw 'Should not deploy' }
+                Mock Test-SalesforceApex { throw 'Should not test' }
+
+                $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result | Should -BeNullOrEmpty
+                Assert-MockCalled Deploy-SalesforceComponent -Times 0
+                Assert-MockCalled Test-SalesforceApex -Times 0
+            }
+            finally {
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+
+        It 'deploys but skips tests when no apex tests exist' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                $file = Join-Path $tempRoot.FullName 'Sample.trigger'
+                Set-Content -Path $file -Value 'trigger Sample on Account (before insert) {}' -Encoding UTF8
+
+                Mock Deploy-SalesforceComponent {}
+                Mock Get-SalesforceTestResultsApexFolder { param($ProjectFolder) return 'results' }
+                Mock Get-SalesforceApexTestClassNames { param($ProjectFolder) return @() }
+                Mock Test-SalesforceApex { throw 'Should not test with no classes' }
+
+                $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
+                Assert-MockCalled Deploy-SalesforceComponent -Times 1 -ParameterFilter { $Type -eq 'ApexTrigger' -and $Name -eq 'Sample' }
+                Assert-MockCalled Test-SalesforceApex -Times 0
+                $result | Should -BeNullOrEmpty
+            }
+            finally {
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+    }
+}
+
 Describe 'Get-SalesforceApexClass' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
