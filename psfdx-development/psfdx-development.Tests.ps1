@@ -249,18 +249,14 @@ Describe 'Invoke-SalesforceApexAutomation' {
 
                 Mock Invoke-Salesforce {
                     param($Command)
-                    return '{"status":0,"result":{"command":"deploy"}}'
+                    return '{"status":0,"result":{"command":"deploy","details":{"tests":{"successes":[{"name":"SampleTest"}]}}}}'
                 }
-                Mock Get-SalesforceTestResultsApexFolder { param($ProjectFolder) return 'results' }
-                Mock Get-SalesforceApexTestClassNames { param($ProjectFolder) return @('SampleTest') }
-                Mock Test-SalesforceApex { return @{ Command = 'test' } }
+                Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @('SampleTest') }
 
                 $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
 
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf project deploy start --metadata ApexClass:Sample*' }
-                Assert-MockCalled Test-SalesforceApex -Times 1 -ParameterFilter { ($ClassName -contains 'SampleTest') -and -not $CodeCoverage }
-                $result.Deploy.command | Should -Be 'deploy'
-                $result.Test.Command    | Should -Be 'test'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexClass:Sample*') -and ($Command -like '*--tests SampleTest*') -and ($Command -like '*--test-level RunSpecifiedTests*') }
+                $result.command | Should -Be 'deploy'
             }
             finally {
                 Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
@@ -274,12 +270,10 @@ Describe 'Invoke-SalesforceApexAutomation' {
                 Set-Content -Path $file -Value 'not apex' -Encoding UTF8
 
                 Mock Invoke-Salesforce { throw 'Should not deploy' }
-                Mock Test-SalesforceApex { throw 'Should not test' }
 
                 $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
                 $result | Should -BeNullOrEmpty
                 Assert-MockCalled Invoke-Salesforce -Times 0
-                Assert-MockCalled Test-SalesforceApex -Times 0
             }
             finally {
                 Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
@@ -296,14 +290,76 @@ Describe 'Invoke-SalesforceApexAutomation' {
                     param($Command)
                     return '{"status":0,"result":{"command":"deploy"}}'
                 }
-                Mock Get-SalesforceTestResultsApexFolder { param($ProjectFolder) return 'results' }
-                Mock Get-SalesforceApexTestClassNames { param($ProjectFolder) return @() }
-                Mock Test-SalesforceApex { throw 'Should not test with no classes' }
+                Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @() }
 
                 $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf project deploy start --metadata ApexTrigger:Sample*' }
-                Assert-MockCalled Test-SalesforceApex -Times 0
-                $result.Command | Should -Be 'deploy'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexTrigger:Sample*') -and ($Command -notlike '*--tests*') }
+                $result.command | Should -Be 'deploy'
+            }
+            finally {
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+    }
+}
+
+Describe 'Get-SalesforceApexTestClassNames' {
+    InModuleScope 'psfdx-development' {
+        It 'returns all test classes within a project folder' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                $testOne = Join-Path $tempRoot.FullName 'SampleTest.cls'
+                $nested = Join-Path $tempRoot.FullName 'nested'
+                New-Item -Path $nested -ItemType Directory | Out-Null
+                $testTwo = Join-Path $nested 'AnotherTest.cls'
+                Set-Content -Path $testOne -Value '@isTest public class SampleTest {}' -Encoding UTF8
+                Set-Content -Path $testTwo -Value '@isTest private class AnotherTest {}' -Encoding UTF8
+
+                $result = Get-SalesforceApexTestClassNames -ProjectFolder $tempRoot.FullName
+                $result | Should -Contain 'SampleTest'
+                $result | Should -Contain 'AnotherTest'
+                $result.Count | Should -Be 2
+            }
+            finally {
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+    }
+}
+
+Describe 'Get-SalesforceApexTestClassNamesFromFile' {
+    InModuleScope 'psfdx-development' {
+        It 'returns only the class when file is a test class' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                $file = Join-Path $tempRoot.FullName 'SampleTest.cls'
+                Set-Content -Path $file -Value '@isTest public class SampleTest {}' -Encoding UTF8
+
+                $result = Get-SalesforceApexTestClassNamesFromFile -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result | Should -Be @('SampleTest')
+            }
+            finally {
+                Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
+            }
+        }
+
+        It 'returns all discovered test classes when file is not a test class' {
+            $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                $classFile = Join-Path $tempRoot.FullName 'Sample.cls'
+                Set-Content -Path $classFile -Value 'public class Sample {}' -Encoding UTF8
+
+                $testOne = Join-Path $tempRoot.FullName 'SampleTest.cls'
+                $nested = Join-Path $tempRoot.FullName 'nested'
+                New-Item -Path $nested -ItemType Directory | Out-Null
+                $testTwo = Join-Path $nested 'AnotherTest.cls'
+                Set-Content -Path $testOne -Value '@isTest public class SampleTest {}' -Encoding UTF8
+                Set-Content -Path $testTwo -Value '@isTest private class AnotherTest {}' -Encoding UTF8
+
+                $result = Get-SalesforceApexTestClassNamesFromFile -FilePath $classFile -ProjectFolder $tempRoot.FullName
+                $result | Should -Contain 'SampleTest'
+                $result | Should -Contain 'AnotherTest'
+                $result.Count | Should -Be 2
             }
             finally {
                 Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse

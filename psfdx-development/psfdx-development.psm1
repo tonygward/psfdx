@@ -449,13 +449,26 @@ function Invoke-SalesforceApexAutomation {
     $name = Get-SalesforceName -FileName $FilePath
     Write-Verbose "Deploying $type ${name}..."
 
+    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
+
     $command = "sf project deploy start"
     $command += " --metadata ${type}:${name}"
+    if ($testClassNames -and $testClassNames.Count -gt 0) {
+        $command += " --test-level RunSpecifiedTests"
+        foreach ($testName in $testClassNames) {
+            $command += " --tests $testName"
+        }
+    }
+    else {
+        Write-Warning 'No Apex test classes found in project; deploying without running tests.'
+    }
     $command += " --ignore-warnings"
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
-    Show-SalesforceResult -Result $result
+
+    $deployJson = Invoke-Salesforce -Command $command
+    $deployResult = Show-SalesforceResult -Result $deployJson
     Write-Verbose "Deployed $type ${name}."
+    return $deployResult
 }
 
 function Get-SalesforceType {
@@ -480,22 +493,22 @@ function Get-SalesforceName {
     return $name
 }
 
-function Get-SalesforceTestResultsApexFolder {
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
-
-    $folder = Join-Path -Path (Join-Path -Path (Join-Path -Path $ProjectFolder -ChildPath ".sfdx") -ChildPath "tools") -ChildPath "testresults/apex"
-    Write-Verbose ("Apex Test Results Folder: " + $folder)
-    # TODO: Check Folder Exists
-    return $folder
-}
-
 function Get-SalesforceApexTestClassNames {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][string] $ProjectFolder)
+    Param(
+        [Parameter(Mandatory = $false)][string] $FilePath,
+        [Parameter(Mandatory = $false)][string] $ProjectFolder
+    )
+
+    if ($FilePath) {
+        return Get-SalesforceApexTestClassNamesFromFile -FilePath $FilePath
+    }
 
     if (!$ProjectFolder) {
-        $ProjectFolder = Get-Location
+        $ProjectFolder = (Get-Location).Path
+    }
+    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
+        throw "Project folder '$ProjectFolder' does not exist."
     }
 
     $testFiles = Get-ChildItem -Path $ProjectFolder -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
@@ -506,7 +519,21 @@ function Get-SalesforceApexTestClassNames {
     $testClassNames = $testFiles | ForEach-Object {
         [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
     } | Sort-Object -Unique
-    return $testClassNames
+
+    return @($testClassNames)
+}
+
+function Get-SalesforceApexTestClassNamesFromFile {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $FilePath
+    )
+
+    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+        throw "File '$FilePath' does not exist."
+    }
+
+    $rootFolder = (Get-Item -LiteralPath (Split-Path -Path $FilePath -Parent)).FullName
 }
 
 function Get-SalesforceApexClass {
