@@ -268,7 +268,7 @@ function Test-SalesforceApex {
     if ($Concise) { $command += " --concise" }
     if ($CodeCoverage) { $command += " --code-coverage" }
     if ($CodeCoverageDetailed) { $command += " --detailed-coverage" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
     if ($ResultFormat -ne 'json') {
@@ -343,7 +343,7 @@ function Invoke-SalesforceApex {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf apex run --file $ApexFile"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result

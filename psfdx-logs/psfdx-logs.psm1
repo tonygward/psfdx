@@ -13,7 +13,7 @@ function Watch-SalesforceDebugLogs {
     $command = "sf apex log tail"
     if ($DebugLevel) { $command += " --debug-level $DebugLevel" }
     if ($SkipTraceFlag) { $command += " --skip-trace-flag" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --color"
     return Invoke-Salesforce -Command $command
 }
@@ -22,7 +22,7 @@ function Select-SalesforceDebugLogs {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf apex log list"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -54,7 +54,7 @@ function Get-SalesforceDebugLogs {
     }
     if ($LogId) { $command += " --log-id $LogId" }
     if ($Last) { $command += " --number $Last" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     if (-not $Raw) {
         return Invoke-Salesforce -Command $command
@@ -170,7 +170,7 @@ function Get-SalesforceFlowInterviews {
 
     # Execute via sf data query
     $command = "sf data query --query `"$query`" --result-format json"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
@@ -202,7 +202,7 @@ function Get-SalesforceLoginHistory {
 
     # Query LoginHistory
     $command = "sf data query --query `"$query`" --result-format json"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
@@ -282,7 +282,7 @@ function Select-SalesforceEventFiles {
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
 
     $command = "sf data query --query `"$query`" --result-format json"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
@@ -296,7 +296,7 @@ function Get-SalesforceEventFile {
     )
     $apiVersion = (Get-SalesforceLatestApiVersion -TargetOrg $TargetOrg)
     $command = "sf api request rest /services/data/$apiVersion/sobjects/EventLogFile/$Id/Logfile"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     Invoke-Salesforce -Command $command
 }
 
@@ -357,7 +357,7 @@ function Export-SalesforceEventFiles {
     $query += " LIMIT $Limit"
 
     $command = "sf data query --query `"$query`" --result-format json"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     $raw = Invoke-Salesforce -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords

@@ -33,7 +33,7 @@ function Retrieve-SalesforceComponent {
         $command += ":$Name"
         if ($ChildName) { $command += ".$ChildName" }
     }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($OutputDir) {
         if (-not (Test-Path -Path $OutputDir -PathType Container)) {
@@ -66,7 +66,7 @@ function Retrieve-SalesforceMetadata {
     $command += " --target-metadata-dir `"$OutputDir`""
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($Unzip) { $command += " --unzip" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     Invoke-Salesforce -Command $command
 }
@@ -87,7 +87,7 @@ function Retrieve-SalesforcePackage {
     $command = "sf project retrieve start --package-name `"$Name`""
     $command += " --output-dir `"$OutputDir`""
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     Invoke-Salesforce -Command $command
 }
@@ -158,7 +158,7 @@ function Deploy-SalesforceComponent {
     $command = "sf project deploy start"
     $command += " --metadata $Type"
     if ($Name) { $command += ":$Name" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }
     if ($IgnoreErrors) { $command += " --ignore-errors" }
@@ -202,7 +202,7 @@ function Deploy-SalesforceMetadata {
     if ($Manifest) { $command += " --manifest `"$Manifest`"" }
     if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
     if ($ManifestPackage) { $command += " --single-package" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }
     if ($IgnoreErrors) { $command += " --ignore-errors" }
@@ -222,7 +222,7 @@ function Describe-SalesforceObjects {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf sobject list"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -236,7 +236,7 @@ function Describe-SalesforceObject {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     $command = "sf sobject describe"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --sobject $Name"
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --json"
@@ -265,7 +265,7 @@ function Describe-SalesforceMetadataTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf org list metadata-types"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command

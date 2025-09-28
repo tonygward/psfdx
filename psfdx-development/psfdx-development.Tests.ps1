@@ -157,7 +157,7 @@ Describe 'Get-SalesforceApexClass' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
             $json = '{"status":0,"result":{"records":[{"Id":"01pxx0000000001AAA","Name":"MyClass"}]}}'
-            Mock Invoke-Salesforce { $json }
+            Mock Invoke-Salesforce { $json } -ModuleName 'psfdx'
         }
         It 'returns first record by name' {
             $rec = Get-SalesforceApexClass -Name 'MyClass' -TargetOrg 'me'

@@ -89,7 +89,7 @@ function Open-Salesforce {
         [Parameter(Mandatory = $false)][string] $BrowserPrivateMode
     )
     $command = "sf org open"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($Browser) { $command += " --browser $Browser" }
     if ($BrowserPrivateMode) { $command += " --private $BrowserPrivateMode" }
     if ($UrlOnly) { $command += " --url-only" }
@@ -156,7 +156,7 @@ function Get-SalesforceLimits {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf limits api display"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -198,7 +198,10 @@ function Select-SalesforceRecords {
     if ($Query) { $command += " --query `"$Query`"" }
     if ($File) { $command += " --file `"$File`"" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
-        $command += " --target-org `"$($TargetOrg.Trim())`""
+        $trimmedTargetOrg = $TargetOrg.Trim()
+        if (-not [string]::IsNullOrWhiteSpace($trimmedTargetOrg)) {
+            $command += " --target-org $trimmedTargetOrg"
+        }
     }
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     if ($IncludeDeletedRows) { $command += " --all-rows" }
@@ -249,7 +252,7 @@ function New-SalesforceRecord {
     $command += " --sobject $Type"
     $command += " --values `"$FieldUpdates`""
     if ($UseToolingApi) { $command += " --use-tooling-api" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -270,7 +273,7 @@ function Set-SalesforceRecord {
     $command += " --record-id $Id"
     $command += " --values `"$FieldUpdates`""
     if ($UseToolingApi) { $command += " --use-tooling-api" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -335,7 +338,7 @@ function Get-SalesforceApiVersions {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf api request rest /services/data"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $result = Invoke-Salesforce -Command $command
     return $result | ConvertFrom-Json
 }
