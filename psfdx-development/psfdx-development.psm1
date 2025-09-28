@@ -411,7 +411,7 @@ function Get-SalesforceApexClass {
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
+    $query = "SELECT Id, Name, Body FROM ApexClass WHERE Name = '$Name' LIMIT 1"
     return Select-SalesforceRecords -Query $query -UseToolingApi -TargetOrg $TargetOrg
 }
 
@@ -428,6 +428,11 @@ function New-SalesforceApexClass {
             $Template = 'DefaultApexClass',
         [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/classes'
     )
+    if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
+    }
     $command = "sf apex generate class"
     $command += " --name $Name"
     $command += " --template $Template"
@@ -445,6 +450,11 @@ function New-SalesforceApexTrigger {
         [Parameter(Mandatory = $false)][string] $SObject,
         [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/triggers'
     )
+    if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
+    }
     $command = "sf apex generate trigger"
     $command += " --name $Name"
     $command += " --event $Event"

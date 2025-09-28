@@ -117,7 +117,7 @@ Describe 'Test-SalesforceApex command building' {
                 }
                 catch {
                     $threw = $true
-                    $_.Exception.Message | Should -Be "No Apex test classes found in '$currentPath'."
+                    $_.Exception.Message | Should -Be "No Apex test classes found."
                 }
                 $threw | Should -BeTrue "Expected Test-SalesforceApex to throw when no Apex tests found."
                 Assert-MockCalled Invoke-Salesforce -Times 0
@@ -149,6 +149,84 @@ Describe 'Test-SalesforceApex command building' {
                 Pop-Location
                 Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
             }
+        }
+    }
+}
+
+Describe 'New-SalesforceApexClass' {
+    InModuleScope 'psfdx-development' {
+        It 'throws if output directory does not exist' {
+            Mock Invoke-Salesforce {}
+            $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
+            $threw = $false
+            try {
+                New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $missing
+            }
+            catch {
+                $threw = $true
+                $_.Exception.Message | Should -Be "Output directory '$missing' does not exist."
+            }
+            $threw | Should -BeTrue "Expected New-SalesforceApexClass to throw when output directory is missing."
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'passes output directory when path exists' {
+            $existing = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                Mock Invoke-Salesforce {}
+                New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $existing.FullName
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf apex generate class --name MyClass --template DefaultApexClass --output-dir $($existing.FullName)" }
+            }
+            finally {
+                Remove-Item -LiteralPath $existing.FullName -Force -Recurse
+            }
+        }
+
+        It 'uses default output directory without validation when not provided' {
+            Mock Invoke-Salesforce {}
+            Mock Test-Path { throw "Test-Path should not be called" }
+            New-SalesforceApexClass -Name 'DefaultClass'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex generate class --name DefaultClass --template DefaultApexClass --output-dir force-app/main/default/classes' }
+        }
+    }
+}
+
+Describe 'New-SalesforceApexTrigger' {
+    InModuleScope 'psfdx-development' {
+        It 'throws if output directory does not exist' {
+            Mock Invoke-Salesforce {}
+            $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
+            $threw = $false
+            try {
+                New-SalesforceApexTrigger -Name 'MyTrigger' -OutputDirectory $missing
+            }
+            catch {
+                $threw = $true
+                $_.Exception.Message | Should -Be "Output directory '$missing' does not exist."
+            }
+            $threw | Should -BeTrue "Expected New-SalesforceApexTrigger to throw when output directory is missing."
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'passes options when path exists' {
+            $existing = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
+            try {
+                Mock Invoke-Salesforce {}
+                New-SalesforceApexTrigger -Name 'MyTrigger' -SObject 'Account' -OutputDirectory $existing.FullName
+                $expected = "sf apex generate trigger --name MyTrigger --event before insert --sobject Account --output-dir $($existing.FullName)"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
+            }
+            finally {
+                Remove-Item -LiteralPath $existing.FullName -Force -Recurse
+            }
+        }
+
+        It 'uses default output directory without validation when not provided' {
+            Mock Invoke-Salesforce {}
+            Mock Test-Path { throw "Test-Path should not be called" }
+            New-SalesforceApexTrigger -Name 'DefaultTrigger'
+            $expected = 'sf apex generate trigger --name DefaultTrigger --event before insert --output-dir force-app/main/default/triggers'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
         }
     }
 }
