@@ -447,7 +447,7 @@ function Invoke-SalesforceApexAutomation {
     }
 
     $name = Get-SalesforceName -FileName $FilePath
-    Write-Verbose "Deploying $type ${name}..."
+    Write-Verbose "Deploy and Testing $type ${name}..."
 
     $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
 
@@ -467,7 +467,7 @@ function Invoke-SalesforceApexAutomation {
 
     $deployJson = Invoke-Salesforce -Command $command
     $deployResult = Show-SalesforceResult -Result $deployJson
-    Write-Verbose "Deployed $type ${name}."
+    Write-Verbose $deployResult
     return $deployResult
 }
 
@@ -540,7 +540,17 @@ function Get-SalesforceApexTestClassNamesFromFile {
     }
     $rootFolder = (Get-Item -LiteralPath $rootFolder).FullName
 
-    return $rootFolder
+    $className = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
+
+    $testFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+    $matchingTests = $testFiles | Where-Object {
+        (Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet) -and
+        (Select-String -Path $_.FullName -Pattern $className -SimpleMatch -Quiet)
+    }
+
+    $matchingTests | ForEach-Object {
+        [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+    } | Sort-Object -Unique
 }
 
 function Get-SalesforceApexClass {

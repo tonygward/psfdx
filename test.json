@@ -1,0 +1,120 @@
+{
+    "status": 1,
+    "result": {
+        "checkOnly": false,
+        "completedDate": "2025-09-28T12:34:39.000Z",
+        "createdBy": "0054K000000Dkd1",
+        "createdByName": "Tony Ward",
+        "createdDate": "2025-09-28T12:34:37.000Z",
+        "details": {
+            "componentSuccesses": [
+                {
+                    "changed": true,
+                    "componentType": "ApexClass",
+                    "created": false,
+                    "createdDate": "2025-09-28T12:34:37.000Z",
+                    "deleted": false,
+                    "fileName": "classes/StringKataTests.cls",
+                    "fullName": "StringKataTests",
+                    "id": "01pJ9000000GnC4IAK",
+                    "success": true
+                },
+                {
+                    "changed": true,
+                    "componentType": "",
+                    "created": false,
+                    "createdDate": "2025-09-28T12:34:38.000Z",
+                    "deleted": false,
+                    "fileName": "package.xml",
+                    "fullName": "package.xml",
+                    "success": true
+                }
+            ],
+            "runTestResult": {
+                "failures": [
+                    {
+                        "id": "01pJ9000000GnC4IAK",
+                        "message": "System.AssertException: Assertion Failed: Expected: true, Actual: false",
+                        "methodName": "failingTest",
+                        "name": "StringKataTests",
+                        "namespace": null,
+                        "packageName": "StringKataTests",
+                        "stackTrace": "Class.StringKataTests.failingTest: line 6, column 1",
+                        "time": 51,
+                        "type": "Class"
+                    }
+                ],
+                "flowCoverage": [
+                    {
+                        "elementsNotCovered": [
+                            "setrecordtypeid"
+                        ],
+                        "flowId": "301J9000000c1H6",
+                        "flowName": "Account_Update_Failing_Flow",
+                        "flowNamespace": null,
+                        "numElements": 1,
+                        "numElementsNotCovered": 1,
+                        "processType": "AutoLaunchedFlow"
+                    }
+                ],
+                "numFailures": 1,
+                "numTestsRun": 3,
+                "successes": [
+                    {
+                        "id": "01pJ9000000GnC4IAK",
+                        "methodName": "defaultsToZero",
+                        "name": "StringKataTests",
+                        "namespace": null,
+                        "time": 36
+                    },
+                    {
+                        "id": "01pJ9000000GnC4IAK",
+                        "methodName": "returnsSingleNumber",
+                        "name": "StringKataTests",
+                        "namespace": null,
+                        "time": 51
+                    }
+                ],
+                "totalTime": 190,
+                "codeCoverage": [],
+                "codeCoverageWarnings": [],
+                "flowCoverageWarnings": []
+            },
+            "componentFailures": []
+        },
+        "done": true,
+        "id": "0AfJ900000BNKu2KAH",
+        "ignoreWarnings": true,
+        "lastModifiedDate": "2025-09-28T12:34:39.000Z",
+        "numberComponentErrors": 0,
+        "numberComponentsDeployed": 1,
+        "numberComponentsTotal": 1,
+        "numberFiles": "4",
+        "numberTestErrors": 1,
+        "numberTestsCompleted": 2,
+        "numberTestsTotal": 3,
+        "rollbackOnError": true,
+        "runTestsEnabled": true,
+        "startDate": "2025-09-28T12:34:37.000Z",
+        "status": "Failed",
+        "success": false,
+        "zipSize": 1058,
+        "files": [
+            {
+                "fullName": "StringKataTests",
+                "type": "ApexClass",
+                "state": "Changed",
+                "filePath": "/home/tony/salesforce/gmail/force-app/main/default/classes/StringKataTests.cls"
+            },
+            {
+                "fullName": "StringKataTests",
+                "type": "ApexClass",
+                "state": "Changed",
+                "filePath": "/home/tony/salesforce/gmail/force-app/main/default/classes/StringKataTests.cls-meta.xml"
+            }
+        ],
+        "zipFileCount": 3,
+        "deployUrl": "https://tonygward-sf-gmail-dev-ed.my.salesforce.com/lightning/setup/DeployStatus/page?address=%2Fchangemgmt%2FmonitorDeploymentsDetails.apexp%3FasyncId%3D0AfJ900000BNKu2KAH%26retURL%3D%252Fchangemgmt%252FmonitorDeployment.apexp"
+    },
+    "warnings": []
+}
