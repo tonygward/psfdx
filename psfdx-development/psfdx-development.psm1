@@ -623,15 +623,13 @@ function New-SalesforceApexTrigger {
 function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "npm install -g node-gyp"
-    Invoke-Salesforce -Command "sf plugins install @salesforce/lwc-dev-server"
-    Invoke-Salesforce -Command "sf plugins update"
+    Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev"
 }
 
-function Start-SalesforceLwcDevServer {
+function Start-SalesforceLwcDevServerApp {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "sf lightning lwc start"
+    Invoke-Salesforce -Command "sf lightning dev app"
 }
 
 #endregion
