@@ -1,11 +1,15 @@
 # Ensure clean slate and load local dependency module first
-Get-Module -Name 'psfdx-development','psfdx-metadata' -All | ForEach-Object {
+Get-Module -Name 'psfdx-development','psfdx-metadata','psfdx' -All | ForEach-Object {
     try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
 }
 
 # Import local psfdx-metadata so RequiredModules resolves from repo
 $metadataManifest = Join-Path -Path $PSScriptRoot -ChildPath '..\psfdx-metadata\psfdx-metadata.psd1'
 Import-Module $metadataManifest -Force | Out-Null
+
+# Import base psfdx module used by shared helpers
+$psfdxManifest = Join-Path -Path $PSScriptRoot -ChildPath '..\psfdx\psfdx.psd1'
+Import-Module $psfdxManifest -Force | Out-Null
 
 # Import module under test so InModuleScope can find it
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-development.psd1'
@@ -110,7 +114,6 @@ Describe 'Test-SalesforceApex command building' {
             try {
                 $clsPath = Join-Path (Get-Location).Path 'NotATest.cls'
                 Set-Content -Path $clsPath -Value 'public class NotATest {}' -Encoding UTF8
-                $currentPath = (Get-Location).Path
                 $threw = $false
                 try {
                     Test-SalesforceApex -TestsInProject | Out-Null
@@ -182,11 +185,12 @@ Describe 'New-SalesforceApexClass' {
             }
         }
 
-        It 'uses default output directory without validation when not provided' {
+        It 'omits output directory validation when not provided' {
             Mock Invoke-Salesforce {}
             Mock Test-Path { throw "Test-Path should not be called" }
             New-SalesforceApexClass -Name 'DefaultClass'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex generate class --name DefaultClass --template DefaultApexClass --output-dir force-app/main/default/classes' }
+            $expected = 'sf apex generate class --name DefaultClass --template DefaultApexClass'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
         }
     }
 }
@@ -221,11 +225,11 @@ Describe 'New-SalesforceApexTrigger' {
             }
         }
 
-        It 'uses default output directory without validation when not provided' {
+        It 'omits output directory validation when not provided' {
             Mock Invoke-Salesforce {}
             Mock Test-Path { throw "Test-Path should not be called" }
             New-SalesforceApexTrigger -Name 'DefaultTrigger'
-            $expected = 'sf apex generate trigger --name DefaultTrigger --event before insert --output-dir force-app/main/default/triggers'
+            $expected = 'sf apex generate trigger --name DefaultTrigger --event before insert'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
         }
     }
