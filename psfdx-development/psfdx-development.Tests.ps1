@@ -247,16 +247,19 @@ Describe 'Invoke-SalesforceApexAutomation' {
                 $file = Join-Path $tempRoot.FullName 'Sample.cls'
                 Set-Content -Path $file -Value 'public class Sample {}' -Encoding UTF8
 
-                Mock Deploy-SalesforceComponent { return @{ Command = 'deploy' } }
+                Mock Invoke-Salesforce {
+                    param($Command)
+                    return '{"status":0,"result":{"command":"deploy"}}'
+                }
                 Mock Get-SalesforceTestResultsApexFolder { param($ProjectFolder) return 'results' }
                 Mock Get-SalesforceApexTestClassNames { param($ProjectFolder) return @('SampleTest') }
                 Mock Test-SalesforceApex { return @{ Command = 'test' } }
 
                 $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
 
-                Assert-MockCalled Deploy-SalesforceComponent -Times 1 -ParameterFilter { $Type -eq 'ApexClass' -and $Name -eq 'Sample' }
-                Assert-MockCalled Test-SalesforceApex -Times 1 -ParameterFilter { ($ClassName -contains 'SampleTest') -and -not $CodeCoverage.IsPresent }
-                $result.Deploy.Command | Should -Be 'deploy'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf project deploy start --metadata ApexClass:Sample*' }
+                Assert-MockCalled Test-SalesforceApex -Times 1 -ParameterFilter { ($ClassName -contains 'SampleTest') -and -not $CodeCoverage }
+                $result.Deploy.command | Should -Be 'deploy'
                 $result.Test.Command    | Should -Be 'test'
             }
             finally {
@@ -270,12 +273,12 @@ Describe 'Invoke-SalesforceApexAutomation' {
                 $file = Join-Path $tempRoot.FullName 'README.txt'
                 Set-Content -Path $file -Value 'not apex' -Encoding UTF8
 
-                Mock Deploy-SalesforceComponent { throw 'Should not deploy' }
+                Mock Invoke-Salesforce { throw 'Should not deploy' }
                 Mock Test-SalesforceApex { throw 'Should not test' }
 
                 $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
                 $result | Should -BeNullOrEmpty
-                Assert-MockCalled Deploy-SalesforceComponent -Times 0
+                Assert-MockCalled Invoke-Salesforce -Times 0
                 Assert-MockCalled Test-SalesforceApex -Times 0
             }
             finally {
@@ -289,15 +292,18 @@ Describe 'Invoke-SalesforceApexAutomation' {
                 $file = Join-Path $tempRoot.FullName 'Sample.trigger'
                 Set-Content -Path $file -Value 'trigger Sample on Account (before insert) {}' -Encoding UTF8
 
-                Mock Deploy-SalesforceComponent {}
+                Mock Invoke-Salesforce {
+                    param($Command)
+                    return '{"status":0,"result":{"command":"deploy"}}'
+                }
                 Mock Get-SalesforceTestResultsApexFolder { param($ProjectFolder) return 'results' }
                 Mock Get-SalesforceApexTestClassNames { param($ProjectFolder) return @() }
                 Mock Test-SalesforceApex { throw 'Should not test with no classes' }
 
                 $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
-                Assert-MockCalled Deploy-SalesforceComponent -Times 1 -ParameterFilter { $Type -eq 'ApexTrigger' -and $Name -eq 'Sample' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf project deploy start --metadata ApexTrigger:Sample*' }
                 Assert-MockCalled Test-SalesforceApex -Times 0
-                $result | Should -BeNullOrEmpty
+                $result.Command | Should -Be 'deploy'
             }
             finally {
                 Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse

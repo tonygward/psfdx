@@ -353,6 +353,7 @@ function Watch-SalesforceApex {
     }
 
     $project = (Get-Item -LiteralPath $ProjectFolder).FullName
+    Write-Verbose ("Watching Project Folder: " + $project)
     $watcher = New-Object System.IO.FileSystemWatcher
     $watcher.Path = $project
     $watcher.Filter = '*.*'
@@ -361,19 +362,24 @@ function Watch-SalesforceApex {
     $watcher.EnableRaisingEvents = $true
 
     $sourcePrefix = "Watch-SalesforceApex_$([guid]::NewGuid())"
-    $handlers = @()
+    $sourceIdentifiers = @()
     foreach ($eventName in 'Changed', 'Created', 'Renamed') {
-        $handlers += Register-ObjectEvent -InputObject $watcher -EventName $eventName -SourceIdentifier "${sourcePrefix}:$eventName"
+        $sourceId = "${sourcePrefix}:$eventName"
+        Register-ObjectEvent -InputObject $watcher -EventName $eventName -SourceIdentifier $sourceId | Out-Null
+        $sourceIdentifiers += $sourceId
     }
 
-    $sourceIdentifiers = $handlers | ForEach-Object { $_.Name }
     $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
 
     try {
         Write-Host "Watching $project for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
         while ($true) {
-            $changeEvent = Wait-Event -SourceIdentifier $sourceIdentifiers -Timeout 1
+            $changeEvent = Wait-Event -Timeout 1
             if (-not $changeEvent) { continue }
+            if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
+                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+                continue
+            }
 
             try {
                 $changeEventArgs = $changeEvent.SourceEventArgs
@@ -392,10 +398,11 @@ function Watch-SalesforceApex {
                     if ($extension -notin @('.cls', '.trigger')) { continue }
                     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
 
+                    write-Verbose ("File Changed: " + $path)
+
                     $now = Get-Date
-                    $last = $recentEvents[$path]
-                    if ($last -and (($now - $last).TotalMilliseconds -lt $DebounceMilliseconds)) { continue }
-                    $recentEvents[$path] = $now
+                    $nextAllowed = $recentEvents[$path]
+                    if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
 
                     Start-Sleep -Milliseconds $DebounceMilliseconds
                     try {
@@ -403,6 +410,9 @@ function Watch-SalesforceApex {
                     }
                     catch {
                         Write-Error $_
+                    }
+                    finally {
+                        $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
                     }
                 }
             }
@@ -429,33 +439,23 @@ function Invoke-SalesforceApexAutomation {
 
     Write-Verbose ("Processing file: " + $FilePath)
 
-    # if (-not $ProjectFolder) {
-    #     $ProjectFolder = (Get-Location).Path
-    # }
+    if (-not $ProjectFolder) {
+        $ProjectFolder = (Get-Location).Path
+    }
 
-    # $type = Get-SalesforceType -FileName $FilePath
-    # if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
-    #     return
-    # }
+    $type = Get-SalesforceType -FileName $FilePath
+    if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
+        return
+    }
 
-    # $name = Get-SalesforceName -FileName $FilePath
-    # Write-Verbose "Deploying $type '$name'"
-    # $deployResult = Deploy-SalesforceComponent -Type $type -Name $name
+    $name = Get-SalesforceName -FileName $FilePath
+    Write-Verbose "Deploying $type '$name'"
 
-    # $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
-    # $testClassNames = Get-SalesforceApexTestClassNames -ProjectFolder $ProjectFolder
-    # if (-not $testClassNames -or $testClassNames.Count -eq 0) {
-    #     Write-Warning 'No Apex test classes found in project; skipping Apex test run.'
-    #     return $deployResult
-    # }
-
-    # Write-Verbose ("Running Apex tests: " + ($testClassNames -join ', '))
-    # $testResult = Test-SalesforceApex -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
-
-    # [PSCustomObject]@{
-    #     Deploy = $deployResult
-    #     Test   = $testResult
-    # }
+    $command = "sf project deploy start"
+    $command += " --metadata ${type}:${name}"
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    Show-SalesforceResult -Result $result
 }
 
 function Get-SalesforceType {
