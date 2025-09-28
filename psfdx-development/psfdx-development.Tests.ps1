@@ -312,8 +312,8 @@ Describe 'Get-SalesforceApexTestClassNames' {
                 $nested = Join-Path $tempRoot.FullName 'nested'
                 New-Item -Path $nested -ItemType Directory | Out-Null
                 $testTwo = Join-Path $nested 'AnotherTest.cls'
-                Set-Content -Path $testOne -Value '@isTest public class SampleTest {}' -Encoding UTF8
-                Set-Content -Path $testTwo -Value '@isTest private class AnotherTest {}' -Encoding UTF8
+                Set-Content -Path $testOne -Value '@isTest public class SampleTest { @isTest static void exerciseSample() { Sample.handle(); } }' -Encoding UTF8
+                Set-Content -Path $testTwo -Value '@isTest private class AnotherTest { @isTest static void exerciseSampleDependency() { Sample.handle(); } }' -Encoding UTF8
 
                 $result = Get-SalesforceApexTestClassNames -ProjectFolder $tempRoot.FullName
                 $result | Should -Contain 'SampleTest'
@@ -332,10 +332,14 @@ Describe 'Get-SalesforceApexTestClassNamesFromFile' {
         It 'returns only the class when file is a test class' {
             $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
-                $file = Join-Path $tempRoot.FullName 'SampleTest.cls'
+                $grand = Join-Path $tempRoot.FullName 'grand'
+                $parent = Join-Path $grand 'parent'
+                New-Item -Path $parent -ItemType Directory -Force | Out-Null
+
+                $file = Join-Path $parent 'SampleTest.cls'
                 Set-Content -Path $file -Value '@isTest public class SampleTest {}' -Encoding UTF8
 
-                $result = Get-SalesforceApexTestClassNamesFromFile -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result = Get-SalesforceApexTestClassNamesFromFile -FilePath $file
                 $result | Should -Be @('SampleTest')
             }
             finally {
@@ -346,20 +350,23 @@ Describe 'Get-SalesforceApexTestClassNamesFromFile' {
         It 'returns all discovered test classes when file is not a test class' {
             $tempRoot = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
-                $classFile = Join-Path $tempRoot.FullName 'Sample.cls'
+                $grand = Join-Path $tempRoot.FullName 'grand'
+                $parent = Join-Path $grand 'parent'
+                New-Item -Path $parent -ItemType Directory -Force | Out-Null
+
+                $classFile = Join-Path $parent 'Sample.cls'
                 Set-Content -Path $classFile -Value 'public class Sample {}' -Encoding UTF8
 
-                $testOne = Join-Path $tempRoot.FullName 'SampleTest.cls'
-                $nested = Join-Path $tempRoot.FullName 'nested'
-                New-Item -Path $nested -ItemType Directory | Out-Null
+                $testOne = Join-Path $grand 'SampleTest.cls'
+                $nested = Join-Path $grand 'nested'
+                New-Item -Path $nested -ItemType Directory -Force | Out-Null
                 $testTwo = Join-Path $nested 'AnotherTest.cls'
                 Set-Content -Path $testOne -Value '@isTest public class SampleTest {}' -Encoding UTF8
                 Set-Content -Path $testTwo -Value '@isTest private class AnotherTest {}' -Encoding UTF8
 
-                $result = Get-SalesforceApexTestClassNamesFromFile -FilePath $classFile -ProjectFolder $tempRoot.FullName
+                $result = Get-SalesforceApexTestClassNamesFromFile -FilePath $classFile
                 $result | Should -Contain 'SampleTest'
-                $result | Should -Contain 'AnotherTest'
-                $result.Count | Should -Be 2
+                $result.Count | Should -Be 1
             }
             finally {
                 Remove-Item -LiteralPath $tempRoot.FullName -Force -Recurse
