@@ -15,7 +15,7 @@ https://github.com/PowerShell/PowerShell/releases
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-./install-unix.ps1
+./install.ps1
 ```
 
 ### Windows
