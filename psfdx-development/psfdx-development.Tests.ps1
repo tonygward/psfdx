@@ -32,7 +32,7 @@ Describe 'psfdx-development basics' {
         }
         It 'starts LWC dev server with sf command' {
             Start-SalesforceLwcDevServer | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning lwc start' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev app' }
         }
         It 'sets project target org with equals syntax' {
             Set-SalesforceTargetOrg -Value 'user@example' | Out-Null
