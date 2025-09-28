@@ -626,7 +626,7 @@ function Install-SalesforceLwcDevServer {
     Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev"
 }
 
-function Start-SalesforceLwcDevServerApp {
+function Start-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
     Invoke-Salesforce -Command "sf lightning dev app"
