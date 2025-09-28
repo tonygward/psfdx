@@ -211,7 +211,7 @@ function Install-SalesforcePackageVersion {
 
     $command = "sf package install"
     $command += " --package $PackageVersionId"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($NoPrompt) { $command += " --no-prompt" }
     if ($SecurityType) { $command += " --security-type $SecurityType" }
     if ($WaitMinutes) {

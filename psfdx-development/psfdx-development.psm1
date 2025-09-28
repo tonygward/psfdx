@@ -233,23 +233,14 @@ function Test-SalesforceApex {
     )
 
     $command = "sf apex run test"
-    $collectedTests = @()
 
     if ($TestsInProject.IsPresent) {
-        $searchRoot = Get-Location
-        $testFiles = Get-ChildItem -Path $searchRoot.Path -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
-        $testFiles = $testFiles | Where-Object {
-            Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+        $testClassNames = Get-SalesforceApexTestClassNames
+        if (-not $testClassNames) {
+            throw "No Apex test classes found."
         }
-        $collectedTests = $testFiles | ForEach-Object {
-            [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-        } | Sort-Object -Unique
-
-        if (-not $collectedTests) {
-            throw "No Apex test classes found in '$($searchRoot.Path)'."
-        }
-        foreach ($testName in $collectedTests) {
-            $command += " --tests $testName"
+        foreach ($testClassName in $testClassNames) {
+            $command += " --tests $testClassName"
         }
     } elseif ($ClassName -and $TestName) {
         $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
@@ -268,7 +259,7 @@ function Test-SalesforceApex {
     if ($Concise) { $command += " --concise" }
     if ($CodeCoverage) { $command += " --code-coverage" }
     if ($CodeCoverageDetailed) { $command += " --detailed-coverage" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
     if ($ResultFormat -ne 'json') {
@@ -303,13 +294,10 @@ function Get-SalesforceCodeCoverage {
     )
     $query = "SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage "
     $query += "FROM ApexCodeCoverage "
-    if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {
-        $apexClass = Get-SalesforceApexClass -Name $ApexClassOrTrigger -TargetOrg $TargetOrg
-        $apexClassId = $apexClass.Id
-        $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
-    }
-
     $results = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -UseToolingApi
+    if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {
+        $results = $results | Where-Object { $_.ApexClassOrTrigger.Name -eq $ApexClassOrTrigger -or $_.ApexTestClass.Name -eq $ApexClassOrTrigger }
+    }
 
     $values = @()
     foreach ($item in $results) {
@@ -343,7 +331,7 @@ function Invoke-SalesforceApex {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $command = "sf apex run --file $ApexFile"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
@@ -352,18 +340,140 @@ function Invoke-SalesforceApex {
 function Watch-SalesforceApex {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $FileName
+        [Parameter(Mandatory = $false)][string] $ProjectFolder,
+        [Parameter(Mandatory = $false)][int] $DebounceMilliseconds = 300
     )
 
-    $type = Get-SalesforceType -FileName $FileName
-    if (($type -eq "ApexClass") -or ($type -eq "ApexTrigger")) {
-        $name = Get-SalesforceName -FileName $FileName
-        Deploy-SalesforceComponent -Type $type -Name $name
-
-        $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
-        $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
-        Test-SalesforceApex -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
+    if (-not $ProjectFolder) {
+        $ProjectFolder = (Get-Location).Path
     }
+
+    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
+        throw "Project folder '$ProjectFolder' does not exist."
+    }
+
+    $project = (Get-Item -LiteralPath $ProjectFolder).FullName
+    Write-Verbose ("Watching Project Folder: " + $project)
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path = $project
+    $watcher.Filter = '*.*'
+    $watcher.IncludeSubdirectories = $true
+    $watcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
+    $watcher.EnableRaisingEvents = $true
+
+    $sourcePrefix = "Watch-SalesforceApex_$([guid]::NewGuid())"
+    $sourceIdentifiers = @()
+    foreach ($eventName in 'Changed', 'Created', 'Renamed') {
+        $sourceId = "${sourcePrefix}:$eventName"
+        Register-ObjectEvent -InputObject $watcher -EventName $eventName -SourceIdentifier $sourceId | Out-Null
+        $sourceIdentifiers += $sourceId
+    }
+
+    $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
+
+    try {
+        Write-Host "Watching $project for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
+        while ($true) {
+            $changeEvent = Wait-Event -Timeout 1
+            if (-not $changeEvent) { continue }
+            if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
+                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+                continue
+            }
+
+            try {
+                $changeEventArgs = $changeEvent.SourceEventArgs
+                $paths = @()
+                if ($changeEventArgs -is [System.IO.RenamedEventArgs]) {
+                    $paths += $changeEventArgs.FullPath
+                } else {
+                    $paths += $changeEventArgs.FullPath
+                }
+
+                foreach ($path in $paths) {
+                    if (-not $path) { continue }
+                    $extension = [System.IO.Path]::GetExtension($path)
+                    if (-not $extension) { continue }
+                    $extension = $extension.ToLowerInvariant()
+                    if ($extension -notin @('.cls', '.trigger')) { continue }
+                    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+
+                    $now = Get-Date
+                    $nextAllowed = $recentEvents[$path]
+                    if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
+
+                    Start-Sleep -Milliseconds $DebounceMilliseconds
+                    try {
+                        Invoke-SalesforceApexAutomation -FilePath $path -ProjectFolder $project | Out-Null
+                    }
+                    catch {
+                        Write-Error $_
+                    }
+                    finally {
+                        $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
+                    }
+                }
+            }
+            finally {
+                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+            }
+        }
+    }
+    finally {
+        foreach ($identifier in $sourceIdentifiers) {
+            Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
+        }
+        $watcher.EnableRaisingEvents = $false
+        $watcher.Dispose()
+    }
+}
+
+function Invoke-SalesforceApexAutomation {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $FilePath,
+        [Parameter(Mandatory = $false)][string] $ProjectFolder
+    )
+
+    Write-Verbose ("Processing file: " + $FilePath)
+
+    if (-not $ProjectFolder) {
+        $ProjectFolder = (Get-Location).Path
+    }
+
+    $type = Get-SalesforceType -FileName $FilePath
+    if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
+        return
+    }
+
+    $name = Get-SalesforceName -FileName $FilePath
+    Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
+
+    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
+
+    $command = "sf project deploy start"
+    $command += " --metadata ${type}:${name}"
+    if ($testClassNames -and $testClassNames.Count -gt 0) {
+        $command += " --test-level RunSpecifiedTests"
+        foreach ($testName in $testClassNames) {
+            $command += " --tests $testName"
+        }
+    }
+    else {
+        Write-Warning 'No Apex test classes found in project; deploying without running tests.'
+    }
+    $command += " --ignore-warnings"
+    $command += " --json"
+
+    $deployJson = Invoke-Salesforce -Command $command
+    Show-SalesforceResult -Result $deployJson
+
+    $successMessage = "Deployed $type ${name}"
+    if ($testClassNames -and $testClassNames.Count -gt 0) {
+        $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
+    }
+    $successMessage += "."
+    Write-Host $successMessage -ForegroundColor Cyan
 }
 
 function Get-SalesforceType {
@@ -388,32 +498,64 @@ function Get-SalesforceName {
     return $name
 }
 
-function Get-SalesforceTestResultsApexFolder {
+function Get-SalesforceApexTestClassNames {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
+    Param(
+        [Parameter(Mandatory = $false)][string] $FilePath,
+        [Parameter(Mandatory = $false)][string] $ProjectFolder
+    )
 
-    $folder = Join-Path -Path (Join-Path -Path (Join-Path -Path $ProjectFolder -ChildPath ".sfdx") -ChildPath "tools") -ChildPath "testresults/apex"
-    Write-Verbose ("Apex Test Results Folder: " + $folder)
-    # TODO: Check Folder Exists
-    return $folder
+    if ($FilePath) {
+        return Get-SalesforceApexTestClassNamesFromFile -FilePath $FilePath
+    }
+
+    if (!$ProjectFolder) {
+        $ProjectFolder = (Get-Location).Path
+    }
+    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
+        throw "Project folder '$ProjectFolder' does not exist."
+    }
+
+    $testFiles = Get-ChildItem -Path $ProjectFolder -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+    $testFiles = $testFiles | Where-Object {
+        Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+    }
+
+    $testClassNames = $testFiles | ForEach-Object {
+        [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+    } | Sort-Object -Unique
+
+    return @($testClassNames)
 }
 
-function Get-SalesforceApexTestsClasses {
+function Get-SalesforceApexTestClassNamesFromFile {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
+    Param(
+        [Parameter(Mandatory = $true)][string] $FilePath
+    )
 
-    $classesFolder = Join-Path -Path $ProjectFolder -ChildPath "force-app\main\default\classes"
-    $classes = Get-ChildItem -Path $classesFolder -Filter *.cls
-    $testClasses = @()
-    foreach ($class in $classes) {
-        if (Select-String -Path $class -Pattern "@isTest") {
-            Write-Verbose ("Found Apex Test Class: " + $class)
-            $testClasses += Get-SalesforceName -FileName $class
-        }
+    if (-not (Test-Path -LiteralPath $FilePath -PathType Leaf)) {
+        throw "File '$FilePath' does not exist."
     }
-    $testClassNames = $testClasses -join ","
-    Write-Verbose ("Apex Test Class Names: " + $testClassNames)
-    return $testClassNames
+
+    $parentFolder = Split-Path -Path $FilePath -Parent
+    $rootFolder = Split-Path -Path $parentFolder -Parent
+    if ([string]::IsNullOrWhiteSpace($rootFolder)) {
+        $rootFolder = $parentFolder
+    }
+    $rootFolder = (Get-Item -LiteralPath $rootFolder).FullName
+
+    $className = [System.IO.Path]::GetFileNameWithoutExtension($FilePath)
+
+    $testFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+    $matchingTests = $testFiles | Where-Object {
+        (Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet) -and
+        (Select-String -Path $_.FullName -Pattern $className -SimpleMatch -Quiet)
+    }
+
+    $matchingTests | ForEach-Object {
+        [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+    } | Sort-Object -Unique
 }
 
 function Get-SalesforceApexClass {
@@ -422,7 +564,7 @@ function Get-SalesforceApexClass {
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
+    $query = "SELECT Id, Name, Body FROM ApexClass WHERE Name = '$Name' LIMIT 1"
     return Select-SalesforceRecords -Query $query -UseToolingApi -TargetOrg $TargetOrg
 }
 
@@ -442,7 +584,12 @@ function New-SalesforceApexClass {
     $command = "sf apex generate class"
     $command += " --name $Name"
     $command += " --template $Template"
-    $command += " --output-dir $OutputDirectory"
+    if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
+        $command += " --output-dir $OutputDirectory"
+    }
     Invoke-Salesforce -Command $command
 }
 
@@ -460,7 +607,12 @@ function New-SalesforceApexTrigger {
     $command += " --name $Name"
     $command += " --event $Event"
     if ($SObject) { $command += " --sobject $SObject" }
-    $command += " --output-dir $OutputDirectory"
+        if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
+        $command += " --output-dir $OutputDirectory"
+    }
     Invoke-Salesforce -Command $command
 }
 
@@ -471,15 +623,13 @@ function New-SalesforceApexTrigger {
 function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "npm install -g node-gyp"
-    Invoke-Salesforce -Command "sf plugins install @salesforce/lwc-dev-server"
-    Invoke-Salesforce -Command "sf plugins update"
+    Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev"
 }
 
 function Start-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "sf lightning lwc start"
+    Invoke-Salesforce -Command "sf lightning dev app"
 }
 
 #endregion

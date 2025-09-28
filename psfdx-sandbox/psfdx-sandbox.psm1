@@ -49,7 +49,7 @@ function New-SalesforceSandbox {
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
     if ($NoPrompt) { $command += " --no-prompt" }
     if ($NoTrackSource) { $command += " --no-track-source" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
@@ -66,7 +66,7 @@ function Resume-SalesforceSandbox {
 
     $command = "sf org resume sandbox --name $SandboxName"
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
@@ -90,7 +90,7 @@ function Copy-SalesforceSandbox {
     if ($Alias) { $command += " --alias $Alias" }
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
     if ($NoPrompt) { $command += " --no-prompt" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
@@ -106,7 +106,7 @@ function Remove-SalesforceSandbox {
 
     $command = "sf org delete sandbox"
     if ($NoPrompt) { $command += " --no-prompt" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
@@ -124,7 +124,7 @@ function Get-SalesforceSandboxRefreshStatus {
 
     $infoQuery = "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = '$escapedName'"
     $infoCommand = "sf data query --use-tooling-api --result-format json --query `"$infoQuery`""
-    if ($TargetOrg) { $infoCommand += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $infoCommand += " --target-org $TargetOrg" }
 
     $infoResult = Invoke-Salesforce -Command $infoCommand | ConvertFrom-Json
     if ($infoResult.status -ne 0) {
@@ -141,7 +141,7 @@ function Get-SalesforceSandboxRefreshStatus {
 
     $processQuery = "SELECT SandboxName, StartDate, EndDate FROM SandboxProcess WHERE SandboxName = '$escapedName' ORDER BY StartDate DESC LIMIT 1"
     $processCommand = "sf data query --use-tooling-api --result-format json --query `"$processQuery`""
-    if ($TargetOrg) { $processCommand += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $processCommand += " --target-org $TargetOrg" }
 
     $processResult = Invoke-Salesforce -Command $processCommand | ConvertFrom-Json
     if ($processResult.status -ne 0) {
