@@ -197,7 +197,9 @@ function Select-SalesforceRecords {
     $command = "sf data query"
     if ($Query) { $command += " --query `"$Query`"" }
     if ($File) { $command += " --file `"$File`"" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
+        $command += " --target-org `"$($TargetOrg.Trim())`""
+    }
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     if ($IncludeDeletedRows) { $command += " --all-rows" }
 

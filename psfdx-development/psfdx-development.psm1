@@ -299,7 +299,7 @@ function Get-SalesforceCodeCoverage {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $ApexClassOrTrigger = $null,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $query = "SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage "
     $query += "FROM ApexCodeCoverage "
@@ -309,11 +309,10 @@ function Get-SalesforceCodeCoverage {
         $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
     }
 
-    $result = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -UseToolingApi
-    $result = (Show-SalesforceResult -Result $result).records
+    $results = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -UseToolingApi
 
     $values = @()
-    foreach ($item in $result) {
+    foreach ($item in $results) {
         $value = New-Object -TypeName PSObject
         $value | Add-Member -MemberType NoteProperty -Name 'ApexClassOrTrigger' -Value $item.ApexClassOrTrigger.Name
         $value | Add-Member -MemberType NoteProperty -Name 'ApexTestClass' -Value $item.ApexTestClass.Name
@@ -421,15 +420,10 @@ function Get-SalesforceApexClass {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $true)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $query = "SELECT Id, Name FROM ApexClass WHERE Name = '$Name' LIMIT 1"
-    $result = Invoke-Salesforce -Command "sf data query --query `"$query`" --use-tooling-api --target-org $TargetOrg --json"
-    $parsed = $result | ConvertFrom-Json
-    if ($parsed.status -ne 0) {
-        throw ($parsed.message)
-    }
-    return $parsed.result.records | Select-Object -First 1
+    return Select-SalesforceRecords -Query $query -UseToolingApi -TargetOrg $TargetOrg
 }
 
 #endregion
