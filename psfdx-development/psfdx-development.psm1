@@ -233,23 +233,14 @@ function Test-SalesforceApex {
     )
 
     $command = "sf apex run test"
-    $collectedTests = @()
 
     if ($TestsInProject.IsPresent) {
-        $searchRoot = Get-Location
-        $testFiles = Get-ChildItem -Path $searchRoot.Path -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
-        $testFiles = $testFiles | Where-Object {
-            Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+        $testClassNames = Get-SalesforceApexTestClassNames
+        if (-not $testClassNames) {
+            throw "No Apex test classes found."
         }
-        $collectedTests = $testFiles | ForEach-Object {
-            [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
-        } | Sort-Object -Unique
-
-        if (-not $collectedTests) {
-            throw "No Apex test classes found in '$($searchRoot.Path)'."
-        }
-        foreach ($testName in $collectedTests) {
-            $command += " --tests $testName"
+        foreach ($testClassName in $testClassNames) {
+            $command += " --tests $testClassName"
         }
     } elseif ($ClassName -and $TestName) {
         $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
@@ -303,13 +294,10 @@ function Get-SalesforceCodeCoverage {
     )
     $query = "SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage "
     $query += "FROM ApexCodeCoverage "
-    if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {
-        $apexClass = Get-SalesforceApexClass -Name $ApexClassOrTrigger -TargetOrg $TargetOrg
-        $apexClassId = $apexClass.Id
-        $query += "WHERE ApexClassOrTriggerId = '$apexClassId' "
-    }
-
     $results = Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg -UseToolingApi
+    if (($null -ne $ApexClassOrTrigger) -and ($ApexClassOrTrigger -ne '')) {
+        $results = $results | Where-Object { $_.ApexClassOrTrigger.Name -eq $ApexClassOrTrigger -or $_.ApexTestClass.Name -eq $ApexClassOrTrigger }
+    }
 
     $values = @()
     foreach ($item in $results) {
@@ -361,7 +349,7 @@ function Watch-SalesforceApex {
         Deploy-SalesforceComponent -Type $type -Name $name
 
         $outputDir = Get-SalesforceTestResultsApexFolder -ProjectFolder $ProjectFolder
-        $testClassNames = Get-SalesforceApexTestsClasses -ProjectFolder $ProjectFolder
+        $testClassNames = Get-SalesforceApexTestClassNames -ProjectFolder $ProjectFolder
         Test-SalesforceApex -ClassName $testClassNames -CodeCoverage:$false -OutputDirectory $outputDir
     }
 }
@@ -398,21 +386,22 @@ function Get-SalesforceTestResultsApexFolder {
     return $folder
 }
 
-function Get-SalesforceApexTestsClasses {
+function Get-SalesforceApexTestClassNames {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $ProjectFolder)
+    Param([Parameter(Mandatory = $false)][string] $ProjectFolder)
 
-    $classesFolder = Join-Path -Path $ProjectFolder -ChildPath "force-app\main\default\classes"
-    $classes = Get-ChildItem -Path $classesFolder -Filter *.cls
-    $testClasses = @()
-    foreach ($class in $classes) {
-        if (Select-String -Path $class -Pattern "@isTest") {
-            Write-Verbose ("Found Apex Test Class: " + $class)
-            $testClasses += Get-SalesforceName -FileName $class
-        }
+    if (!$ProjectFolder) {
+        $ProjectFolder = Get-Location
     }
-    $testClassNames = $testClasses -join ","
-    Write-Verbose ("Apex Test Class Names: " + $testClassNames)
+
+    $testFiles = Get-ChildItem -Path $ProjectFolder -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+    $testFiles = $testFiles | Where-Object {
+        Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+    }
+
+    $testClassNames = $testFiles | ForEach-Object {
+        [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+    } | Sort-Object -Unique
     return $testClassNames
 }
 
