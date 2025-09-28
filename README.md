@@ -180,14 +180,13 @@ Get-Command -Module psfdx*
 | Cmdlet | Description |
 | :--- | :--- |
 | `New-SalesforceProject` | Create a new Salesforce project. |
-| `Set-SalesforceTargetOrg` | Set project (or global) default Target Org. |
-| `Get-SalesforceTargetOrg` | Get project (or global) default Target Org. |
-| `Remove-SalesforceTargetOrg` | Unset project (or global) default Target Org. |
-| `Get-SalesforceConfig` | Get all Salesforce Config values per project or global. |
-| `Set-SalesforceTargetDevHub` | Set project (or global) default DevHub. |
+| `Set-SalesforceTargetOrg` | Set default Target Org (project or global). |
+| `Get-SalesforceTargetOrg` | Get default Target Org (project or global). |
+| `Remove-SalesforceTargetOrg` | Unset default Target Org (project or global). |
 | `Set-SalesforceTargetDevHub` | Set default Dev Hub (project or global). |
 | `Get-SalesforceTargetDevHub` | Get default Dev Hub (project or global). |
 | `Remove-SalesforceTargetDevHub` | Unset default Dev Hub (project or global). |
+| `Get-SalesforceConfig` | Get all Salesforce Config values per project or global. |
 ### Scratch Orgs
 
 | Cmdlet | Description |
@@ -201,7 +200,7 @@ Get-Command -Module psfdx*
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Test-SalesforceApex` | Run Apex tests (use the `-TestsInProject` switch to auto-discover local `@isTest` classes). |
+| `Test-SalesforceApex` | Run Apex tests. |
 | `Get-SalesforceCodeCoverage` | Compute coverage per class/test method. |
 | `Invoke-SalesforceApex` | Execute Apex from a file. |
 | `Watch-SalesforceApex` | On-save deploy and test Apex. |
