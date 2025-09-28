@@ -428,15 +428,15 @@ function New-SalesforceApexClass {
             $Template = 'DefaultApexClass',
         [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/classes'
     )
+    $command = "sf apex generate class"
+    $command += " --name $Name"
+    $command += " --template $Template"
     if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
         }
+        $command += " --output-dir $OutputDirectory"
     }
-    $command = "sf apex generate class"
-    $command += " --name $Name"
-    $command += " --template $Template"
-    $command += " --output-dir $OutputDirectory"
     Invoke-Salesforce -Command $command
 }
 
@@ -450,16 +450,16 @@ function New-SalesforceApexTrigger {
         [Parameter(Mandatory = $false)][string] $SObject,
         [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/triggers'
     )
-    if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
-        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
-            throw "Output directory '$OutputDirectory' does not exist."
-        }
-    }
     $command = "sf apex generate trigger"
     $command += " --name $Name"
     $command += " --event $Event"
     if ($SObject) { $command += " --sobject $SObject" }
-    $command += " --output-dir $OutputDirectory"
+        if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory)) {
+            throw "Output directory '$OutputDirectory' does not exist."
+        }
+        $command += " --output-dir $OutputDirectory"
+    }
     Invoke-Salesforce -Command $command
 }
 
