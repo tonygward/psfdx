@@ -533,7 +533,14 @@ function Get-SalesforceApexTestClassNamesFromFile {
         throw "File '$FilePath' does not exist."
     }
 
-    $rootFolder = (Get-Item -LiteralPath (Split-Path -Path $FilePath -Parent)).FullName
+    $parentFolder = Split-Path -Path $FilePath -Parent
+    $rootFolder = Split-Path -Path $parentFolder -Parent
+    if ([string]::IsNullOrWhiteSpace($rootFolder)) {
+        $rootFolder = $parentFolder
+    }
+    $rootFolder = (Get-Item -LiteralPath $rootFolder).FullName
+
+    return $rootFolder
 }
 
 function Get-SalesforceApexClass {
