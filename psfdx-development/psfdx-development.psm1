@@ -398,8 +398,6 @@ function Watch-SalesforceApex {
                     if ($extension -notin @('.cls', '.trigger')) { continue }
                     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
 
-                    write-Verbose ("File Changed: " + $path)
-
                     $now = Get-Date
                     $nextAllowed = $recentEvents[$path]
                     if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
@@ -449,13 +447,15 @@ function Invoke-SalesforceApexAutomation {
     }
 
     $name = Get-SalesforceName -FileName $FilePath
-    Write-Verbose "Deploying $type '$name'"
+    Write-Verbose "Deploying $type ${name}..."
 
     $command = "sf project deploy start"
     $command += " --metadata ${type}:${name}"
+    $command += " --ignore-warnings"
     $command += " --json"
     $result = Invoke-Salesforce -Command $command
     Show-SalesforceResult -Result $result
+    Write-Verbose "Deployed $type ${name}."
 }
 
 function Get-SalesforceType {
