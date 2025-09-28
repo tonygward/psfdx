@@ -11,11 +11,11 @@ https://github.com/PowerShell/PowerShell/releases
 
 # Installation
 
-### Linux
+### Mac or Linux
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
-./install-linux.ps1
+./install-unix.ps1
 ```
 
 ### Windows
