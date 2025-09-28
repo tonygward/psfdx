@@ -447,7 +447,7 @@ function Invoke-SalesforceApexAutomation {
     }
 
     $name = Get-SalesforceName -FileName $FilePath
-    Write-Verbose "Deploy and Testing $type ${name}..."
+    Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
 
     $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
 
@@ -466,9 +466,14 @@ function Invoke-SalesforceApexAutomation {
     $command += " --json"
 
     $deployJson = Invoke-Salesforce -Command $command
-    $deployResult = Show-SalesforceResult -Result $deployJson
-    Write-Verbose $deployResult
-    return $deployResult
+    Show-SalesforceResult -Result $deployJson
+
+    $successMessage = "Deployed $type ${name}"
+    if ($testClassNames -and $testClassNames.Count -gt 0) {
+        $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
+    }
+    $successMessage += "."
+    Write-Host $successMessage -ForegroundColor Cyan
 }
 
 function Get-SalesforceType {

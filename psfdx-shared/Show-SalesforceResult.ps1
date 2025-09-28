@@ -8,6 +8,7 @@ function Show-SalesforceResult {
 
     $converted = $Result | ConvertFrom-Json
     if ($converted.status -ne 0) {
+        Write-Debug ($Result | ConvertTo-Json)
         $message = Get-SalesforceErrorMessage -Result $converted
         throw $message
     }
@@ -28,10 +29,21 @@ function Get-SalesforceErrorMessage {
         [Parameter(Mandatory = $true)][psobject] $Result
     )
 
+    if ($Result -is [string]) {
+        Write-Debug $Result
+    } else {
+        Write-Debug ($Result | ConvertTo-Json -Depth 10)
+    }
+
     $messages = @()
 
     if ($Result.message) {
         $messages += $Result.message
+    }
+
+    $deployFailures = Get-SalesforceDeployFailures -Result $Result
+    if ($deployFailures) {
+        $messages += $deployFailures
     }
 
     $testFailures = Get-SalesforceTestFailure -Result $Result
@@ -44,6 +56,42 @@ function Get-SalesforceErrorMessage {
     }
 
     return ($messages -join [Environment]::NewLine)
+}
+
+function Get-SalesforceDeployFailures {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][psobject] $Result
+    )
+
+    $resultRoot = $Result.result
+    if ($null -eq $resultRoot) { return $null }
+
+    $details = $resultRoot.details
+    if ($null -eq $details) { return $null }
+
+    $componentFailures = $details.componentFailures
+    if (-not $componentFailures) {
+        return $null
+    }
+
+    return ($componentFailures | ForEach-Object {
+        $problem = $_.problem
+        $line = $_.lineNumber
+        $column = $_.columnNumber
+
+        if ([string]::IsNullOrWhiteSpace($problem)) {
+            return $null
+        }
+
+        if (($null -ne $line) -or ($null -ne $column)) {
+            $lineValue = if ($null -ne $line) { $line } else { '?' }
+            $columnValue = if ($null -ne $column) { $column } else { '?' }
+            "$problem ($($lineValue):$($columnValue))"
+        } else {
+            $problem
+        }
+    }) | Where-Object { $_ }
 }
 
 function Get-SalesforceTestFailure {
