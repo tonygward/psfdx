@@ -48,6 +48,14 @@ Describe 'psfdx module' {
             }
         }
 
+        Context 'Install-SalesforceCli' {
+            It 'runs npm global install for the CLI' {
+                Mock Invoke-Salesforce {} -ModuleName $module.Name
+                Install-SalesforceCli
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm install --global @salesforce/cli' }
+            }
+        }
+
         Context 'Connect-SalesforceJwt' {
             BeforeAll {
                 Mock Test-Path { $true }

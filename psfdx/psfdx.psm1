@@ -359,6 +359,12 @@ function Get-SalesforceLatestApiVersion {
 
 #region Plugins
 
+function Install-SalesforceCli {
+    [CmdletBinding()]
+    Param()
+    Invoke-Salesforce -Command "npm install --global @salesforce/cli"
+}
+
 function Install-SalesforcePlugin {
     [CmdletBinding()]
     Param(
