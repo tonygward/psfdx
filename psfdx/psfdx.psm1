@@ -33,6 +33,29 @@ function Connect-Salesforce {
     Show-SalesforceResult -Result $result
 }
 
+function Connect-SalesforceAuthUrl {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $SfdxUrlFile,
+
+        [Parameter(Mandatory = $false)][string] $Alias,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
+        [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub
+    )
+
+    if (-not (Test-Path -LiteralPath $SfdxUrlFile)) {
+        throw "File does not exist: $SfdxUrlFile"
+    }
+
+    $command = "sf auth sfdxurl store --sfdx-url-file `"$SfdxUrlFile`""
+    if ($Alias) { $command += " --alias $Alias" }
+    if ($SetDefault) { $command += " --set-default" }
+    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command
+    Show-SalesforceResult -Result $result
+}
+
 function Disconnect-Salesforce {
     [CmdletBinding(DefaultParameterSetName = 'TargetOrg')]
     Param(
