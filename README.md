@@ -6,19 +6,6 @@ Cross platform PowerShell modules that wrap the Salesforce CLI.
 PowerShell for Windows or Linux
 https://github.com/PowerShell/PowerShell/releases
 
-# Salesforce CLI
-1. Salesforce CLI
-https://developer.salesforce.com/tools/sfdxcli
-
-   You can install the Salesforce CLI directly from this module once it's imported by running:
-
-   ```powershell
-   Import-Module psfdx
-   Install-SalesforceCli
-   ```
-
-   On macOS the cmdlet uses Homebrew (`brew install sfdx-cli/tap/sf`); on Windows and Linux it falls back to the global npm installer (`npm install --global @salesforce/cli`).
-
 # Installation
 
 ### Mac or Linux
@@ -35,7 +22,7 @@ cd psfdx
 ./install-windows.ps1
 ```
 
-# Dependency - Salesforce CLI
+# Salesforce CLI
 
    You can install the Salesforce CLI directly from this module once it's imported by running:
 
