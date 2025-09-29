@@ -40,20 +40,50 @@ function Connect-SalesforceAuthUrl {
 
         [Parameter(Mandatory = $false)][string] $Alias,
         [Parameter(Mandatory = $false)][switch] $SetDefault,
-        [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub
+        [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub,
+        [Parameter(Mandatory = $false)][switch] $IncludeToken
     )
 
     if (-not (Test-Path -LiteralPath $SfdxUrlFile)) {
         throw "File does not exist: $SfdxUrlFile"
     }
 
-    $command = "sf auth sfdxurl store --sfdx-url-file `"$SfdxUrlFile`""
-    if ($Alias) { $command += " --alias $Alias" }
-    if ($SetDefault) { $command += " --set-default" }
-    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
-    $command += " --json"
+    $segments = [System.Collections.Generic.List[string]]::new()
+    $segments.Add('sf auth sfdxurl store') | Out-Null
+    $segments.Add("--sfdx-url-file `"$SfdxUrlFile`"") | Out-Null
+    if ($Alias) { $segments.Add("--alias $Alias") | Out-Null }
+    if ($SetDefault) { $segments.Add('--set-default') | Out-Null }
+    if ($SetDefaultDevHub) { $segments.Add('--set-default-dev-hub') | Out-Null }
+    $segments.Add('--json') | Out-Null
+
+    $command = $segments -join ' '
     $result = Invoke-Salesforce -Command $command
-    Show-SalesforceResult -Result $result
+    $details = Show-SalesforceResult -Result $result
+
+    if ($IncludeToken) {
+        return $details
+    }
+
+    if ($null -eq $details) {
+        return $details
+    }
+
+    $sensitiveKeys = @('accessToken', 'refreshToken')
+    if ($details -is [System.Collections.IEnumerable] -and -not ($details -is [string])) {
+        return $details | ForEach-Object {
+            if ($_ -is [psobject]) {
+                $_ | Select-Object -Property * -ExcludeProperty $sensitiveKeys
+            } else {
+                $_
+            }
+        }
+    }
+
+    if ($details -is [psobject]) {
+        return $details | Select-Object -Property * -ExcludeProperty $sensitiveKeys
+    }
+
+    return $details
 }
 
 function Disconnect-Salesforce {
