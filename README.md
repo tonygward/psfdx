@@ -2,27 +2,30 @@
 [![CI](https://github.com/tonygward/psfdx/actions/workflows/ci.yml/badge.svg)](https://github.com/tonygward/psfdx/actions/workflows/ci.yml)
 Cross platform PowerShell modules that wrap the Salesforce CLI.
 
-# Pre-Requisites
+# Installation
+
+## 1. Pre-Requisites
 PowerShell for Windows or Linux
 https://github.com/PowerShell/PowerShell/releases
 
-# Installation
 
-### Mac or Linux
+### 2. Import Scripts
+
+#### Mac or Linux
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
 ./install.ps1
 ```
 
-### Windows
+#### Windows
 ```
 git clone https://github.com/tonygward/psfdx
 cd psfdx
 ./install-windows.ps1
 ```
 
-# Salesforce CLI
+### 3. Salesforce CLI
 
    You can install the Salesforce CLI directly from this module once it's imported by running:
 
