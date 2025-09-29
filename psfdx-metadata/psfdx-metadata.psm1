@@ -137,27 +137,40 @@ function Deploy-SalesforceComponent {
     Param(
         [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $SourceDir,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
         [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
         [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][switch] $DryRun,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
-        [Parameter(Mandatory = $false)][switch] $DetailedResults
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     if ($ConciseResults -and $DetailedResults) {
         throw "Specify only one of -ConciseResults or -DetailedResults."
     }
 
-    if (-not $Type) {
-        throw "Specify -Type when deploying metadata."
+    if (-not $Type -and -not $SourceDir) {
+        throw "Specify -Type or -SourceDir when deploying metadata."
+    }
+
+    if (-not $Type -and $Name) {
+        throw "Specify -Type when using -Name."
     }
 
     $command = "sf project deploy start"
-    $command += " --metadata $Type"
-    if ($Name) { $command += ":$Name" }
+    if ($Type) {
+        $command += " --metadata $Type"
+        if ($Name) { $command += ":$Name" }
+    }
+    if ($SourceDir) {
+        if (-not (Test-Path -LiteralPath $SourceDir)) {
+            throw "Source path '$SourceDir' does not exist."
+        }
+        $command += " --source-dir `"$SourceDir`""
+    }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }

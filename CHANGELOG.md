@@ -4,6 +4,7 @@
 
 - psfdx: Add `Install-SalesforceCli` cmdlet that installs the Salesforce CLI via Homebrew on macOS or global npm elsewhere.
 - psfdx: Add `Connect-SalesforceAuthUrl` cmdlet to wrap `sf auth sfdxurl store`, hiding tokens by default with an opt-in `-IncludeToken` switch.
+- psfdx-metadata: Allow `Deploy-SalesforceComponent` to use either `-SourceDir` or `-Type`, with `-SourceDir` supporting files or directories.
 - Replace `Invoke-Salesforce -Arguments` with `-Command "sf …"` across modules to allow non-`sf` commands where needed.
 - Centralize `Invoke-Salesforce` and `Show-SalesforceResult` into `psfdx-shared/` and dot-source across all modules.
 - Rename folder `shared/` to `psfdx-shared/`.
