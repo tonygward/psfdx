@@ -7,6 +7,7 @@
     FunctionsToExport = @(
         'Get-SalesforceDateTime',
         'Connect-Salesforce',
+        'Connect-SalesforceAuthUrl',
         'Disconnect-Salesforce',
         'Connect-SalesforceJwt',
         'Open-Salesforce',

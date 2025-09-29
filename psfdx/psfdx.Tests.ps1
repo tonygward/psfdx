@@ -48,6 +48,27 @@ Describe 'psfdx module' {
             }
         }
 
+        Context 'Connect-SalesforceAuthUrl' {
+            It 'throws when the SFDX URL file does not exist' {
+                Mock Test-Path { $false }
+                { Connect-SalesforceAuthUrl -SfdxUrlFile 'missing.txt' } | Should -Throw -ExpectedMessage 'File does not exist: missing.txt'
+            }
+
+            It 'stores authentication using the provided URL file and options' {
+                Mock Test-Path { $true }
+                Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
+                Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -Alias 'my' -SetDefault -SetDefaultDevHub
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    ($Command -like 'sf auth sfdxurl store*') -and
+                    ($Command -like '*--sfdx-url-file "./auth.txt"*') -and
+                    ($Command -like '* --alias my*') -and
+                    ($Command -like '* --set-default*') -and
+                    ($Command -like '* --set-default-dev-hub*') -and
+                    ($Command -like '* --json')
+                }
+            }
+        }
+
         Context 'Install-SalesforceCli' {
             It 'uses brew on macOS' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
