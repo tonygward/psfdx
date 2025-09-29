@@ -359,10 +359,20 @@ function Get-SalesforceLatestApiVersion {
 
 #region Plugins
 
+function Test-SalesforceIsMacOS {
+    [CmdletBinding()]
+    Param()
+    return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::OSX)
+}
+
 function Install-SalesforceCli {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "npm install --global @salesforce/cli"
+    if (Test-SalesforceIsMacOS) {
+        Invoke-Salesforce -Command "brew install sfdx-cli/tap/sf"
+    } else {
+        Invoke-Salesforce -Command "npm install --global @salesforce/cli"
+    }
 }
 
 function Install-SalesforcePlugin {

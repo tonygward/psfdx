@@ -49,8 +49,16 @@ Describe 'psfdx module' {
         }
 
         Context 'Install-SalesforceCli' {
-            It 'runs npm global install for the CLI' {
+            It 'uses brew on macOS' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
+                Mock Test-SalesforceIsMacOS { $true } -ModuleName $module.Name
+                Install-SalesforceCli
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'brew install sfdx-cli/tap/sf' }
+            }
+
+            It 'falls back to npm elsewhere' {
+                Mock Invoke-Salesforce {} -ModuleName $module.Name
+                Mock Test-SalesforceIsMacOS { $false } -ModuleName $module.Name
                 Install-SalesforceCli
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm install --global @salesforce/cli' }
             }
