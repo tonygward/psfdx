@@ -57,7 +57,8 @@ Describe 'psfdx module' {
             It 'stores authentication using the provided URL file and options' {
                 Mock Test-Path { $true }
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
-                Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -Alias 'my' -SetDefault -SetDefaultDevHub
+                Mock Show-SalesforceResult { [pscustomobject]@{ alias = 'my'; username = 'user'; accessToken = 'tok'; refreshToken = 'ref' } } -ModuleName $module.Name
+                $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -Alias 'my' -SetDefault -SetDefaultDevHub
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
                     ($Command -like 'sf auth sfdxurl store*') -and
                     ($Command -like '*--sfdx-url-file "./auth.txt"*') -and
@@ -66,6 +67,18 @@ Describe 'psfdx module' {
                     ($Command -like '* --set-default-dev-hub*') -and
                     ($Command -like '* --json')
                 }
+                $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
+                $result.PSObject.Properties.Match('refreshToken').Count | Should -Be 0
+                $result.alias | Should -Be 'my'
+            }
+
+            It 'returns tokens when IncludeToken is specified' {
+                Mock Test-Path { $true }
+                Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
+                Mock Show-SalesforceResult { [pscustomobject]@{ alias = 'my'; accessToken = 'tok'; refreshToken = 'ref' } } -ModuleName $module.Name
+                $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -IncludeToken
+                $result.PSObject.Properties.Match('accessToken').Count | Should -Be 1
+                $result.PSObject.Properties.Match('refreshToken').Count | Should -Be 1
             }
         }
 

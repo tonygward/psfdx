@@ -89,7 +89,7 @@ Get-Command -Module psfdx*
 | Cmdlet | Description |
 | :--- | :--- |
 | `Connect-Salesforce` | Web-based org authentication. |
-| `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias and default flags). |
+| `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias/default flags and hides tokens unless `-IncludeToken`). |
 | `Disconnect-Salesforce` | Logout from orgs. |
 | `Connect-SalesforceJwt` | JWT-based authentication. |
 | `Open-Salesforce` | Open org in a browser or get URL. |
