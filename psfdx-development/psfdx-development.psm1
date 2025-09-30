@@ -286,6 +286,22 @@ function Test-SalesforceApex {
     }
 }
 
+function ConvertTo-SalesforceCliTestParams {
+    [CmdletBinding()]
+    Param(
+
+    )
+
+    $value = ""
+    if (-not $TestClassNames) {
+        throw "No Apex test classes found."
+    }
+    foreach ($testClassName in $TestClassNames) {
+        $value += " --tests $testClassName"
+    }
+    return $value
+}
+
 function Get-SalesforceCodeCoverage {
     [CmdletBinding()]
     Param(
