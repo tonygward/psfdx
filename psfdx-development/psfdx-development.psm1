@@ -236,12 +236,7 @@ function Test-SalesforceApex {
 
     if ($TestsInProject.IsPresent) {
         $testClassNames = Get-SalesforceApexTestClassNames
-        if (-not $testClassNames) {
-            throw "No Apex test classes found."
-        }
-        foreach ($testClassName in $testClassNames) {
-            $command += " --tests $testClassName"
-        }
+        $command += ConvertTo-SalesforceCliTestParams -TestClassNames $testClassNames
     } elseif ($ClassName -and $TestName) {
         $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
     } elseif ((-not $TestName) -and ($ClassName)) {
@@ -295,7 +290,7 @@ function ConvertTo-SalesforceCliTestParams {
     )
     $value = ""
     if (-not $TestClassNames) {
-        throw "No Apex test classes found."
+        return $value
     }
     foreach ($testClassName in $TestClassNames) {
         $value += " --tests $testClassName"
