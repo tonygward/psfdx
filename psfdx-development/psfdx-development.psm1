@@ -289,9 +289,10 @@ function Test-SalesforceApex {
 function ConvertTo-SalesforceCliTestParams {
     [CmdletBinding()]
     Param(
-
+        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]] $TestClassNames
     )
-
     $value = ""
     if (-not $TestClassNames) {
         throw "No Apex test classes found."
