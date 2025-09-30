@@ -83,7 +83,7 @@ Describe 'Test-SalesforceApex command building' {
         }
         It 'runs specified class synchronously with target org and json' {
             Test-SalesforceApex -ClassName 'MyClass' -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf apex run test *') -and ($Command -like '* --class-names MyClass*') -and ($Command -like '* --target-org me*') -and ($Command -like '* --result-format json*') }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf apex run test *') -and ($Command -like '* --tests MyClass*') -and ($Command -like '* --target-org me*') -and ($Command -like '* --result-format json*') }
         }
         It 'throws if output directory does not exist' {
             $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
@@ -120,7 +120,7 @@ Describe 'Test-SalesforceApex command building' {
                 }
                 catch {
                     $threw = $true
-                    $_.Exception.Message | Should -Be "No Apex test classes found."
+                    $_.Exception.Message | Should -BeLike "Cannot validate argument on parameter 'TestClassNames'.*"
                 }
                 $threw | Should -BeTrue "Expected Test-SalesforceApex to throw when no Apex tests found."
                 Assert-MockCalled Invoke-Salesforce -Times 0

@@ -234,19 +234,7 @@ function Test-SalesforceApex {
 
     $command = "sf apex run test"
 
-    if ($TestsInProject.IsPresent) {
-        $testClassNames = Get-SalesforceApexTestClassNames
-        if (-not $testClassNames) {
-            throw "No Apex test classes found."
-        }
-        foreach ($testClassName in $testClassNames) {
-            $command += " --tests $testClassName"
-        }
-    } elseif ($ClassName -and $TestName) {
-        $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
-    } elseif ((-not $TestName) -and ($ClassName)) {
-        $command += " --class-names $ClassName"     # Run Test Class
-    }
+    $command += Get-SalesforceCliApexTestParams -TestsInProject:$TestsInProject -ClassName $ClassName -TestName $TestName
 
     if ($OutputDirectory) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
@@ -284,6 +272,43 @@ function Test-SalesforceApex {
         $result.result.coverage.coverage
         throw "Insufficient code coverage ${codeCoverage}%"
     }
+}
+
+function Get-SalesforceCliApexTestParams {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $ClassName,
+        [Parameter(Mandatory = $false)][string] $TestName,
+        [Parameter(Mandatory = $false)][switch] $TestsInProject
+    )
+
+    $value = ""
+    if ($TestsInProject.IsPresent) {
+        $testClassNames = Get-SalesforceApexTestClassNames
+        $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $testClassNames
+    } elseif ($ClassName -and $TestName) {
+        $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
+    } elseif ((-not $TestName) -and ($ClassName)) {
+        $value += " --tests $ClassName"     # Run Test Class
+    }
+    return $value
+}
+
+function ConvertTo-SalesforceCliApexTestParams {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
+        [string[]] $TestClassNames
+    )
+    $value = ""
+    if (-not $TestClassNames) {
+        return $value
+    }
+    foreach ($testClassName in $TestClassNames) {
+        $value += " --tests $testClassName"
+    }
+    return $value
 }
 
 function Get-SalesforceCodeCoverage {
@@ -449,17 +474,14 @@ function Invoke-SalesforceApexAutomation {
     $name = Get-SalesforceName -FileName $FilePath
     Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
 
-    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
-
     $command = "sf project deploy start"
     $command += " --metadata ${type}:${name}"
+
+    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
     if ($testClassNames -and $testClassNames.Count -gt 0) {
         $command += " --test-level RunSpecifiedTests"
-        foreach ($testName in $testClassNames) {
-            $command += " --tests $testName"
-        }
-    }
-    else {
+        $command += $testClassNames | ConvertTo-SalesforceCliApexTestParams
+    } else {
         Write-Warning 'No Apex test classes found in project; deploying without running tests.'
     }
     $command += " --ignore-warnings"
