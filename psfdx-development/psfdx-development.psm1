@@ -474,17 +474,14 @@ function Invoke-SalesforceApexAutomation {
     $name = Get-SalesforceName -FileName $FilePath
     Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
 
-    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
-
     $command = "sf project deploy start"
     $command += " --metadata ${type}:${name}"
+
+    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
     if ($testClassNames -and $testClassNames.Count -gt 0) {
         $command += " --test-level RunSpecifiedTests"
-        foreach ($testName in $testClassNames) {
-            $command += " --tests $testName"
-        }
-    }
-    else {
+        $command += $testClassNames | ConvertTo-SalesforceCliApexTestParams
+    } else {
         Write-Warning 'No Apex test classes found in project; deploying without running tests.'
     }
     $command += " --ignore-warnings"
