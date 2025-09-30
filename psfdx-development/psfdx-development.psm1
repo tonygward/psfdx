@@ -240,7 +240,7 @@ function Test-SalesforceApex {
     } elseif ($ClassName -and $TestName) {
         $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
     } elseif ((-not $TestName) -and ($ClassName)) {
-        $command += " --class-names $ClassName"     # Run Test Class
+        $command += " --tests $ClassName"     # Run Test Class
     }
 
     if ($OutputDirectory) {
