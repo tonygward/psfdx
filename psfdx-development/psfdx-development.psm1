@@ -234,14 +234,7 @@ function Test-SalesforceApex {
 
     $command = "sf apex run test"
 
-    if ($TestsInProject.IsPresent) {
-        $testClassNames = Get-SalesforceApexTestClassNames
-        $command += ConvertTo-SalesforceCliTestParams -TestClassNames $testClassNames
-    } elseif ($ClassName -and $TestName) {
-        $command += " --tests $ClassName.$TestName" # Run specific Test in a Class
-    } elseif ((-not $TestName) -and ($ClassName)) {
-        $command += " --tests $ClassName"     # Run Test Class
-    }
+    $command += Get-SalesforceCliApexTestParams -TestsInProject:$TestsInProject -ClassName $ClassName -TestName $TestName
 
     if ($OutputDirectory) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
@@ -281,7 +274,27 @@ function Test-SalesforceApex {
     }
 }
 
-function ConvertTo-SalesforceCliTestParams {
+function Get-SalesforceCliApexTestParams {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $ClassName,
+        [Parameter(Mandatory = $false)][string] $TestName,
+        [Parameter(Mandatory = $false)][switch] $TestsInProject
+    )
+
+    $value = ""
+    if ($TestsInProject.IsPresent) {
+        $testClassNames = Get-SalesforceApexTestClassNames
+        $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $testClassNames
+    } elseif ($ClassName -and $TestName) {
+        $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
+    } elseif ((-not $TestName) -and ($ClassName)) {
+        $value += " --tests $ClassName"     # Run Test Class
+    }
+    return $value
+}
+
+function ConvertTo-SalesforceCliApexTestParams {
     [CmdletBinding()]
     Param(
         [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
