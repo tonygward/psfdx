@@ -27,13 +27,13 @@ cd psfdx
 
 ### 3. Salesforce CLI
 
-   You can install the Salesforce CLI directly from this module once it's imported by running:
+   You can install the Salesforce CLI by running:
 
    ```powershell
    Import-Module psfdx
    Install-SalesforceCli
    ```
-   On macOS it uses Homebrew (`brew install sfdx-cli/tap/sf`).
+   On macOS it uses Homebrew (`brew install sfdx-cli/tap/sf`).<br>
    On Windows and Linux it defaults to npm (`npm install --global @salesforce/cli`).
 
 # Examples
@@ -50,11 +50,11 @@ A web browser will appear, login to Salesforce as you would normally.
 **2. Create and use a Salesforce Alias**
 ```
 Add-SalesforceAlias -TargetOrg my@email.com -Alias myalias
-Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg myalias
+Select-SalesforceRecords -Query "SELECT Id, Name FROM Account LIMIT 10" -TargetOrg myalias
 ```
 **3. Retrieve first 10 Salesforce Accounts**
 ```
-Select-SalesforceRecords -Query "SELECT Id,Name FROM Account LIMIT 10" -TargetOrg my@email.com
+Select-SalesforceRecords -Query "SELECT Id, Name FROM Account LIMIT 10" -TargetOrg my@email.com
 ```
 NB you only need to Import-Module psfdx once per PowerShell session
 
@@ -64,7 +64,7 @@ Import-Module psfdx-logs
 Export-SalesforceDebugLogs -TargetOrg my@email.com
 ```
 
-**5. List every cmdlet**
+**5. List every psfdx cmdlet**
 ```
 Get-Command -Module psfdx*
 ```
@@ -90,17 +90,17 @@ Get-Command -Module psfdx*
 | :--- | :--- |
 | `Connect-Salesforce` | Web-based org authentication. |
 | `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias/default flags and hides tokens unless `-IncludeToken`). |
-| `Disconnect-Salesforce` | Logout from orgs. |
+| `Disconnect-Salesforce` | Logout from Salesforce org. |
 | `Connect-SalesforceJwt` | JWT-based authentication. |
 | `Open-Salesforce` | Open org in a browser or get URL. |
-| `Get-SalesforceConnections` | List connected orgs (non-scratch by default). |
+| `Get-SalesforceConnections` | List connected orgs (excluding scratch orgs). |
 | `Repair-SalesforceConnections` | Clean up stale connections. |
 
 ### Aliases
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Get-SalesforceAlias` | List configured aliases. |
+| `Get-SalesforceAlias` | List Salesforce aliases. |
 | `Add-SalesforceAlias` | Create/update an alias. |
 | `Remove-SalesforceAlias` | Remove an alias. |
 
@@ -173,16 +173,16 @@ Get-Command -Module psfdx*
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Describe-SalesforceObjects` | List sObjects for a target org. |
-| `Describe-SalesforceObject` | Describe a specific sObject (supports tooling API). |
-| `Describe-SalesforceFields` | List fields for an sObject. |
+| `Describe-SalesforceObjects` | List Objects for a target org. |
+| `Describe-SalesforceObject` | Describe a specific Object (supports tooling API). |
+| `Describe-SalesforceFields` | List fields for an Object. |
 | `Describe-SalesforceMetadataTypes` | List available metadata types. |
 
 ### Utilities
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Build-SalesforceQuery` | Build a SELECT for all fields on an sObject. |
+| `Build-SalesforceQuery` | Build a SELECT for all fields on an Object. |
 
 ### psfdx-development
 
