@@ -4,10 +4,203 @@
 class SalesforceMetadataTypeGenerator : System.Management.Automation.IValidateSetValuesGenerator {
     [string[]] GetValidValues() {
         $types = Describe-SalesforceMetadataTypes
+        if (-not $types -or $types.Count -eq 0) {
+            $types = Get-SalesforceMetadataTypesDefault
+        }
         return (@($types) + 'CustomField', 'ValidationRule') |
-            Where-Object { $_ } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
             Sort-Object -Unique
     }
+}
+
+function Get-SalesforceMetadataTypesDefault {
+    [CmdletBinding()]
+    Param()
+
+    return @(
+        'AIApplication'
+        'AIApplicationConfig'
+        'ActionLauncherItemDef'
+        'ActionLinkGroupTemplate'
+        'AnalyticSnapshot'
+        'AnimationRule'
+        'ApexClass'
+        'ApexComponent'
+        'ApexEmailNotifications'
+        'ApexPage'
+        'ApexTestSuite'
+        'ApexTrigger'
+        'AppFrameworkTemplateBundle'
+        'AppMenu'
+        'AppointmentAssignmentPolicy'
+        'AppointmentSchedulingPolicy'
+        'ApprovalProcess'
+        'AssignmentRules'
+        'AuraDefinitionBundle'
+        'AuthProvider'
+        'AutoResponseRules'
+        'BlacklistedConsumer'
+        'BrandingSet'
+        'BriefcaseDefinition'
+        'CallCenter'
+        'CallCoachingMediaProvider'
+        'CanvasMetadata'
+        'Certificate'
+        'ChannelLayout'
+        'ChatterExtension'
+        'ChoiceList'
+        'CleanDataService'
+        'Community'
+        'ConnectedApp'
+        'ContentAsset'
+        'ContentTypeBundle'
+        'ConvIntelligenceSignalRule'
+        'ConversationMessageDefinition'
+        'CorsWhitelistOrigin'
+        'CspTrustedSite'
+        'CustomApplication'
+        'CustomApplicationComponent'
+        'CustomFeedFilter'
+        'CustomHelpMenuSection'
+        'CustomIndex'
+        'CustomLabels'
+        'CustomMetadata'
+        'CustomNotificationType'
+        'CustomObject'
+        'CustomObjectTranslation'
+        'CustomPageWebLink'
+        'CustomPermission'
+        'CustomSite'
+        'CustomTab'
+        'Dashboard'
+        'DataCategoryGroup'
+        'DataWeaveResource'
+        'DelegateGroup'
+        'DigitalExperienceBundle'
+        'Document'
+        'DuplicateRule'
+        'EclairGeoData'
+        'EmailServicesFunction'
+        'EmailTemplate'
+        'EmbeddedServiceBranding'
+        'EmbeddedServiceConfig'
+        'EmbeddedServiceFlowConfig'
+        'EmbeddedServiceMenuSettings'
+        'EscalationRules'
+        'EventRelayConfig'
+        'ExperienceContainer'
+        'ExperiencePropertyTypeBundle'
+        'ExternalAuthIdentityProvider'
+        'ExternalClientApplication'
+        'ExternalCredential'
+        'ExternalDataSource'
+        'ExternalServiceRegistration'
+        'ExtlClntAppConfigurablePolicies'
+        'ExtlClntAppGlobalOauthSettings'
+        'ExtlClntAppMobileConfigurablePolicies'
+        'ExtlClntAppMobileSettings'
+        'ExtlClntAppNotificationSettings'
+        'ExtlClntAppOauthConfigurablePolicies'
+        'ExtlClntAppOauthSettings'
+        'ExtlClntAppPushConfigurablePolicies'
+        'ExtlClntAppPushSettings'
+        'ExtlClntAppSamlConfigurablePolicies'
+        'FieldRestrictionRule'
+        'FlexiPage'
+        'Flow'
+        'FlowCategory'
+        'FlowDefinition'
+        'FlowTest'
+        'ForecastingFilter'
+        'ForecastingFilterCondition'
+        'ForecastingGroup'
+        'ForecastingSourceDefinition'
+        'ForecastingType'
+        'ForecastingTypeSource'
+        'GatewayProviderPaymentMethodType'
+        'GlobalValueSet'
+        'GlobalValueSetTranslation'
+        'Group'
+        'HomePageComponent'
+        'HomePageLayout'
+        'IPAddressRange'
+        'IframeWhiteListUrlSettings'
+        'InboundNetworkConnection'
+        'InstalledPackage'
+        'Layout'
+        'LeadConvertSettings'
+        'Letterhead'
+        'LightningBolt'
+        'LightningComponentBundle'
+        'LightningExperienceTheme'
+        'LightningMessageChannel'
+        'LightningOnboardingConfig'
+        'LightningTypeBundle'
+        'LiveChatSensitiveDataRule'
+        'MLDataDefinition'
+        'MLPredictionDefinition'
+        'MLRecommendationDefinition'
+        'ManagedContentType'
+        'ManagedEventSubscription'
+        'MatchingRules'
+        'MessagingChannel'
+        'MobileApplicationDetail'
+        'MutingPermissionSet'
+        'MyDomainDiscoverableLogin'
+        'NamedCredential'
+        'NetworkBranding'
+        'NotificationTypeConfig'
+        'OauthCustomScope'
+        'OauthTokenExchangeHandler'
+        'OutboundNetworkConnection'
+        'PathAssistant'
+        'PaymentGatewayProvider'
+        'PermissionSet'
+        'PermissionSetGroup'
+        'PlatformCachePartition'
+        'PlatformEventChannel'
+        'PlatformEventChannelMember'
+        'PlatformEventSubscriberConfig'
+        'PostTemplate'
+        'ProcessFlowMigration'
+        'ProductAttributeSet'
+        'Profile'
+        'ProfilePasswordPolicy'
+        'ProfileSessionSetting'
+        'Prompt'
+        'PublicKeyCertificate'
+        'PublicKeyCertificateSet'
+        'Queue'
+        'QuickAction'
+        'RecommendationStrategy'
+        'RecordActionDeployment'
+        'RedirectWhitelistUrl'
+        'RemoteSiteSetting'
+        'Report'
+        'ReportType'
+        'RestrictionRule'
+        'Role'
+        'SamlSsoConfig'
+        'Scontrol'
+        'SearchCustomization'
+        'SearchOrgWideObjectConfig'
+        'Settings'
+        'SharingRules'
+        'SharingSet'
+        'SiteDotCom'
+        'Skill'
+        'SkillType'
+        'StandardValueSet'
+        'StandardValueSetTranslation'
+        'StaticResource'
+        'SynonymDictionary'
+        'TopicsForObjects'
+        'TransactionSecurityPolicy'
+        'UiFormatSpecificationSet'
+        'UserProvisioningConfig'
+        'WaveAnalyticAssetCollection'
+        'Workflow'
+    )
 }
 
 #region Retrieve
@@ -142,6 +335,8 @@ function Deploy-SalesforceComponent {
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
         [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
         [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'TestsInFolder', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
+        [Parameter(Mandatory = $false)][string[]] $Tests,
         [Parameter(Mandatory = $false)][switch] $DryRun,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
         [Parameter(Mandatory = $false)][switch] $DetailedResults,
@@ -176,6 +371,39 @@ function Deploy-SalesforceComponent {
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+
+    # TODO: Related Tests
+    $testLevelMap = @{
+        'NoTests'               = 'NoTestRun'
+        'SpecificTests'         = 'RunSpecifiedTests'
+        'TestsInFolder'         = 'RunSpecifiedTests'
+        'TestsInOrg'            = 'RunLocalTests'
+        'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
+    }
+    $command += " --test-level " + $testLevelMap[$TestLevel]
+
+    if ($TestLevel -eq 'TestsInFolder') {
+        $TestsPath = $SourceDir
+        if (-not $TestsPath) {
+            $TestsPath = Get-Location
+        }
+        $Tests = Get-SalesforceApexTestClassNamesFromPath -Path $TestsPath
+        if (-not $Tests -or $Tests.Count -eq 0) {
+            throw "No Apex test classes found in '$TestsPath'."
+        }
+    } elseif ($TestLevel -eq 'SpecificTests') {
+        if (-not $Tests -or $Tests.Count -eq 0) {
+            throw "Provide one or more -Tests when using -TestLevel SpecificTests."
+        }
+        $Tests = $Tests |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Sort-Object -Unique
+        if (-not $Tests -or $Tests.Count -eq 0) {
+            throw "Provided -Tests values are empty."
+        }
+    }
+    $command += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests
+
     if ($DryRun) { $command += " --dry-run" }
     if ($ConciseResults) { $command += " --concise" }
     if ($DetailedResults) { $command += " --verbose" }
@@ -278,14 +506,20 @@ function Describe-SalesforceMetadataTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf org list metadata-types"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
+        $command += " --target-org $TargetOrg"
+    }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
     $result = $result | ConvertFrom-Json
-    $result = $result.result.metadataObjects
-    $result = $result | Select-Object xmlName
-    return $result
+    $metadataObjects = $result.result.metadataObjects
+    if (-not $metadataObjects) {
+        return @()
+    }
+    return $metadataObjects |
+        ForEach-Object { $_.xmlName } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 }
 
 function Build-SalesforceQuery {
@@ -344,6 +578,60 @@ function Build-SalesforceQuery {
     $value = $value.TrimEnd(",")
     $value += " FROM $ObjectName"
     return $value
+}
+
+function Get-SalesforceApexTestClassNamesFromPath {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Path '$Path' does not exist."
+    }
+
+    $item = Get-Item -LiteralPath $Path
+    if ($item.PSIsContainer) {
+        $searchRoot = $item.FullName
+    } else {
+        $directory = $item.Directory
+        $searchRoot = if ($directory) { $directory.FullName } else { $item.FullName }
+    }
+
+    $testFiles = Get-ChildItem -LiteralPath $searchRoot -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+    if (-not $testFiles) {
+        return @()
+    }
+
+    $testFiles = $testFiles | Where-Object {
+        Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+    }
+
+    return @($testFiles | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
+}
+
+function ConvertTo-SalesforceCliApexTestParams {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [string[]] $TestClassNames = @()
+    )
+
+    begin { $all = @() }
+
+    process {
+        if ($null -ne $TestClassNames) {
+            $all += $TestClassNames | ForEach-Object { $_ } | Where-Object { $_ -and $_.Trim() }
+        }
+    }
+
+    end {
+        if ($all.Count -eq 0) { return "" }
+        $parts = $all | ForEach-Object { "--tests $($_.Trim())" }
+        ' ' + ($parts -join ' ')
+    }
 }
 
 #endregion

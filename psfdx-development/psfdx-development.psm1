@@ -429,7 +429,7 @@ function Watch-SalesforceApex {
 
                     Start-Sleep -Milliseconds $DebounceMilliseconds
                     try {
-                        Invoke-SalesforceApexAutomation -FilePath $path -ProjectFolder $project | Out-Null
+                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $project | Out-Null
                     }
                     catch {
                         Write-Error $_
@@ -453,7 +453,7 @@ function Watch-SalesforceApex {
     }
 }
 
-function Invoke-SalesforceApexAutomation {
+function Watch-SalesforceApexAction {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $FilePath,

@@ -235,7 +235,7 @@ Describe 'New-SalesforceApexTrigger' {
     }
 }
 
-Describe 'Invoke-SalesforceApexAutomation' {
+Describe 'Watch-SalesforceApexAction' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
             Mock Describe-SalesforceMetadataTypes { @('ApexClass', 'ApexTrigger') } -ModuleName 'psfdx-metadata'
@@ -253,7 +253,7 @@ Describe 'Invoke-SalesforceApexAutomation' {
                 }
                 Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @('SampleTest') }
 
-                $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName
 
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexClass:Sample*') -and ($Command -like '*--tests SampleTest*') -and ($Command -like '*--test-level RunSpecifiedTests*') }
                 $result.command | Should -Be 'deploy'
@@ -271,7 +271,7 @@ Describe 'Invoke-SalesforceApexAutomation' {
 
                 Mock Invoke-Salesforce { throw 'Should not deploy' }
 
-                $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName
                 $result | Should -BeNullOrEmpty
                 Assert-MockCalled Invoke-Salesforce -Times 0
             }
@@ -292,7 +292,7 @@ Describe 'Invoke-SalesforceApexAutomation' {
                 }
                 Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @() }
 
-                $result = Invoke-SalesforceApexAutomation -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexTrigger:Sample*') -and ($Command -notlike '*--tests*') }
                 $result.command | Should -Be 'deploy'
             }
