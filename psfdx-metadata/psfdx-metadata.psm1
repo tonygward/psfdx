@@ -278,14 +278,20 @@ function Describe-SalesforceMetadataTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $command = "sf org list metadata-types"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
+        $command += " --target-org $TargetOrg"
+    }
     $command += " --json"
 
     $result = Invoke-Salesforce -Command $command
     $result = $result | ConvertFrom-Json
-    $result = $result.result.metadataObjects
-    $result = $result | Select-Object xmlName
-    return $result
+    $metadataObjects = $result.result.metadataObjects
+    if (-not $metadataObjects) {
+        return @()
+    }
+    return $metadataObjects |
+        ForEach-Object { $_.xmlName } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 }
 
 function Build-SalesforceQuery {
