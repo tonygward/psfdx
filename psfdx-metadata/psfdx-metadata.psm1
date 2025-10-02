@@ -335,7 +335,7 @@ function Deploy-SalesforceComponent {
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
         [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
         [Parameter(Mandatory = $false)][int] $Wait,
-        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'LocalTests', 'AllTests')][string] $TestLevel = 'NoTests',
+        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
         [Parameter(Mandatory = $false)][switch] $DryRun,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
         [Parameter(Mandatory = $false)][switch] $DetailedResults,
@@ -371,9 +371,9 @@ function Deploy-SalesforceComponent {
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     $testLevelMap = @{
-        'NoTests'   = 'NoTestRun'
-        'LocalTests' = 'RunLocalTests'
-        'AllTests'  = 'RunAllTestsInOrg'
+        'NoTests'               = 'NoTestRun'
+        'TestsInOrg'            = 'RunLocalTests'
+        'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
     }
     $cliTestLevel = $testLevelMap[$TestLevel]
     if (-not $cliTestLevel) {
