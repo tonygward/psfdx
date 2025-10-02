@@ -335,7 +335,8 @@ function Deploy-SalesforceComponent {
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
         [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
         [Parameter(Mandatory = $false)][int] $Wait,
-        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
+        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'TestsInFolder', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
+        [Parameter(Mandatory = $false)][string[]] $Tests,
         [Parameter(Mandatory = $false)][switch] $DryRun,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
         [Parameter(Mandatory = $false)][switch] $DetailedResults,
@@ -370,16 +371,38 @@ function Deploy-SalesforceComponent {
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+
     $testLevelMap = @{
         'NoTests'               = 'NoTestRun'
+        'SpecificTests'         = 'RunSpecifiedTests'
+        'TestsInFolder'         = 'RunSpecifiedTests'
         'TestsInOrg'            = 'RunLocalTests'
         'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
     }
-    $cliTestLevel = $testLevelMap[$TestLevel]
-    if (-not $cliTestLevel) {
-        throw "Unsupported test level '$TestLevel'."
+    $command += " --test-level " + $testLevelMap[$TestLevel]
+
+    if ($TestLevel -eq 'TestsInFolder') {
+        $TestsPath = $SourceDir
+        if (-not $TestsPath) {
+            $TestsPath = Get-Location
+        }
+        $Tests = Get-SalesforceApexTestClassNamesFromPath -Path $TestsPath
+        if (-not $Tests -or $Tests.Count -eq 0) {
+            throw "No Apex test classes found in '$TestsPath'."
+        }
+    } elseif ($TestLevel -eq 'SpecificTests') {
+        if (-not $Tests -or $Tests.Count -eq 0) {
+            throw "Provide one or more -Tests when using -TestLevel SpecificTests."
+        }
+        $Tests = $Tests |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Sort-Object -Unique
+        if (-not $Tests -or $Tests.Count -eq 0) {
+            throw "Provided -Tests values are empty."
+        }
     }
-    $command += " --test-level $cliTestLevel"
+    $command += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests
+
     if ($DryRun) { $command += " --dry-run" }
     if ($ConciseResults) { $command += " --concise" }
     if ($DetailedResults) { $command += " --verbose" }
@@ -554,6 +577,36 @@ function Build-SalesforceQuery {
     $value = $value.TrimEnd(",")
     $value += " FROM $ObjectName"
     return $value
+}
+
+function Get-SalesforceApexTestClassNamesFromPath {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "Path '$Path' does not exist."
+    }
+
+    $item = Get-Item -LiteralPath $Path
+    if ($item.PSIsContainer) {
+        $searchRoot = $item.FullName
+    } else {
+        $directory = $item.Directory
+        $searchRoot = if ($directory) { $directory.FullName } else { $item.FullName }
+    }
+
+    $testFiles = Get-ChildItem -LiteralPath $searchRoot -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
+    if (-not $testFiles) {
+        return @()
+    }
+
+    $testFiles = $testFiles | Where-Object {
+        Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet
+    }
+
+    return @($testFiles | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
 }
 
 #endregion
