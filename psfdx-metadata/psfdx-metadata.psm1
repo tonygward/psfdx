@@ -372,6 +372,7 @@ function Deploy-SalesforceComponent {
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
 
+    # TODO: Related Tests
     $testLevelMap = @{
         'NoTests'               = 'NoTestRun'
         'SpecificTests'         = 'RunSpecifiedTests'
@@ -607,6 +608,30 @@ function Get-SalesforceApexTestClassNamesFromPath {
     }
 
     return @($testFiles | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
+}
+
+function ConvertTo-SalesforceCliApexTestParams {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [AllowNull()]
+        [AllowEmptyCollection()]
+        [string[]] $TestClassNames = @()
+    )
+
+    begin { $all = @() }
+
+    process {
+        if ($null -ne $TestClassNames) {
+            $all += $TestClassNames | ForEach-Object { $_ } | Where-Object { $_ -and $_.Trim() }
+        }
+    }
+
+    end {
+        if ($all.Count -eq 0) { return "" }
+        $parts = $all | ForEach-Object { "--tests $($_.Trim())" }
+        ' ' + ($parts -join ' ')
+    }
 }
 
 #endregion
