@@ -2,7 +2,12 @@ function Get-SalesforceApexCliTestParams {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $SourceDir,
-        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'TestsInFolder', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
+        [Parameter(Mandatory = $false)][ValidateSet(
+            'NoTests',
+            'SpecificTests',
+            'TestsInFolder',
+            'TestsInOrg',
+            'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
         [Parameter(Mandatory = $false)][string[]] $Tests
     )
 
@@ -19,6 +24,12 @@ function Get-SalesforceApexCliTestParams {
         $TestsPath = $SourceDir
         if (-not $TestsPath) {
             $TestsPath = Get-Location
+        }
+        if (Test-Path -LiteralPath $TestsPath) {
+            $item = Get-Item -LiteralPath $TestsPath
+            if (-not $item.PSIsContainer -and $item.Directory) {
+                $TestsPath = $item.Directory.FullName
+            }
         }
         $Tests = Get-SalesforceApexTestClassNamesFromPath -Path $TestsPath
         if (-not $Tests -or $Tests.Count -eq 0) {
