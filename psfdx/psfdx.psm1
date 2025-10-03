@@ -1,5 +1,52 @@
-. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
-. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
+$resolvePsfdxSharedScript = {
+    param(
+        [Parameter(Mandatory = $true)][string] $FileName
+    )
+
+    $moduleBase = $ExecutionContext.SessionState.Module.ModuleBase
+    $candidates = @()
+    $candidates += Join-Path -Path $moduleBase -ChildPath (Join-Path '..' (Join-Path 'psfdx-shared' $FileName))
+
+    $moduleRoot = Split-Path -Path $moduleBase -Parent
+    if ($moduleRoot) {
+        $candidates += Join-Path -Path $moduleRoot -ChildPath (Join-Path 'psfdx-shared' $FileName)
+    }
+
+    $psModuleRoots = $env:PSModulePath -split [System.IO.Path]::PathSeparator
+    foreach ($root in $psModuleRoots) {
+        if (-not [string]::IsNullOrWhiteSpace($root)) {
+            $candidates += Join-Path -Path $root -ChildPath (Join-Path 'psfdx-shared' $FileName)
+        }
+    }
+
+    foreach ($candidate in $candidates | Select-Object -Unique) {
+        try {
+            $resolved = Resolve-Path -LiteralPath $candidate -ErrorAction Stop
+            return $resolved.ProviderPath
+        } catch {
+            continue
+        }
+    }
+
+    return $null
+}
+
+$importPsfdxSharedScript = {
+    param(
+        [Parameter(Mandatory = $true)][string] $FileName
+    )
+
+    $path = & $resolvePsfdxSharedScript -FileName $FileName
+    if ($path) {
+        . $path
+        return
+    }
+
+    throw "Unable to locate psfdx-shared script '$FileName'. Reinstall psfdx to ensure shared scripts are installed."
+}
+
+& $importPsfdxSharedScript -FileName 'Invoke-Salesforce.ps1'
+& $importPsfdxSharedScript -FileName 'Show-SalesforceResult.ps1'
 
 #region Authentication & Orgs
 
