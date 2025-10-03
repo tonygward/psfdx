@@ -1,5 +1,6 @@
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
 . (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
+. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'SalesforceApexTests.ps1')
 
 #region Projects & Config
 
@@ -290,23 +291,6 @@ function Get-SalesforceCliApexTestParams {
         $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
     } elseif ((-not $TestName) -and ($ClassName)) {
         $value += " --tests $ClassName"     # Run Test Class
-    }
-    return $value
-}
-
-function ConvertTo-SalesforceCliApexTestParams {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]] $TestClassNames
-    )
-    $value = ""
-    if (-not $TestClassNames) {
-        return $value
-    }
-    foreach ($testClassName in $TestClassNames) {
-        $value += " --tests $testClassName"
     }
     return $value
 }
