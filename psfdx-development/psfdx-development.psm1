@@ -1,5 +1,58 @@
-. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Invoke-Salesforce.ps1')
-. (Join-Path $PSScriptRoot '..' 'psfdx-shared' 'Show-SalesforceResult.ps1')
+function Import-PsfdxSharedModule {
+    [CmdletBinding()]
+    param(
+        [string] $ModuleName = 'psfdx-shared'
+    )
+
+    if (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue) {
+        return
+    }
+
+    $candidates = @()
+
+    $repoManifest = Join-Path -Path $PSScriptRoot -ChildPath (Join-Path '..' (Join-Path $ModuleName "$ModuleName.psd1"))
+    $candidates += $repoManifest
+
+    $moduleParent = Split-Path -Path $PSScriptRoot -Parent
+    if ($moduleParent) {
+        $siblingManifest = Join-Path -Path $moduleParent -ChildPath (Join-Path $ModuleName "$ModuleName.psd1")
+        $candidates += $siblingManifest
+
+        $moduleRoot = Split-Path -Path $moduleParent -Parent
+        if ($moduleRoot) {
+            $sharedBase = Join-Path -Path $moduleRoot -ChildPath $ModuleName
+            if (Test-Path -LiteralPath $sharedBase) {
+                try {
+                    $versionDirectories = Get-ChildItem -Path $sharedBase -Directory -ErrorAction Stop | Sort-Object -Property Name -Descending
+                    foreach ($dir in $versionDirectories) {
+                        $candidates += Join-Path -Path $dir.FullName -ChildPath "$ModuleName.psd1"
+                    }
+                } catch {
+                    # ignore directory inspection failures
+                }
+                $candidates += Join-Path -Path $sharedBase -ChildPath "$ModuleName.psd1"
+            }
+        }
+    }
+
+    $available = Get-Module -ListAvailable -Name $ModuleName -ErrorAction SilentlyContinue | Sort-Object -Property Version -Descending
+    foreach ($item in $available) {
+        if ($item.Path) {
+            $candidates += $item.Path
+        }
+    }
+
+    foreach ($candidate in $candidates | Where-Object { $_ } | Select-Object -Unique) {
+        if (Test-Path -LiteralPath $candidate) {
+            Import-Module -Name $candidate -ErrorAction Stop
+            return
+        }
+    }
+
+    Import-Module -Name $ModuleName -ErrorAction Stop
+}
+
+Import-PsfdxSharedModule
 
 #region Projects & Config
 
@@ -290,23 +343,6 @@ function Get-SalesforceCliApexTestParams {
         $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
     } elseif ((-not $TestName) -and ($ClassName)) {
         $value += " --tests $ClassName"     # Run Test Class
-    }
-    return $value
-}
-
-function ConvertTo-SalesforceCliApexTestParams {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]] $TestClassNames
-    )
-    $value = ""
-    if (-not $TestClassNames) {
-        return $value
-    }
-    foreach ($testClassName in $TestClassNames) {
-        $value += " --tests $testClassName"
     }
     return $value
 }
