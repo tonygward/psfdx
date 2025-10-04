@@ -126,9 +126,8 @@ function ConvertTo-SalesforceCliApexTestParams {
     [CmdletBinding()]
     Param(
         [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [AllowNull()]
-        [AllowEmptyCollection()]
-        [string[]] $TestClassNames = @()
+        [ValidateNotNullOrEmpty()]
+        [string[]] $TestClassNames
     )
 
     begin { $all = @() }
