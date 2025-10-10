@@ -124,6 +124,22 @@ function Remove-SalesforcePackage {
     Invoke-Salesforce -Command $command
 }
 
+function Get-SalesforcePackagesInstalled {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $ApiVersion
+    )
+
+    $command = "sf force package installed list"
+    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
+    if ($ApiVersion) { $command += " --api-version $ApiVersion" }
+    $command += " --json"
+
+    $result = Invoke-Salesforce -Command $command
+    return Show-SalesforceResult -Result $result -ReturnRecords
+}
+
 #endregion
 
 #region Package Versions
