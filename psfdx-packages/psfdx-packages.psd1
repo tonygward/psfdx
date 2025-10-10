@@ -18,6 +18,7 @@
         'Get-SalesforcePackage',
         'New-SalesforcePackage',
         'Remove-SalesforcePackage',
+        'Get-SalesforcePackagesInstalled',
         'Get-SalesforcePackageVersions',
         'New-SalesforcePackageVersion',
         'Promote-SalesforcePackageVersion',

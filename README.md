@@ -310,6 +310,7 @@ Get-Command -Module psfdx*
 | `Get-SalesforcePackage` | Get a specific package by name. |
 | `New-SalesforcePackage` | Create a package (managed/unlocked, org-dependent, path, description, no-namespace). |
 | `Remove-SalesforcePackage` | Delete a package by name. |
+| `Get-SalesforcePackagesInstalled` | List installed packages in a target org (supports API version override). |
 
 ### Package Versions
 
