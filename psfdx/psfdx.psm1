@@ -481,6 +481,16 @@ function Install-SalesforceCli {
     }
 }
 
+function Update-SalesforceCli {
+    [CmdletBinding()]
+    Param()
+    if (Test-SalesforceIsMacOS) {
+        Invoke-Salesforce -Command "brew upgrade sfdx-cli/tap/sf"
+    } else {
+        Invoke-Salesforce -Command "npm update --global @salesforce/cli"
+    }
+}
+
 function Install-SalesforcePlugin {
     [CmdletBinding()]
     Param(
