@@ -136,6 +136,7 @@ Get-Command -Module psfdx*
 | Cmdlet | Description |
 | :--- | :--- |
 | `Install-SalesforceCli` | Install the Salesforce CLI. |
+| `Update-SalesforceCli` | Update the Salesforce CLI. |
 | `Install-SalesforcePlugin` | Install a Salesforce CLI plugin. |
 | `Get-SalesforcePlugins` | List installed plugins (optionally core). |
 | `Update-SalesforcePlugins` | Update installed plugins. |

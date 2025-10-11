@@ -29,6 +29,7 @@
         'Connect-SalesforceApi',
         'Invoke-SalesforceApi',
         'Install-SalesforceCli',
+        'Update-SalesforceCli',
         'Install-SalesforcePlugin',
         'Get-SalesforcePlugins',
         'Update-SalesforcePlugins'
