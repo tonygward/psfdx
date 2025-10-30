@@ -35,7 +35,7 @@ foreach ($m in $modules) {
 
     if (-not $IncludeTests) {
         # Remove test files from installed module
-        Get-ChildItem -Path $target -Recurse -Filter '*Tests.ps1' -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -Path $target -Recurse -Filter '*.Tests.ps1' -ErrorAction SilentlyContinue | ForEach-Object {
             Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
         }
     }

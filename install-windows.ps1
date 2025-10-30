@@ -38,7 +38,7 @@ foreach ($m in $modules) {
     Copy-Item -Path $src -Destination $dest -Recurse -Force
 
     if (-not $IncludeTests) {
-        Get-ChildItem -Path $target -Recurse -Filter '*Tests.ps1' -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -Path $target -Recurse -Filter '*.Tests.ps1' -ErrorAction SilentlyContinue | ForEach-Object {
             Remove-Item -Path $_.FullName -Force -ErrorAction SilentlyContinue
         }
     }
