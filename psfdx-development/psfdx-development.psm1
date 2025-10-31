@@ -385,6 +385,8 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
+#region "Salesforce Apex Watcher Helpers"
+
 function Invoke-SalesforceApex {
     [CmdletBinding()]
     Param(
@@ -397,6 +399,28 @@ function Invoke-SalesforceApex {
     $result = Invoke-Salesforce -Command $command
     return Show-SalesforceResult -Result $result
 }
+
+function New-SalesforceApexWatcher {
+    Param(
+        [Parameter(Mandatory = $true)][string] $ProjectFolder
+    )
+
+    $project = (Get-Item -LiteralPath $ProjectFolder).FullName
+    Write-Verbose ("Watching Project Folder: " + $project)
+    $watcher = New-Object System.IO.FileSystemWatcher
+    $watcher.Path = $project
+    $watcher.Filter = '*.*'
+    $watcher.IncludeSubdirectories = $true
+    $watcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
+    $watcher.EnableRaisingEvents = $true
+
+    return [pscustomobject]@{
+        Project = $project
+        Watcher = $watcher
+    }
+}
+
+#endregion
 
 function Watch-SalesforceApex {
     [CmdletBinding()]
@@ -413,14 +437,9 @@ function Watch-SalesforceApex {
         throw "Project folder '$ProjectFolder' does not exist."
     }
 
-    $project = (Get-Item -LiteralPath $ProjectFolder).FullName
-    Write-Verbose ("Watching Project Folder: " + $project)
-    $watcher = New-Object System.IO.FileSystemWatcher
-    $watcher.Path = $project
-    $watcher.Filter = '*.*'
-    $watcher.IncludeSubdirectories = $true
-    $watcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
-    $watcher.EnableRaisingEvents = $true
+    $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
+    $project = $watcherInfo.Project
+    $watcher = $watcherInfo.Watcher
 
     $sourcePrefix = "Watch-SalesforceApex_$([guid]::NewGuid())"
     $sourceIdentifiers = @()
