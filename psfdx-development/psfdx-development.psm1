@@ -420,6 +420,57 @@ function New-SalesforceApexWatcher {
     }
 }
 
+function Get-SalesforceApexEventPaths {
+    Param(
+        [Parameter(Mandatory = $true)][System.IO.FileSystemEventArgs] $EventArgs
+    )
+
+    $paths = @()
+    if ($EventArgs -is [System.IO.RenamedEventArgs]) {
+        $paths += $EventArgs.FullPath
+    }
+    else {
+        $paths += $EventArgs.FullPath
+    }
+
+    return $paths
+}
+
+function Register-SalesforceApexWatcherEvents {
+    Param(
+        [Parameter(Mandatory = $true)][System.IO.FileSystemWatcher] $Watcher
+    )
+
+    $sourcePrefix = "Watch-SalesforceApex_$([guid]::NewGuid())"
+    $sourceIdentifiers = @()
+    foreach ($eventName in 'Changed', 'Created', 'Renamed') {
+        $sourceId = "${sourcePrefix}:$eventName"
+        Register-ObjectEvent -InputObject $Watcher -EventName $eventName -SourceIdentifier $sourceId | Out-Null
+        $sourceIdentifiers += $sourceId
+    }
+
+    return $sourceIdentifiers
+}
+
+function Test-SalesforceApexPath {
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path,
+        [Parameter(Mandatory = $true)][string[]] $Extensions
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+
+    $extension = [System.IO.Path]::GetExtension($Path)
+    if (-not $extension) { return $false }
+
+    $extension = $extension.ToLowerInvariant()
+    if ($extension -notin $Extensions) { return $false }
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+
+    return $true
+}
+
 #endregion
 
 function Watch-SalesforceApex {
@@ -441,14 +492,7 @@ function Watch-SalesforceApex {
     $project = $watcherInfo.Project
     $watcher = $watcherInfo.Watcher
 
-    $sourcePrefix = "Watch-SalesforceApex_$([guid]::NewGuid())"
-    $sourceIdentifiers = @()
-    foreach ($eventName in 'Changed', 'Created', 'Renamed') {
-        $sourceId = "${sourcePrefix}:$eventName"
-        Register-ObjectEvent -InputObject $watcher -EventName $eventName -SourceIdentifier $sourceId | Out-Null
-        $sourceIdentifiers += $sourceId
-    }
-
+    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcher
     $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
 
     try {
@@ -462,21 +506,10 @@ function Watch-SalesforceApex {
             }
 
             try {
-                $changeEventArgs = $changeEvent.SourceEventArgs
-                $paths = @()
-                if ($changeEventArgs -is [System.IO.RenamedEventArgs]) {
-                    $paths += $changeEventArgs.FullPath
-                } else {
-                    $paths += $changeEventArgs.FullPath
-                }
+                $paths = Get-SalesforceApexEventPaths -EventArgs $changeEvent.SourceEventArgs
 
                 foreach ($path in $paths) {
-                    if (-not $path) { continue }
-                    $extension = [System.IO.Path]::GetExtension($path)
-                    if (-not $extension) { continue }
-                    $extension = $extension.ToLowerInvariant()
-                    if ($extension -notin @('.cls', '.trigger')) { continue }
-                    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+                    if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) { continue }
 
                     $now = Get-Date
                     $nextAllowed = $recentEvents[$path]
