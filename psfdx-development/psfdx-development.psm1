@@ -401,14 +401,12 @@ function Watch-SalesforceApex {
     }
 
     $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
-    $project = $watcherInfo.Project
-    $watcher = $watcherInfo.Watcher
 
-    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcher
+    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcherInfo.Watcher
     $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
 
     try {
-        Write-Host "Watching $project for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
+        Write-Host "Watching $($watcherInfo.Project) for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
         while ($true) {
             $changeEvent = Wait-Event -Timeout 1
             if (-not $changeEvent) { continue }
@@ -429,7 +427,7 @@ function Watch-SalesforceApex {
 
                     Start-Sleep -Milliseconds $DebounceMilliseconds
                     try {
-                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $project | Out-Null
+                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
                     }
                     catch {
                         Write-Error $_
@@ -448,8 +446,8 @@ function Watch-SalesforceApex {
         foreach ($identifier in $sourceIdentifiers) {
             Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
         }
-        $watcher.EnableRaisingEvents = $false
-        $watcher.Dispose()
+        $watcherInfo.Watcher.EnableRaisingEvents = $false
+        $watcherInfo.Watcher.Dispose()
     }
 }
 
