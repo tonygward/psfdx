@@ -392,16 +392,18 @@ function Watch-SalesforceApex {
         [Parameter(Mandatory = $false)][int] $DebounceMilliseconds = 300
     )
 
+    # Default to Current Folder
     if (-not $ProjectFolder) {
         $ProjectFolder = (Get-Location).Path
     }
 
+    # Folder does not Exist
     if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
         throw "Project folder '$ProjectFolder' does not exist."
     }
 
+    # Watch File System Changes
     $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
-
     $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcherInfo.Watcher
     $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
 
@@ -409,7 +411,9 @@ function Watch-SalesforceApex {
         Write-Host "Watching $($watcherInfo.Project) for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
         while ($true) {
             $changeEvent = Wait-Event -Timeout 1
-            if (-not $changeEvent) { continue }
+            if (-not $changeEvent) {
+                continue
+            }
             if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
                 Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
                 continue
@@ -419,13 +423,19 @@ function Watch-SalesforceApex {
                 $paths = Get-SalesforceApexEventPaths -EventArgs $changeEvent.SourceEventArgs
 
                 foreach ($path in $paths) {
-                    if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) { continue }
+                    # If Not Salesfore Apex or Trigger
+                    if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) {
+                        continue
+                    }
 
+                    # Wait for File Save
                     $now = Get-Date
                     $nextAllowed = $recentEvents[$path]
-                    if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
-
+                    if ($nextAllowed -and ($now -lt $nextAllowed)) {
+                        continue
+                    }
                     Start-Sleep -Milliseconds $DebounceMilliseconds
+
                     try {
                         Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
                     }
