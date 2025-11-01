@@ -88,7 +88,9 @@ function Get-SalesforceApexCliTestParams {
         }
     }
 
-    $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests
+    if ($Tests) {
+        $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests
+    }
     return $value
 }
 

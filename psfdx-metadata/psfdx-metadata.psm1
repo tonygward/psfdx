@@ -363,13 +363,19 @@ function Retrieve-SalesforceOrg {
         [Parameter(Mandatory = $false)][switch] $IncludePackages
     )
 
-    $command = "sf force source manifest create --from-org $TargetOrg"
+    $command = "sf force source manifest create"
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
+        $command += " --from-org $TargetOrg"
+    }
     $command += " --name=allMetadata"
     $command += " --output-dir ."
     if ($IncludePackages) { $command += " --include-packages=unlocked" }
     Invoke-Salesforce -Command $command
 
-    $command = "sf project retrieve start --target-org $TargetOrg"
+    $command = "sf project retrieve start"
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
+        $command += " --target-org $TargetOrg"
+    }
     $command += " --manifest allMetadata.xml"
     Invoke-Salesforce -Command $command
 }
