@@ -436,15 +436,9 @@ function Watch-SalesforceApex {
                     }
                     Start-Sleep -Milliseconds $DebounceMilliseconds
 
-                    try {
-                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
-                    }
-                    catch {
-                        Write-Error $_
-                    }
-                    finally {
-                        $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
-                    }
+                    # Deploy and Test
+                    Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
+                    $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
                 }
             }
             finally {
@@ -555,42 +549,47 @@ function Watch-SalesforceApexAction {
         [Parameter(Mandatory = $false)][string] $ProjectFolder
     )
 
-    Write-Verbose ("Processing file: " + $FilePath)
+    try {
+        Write-Verbose ("Processing file: " + $FilePath)
 
-    if (-not $ProjectFolder) {
-        $ProjectFolder = (Get-Location).Path
+        if (-not $ProjectFolder) {
+            $ProjectFolder = (Get-Location).Path
+        }
+
+        $type = Get-SalesforceType -FileName $FilePath
+        if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
+            return
+        }
+
+        $name = Get-SalesforceName -FileName $FilePath
+        Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
+
+        $command = "sf project deploy start"
+        $command += " --metadata ${type}:${name}"
+
+        $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
+        if ($testClassNames -and $testClassNames.Count -gt 0) {
+            $command += " --test-level RunSpecifiedTests"
+            $command += $testClassNames | ConvertTo-SalesforceCliApexTestParams
+        } else {
+            Write-Warning 'No Apex test classes found in project; deploying without running tests.'
+        }
+        $command += " --ignore-warnings"
+        $command += " --json"
+
+        $deployJson = Invoke-Salesforce -Command $command
+        Show-SalesforceResult -Result $deployJson
+
+        $successMessage = "Deployed $type ${name}"
+        if ($testClassNames -and $testClassNames.Count -gt 0) {
+            $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
+        }
+        $successMessage += "."
+        Write-Host $successMessage -ForegroundColor Cyan
     }
-
-    $type = Get-SalesforceType -FileName $FilePath
-    if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
-        return
+    catch {
+        Write-Error $_
     }
-
-    $name = Get-SalesforceName -FileName $FilePath
-    Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
-
-    $command = "sf project deploy start"
-    $command += " --metadata ${type}:${name}"
-
-    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
-    if ($testClassNames -and $testClassNames.Count -gt 0) {
-        $command += " --test-level RunSpecifiedTests"
-        $command += $testClassNames | ConvertTo-SalesforceCliApexTestParams
-    } else {
-        Write-Warning 'No Apex test classes found in project; deploying without running tests.'
-    }
-    $command += " --ignore-warnings"
-    $command += " --json"
-
-    $deployJson = Invoke-Salesforce -Command $command
-    Show-SalesforceResult -Result $deployJson
-
-    $successMessage = "Deployed $type ${name}"
-    if ($testClassNames -and $testClassNames.Count -gt 0) {
-        $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
-    }
-    $successMessage += "."
-    Write-Host $successMessage -ForegroundColor Cyan
 }
 
 #endregion
