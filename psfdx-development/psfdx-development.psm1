@@ -385,6 +385,74 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
+function Watch-SalesforceApex {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $ProjectFolder,
+        [Parameter(Mandatory = $false)][int] $DebounceMilliseconds = 300
+    )
+
+    if (-not $ProjectFolder) {
+        $ProjectFolder = (Get-Location).Path
+    }
+
+    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
+        throw "Project folder '$ProjectFolder' does not exist."
+    }
+
+    $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
+    $project = $watcherInfo.Project
+    $watcher = $watcherInfo.Watcher
+
+    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcher
+    $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
+
+    try {
+        Write-Host "Watching $project for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
+        while ($true) {
+            $changeEvent = Wait-Event -Timeout 1
+            if (-not $changeEvent) { continue }
+            if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
+                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+                continue
+            }
+
+            try {
+                $paths = Get-SalesforceApexEventPaths -EventArgs $changeEvent.SourceEventArgs
+
+                foreach ($path in $paths) {
+                    if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) { continue }
+
+                    $now = Get-Date
+                    $nextAllowed = $recentEvents[$path]
+                    if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
+
+                    Start-Sleep -Milliseconds $DebounceMilliseconds
+                    try {
+                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $project | Out-Null
+                    }
+                    catch {
+                        Write-Error $_
+                    }
+                    finally {
+                        $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
+                    }
+                }
+            }
+            finally {
+                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+            }
+        }
+    }
+    finally {
+        foreach ($identifier in $sourceIdentifiers) {
+            Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
+        }
+        $watcher.EnableRaisingEvents = $false
+        $watcher.Dispose()
+    }
+}
+
 #region "Salesforce Apex Watcher Helpers"
 
 function Invoke-SalesforceApex {
@@ -471,75 +539,6 @@ function Test-SalesforceApexPath {
     return $true
 }
 
-#endregion
-
-function Watch-SalesforceApex {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $ProjectFolder,
-        [Parameter(Mandatory = $false)][int] $DebounceMilliseconds = 300
-    )
-
-    if (-not $ProjectFolder) {
-        $ProjectFolder = (Get-Location).Path
-    }
-
-    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
-        throw "Project folder '$ProjectFolder' does not exist."
-    }
-
-    $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
-    $project = $watcherInfo.Project
-    $watcher = $watcherInfo.Watcher
-
-    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcher
-    $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
-
-    try {
-        Write-Host "Watching $project for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
-        while ($true) {
-            $changeEvent = Wait-Event -Timeout 1
-            if (-not $changeEvent) { continue }
-            if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
-                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
-                continue
-            }
-
-            try {
-                $paths = Get-SalesforceApexEventPaths -EventArgs $changeEvent.SourceEventArgs
-
-                foreach ($path in $paths) {
-                    if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) { continue }
-
-                    $now = Get-Date
-                    $nextAllowed = $recentEvents[$path]
-                    if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
-
-                    Start-Sleep -Milliseconds $DebounceMilliseconds
-                    try {
-                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $project | Out-Null
-                    }
-                    catch {
-                        Write-Error $_
-                    }
-                    finally {
-                        $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
-                    }
-                }
-            }
-            finally {
-                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
-            }
-        }
-    }
-    finally {
-        foreach ($identifier in $sourceIdentifiers) {
-            Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
-        }
-        $watcher.EnableRaisingEvents = $false
-        $watcher.Dispose()
-    }
-}
 
 function Watch-SalesforceApexAction {
     [CmdletBinding()]
@@ -585,6 +584,8 @@ function Watch-SalesforceApexAction {
     $successMessage += "."
     Write-Host $successMessage -ForegroundColor Cyan
 }
+
+#endregion
 
 function Get-SalesforceType {
     [CmdletBinding()]
