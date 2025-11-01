@@ -403,8 +403,8 @@ function Watch-SalesforceApex {
     }
 
     # Watch File System Changes
-    $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
-    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcherInfo.Watcher
+    $watcherInfo = Start-SalesforceApexWatcher -ProjectFolder $ProjectFolder
+    $sourceIdentifiers = $watcherInfo.SourceIdentifiers
     $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
 
     try {
@@ -440,18 +440,12 @@ function Watch-SalesforceApex {
                     Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
                     $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
                 }
-            }
-            finally {
+            } finally {
                 Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
             }
         }
-    }
-    finally {
-        foreach ($identifier in $sourceIdentifiers) {
-            Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
-        }
-        $watcherInfo.Watcher.EnableRaisingEvents = $false
-        $watcherInfo.Watcher.Dispose()
+    } finally {
+        Stop-SalesforceApexWatcher -SourceIdentifiers $sourceIdentifiers -Watcher $watcherInfo.Watcher
     }
 }
 
@@ -520,6 +514,34 @@ function Register-SalesforceApexWatcherEvents {
     }
 
     return $sourceIdentifiers
+}
+
+function Start-SalesforceApexWatcher {
+    Param(
+        [Parameter(Mandatory = $true)][string] $ProjectFolder
+    )
+
+    $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
+    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcherInfo.Watcher
+
+    return [pscustomobject]@{
+        Project = $watcherInfo.Project
+        Watcher = $watcherInfo.Watcher
+        SourceIdentifiers = $sourceIdentifiers
+    }
+}
+
+function Stop-SalesforceApexWatcher {
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $SourceIdentifiers,
+        [Parameter(Mandatory = $true)][System.IO.FileSystemWatcher] $Watcher
+    )
+
+    foreach ($identifier in $SourceIdentifiers) {
+        Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
+    }
+    $Watcher.EnableRaisingEvents = $false
+    $Watcher.Dispose()
 }
 
 function Test-SalesforceApexPath {
