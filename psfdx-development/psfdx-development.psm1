@@ -421,24 +421,9 @@ function Watch-SalesforceApex {
                 continue
             }
 
+            # On File Changed
             try {
-                $paths = Get-SalesforceApexEventPaths -EventArgs $apexChangeEvent.SourceEventArgs
-
-                foreach ($path in $paths) {
-                    # If Not Salesfore Apex or Trigger
-                    if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) {
-                        continue
-                    }
-
-                    # Ignore Duplicate File Events
-                    if (-not (Wait-SalesforceApexCooldown -Path $path -RecentEvents $recentEvents -CooldownMilliseconds $CooldownMilliseconds)) {
-                        continue
-                    }
-
-                    # Deploy and Test
-                    Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
-                    $recentEvents[$path] = (Get-Date).AddMilliseconds($CooldownMilliseconds)
-                }
+                Invoke-SalesforceApexChangeEvent -ApexChangeEvent $apexChangeEvent -ProjectFolder $watcherInfo.Project -RecentEvents $recentEvents -CooldownMilliseconds $CooldownMilliseconds
             } finally {
                 Remove-Event -EventIdentifier $apexChangeEvent.EventIdentifier -ErrorAction SilentlyContinue
             }
@@ -560,6 +545,30 @@ function Receive-SalesforceApexWatcherEvent {
     }
 
     return $apexChangeEvent
+}
+
+function Invoke-SalesforceApexChangeEvent {
+    Param(
+        [Parameter(Mandatory = $true)][System.Management.Automation.PSEventArgs] $ApexChangeEvent,
+        [Parameter(Mandatory = $true)][string] $ProjectFolder,
+        [Parameter(Mandatory = $true)][System.Collections.Hashtable] $RecentEvents,
+        [Parameter(Mandatory = $true)][int] $CooldownMilliseconds
+    )
+
+    $paths = Get-SalesforceApexEventPaths -EventArgs $ApexChangeEvent.SourceEventArgs
+
+    foreach ($path in $paths) {
+        if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) {
+            continue
+        }
+
+        if (-not (Wait-SalesforceApexCooldown -Path $path -RecentEvents $RecentEvents -CooldownMilliseconds $CooldownMilliseconds)) {
+            continue
+        }
+
+        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $ProjectFolder | Out-Null
+        $RecentEvents[$path] = (Get-Date).AddMilliseconds($CooldownMilliseconds)
+    }
 }
 
 function Wait-SalesforceApexCooldown {
