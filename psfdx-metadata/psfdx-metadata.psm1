@@ -397,7 +397,7 @@ function Deploy-SalesforceComponent {
         [Parameter(Mandatory = $false)][ValidateSet(
             'NoTests',
             'SpecificTests',
-            'TestsClass',
+            'ReferencedTests',
             'TestsInFolder',
             'TestsInOrg',
             'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',

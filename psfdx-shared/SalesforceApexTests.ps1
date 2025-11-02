@@ -5,7 +5,7 @@ function Get-SalesforceApexCliTestParams {
         [Parameter(Mandatory = $false)][ValidateSet(
             'NoTests',
             'SpecificTests',
-            'TestsClass',
+            'ReferencedTests',
             'TestsInFolder',
             'TestsInOrg',
             'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
@@ -16,16 +16,16 @@ function Get-SalesforceApexCliTestParams {
     $testLevelMap = @{
         'NoTests'               = 'NoTestRun'
         'SpecificTests'         = 'RunSpecifiedTests'
-        'TestsClass'            = 'RunSpecifiedTests'
+        'ReferencedTests'       = 'RunSpecifiedTests'
         'TestsInFolder'         = 'RunSpecifiedTests'
         'TestsInOrg'            = 'RunLocalTests'
         'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
     }
     $value += " --test-level " + $testLevelMap[$TestLevel]
 
-    if ($TestLevel -eq 'TestsClass') {
+    if ($TestLevel -eq 'ReferencedTests') {
         if (-not $SourceDir) {
-            throw "Specify -SourceDir when using -TestLevel TestsClass."
+            throw "Specify -SourceDir when using -TestLevel ReferencedTests."
         }
         if (-not (Test-Path -LiteralPath $SourceDir)) {
             throw "Source path '$SourceDir' does not exist."
@@ -33,7 +33,7 @@ function Get-SalesforceApexCliTestParams {
 
         $item = Get-Item -LiteralPath $SourceDir
         if ($item.PSIsContainer) {
-            throw "Provide a file path for -SourceDir when using -TestLevel TestsClass."
+            throw "Provide a file path for -SourceDir when using -TestLevel ReferencedTests."
         }
 
         $className = [System.IO.Path]::GetFileNameWithoutExtension($item.Name)
