@@ -288,7 +288,7 @@ function Retrieve-SalesforceComponent {
         $command += " --output-dir `"$OutputDir`""
     }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Retrieve-SalesforceMetadata {
@@ -314,7 +314,7 @@ function Retrieve-SalesforceMetadata {
     if ($Unzip) { $command += " --unzip" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Retrieve-SalesforcePackage {
@@ -335,7 +335,7 @@ function Retrieve-SalesforcePackage {
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Retrieve-SalesforceField {
@@ -370,14 +370,14 @@ function Retrieve-SalesforceOrg {
     $command += " --name=allMetadata"
     $command += " --output-dir ."
     if ($IncludePackages) { $command += " --include-packages=unlocked" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 
     $command = "sf project retrieve start"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
         $command += " --target-org $TargetOrg"
     }
     $command += " --manifest allMetadata.xml"
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 #endregion
@@ -443,7 +443,7 @@ function Deploy-SalesforceComponent {
     if ($ConciseResults) { $command += " --concise" }
     if ($DetailedResults) { $command += " --verbose" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -484,7 +484,7 @@ function Deploy-SalesforceMetadata {
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -500,7 +500,7 @@ function Describe-SalesforceObjects {
     $command = "sf sobject list"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -516,7 +516,7 @@ function Describe-SalesforceObject {
     $command += " --sobject $Name"
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -546,7 +546,7 @@ function Describe-SalesforceMetadataTypes {
     }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     $result = $result | ConvertFrom-Json
     $metadataObjects = $result.result.metadataObjects
     if (-not $metadataObjects) {

@@ -82,7 +82,7 @@ function Connect-Salesforce {
     if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
 
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     Show-SalesforceResult -Result $result
 }
 
@@ -110,7 +110,7 @@ function Connect-SalesforceAuthUrl {
     $segments.Add('--json') | Out-Null
 
     $command = $segments -join ' '
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     $details = Show-SalesforceResult -Result $result
 
     if ($IncludeToken) {
@@ -154,7 +154,7 @@ function Disconnect-Salesforce {
     }
     if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     Show-SalesforceResult -Result $result
 }
 
@@ -182,7 +182,7 @@ function Connect-SalesforceJwt {
     if ($SetDefault) { $command += " --set-default" }
     if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -199,7 +199,7 @@ function Open-Salesforce {
     if ($Browser) { $command += " --browser $Browser" }
     if ($BrowserPrivateMode) { $command += " --private $BrowserPrivateMode" }
     if ($UrlOnly) { $command += " --url-only" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Get-SalesforceConnections {
@@ -210,7 +210,7 @@ function Get-SalesforceConnections {
     $command = "sf org list"
     if ($ShowVerboseDetails) { $command += " --verbose" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.nonScratchOrgs # Exclude Scratch Orgs
@@ -223,7 +223,7 @@ function Repair-SalesforceConnections {
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
     $command = "sf org list --clean"
     if ($NoPrompt) { $command += " --no-prompt" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 #endregion
@@ -233,7 +233,7 @@ function Repair-SalesforceConnections {
 function Get-SalesforceAlias {
     [CmdletBinding()]
     $command = "sf alias list --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -244,14 +244,14 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $TargetOrg
     )
     $command = "sf alias set $Alias=$TargetOrg"
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)
     $command = "sf alias unset $Alias"
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 #endregion
@@ -264,7 +264,7 @@ function Get-SalesforceLimits {
     $command = "sf limits api display"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -315,7 +315,7 @@ function Select-SalesforceRecords {
     $command += " --result-format $ResultFormat"
     if ($OutputFile) { $command += " --output-file $OutputFile" }
 
-    $result = Invoke-Salesforce -Command $command | ConvertFrom-Json
+    $result = Invoke-Salesforce -Verbose -Command $command | ConvertFrom-Json
     if ($result.status -ne 0) {
         $result
         throw $result.message
@@ -360,7 +360,7 @@ function New-SalesforceRecord {
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -381,7 +381,7 @@ function Set-SalesforceRecord {
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -445,7 +445,7 @@ function Get-SalesforceApiVersions {
     )
     $command = "sf api request rest /services/data"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return $result | ConvertFrom-Json
 }
 
@@ -475,9 +475,9 @@ function Install-SalesforceCli {
     [CmdletBinding()]
     Param()
     if (Test-SalesforceIsMacOS) {
-        Invoke-Salesforce -Command "brew install sfdx-cli/tap/sf"
+        Invoke-Salesforce -Verbose -Command "brew install sfdx-cli/tap/sf"
     } else {
-        Invoke-Salesforce -Command "npm install --global @salesforce/cli"
+        Invoke-Salesforce -Verbose -Command "npm install --global @salesforce/cli"
     }
 }
 
@@ -485,9 +485,9 @@ function Update-SalesforceCli {
     [CmdletBinding()]
     Param()
     if (Test-SalesforceIsMacOS) {
-        Invoke-Salesforce -Command "brew upgrade sfdx-cli/tap/sf"
+        Invoke-Salesforce -Verbose -Command "brew upgrade sfdx-cli/tap/sf"
     } else {
-        Invoke-Salesforce -Command "npm update --global @salesforce/cli"
+        Invoke-Salesforce -Verbose -Command "npm update --global @salesforce/cli"
     }
 }
 
@@ -497,7 +497,7 @@ function Install-SalesforcePlugin {
         [Parameter(Mandatory = $true)][string] $Name
     )
     $command = "sf plugins install $Name"
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Get-SalesforcePlugins {
@@ -507,14 +507,14 @@ function Get-SalesforcePlugins {
     )
     $command = "sf plugins"
     if ($IncludeCore) { $command += " --core" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Update-SalesforcePlugins {
     [CmdletBinding()]
     Param()
     $command = "sf plugins update"
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 #endregion

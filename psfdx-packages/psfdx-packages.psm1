@@ -66,7 +66,7 @@ function Get-SalesforcePackages {
     if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     if ($ExtendedPackageDetails) { $command += " --verbose" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -106,7 +106,7 @@ function New-SalesforcePackage {
     if ($NoNamespace) { $command += " --no-namespace" }
     if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     $resultSfdx = Show-SalesforceResult -Result $result
     return $resultSfdx.Id
 }
@@ -121,7 +121,7 @@ function Remove-SalesforcePackage {
     $command = "sf package delete --package $Name"
     if ($NoPrompt) { $command += " --no-prompt" }
     if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Get-SalesforcePackagesInstalled {
@@ -136,7 +136,7 @@ function Get-SalesforcePackagesInstalled {
     if ($ApiVersion) { $command += " --api-version $ApiVersion" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result -ReturnRecords
 }
 
@@ -175,7 +175,7 @@ function Get-SalesforcePackageVersions {
     if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -228,7 +228,7 @@ function New-SalesforcePackageVersion {
     if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
 
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -246,7 +246,7 @@ function Promote-SalesforcePackageVersion {
     if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -264,7 +264,7 @@ function Remove-SalesforcePackageVersion {
     if ($NoPrompt) { $command += " --no-prompt" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -287,7 +287,7 @@ function Install-SalesforcePackageVersion {
         $command += " --wait $WaitMinutes"
         $command += " --publish-wait $WaitMinutes"
     }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 #endregion

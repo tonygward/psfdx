@@ -68,7 +68,7 @@ function Watch-SalesforceDebugLogs {
     if ($SkipTraceFlag) { $command += " --skip-trace-flag" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --color"
-    return Invoke-Salesforce -Command $command
+    return Invoke-Salesforce -Verbose -Command $command
 }
 
 function Select-SalesforceDebugLogs {
@@ -77,7 +77,7 @@ function Select-SalesforceDebugLogs {
     $command = "sf apex log list"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -110,11 +110,11 @@ function Get-SalesforceDebugLogs {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
     if (-not $Raw) {
-        return Invoke-Salesforce -Command $command
+        return Invoke-Salesforce -Verbose -Command $command
     }
 
     $command += " --json"
-    $response = Invoke-Salesforce -Command $command
+    $response = Invoke-Salesforce -Verbose -Command $command
     $response = $response | ConvertFrom-Json
     if ($response.status -ne 0) {
         throw "Error retrieving log: $($response.message)"
@@ -225,7 +225,7 @@ function Get-SalesforceFlowInterviews {
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
-    $raw = Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
@@ -256,7 +256,7 @@ function Get-SalesforceLoginHistory {
     # Query LoginHistory
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $raw = Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Verbose -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
     # No LoginHistory records found
@@ -337,7 +337,7 @@ function Select-SalesforceEventFiles {
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
-    $raw = Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
@@ -350,7 +350,7 @@ function Get-SalesforceEventFile {
     $apiVersion = (Get-SalesforceLatestApiVersion -TargetOrg $TargetOrg)
     $command = "sf api request rest /services/data/$apiVersion/sobjects/EventLogFile/$Id/Logfile"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    Invoke-Salesforce -Verbose -Command $command
 }
 
 function Export-SalesforceEventFile {
@@ -412,7 +412,7 @@ function Export-SalesforceEventFiles {
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
-    $raw = Invoke-Salesforce -Command $command
+    $raw = Invoke-Salesforce -Verbose -Command $command
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
     if (-not $records -or (($records | Measure-Object).Count -eq 0)) {
         Write-Verbose "No EventLogFile records found"

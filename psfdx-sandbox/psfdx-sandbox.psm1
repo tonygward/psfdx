@@ -63,7 +63,7 @@ function Get-SalesforceSandboxes {
     )
 
     $command = "sf org list --json"
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     $parsed = Show-SalesforceResult -Result $result
     if (-not $parsed) { return @() }
 
@@ -105,7 +105,7 @@ function New-SalesforceSandbox {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -122,7 +122,7 @@ function Resume-SalesforceSandbox {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -146,7 +146,7 @@ function Copy-SalesforceSandbox {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -162,7 +162,7 @@ function Remove-SalesforceSandbox {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
 
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Verbose -Command $command
     return Show-SalesforceResult -Result $result
 }
 
@@ -179,7 +179,7 @@ function Get-SalesforceSandboxRefreshStatus {
     $infoCommand = "sf data query --use-tooling-api --result-format json --query `"$infoQuery`""
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $infoCommand += " --target-org $TargetOrg" }
 
-    $infoResult = Invoke-Salesforce -Command $infoCommand | ConvertFrom-Json
+    $infoResult = Invoke-Salesforce -Verbose -Command $infoCommand | ConvertFrom-Json
     if ($infoResult.status -ne 0) {
         Write-Debug ($infoResult | ConvertTo-Json -Depth 5)
         throw $infoResult.message
@@ -196,7 +196,7 @@ function Get-SalesforceSandboxRefreshStatus {
     $processCommand = "sf data query --use-tooling-api --result-format json --query `"$processQuery`""
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $processCommand += " --target-org $TargetOrg" }
 
-    $processResult = Invoke-Salesforce -Command $processCommand | ConvertFrom-Json
+    $processResult = Invoke-Salesforce -Verbose -Command $processCommand | ConvertFrom-Json
     if ($processResult.status -ne 0) {
         Write-Debug ($processResult | ConvertTo-Json -Depth 5)
         throw $processResult.message
