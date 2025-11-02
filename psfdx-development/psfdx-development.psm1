@@ -1,10 +1,13 @@
 function Import-PsfdxSharedModule {
     [CmdletBinding()]
     param(
-        [string] $ModuleName = 'psfdx-shared'
+        [string] $ModuleName = 'psfdx-shared',
+        [switch] $ForceImport
     )
 
-    if (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue) {
+    $forceImport = $ForceImport.IsPresent
+
+    if (-not $forceImport -and (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue)) {
         return
     }
 
@@ -44,12 +47,12 @@ function Import-PsfdxSharedModule {
 
     foreach ($candidate in $candidates | Where-Object { $_ } | Select-Object -Unique) {
         if (Test-Path -LiteralPath $candidate) {
-            Import-Module -Name $candidate -ErrorAction Stop
+            Import-Module -Name $candidate -ErrorAction Stop -Force:$forceImport
             return
         }
     }
 
-    Import-Module -Name $ModuleName -ErrorAction Stop
+    Import-Module -Name $ModuleName -ErrorAction Stop -Force:$forceImport
 }
 
 Import-PsfdxSharedModule
@@ -338,6 +341,9 @@ function Get-SalesforceCliApexTestParams {
     $value = ""
     if ($TestsInProject.IsPresent) {
         $testClassNames = Get-SalesforceApexTestClassNames
+        if (-not (Get-Command -Name ConvertTo-SalesforceCliApexTestParams -ErrorAction SilentlyContinue)) {
+            Import-PsfdxSharedModule -ForceImport
+        }
         $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $testClassNames
     } elseif ($ClassName -and $TestName) {
         $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
@@ -389,7 +395,7 @@ function Watch-SalesforceApex {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $ProjectFolder,
-        [Parameter(Mandatory = $false)][int] $DebounceMilliseconds = 300
+        [Parameter(Mandatory = $false)][int] $CooldownMilliseconds = 300
     )
 
     # Default to Current Folder
@@ -410,17 +416,13 @@ function Watch-SalesforceApex {
     try {
         Write-Host "Watching $($watcherInfo.Project) for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
         while ($true) {
-            $changeEvent = Wait-Event -Timeout 1
-            if (-not $changeEvent) {
-                continue
-            }
-            if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
-                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+            $apexChangeEvent = Receive-SalesforceApexWatcherEvent -SourceIdentifiers $sourceIdentifiers -TimeoutSeconds 1
+            if (-not $apexChangeEvent) {
                 continue
             }
 
             try {
-                $paths = Get-SalesforceApexEventPaths -EventArgs $changeEvent.SourceEventArgs
+                $paths = Get-SalesforceApexEventPaths -EventArgs $apexChangeEvent.SourceEventArgs
 
                 foreach ($path in $paths) {
                     # If Not Salesfore Apex or Trigger
@@ -428,20 +430,17 @@ function Watch-SalesforceApex {
                         continue
                     }
 
-                    # Wait for File Save
-                    $now = Get-Date
-                    $nextAllowed = $recentEvents[$path]
-                    if ($nextAllowed -and ($now -lt $nextAllowed)) {
+                    # Ignore Duplicate File Events
+                    if (-not (Wait-SalesforceApexCooldown -Path $path -RecentEvents $recentEvents -CooldownMilliseconds $CooldownMilliseconds)) {
                         continue
                     }
-                    Start-Sleep -Milliseconds $DebounceMilliseconds
 
                     # Deploy and Test
                     Watch-SalesforceApexAction -FilePath $path -ProjectFolder $watcherInfo.Project | Out-Null
-                    $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
+                    $recentEvents[$path] = (Get-Date).AddMilliseconds($CooldownMilliseconds)
                 }
             } finally {
-                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
+                Remove-Event -EventIdentifier $apexChangeEvent.EventIdentifier -ErrorAction SilentlyContinue
             }
         }
     } finally {
@@ -544,6 +543,42 @@ function Stop-SalesforceApexWatcher {
     $Watcher.Dispose()
 }
 
+function Receive-SalesforceApexWatcherEvent {
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $SourceIdentifiers,
+        [Parameter(Mandatory = $false)][int] $TimeoutSeconds = 1
+    )
+
+    $apexChangeEvent = Wait-Event -Timeout $TimeoutSeconds
+    if (-not $apexChangeEvent) {
+        return $null
+    }
+
+    if ($apexChangeEvent.SourceIdentifier -notin $SourceIdentifiers) {
+        Remove-Event -EventIdentifier $apexChangeEvent.EventIdentifier -ErrorAction SilentlyContinue
+        return $null
+    }
+
+    return $apexChangeEvent
+}
+
+function Wait-SalesforceApexCooldown {
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path,
+        [Parameter(Mandatory = $true)][System.Collections.Hashtable] $RecentEvents,
+        [Parameter(Mandatory = $true)][int] $CooldownMilliseconds
+    )
+
+    $now = Get-Date
+    $nextAllowed = $RecentEvents[$Path]
+    if ($nextAllowed -and ($now -lt $nextAllowed)) {
+        return $false
+    }
+
+    Start-Sleep -Milliseconds $CooldownMilliseconds
+    return $true
+}
+
 function Test-SalesforceApexPath {
     Param(
         [Parameter(Mandatory = $true)][string] $Path,
@@ -614,8 +649,6 @@ function Watch-SalesforceApexAction {
     }
 }
 
-#endregion
-
 function Get-SalesforceType {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $FileName)
@@ -637,6 +670,8 @@ function Get-SalesforceName {
     Write-Verbose ("Apex Name: " + $name)
     return $name
 }
+
+#endregion
 
 function Get-SalesforceApexTestClassNames {
     [CmdletBinding()]
