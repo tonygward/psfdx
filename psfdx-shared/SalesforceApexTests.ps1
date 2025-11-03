@@ -1,5 +1,5 @@
 function Get-SalesforceApexCliTestParams {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     Param(
         [Parameter(Mandatory = $false)][string] $SourceDir,
         [Parameter(Mandatory = $false)][ValidateSet(
@@ -11,6 +11,10 @@ function Get-SalesforceApexCliTestParams {
             'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
         [Parameter(Mandatory = $false)][string[]] $Tests
     )
+
+    if (-not $PSCmdlet.ShouldProcess('Salesforce Apex test discovery', 'Resolve CLI test parameters')) {
+        return ""
+    }
 
     $value = ""
     $testLevelMap = @{
@@ -87,6 +91,8 @@ function Get-SalesforceApexCliTestParams {
             throw "Provided -Tests values are empty."
         }
     }
+
+    Write-Verbose "Test Level: $TestLevel found Tests: $Tests"
 
     if ($Tests) {
         $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests

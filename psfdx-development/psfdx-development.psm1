@@ -83,8 +83,8 @@ function New-SalesforceProject {
     if ($GenerateManifest) { $command += " --manifest" }
     $command += " --template $Template"
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     $result = Show-SalesforceResult -Result $result
 
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
@@ -104,7 +104,8 @@ function Set-SalesforceTargetOrg {
     $command = "sf config set target-org=$Value"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -116,7 +117,8 @@ function Get-SalesforceTargetOrg {
     $command = "sf config get target-org"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -128,7 +130,8 @@ function Remove-SalesforceTargetOrg {
     $command = "sf config unset target-org"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -136,7 +139,8 @@ function Get-SalesforceConfig {
     [CmdletBinding()]
     Param()
     $command = "sf config list --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -150,7 +154,8 @@ function Set-SalesforceTargetDevHub {
     $command = "sf config set target-dev-hub=$Value"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -163,7 +168,8 @@ function Get-SalesforceTargetDevHub {
     $command = "sf config get target-dev-hub"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -175,7 +181,8 @@ function Remove-SalesforceTargetDevHub {
     $command = "sf config unset target-dev-hub"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -195,7 +202,8 @@ function Get-SalesforceScratchOrgs {
         $command += " --skip-connection-status"
     }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.scratchOrgs
@@ -238,8 +246,8 @@ function New-SalesforceScratchOrg {
     if ($SourceOrgId) { $command += " --source-org $SourceOrgId" }
     if ($AdminUsername) { $command += " --username $AdminUsername" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -253,7 +261,8 @@ function Remove-SalesforceScratchOrg {
     if ($NoPrompt) {
         $command += " --no-prompt"
     }
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function Remove-SalesforceScratchOrgs {
@@ -306,12 +315,13 @@ function Test-SalesforceApex {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
     if ($ResultFormat -ne 'json') {
-        Invoke-Salesforce -Verbose -Command $command
+        Invoke-Salesforce -Command $command @commonParams
         return
     }
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $result = Invoke-Salesforce -Command $command @commonParams
     $result = $result | ConvertFrom-Json
 
     $result.result.tests
@@ -444,7 +454,8 @@ function Invoke-SalesforceApex {
     $command = "sf apex run --file $ApexFile"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -632,11 +643,11 @@ function Watch-SalesforceApexAction {
 
         $command = "sf project deploy start"
         $command += " --metadata ${type}:${name}"
-        $command += Get-SalesforceApexCliTestParams -SourceDir $FilePath -TestLevel ReferencedTests
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $command += Get-SalesforceApexCliTestParams @commonParams -SourceDir $FilePath -TestLevel ReferencedTests
         $command += " --ignore-warnings"
         $command += " --json"
-
-        $deployJson = Invoke-Salesforce -Verbose -Command $command
+        $deployJson = Invoke-Salesforce -Command $command @commonParams
         Show-SalesforceResult -Result $deployJson
 
         $successMessage = "Deployed $type ${name}"
@@ -767,7 +778,8 @@ function New-SalesforceApexClass {
         }
         $command += " --output-dir $OutputDirectory"
     }
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function New-SalesforceApexTrigger {
@@ -790,7 +802,8 @@ function New-SalesforceApexTrigger {
         }
         $command += " --output-dir $OutputDirectory"
     }
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 #endregion
@@ -800,13 +813,15 @@ function New-SalesforceApexTrigger {
 function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Verbose -Command "sf plugins install @salesforce/plugin-lightning-dev"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev" @commonParams
 }
 
 function Start-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Verbose -Command "sf lightning dev app"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "sf lightning dev app" @commonParams
 }
 
 #endregion
@@ -816,10 +831,11 @@ function Start-SalesforceLwcDevServer {
 function Install-SalesforceJest {
     [CmdletBinding()]
     Param()
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     if (Get-Command yarn -ErrorAction SilentlyContinue) {
-        Invoke-Salesforce -Verbose -Command "yarn add -D @salesforce/sfdx-lwc-jest"
+        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest" @commonParams
     } else {
-        Invoke-Salesforce -Verbose -Command "npm install -D @salesforce/sfdx-lwc-jest"
+        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest" @commonParams
     }
 }
 
@@ -828,26 +844,30 @@ function New-SalesforceJestTest {
     Param([Parameter(Mandatory = $true)][string] $LwcName)
     $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
     $command = "sf force lightning lwc test create --filepath $filePath --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
 function Test-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Verbose -Command "npm run test:unit"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "npm run test:unit" @commonParams
 }
 
 function Debug-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Verbose -Command "npm run test:unit:debug"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "npm run test:unit:debug" @commonParams
 }
 
 function Watch-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Verbose -Command "npm run test:unit:watch"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "npm run test:unit:watch" @commonParams
 }
 
 #endregion

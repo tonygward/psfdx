@@ -288,7 +288,8 @@ function Retrieve-SalesforceComponent {
         $command += " --output-dir `"$OutputDir`""
     }
     if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function Retrieve-SalesforceMetadata {
@@ -313,8 +314,8 @@ function Retrieve-SalesforceMetadata {
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($Unzip) { $command += " --unzip" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function Retrieve-SalesforcePackage {
@@ -334,8 +335,8 @@ function Retrieve-SalesforcePackage {
     $command += " --output-dir `"$OutputDir`""
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function Retrieve-SalesforceField {
@@ -370,14 +371,15 @@ function Retrieve-SalesforceOrg {
     $command += " --name=allMetadata"
     $command += " --output-dir ."
     if ($IncludePackages) { $command += " --include-packages=unlocked" }
-    Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 
     $command = "sf project retrieve start"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
         $command += " --target-org $TargetOrg"
     }
     $command += " --manifest allMetadata.xml"
-    Invoke-Salesforce -Verbose -Command $command
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 #endregion
@@ -420,6 +422,8 @@ function Deploy-SalesforceComponent {
         throw "Specify -Type when using -Name."
     }
 
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
     $command = "sf project deploy start"
     if ($Type) {
         $command += " --metadata $Type"
@@ -437,13 +441,13 @@ function Deploy-SalesforceComponent {
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
 
-    $command += Get-SalesforceApexCliTestParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
+    $command += Get-SalesforceApexCliTestParams @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
 
     if ($DryRun) { $command += " --dry-run" }
     if ($ConciseResults) { $command += " --concise" }
     if ($DetailedResults) { $command += " --verbose" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -483,8 +487,8 @@ function Deploy-SalesforceMetadata {
     if ($IgnoreWarnings) { $command += " --ignore-warnings" }
     if ($IgnoreErrors) { $command += " --ignore-errors" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -500,7 +504,8 @@ function Describe-SalesforceObjects {
     $command = "sf sobject list"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -516,7 +521,8 @@ function Describe-SalesforceObject {
     $command += " --sobject $Name"
     if ($UseToolingApi) { $command += " --use-tooling-api" }
     $command += " --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -545,8 +551,8 @@ function Describe-SalesforceMetadataTypes {
         $command += " --target-org $TargetOrg"
     }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     $result = $result | ConvertFrom-Json
     $metadataObjects = $result.result.metadataObjects
     if (-not $metadataObjects) {

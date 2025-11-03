@@ -63,7 +63,8 @@ function Get-SalesforceSandboxes {
     )
 
     $command = "sf org list --json"
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     $parsed = Show-SalesforceResult -Result $result
     if (-not $parsed) { return @() }
 
@@ -104,8 +105,8 @@ function New-SalesforceSandbox {
     if ($NoTrackSource) { $command += " --no-track-source" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -121,8 +122,8 @@ function Resume-SalesforceSandbox {
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -145,8 +146,8 @@ function Copy-SalesforceSandbox {
     if ($NoPrompt) { $command += " --no-prompt" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -161,8 +162,8 @@ function Remove-SalesforceSandbox {
     if ($NoPrompt) { $command += " --no-prompt" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Verbose -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -178,8 +179,8 @@ function Get-SalesforceSandboxRefreshStatus {
     $infoQuery = "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = '$escapedName'"
     $infoCommand = "sf data query --use-tooling-api --result-format json --query `"$infoQuery`""
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $infoCommand += " --target-org $TargetOrg" }
-
-    $infoResult = Invoke-Salesforce -Verbose -Command $infoCommand | ConvertFrom-Json
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $infoResult = Invoke-Salesforce -Command $infoCommand @commonParams | ConvertFrom-Json
     if ($infoResult.status -ne 0) {
         Write-Debug ($infoResult | ConvertTo-Json -Depth 5)
         throw $infoResult.message
@@ -195,8 +196,8 @@ function Get-SalesforceSandboxRefreshStatus {
     $processQuery = "SELECT SandboxName, StartDate, EndDate FROM SandboxProcess WHERE SandboxName = '$escapedName' ORDER BY StartDate DESC LIMIT 1"
     $processCommand = "sf data query --use-tooling-api --result-format json --query `"$processQuery`""
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $processCommand += " --target-org $TargetOrg" }
-
-    $processResult = Invoke-Salesforce -Verbose -Command $processCommand | ConvertFrom-Json
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $processResult = Invoke-Salesforce -Command $processCommand @commonParams | ConvertFrom-Json
     if ($processResult.status -ne 0) {
         Write-Debug ($processResult | ConvertTo-Json -Depth 5)
         throw $processResult.message
