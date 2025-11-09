@@ -1,10 +1,13 @@
 function Import-PsfdxSharedModule {
     [CmdletBinding()]
     param(
-        [string] $ModuleName = 'psfdx-shared'
+        [string] $ModuleName = 'psfdx-shared',
+        [switch] $ForceImport
     )
 
-    if (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue) {
+    $forceImport = $ForceImport.IsPresent
+
+    if (-not $forceImport -and (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue)) {
         return
     }
 
@@ -44,12 +47,12 @@ function Import-PsfdxSharedModule {
 
     foreach ($candidate in $candidates | Where-Object { $_ } | Select-Object -Unique) {
         if (Test-Path -LiteralPath $candidate) {
-            Import-Module -Name $candidate -ErrorAction Stop
+            Import-Module -Name $candidate -ErrorAction Stop -Force:$forceImport
             return
         }
     }
 
-    Import-Module -Name $ModuleName -ErrorAction Stop
+    Import-Module -Name $ModuleName -ErrorAction Stop -Force:$forceImport
 }
 
 Import-PsfdxSharedModule
@@ -80,8 +83,8 @@ function New-SalesforceProject {
     if ($GenerateManifest) { $command += " --manifest" }
     $command += " --template $Template"
     $command += " --json"
-
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     $result = Show-SalesforceResult -Result $result
 
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
@@ -101,7 +104,8 @@ function Set-SalesforceTargetOrg {
     $command = "sf config set target-org=$Value"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -113,7 +117,8 @@ function Get-SalesforceTargetOrg {
     $command = "sf config get target-org"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -125,7 +130,8 @@ function Remove-SalesforceTargetOrg {
     $command = "sf config unset target-org"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -133,7 +139,8 @@ function Get-SalesforceConfig {
     [CmdletBinding()]
     Param()
     $command = "sf config list --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -147,7 +154,8 @@ function Set-SalesforceTargetDevHub {
     $command = "sf config set target-dev-hub=$Value"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -160,7 +168,8 @@ function Get-SalesforceTargetDevHub {
     $command = "sf config get target-dev-hub"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -172,7 +181,8 @@ function Remove-SalesforceTargetDevHub {
     $command = "sf config unset target-dev-hub"
     if ($Global) { $command += " --global" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -192,7 +202,8 @@ function Get-SalesforceScratchOrgs {
         $command += " --skip-connection-status"
     }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.scratchOrgs
@@ -235,8 +246,8 @@ function New-SalesforceScratchOrg {
     if ($SourceOrgId) { $command += " --source-org $SourceOrgId" }
     if ($AdminUsername) { $command += " --username $AdminUsername" }
     $command += " --json"
-
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -250,7 +261,8 @@ function Remove-SalesforceScratchOrg {
     if ($NoPrompt) {
         $command += " --no-prompt"
     }
-    Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function Remove-SalesforceScratchOrgs {
@@ -303,12 +315,13 @@ function Test-SalesforceApex {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --result-format $ResultFormat"
 
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
     if ($ResultFormat -ne 'json') {
-        Invoke-Salesforce -Command $command
+        Invoke-Salesforce -Command $command @commonParams
         return
     }
-
-    $result = Invoke-Salesforce -Command $command
+    $result = Invoke-Salesforce -Command $command @commonParams
     $result = $result | ConvertFrom-Json
 
     $result.result.tests
@@ -338,6 +351,9 @@ function Get-SalesforceCliApexTestParams {
     $value = ""
     if ($TestsInProject.IsPresent) {
         $testClassNames = Get-SalesforceApexTestClassNames
+        if (-not (Get-Command -Name ConvertTo-SalesforceCliApexTestParams -ErrorAction SilentlyContinue)) {
+            Import-PsfdxSharedModule -ForceImport
+        }
         $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $testClassNames
     } elseif ($ClassName -and $TestName) {
         $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
@@ -385,6 +401,50 @@ function Get-SalesforceCodeCoverage {
     return $values
 }
 
+function Watch-SalesforceApex {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $ProjectFolder,
+        [Parameter(Mandatory = $false)][int] $CooldownMilliseconds = 300
+    )
+
+    # Default to Current Folder
+    if (-not $ProjectFolder) {
+        $ProjectFolder = (Get-Location).Path
+    }
+
+    # Folder does not Exist
+    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
+        throw "Project folder '$ProjectFolder' does not exist."
+    }
+
+    # Watch File System Changes
+    $watcherInfo = Start-SalesforceApexWatcher -ProjectFolder $ProjectFolder
+    $sourceIdentifiers = $watcherInfo.SourceIdentifiers
+    $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
+
+    try {
+        Write-Host "Watching $($watcherInfo.Project) for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
+        while ($true) {
+            $apexChangeEvent = Receive-SalesforceApexWatcherEvent -SourceIdentifiers $sourceIdentifiers -TimeoutSeconds 1
+            if (-not $apexChangeEvent) {
+                continue
+            }
+
+            # On File Changed
+            try {
+                Invoke-SalesforceApexChangeEvent -ApexChangeEvent $apexChangeEvent -ProjectFolder $watcherInfo.Project -RecentEvents $recentEvents -CooldownMilliseconds $CooldownMilliseconds
+            } finally {
+                Remove-Event -EventIdentifier $apexChangeEvent.EventIdentifier -ErrorAction SilentlyContinue
+            }
+        }
+    } finally {
+        Stop-SalesforceApexWatcher -SourceIdentifiers $sourceIdentifiers -Watcher $watcherInfo.Watcher
+    }
+}
+
+#region "Salesforce Apex Watcher Helpers"
+
 function Invoke-SalesforceApex {
     [CmdletBinding()]
     Param(
@@ -394,24 +454,15 @@ function Invoke-SalesforceApex {
     $command = "sf apex run --file $ApexFile"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
-function Watch-SalesforceApex {
-    [CmdletBinding()]
+function New-SalesforceApexWatcher {
     Param(
-        [Parameter(Mandatory = $false)][string] $ProjectFolder,
-        [Parameter(Mandatory = $false)][int] $DebounceMilliseconds = 300
+        [Parameter(Mandatory = $true)][string] $ProjectFolder
     )
-
-    if (-not $ProjectFolder) {
-        $ProjectFolder = (Get-Location).Path
-    }
-
-    if (-not (Test-Path -LiteralPath $ProjectFolder -PathType Container)) {
-        throw "Project folder '$ProjectFolder' does not exist."
-    }
 
     $project = (Get-Item -LiteralPath $ProjectFolder).FullName
     Write-Verbose ("Watching Project Folder: " + $project)
@@ -422,71 +473,149 @@ function Watch-SalesforceApex {
     $watcher.NotifyFilter = [System.IO.NotifyFilters]::FileName -bor [System.IO.NotifyFilters]::LastWrite
     $watcher.EnableRaisingEvents = $true
 
+    return [pscustomobject]@{
+        Project = $project
+        Watcher = $watcher
+    }
+}
+
+function Get-SalesforceApexEventPaths {
+    Param(
+        [Parameter(Mandatory = $true)][System.IO.FileSystemEventArgs] $EventArgs
+    )
+
+    $paths = @()
+    if ($EventArgs -is [System.IO.RenamedEventArgs]) {
+        $paths += $EventArgs.FullPath
+    }
+    else {
+        $paths += $EventArgs.FullPath
+    }
+
+    return $paths
+}
+
+function Register-SalesforceApexWatcherEvents {
+    Param(
+        [Parameter(Mandatory = $true)][System.IO.FileSystemWatcher] $Watcher
+    )
+
     $sourcePrefix = "Watch-SalesforceApex_$([guid]::NewGuid())"
     $sourceIdentifiers = @()
     foreach ($eventName in 'Changed', 'Created', 'Renamed') {
         $sourceId = "${sourcePrefix}:$eventName"
-        Register-ObjectEvent -InputObject $watcher -EventName $eventName -SourceIdentifier $sourceId | Out-Null
+        Register-ObjectEvent -InputObject $Watcher -EventName $eventName -SourceIdentifier $sourceId | Out-Null
         $sourceIdentifiers += $sourceId
     }
 
-    $recentEvents = [System.Collections.Hashtable]::Synchronized(@{})
+    return $sourceIdentifiers
+}
 
-    try {
-        Write-Host "Watching $project for Apex changes. Press Ctrl+C to stop." -ForegroundColor Cyan
-        while ($true) {
-            $changeEvent = Wait-Event -Timeout 1
-            if (-not $changeEvent) { continue }
-            if ($changeEvent.SourceIdentifier -notin $sourceIdentifiers) {
-                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
-                continue
-            }
+function Start-SalesforceApexWatcher {
+    Param(
+        [Parameter(Mandatory = $true)][string] $ProjectFolder
+    )
 
-            try {
-                $changeEventArgs = $changeEvent.SourceEventArgs
-                $paths = @()
-                if ($changeEventArgs -is [System.IO.RenamedEventArgs]) {
-                    $paths += $changeEventArgs.FullPath
-                } else {
-                    $paths += $changeEventArgs.FullPath
-                }
+    $watcherInfo = New-SalesforceApexWatcher -ProjectFolder $ProjectFolder
+    $sourceIdentifiers = Register-SalesforceApexWatcherEvents -Watcher $watcherInfo.Watcher
 
-                foreach ($path in $paths) {
-                    if (-not $path) { continue }
-                    $extension = [System.IO.Path]::GetExtension($path)
-                    if (-not $extension) { continue }
-                    $extension = $extension.ToLowerInvariant()
-                    if ($extension -notin @('.cls', '.trigger')) { continue }
-                    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
-
-                    $now = Get-Date
-                    $nextAllowed = $recentEvents[$path]
-                    if ($nextAllowed -and ($now -lt $nextAllowed)) { continue }
-
-                    Start-Sleep -Milliseconds $DebounceMilliseconds
-                    try {
-                        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $project | Out-Null
-                    }
-                    catch {
-                        Write-Error $_
-                    }
-                    finally {
-                        $recentEvents[$path] = (Get-Date).AddMilliseconds($DebounceMilliseconds)
-                    }
-                }
-            }
-            finally {
-                Remove-Event -EventIdentifier $changeEvent.EventIdentifier -ErrorAction SilentlyContinue
-            }
-        }
+    return [pscustomobject]@{
+        Project = $watcherInfo.Project
+        Watcher = $watcherInfo.Watcher
+        SourceIdentifiers = $sourceIdentifiers
     }
-    finally {
-        foreach ($identifier in $sourceIdentifiers) {
-            Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
-        }
-        $watcher.EnableRaisingEvents = $false
-        $watcher.Dispose()
+}
+
+function Stop-SalesforceApexWatcher {
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $SourceIdentifiers,
+        [Parameter(Mandatory = $true)][System.IO.FileSystemWatcher] $Watcher
+    )
+
+    foreach ($identifier in $SourceIdentifiers) {
+        Unregister-Event -SourceIdentifier $identifier -ErrorAction SilentlyContinue
     }
+    $Watcher.EnableRaisingEvents = $false
+    $Watcher.Dispose()
+}
+
+function Receive-SalesforceApexWatcherEvent {
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $SourceIdentifiers,
+        [Parameter(Mandatory = $false)][int] $TimeoutSeconds = 1
+    )
+
+    $apexChangeEvent = Wait-Event -Timeout $TimeoutSeconds
+    if (-not $apexChangeEvent) {
+        return $null
+    }
+
+    if ($apexChangeEvent.SourceIdentifier -notin $SourceIdentifiers) {
+        Remove-Event -EventIdentifier $apexChangeEvent.EventIdentifier -ErrorAction SilentlyContinue
+        return $null
+    }
+
+    return $apexChangeEvent
+}
+
+function Invoke-SalesforceApexChangeEvent {
+    Param(
+        [Parameter(Mandatory = $true)][System.Management.Automation.PSEventArgs] $ApexChangeEvent,
+        [Parameter(Mandatory = $true)][string] $ProjectFolder,
+        [Parameter(Mandatory = $true)][System.Collections.Hashtable] $RecentEvents,
+        [Parameter(Mandatory = $true)][int] $CooldownMilliseconds
+    )
+
+    $paths = Get-SalesforceApexEventPaths -EventArgs $ApexChangeEvent.SourceEventArgs
+
+    foreach ($path in $paths) {
+        if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) {
+            continue
+        }
+
+        if (-not (Wait-SalesforceApexCooldown -Path $path -RecentEvents $RecentEvents -CooldownMilliseconds $CooldownMilliseconds)) {
+            continue
+        }
+
+        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $ProjectFolder | Out-Null
+        $RecentEvents[$path] = (Get-Date).AddMilliseconds($CooldownMilliseconds)
+    }
+}
+
+function Wait-SalesforceApexCooldown {
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path,
+        [Parameter(Mandatory = $true)][System.Collections.Hashtable] $RecentEvents,
+        [Parameter(Mandatory = $true)][int] $CooldownMilliseconds
+    )
+
+    $now = Get-Date
+    $nextAllowed = $RecentEvents[$Path]
+    if ($nextAllowed -and ($now -lt $nextAllowed)) {
+        return $false
+    }
+
+    Start-Sleep -Milliseconds $CooldownMilliseconds
+    return $true
+}
+
+function Test-SalesforceApexPath {
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path,
+        [Parameter(Mandatory = $true)][string[]] $Extensions
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $false }
+
+    $extension = [System.IO.Path]::GetExtension($Path)
+    if (-not $extension) { return $false }
+
+    $extension = $extension.ToLowerInvariant()
+    if ($extension -notin $Extensions) { return $false }
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+
+    return $true
 }
 
 function Watch-SalesforceApexAction {
@@ -496,42 +625,42 @@ function Watch-SalesforceApexAction {
         [Parameter(Mandatory = $false)][string] $ProjectFolder
     )
 
-    Write-Verbose ("Processing file: " + $FilePath)
+    try {
+        Write-Verbose ("Processing file: " + $FilePath)
 
-    if (-not $ProjectFolder) {
-        $ProjectFolder = (Get-Location).Path
+        if (-not $ProjectFolder) {
+            $ProjectFolder = (Get-Location).Path
+        }
+
+        $type = Get-SalesforceType -FileName $FilePath
+        if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
+            return
+        }
+
+        $name = Get-SalesforceName -FileName $FilePath
+        Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
+
+        $command = "sf project deploy start"
+        $command += " --metadata ${type}:${name}"
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
+        $testLevel = if ($testClassNames -and $testClassNames.Count -gt 0) { 'SpecificTests' } else { 'NoTests' }
+        $command += Get-SalesforceApexCliTestParams @commonParams -TestLevel $testLevel -Tests $testClassNames
+        $command += " --ignore-warnings"
+        $command += " --json"
+        $deployJson = Invoke-Salesforce -Command $command @commonParams
+        Show-SalesforceResult -Result $deployJson
+
+        $successMessage = "Deployed $type ${name}"
+        if ($testClassNames -and $testClassNames.Count -gt 0) {
+            $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
+        }
+        $successMessage += "."
+        Write-Host $successMessage -ForegroundColor Cyan
     }
-
-    $type = Get-SalesforceType -FileName $FilePath
-    if (($type -ne 'ApexClass') -and ($type -ne 'ApexTrigger')) {
-        return
+    catch {
+        Write-Error $_
     }
-
-    $name = Get-SalesforceName -FileName $FilePath
-    Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
-
-    $command = "sf project deploy start"
-    $command += " --metadata ${type}:${name}"
-
-    $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
-    if ($testClassNames -and $testClassNames.Count -gt 0) {
-        $command += " --test-level RunSpecifiedTests"
-        $command += $testClassNames | ConvertTo-SalesforceCliApexTestParams
-    } else {
-        Write-Warning 'No Apex test classes found in project; deploying without running tests.'
-    }
-    $command += " --ignore-warnings"
-    $command += " --json"
-
-    $deployJson = Invoke-Salesforce -Command $command
-    Show-SalesforceResult -Result $deployJson
-
-    $successMessage = "Deployed $type ${name}"
-    if ($testClassNames -and $testClassNames.Count -gt 0) {
-        $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
-    }
-    $successMessage += "."
-    Write-Host $successMessage -ForegroundColor Cyan
 }
 
 function Get-SalesforceType {
@@ -555,6 +684,8 @@ function Get-SalesforceName {
     Write-Verbose ("Apex Name: " + $name)
     return $name
 }
+
+#endregion
 
 function Get-SalesforceApexTestClassNames {
     [CmdletBinding()]
@@ -648,7 +779,8 @@ function New-SalesforceApexClass {
         }
         $command += " --output-dir $OutputDirectory"
     }
-    Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function New-SalesforceApexTrigger {
@@ -671,7 +803,8 @@ function New-SalesforceApexTrigger {
         }
         $command += " --output-dir $OutputDirectory"
     }
-    Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 #endregion
@@ -681,13 +814,15 @@ function New-SalesforceApexTrigger {
 function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev" @commonParams
 }
 
 function Start-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "sf lightning dev app"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "sf lightning dev app" @commonParams
 }
 
 #endregion
@@ -697,10 +832,11 @@ function Start-SalesforceLwcDevServer {
 function Install-SalesforceJest {
     [CmdletBinding()]
     Param()
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     if (Get-Command yarn -ErrorAction SilentlyContinue) {
-        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest"
+        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest" @commonParams
     } else {
-        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest"
+        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest" @commonParams
     }
 }
 
@@ -709,26 +845,30 @@ function New-SalesforceJestTest {
     Param([Parameter(Mandatory = $true)][string] $LwcName)
     $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
     $command = "sf force lightning lwc test create --filepath $filePath --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
 function Test-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "npm run test:unit"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "npm run test:unit" @commonParams
 }
 
 function Debug-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "npm run test:unit:debug"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "npm run test:unit:debug" @commonParams
 }
 
 function Watch-SalesforceJest {
     [CmdletBinding()]
     Param()
-    Invoke-Salesforce -Command "npm run test:unit:watch"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command "npm run test:unit:watch" @commonParams
 }
 
 #endregion

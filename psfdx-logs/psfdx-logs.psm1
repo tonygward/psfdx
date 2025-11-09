@@ -68,7 +68,8 @@ function Watch-SalesforceDebugLogs {
     if ($SkipTraceFlag) { $command += " --skip-trace-flag" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --color"
-    return Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    return Invoke-Salesforce -Command $command @commonParams
 }
 
 function Select-SalesforceDebugLogs {
@@ -77,7 +78,8 @@ function Select-SalesforceDebugLogs {
     $command = "sf apex log list"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $result = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -109,12 +111,14 @@ function Get-SalesforceDebugLogs {
     if ($Last) { $command += " --number $Last" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
 
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
     if (-not $Raw) {
-        return Invoke-Salesforce -Command $command
+        return Invoke-Salesforce -Command $command @commonParams
     }
 
     $command += " --json"
-    $response = Invoke-Salesforce -Command $command
+    $response = Invoke-Salesforce -Command $command @commonParams
     $response = $response | ConvertFrom-Json
     if ($response.status -ne 0) {
         throw "Error retrieving log: $($response.message)"
@@ -224,8 +228,8 @@ function Get-SalesforceFlowInterviews {
     # Execute via sf data query
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-
-    $raw = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $raw = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
@@ -256,7 +260,8 @@ function Get-SalesforceLoginHistory {
     # Query LoginHistory
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $raw = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $raw = Invoke-Salesforce -Command $command @commonParams
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
 
     # No LoginHistory records found
@@ -336,8 +341,8 @@ function Select-SalesforceEventFiles {
 
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-
-    $raw = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $raw = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
@@ -350,7 +355,8 @@ function Get-SalesforceEventFile {
     $apiVersion = (Get-SalesforceLatestApiVersion -TargetOrg $TargetOrg)
     $command = "sf api request rest /services/data/$apiVersion/sobjects/EventLogFile/$Id/Logfile"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 function Export-SalesforceEventFile {
@@ -411,8 +417,8 @@ function Export-SalesforceEventFiles {
 
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-
-    $raw = Invoke-Salesforce -Command $command
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $raw = Invoke-Salesforce -Command $command @commonParams
     $records = Show-SalesforceResult -Result $raw -ReturnRecords
     if (-not $records -or (($records | Measure-Object).Count -eq 0)) {
         Write-Verbose "No EventLogFile records found"

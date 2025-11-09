@@ -1,0 +1,16 @@
+{
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/.sfdx": true
+  },
+  "triggerTaskOnSave.tasks": {
+    "apex deploy and test": [
+      "*.psd1",
+      "*.psm1",
+      "*.ps1",
+    ]
+  },
+  "triggerTaskOnSave.selectedTask": "Pester: Run all tests",
+  "xml.preferences.showSchemaDocumentationType": "none"
+}

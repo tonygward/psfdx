@@ -11,7 +11,8 @@
         'Get-SalesforceDeployFailures',
         'Get-SalesforceTestFailure',
         'Get-SalesforceApexCliTestParams',
-        'ConvertTo-SalesforceCliApexTestParams'
+        'ConvertTo-SalesforceCliApexTestParams',
+        'Get-PsfdxCommonParameterSplat'
     )
     CmdletsToExport = @()
     AliasesToExport = @()
