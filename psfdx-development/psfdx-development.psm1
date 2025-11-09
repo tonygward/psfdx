@@ -618,7 +618,6 @@ function Test-SalesforceApexPath {
     return $true
 }
 
-
 function Watch-SalesforceApexAction {
     [CmdletBinding()]
     Param(
@@ -644,7 +643,9 @@ function Watch-SalesforceApexAction {
         $command = "sf project deploy start"
         $command += " --metadata ${type}:${name}"
         $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-        $command += Get-SalesforceApexCliTestParams @commonParams -SourceDir $FilePath -TestLevel ReferencedTests
+        $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
+        $testLevel = if ($testClassNames -and $testClassNames.Count -gt 0) { 'SpecificTests' } else { 'NoTests' }
+        $command += Get-SalesforceApexCliTestParams @commonParams -TestLevel $testLevel -Tests $testClassNames
         $command += " --ignore-warnings"
         $command += " --json"
         $deployJson = Invoke-Salesforce -Command $command @commonParams
