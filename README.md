@@ -44,7 +44,10 @@ Connect-Salesforce -Sandbox
 ```
 A web browser will appear, login to Salesforce as you would normally.
 
-**-Verbose** switch reveals the underlying Salesfore CLI
+If you enable Verbose messages
+```$VerbosePreference = "Continue```
+
+Then **-Verbose** switch reveals the Salesforce CLI commands
 ![Connect-Salesforce with Verbose](images/connect-verbose.png)
 
 **2. Create and use a Salesforce Alias**
