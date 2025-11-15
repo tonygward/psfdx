@@ -405,7 +405,8 @@ function Watch-SalesforceApex {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $ProjectFolder,
-        [Parameter(Mandatory = $false)][int] $CooldownMilliseconds = 300
+        [Parameter(Mandatory = $false)][int] $CooldownMilliseconds = 300,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors
     )
 
     # Default to Current Folder
@@ -433,7 +434,7 @@ function Watch-SalesforceApex {
 
             # On File Changed
             try {
-                Invoke-SalesforceApexChangeEvent -ApexChangeEvent $apexChangeEvent -ProjectFolder $watcherInfo.Project -RecentEvents $recentEvents -CooldownMilliseconds $CooldownMilliseconds
+                Invoke-SalesforceApexChangeEvent -ApexChangeEvent $apexChangeEvent -ProjectFolder $watcherInfo.Project -RecentEvents $recentEvents -CooldownMilliseconds $CooldownMilliseconds -IgnoreErrors:$IgnoreErrors.IsPresent
             } finally {
                 Remove-Event -EventIdentifier $apexChangeEvent.EventIdentifier -ErrorAction SilentlyContinue
             }
@@ -563,21 +564,18 @@ function Invoke-SalesforceApexChangeEvent {
         [Parameter(Mandatory = $true)][System.Management.Automation.PSEventArgs] $ApexChangeEvent,
         [Parameter(Mandatory = $true)][string] $ProjectFolder,
         [Parameter(Mandatory = $true)][System.Collections.Hashtable] $RecentEvents,
-        [Parameter(Mandatory = $true)][int] $CooldownMilliseconds
+        [Parameter(Mandatory = $true)][int] $CooldownMilliseconds,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors
     )
 
     $paths = Get-SalesforceApexEventPaths -EventArgs $ApexChangeEvent.SourceEventArgs
 
     foreach ($path in $paths) {
-        if (-not (Test-SalesforceApexPath -Path $path -Extensions @('.cls', '.trigger'))) {
-            continue
-        }
-
         if (-not (Wait-SalesforceApexCooldown -Path $path -RecentEvents $RecentEvents -CooldownMilliseconds $CooldownMilliseconds)) {
             continue
         }
 
-        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $ProjectFolder | Out-Null
+        Watch-SalesforceApexAction -FilePath $path -ProjectFolder $ProjectFolder -IgnoreErrors:$IgnoreErrors.IsPresent | Out-Null
         $RecentEvents[$path] = (Get-Date).AddMilliseconds($CooldownMilliseconds)
     }
 }
@@ -622,7 +620,8 @@ function Watch-SalesforceApexAction {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $FilePath,
-        [Parameter(Mandatory = $false)][string] $ProjectFolder
+        [Parameter(Mandatory = $false)][string] $ProjectFolder,
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors
     )
 
     try {
@@ -647,6 +646,7 @@ function Watch-SalesforceApexAction {
         $testLevel = if ($testClassNames -and $testClassNames.Count -gt 0) { 'SpecificTests' } else { 'NoTests' }
         $command += Get-SalesforceApexCliTestParams @commonParams -TestLevel $testLevel -Tests $testClassNames
         $command += " --ignore-warnings"
+        if ($IgnoreErrors) { $command += " --ignore-errors" }
         $command += " --json"
         $deployJson = Invoke-Salesforce -Command $command @commonParams
         Show-SalesforceResult -Result $deployJson
@@ -656,7 +656,7 @@ function Watch-SalesforceApexAction {
             $successMessage += " and successfully ran tests (" + ($testClassNames -join ', ') + ")"
         }
         $successMessage += "."
-        Write-Host $successMessage -ForegroundColor Cyan
+        Write-Host $successMessage -ForegroundColor Green
     }
     catch {
         Write-Error $_
@@ -872,4 +872,3 @@ function Watch-SalesforceJest {
 }
 
 #endregion
-
