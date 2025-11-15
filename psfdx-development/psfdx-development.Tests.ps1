@@ -253,9 +253,9 @@ Describe 'Watch-SalesforceApexAction' {
                 }
                 Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @('SampleTest') }
 
-                $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName
+                $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName -IgnoreErrors
 
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexClass:Sample*') -and ($Command -like '*--tests SampleTest*') -and ($Command -like '*--test-level RunSpecifiedTests*') }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexClass:Sample*') -and ($Command -like '*--tests SampleTest*') -and ($Command -like '*--test-level RunSpecifiedTests*') -and ($Command -like '*--ignore-errors*') }
                 $result.command | Should -Be 'deploy'
             }
             finally {
@@ -293,7 +293,7 @@ Describe 'Watch-SalesforceApexAction' {
                 Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @() }
 
                 $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexTrigger:Sample*') -and ($Command -notlike '*--tests*') }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexTrigger:Sample*') -and ($Command -notlike '*--tests*') -and ($Command -notlike '*--ignore-errors*') }
                 $result.command | Should -Be 'deploy'
             }
             finally {
