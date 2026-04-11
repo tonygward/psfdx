@@ -485,15 +485,7 @@ function Get-SalesforceApexEventPaths {
         [Parameter(Mandatory = $true)][System.IO.FileSystemEventArgs] $EventArgs
     )
 
-    $paths = @()
-    if ($EventArgs -is [System.IO.RenamedEventArgs]) {
-        $paths += $EventArgs.FullPath
-    }
-    else {
-        $paths += $EventArgs.FullPath
-    }
-
-    return $paths
+    return @($EventArgs.FullPath)
 }
 
 function Register-SalesforceApexWatcherEvents {
@@ -766,7 +758,7 @@ function New-SalesforceApexClass {
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string]
-            [ValidateSet('DefaultApexClass', 'ApexUnitTest', 'ApexUnitTest', 'InboundEmailService')]
+            [ValidateSet('DefaultApexClass', 'ApexUnitTest', 'InboundEmailService')]
             $Template = 'DefaultApexClass',
         [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/classes'
     )
