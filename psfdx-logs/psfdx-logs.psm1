@@ -406,7 +406,7 @@ function Export-SalesforceEventFiles {
 
     # Build SOQL for Event Monitoring (EventLogFile)
     $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate"
-    $query = " FROM EventLogFile"
+    $query += " FROM EventLogFile"
     $where = @()
     if ($EventType) { $where += "EventType = '$EventType'" }
     if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }

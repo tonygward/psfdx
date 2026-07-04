@@ -142,10 +142,7 @@ Describe 'Export-SalesforceEventFiles' {
             Export-SalesforceEventFiles -EventType 'Login' -Limit 2 -TargetOrg 'me' -Verbose | Out-Null
             Assert-MockCalled Export-SalesforceEventFile -Times 1
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like 'sf data query --query *FROM EventLogFile*') -and
-                ($Command -like "*EventType = 'Login'*") -and
-                ($Command -like '* LIMIT 2*') -and
-                ($Command -like '* --target-org me*')
+                $Command -eq 'sf data query --query "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = ''Login'' ORDER BY LogDate DESC LIMIT 2" --result-format json --target-org me'
             }
         }
     }
