@@ -208,7 +208,9 @@ function Get-SalesforceSandboxRefreshStatus {
     $lastRefreshed = $null
     if ($processRecords.Count -gt 0 -and $processRecords[0].EndDate) {
         try {
-            $lastRefreshed = [datetime]::Parse($processRecords[0].EndDate)
+            # Parse with the invariant culture: the CLI always returns ISO 8601, which a
+            # culture like de-DE or ar-SA would otherwise misread.
+            $lastRefreshed = [datetime]::Parse($processRecords[0].EndDate, [System.Globalization.CultureInfo]::InvariantCulture)
         } catch {
             Write-Warning "Unable to parse sandbox EndDate '$($processRecords[0].EndDate)' as datetime."
         }

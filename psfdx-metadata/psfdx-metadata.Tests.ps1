@@ -351,5 +351,55 @@ Describe 'Build-SalesforceQuery' {
             Mock Describe-SalesforceFields { $null }
             Build-SalesforceQuery -ObjectName 'Account' | Should -Be ''
         }
+        It 'returns empty string rather than invalid SOQL when every field is excluded' {
+            Mock Describe-SalesforceFields { @([pscustomobject]@{ name = 'Name' }) }
+            Build-SalesforceQuery -ObjectName 'Account' -ExcludeNameFields | Should -Be ''
+        }
+    }
+}
+
+Describe 'Retrieve-SalesforceComponent without -Type' {
+    InModuleScope 'psfdx-metadata' {
+        It 'throws instead of emitting a dangling --metadata flag' {
+            Mock Invoke-Salesforce {}
+            { Retrieve-SalesforceComponent -Name 'MyClass' } |
+                Should -Throw -ExpectedMessage 'Specify -Type when retrieving a component.'
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+    }
+}
+
+Describe 'Metadata type valid-set caching' {
+    InModuleScope 'psfdx-metadata' {
+        AfterEach { Clear-SalesforceMetadataTypeCache }
+        It 'queries the org once and serves later binds from cache' {
+            Clear-SalesforceMetadataTypeCache
+            Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[{"xmlName":"ApexClass"}]}}' }
+
+            $first  = Get-SalesforceMetadataTypeValidValues
+            $second = Get-SalesforceMetadataTypeValidValues
+
+            $first | Should -Contain 'ApexClass'
+            $second | Should -Contain 'ApexClass'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+        }
+        It 're-queries after the cache is cleared' {
+            Clear-SalesforceMetadataTypeCache
+            Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[{"xmlName":"ApexClass"}]}}' }
+
+            Get-SalesforceMetadataTypeValidValues | Out-Null
+            Clear-SalesforceMetadataTypeCache
+            Get-SalesforceMetadataTypeValidValues | Out-Null
+
+            Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly
+        }
+        It 'always offers CustomField and ValidationRule' {
+            Clear-SalesforceMetadataTypeCache
+            Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[]}}' }
+            $values = Get-SalesforceMetadataTypeValidValues
+            $values | Should -Contain 'CustomField'
+            $values | Should -Contain 'ValidationRule'
+            $values | Should -Contain 'ApexClass'
+        }
     }
 }

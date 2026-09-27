@@ -239,6 +239,7 @@ function Repair-SalesforceConnections {
 
 function Get-SalesforceAlias {
     [CmdletBinding()]
+    Param()
     $command = "sf alias list --json"
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -Command $command @commonParams
@@ -283,8 +284,13 @@ function Get-SalesforceDataStorage {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DataStorageMB"
-    $values | Add-Member -NotePropertyName InUse -NotePropertyValue ($values.max + ($values.remaining * -1))
-    $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
+    if ($null -eq $values) {
+        Write-Verbose "No DataStorageMB limit reported for this org"
+        return $null
+    }
+    $inUse = $values.max + ($values.remaining * -1)
+    $values | Add-Member -NotePropertyName InUse -NotePropertyValue $inUse
+    $values | Add-Member -NotePropertyName Usage -NotePropertyValue (Get-SalesforceUsagePercentage -InUse $inUse -Max $values.max)
     return $values
 }
 
@@ -292,8 +298,23 @@ function Get-SalesforceApiUsage {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DailyApiRequests"
-    $values | Add-Member -NotePropertyName Usage -NotePropertyValue (($values.max + ($values.remaining * -1)) / $values.max).ToString('P')
+    if ($null -eq $values) {
+        Write-Verbose "No DailyApiRequests limit reported for this org"
+        return $null
+    }
+    $inUse = $values.max + ($values.remaining * -1)
+    $values | Add-Member -NotePropertyName Usage -NotePropertyValue (Get-SalesforceUsagePercentage -InUse $inUse -Max $values.max)
     return $values
+}
+
+function Get-SalesforceUsagePercentage {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowNull()][System.Nullable[double]] $InUse,
+        [Parameter(Mandatory = $true)][AllowNull()][System.Nullable[double]] $Max
+    )
+    if ((-not $Max) -or ($Max -eq 0)) { return $null }
+    return ($InUse / $Max).ToString('P')
 }
 
 #endregion
@@ -326,9 +347,16 @@ function Select-SalesforceRecords {
     $command += " --result-format $ResultFormat"
     if ($OutputFile) { $command += " --output-file $OutputFile" }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams | ConvertFrom-Json
+    $result = Invoke-Salesforce -Command $command @commonParams
+
+    # csv and human output are not JSON, so hand them back untouched
+    if ($ResultFormat -ne 'json') {
+        return $result
+    }
+
+    $result = $result | ConvertFrom-Json
     if ($result.status -ne 0) {
-        $result
+        Write-Debug ($result | ConvertTo-Json -Depth 10)
         throw $result.message
     }
     # Exclude Salesforce's built-in 'attributes' metadata from each row
@@ -469,10 +497,14 @@ function Get-SalesforceLatestApiVersion {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $versions = Get-SalesforceApiVersions -TargetOrg $TargetOrg
-    if ($versions.Count -eq 0) { return $null }
-    $latest = $versions | Sort-Object -Property version -Descending | Select-Object
-    $version = $latest[0].version
-    return "v$version"
+    if (-not $versions -or (@($versions).Count -eq 0)) { return $null }
+    # Sort numerically: a string sort ranks '99.0' above '100.0'
+    $latest = @($versions) |
+        Where-Object { $_.version } |
+        Sort-Object -Property { [double] $_.version } -Descending |
+        Select-Object -First 1
+    if (-not $latest) { return $null }
+    return "v$($latest.version)"
 }
 
 #endregion

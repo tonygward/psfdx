@@ -1,5 +1,26 @@
+function Test-SalesforceApexTestReference {
+    <# Decides whether a test class exercises $ClassName. A test counts as referencing the
+       class when it names it as a whole word, or when it follows the usual naming
+       convention (<Class>Test / <Class>Tests / Test<Class>). Matching on a bare substring
+       is wrong: 'AccountHelperTest' would then look like a test for 'Account'. #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path,
+        [Parameter(Mandatory = $true)][string] $ClassName
+    )
+
+    $escaped = [regex]::Escape($ClassName)
+
+    $testClassName = [System.IO.Path]::GetFileNameWithoutExtension($Path)
+    if ($testClassName -imatch "^(Test$escaped|$escaped(Test|Tests))$") {
+        return $true
+    }
+
+    return [bool](Select-String -Path $Path -Pattern "\b$escaped\b" -Quiet)
+}
+
 function Get-SalesforceApexCliTestParams {
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
+    [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $SourceDir,
         [Parameter(Mandatory = $false)][ValidateSet(
@@ -11,10 +32,6 @@ function Get-SalesforceApexCliTestParams {
             'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
         [Parameter(Mandatory = $false)][string[]] $Tests
     )
-
-    if (-not $PSCmdlet.ShouldProcess('Salesforce Apex test discovery', 'Resolve CLI test parameters')) {
-        return ""
-    }
 
     $value = ""
     $testLevelMap = @{
@@ -50,14 +67,11 @@ function Get-SalesforceApexCliTestParams {
             throw "Unable to determine directory for '$SourceDir'."
         }
 
-        $escapedClassName = [regex]::Escape($className)
-        $classPattern = "\b$escapedClassName\b"
-
         $Tests = Get-ChildItem -LiteralPath $searchRoot.FullName -Filter '*.cls' -File -ErrorAction SilentlyContinue |
             Where-Object {
                 $_.FullName -ne $item.FullName -and
                 (Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet) -and
-                (Select-String -Path $_.FullName -Pattern $classPattern -Quiet)
+                (Test-SalesforceApexTestReference -Path $_.FullName -ClassName $className)
             } |
             ForEach-Object { $_.BaseName } |
             Sort-Object -Unique

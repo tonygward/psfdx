@@ -88,9 +88,19 @@ function New-SalesforceProject {
     $result = Show-SalesforceResult -Result $result
 
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
-        $projectFolder = Join-Path -Path $result.outputDir -ChildPath $Name
-        New-Item -Path $projectFolder -Name ".sfdx" -ItemType Directory | Out-Null
-        Set-SalesforceTargetOrg -DefaultUserName $DefaultUserName -ProjectFolder $projectFolder
+        # 'sf config set target-org' writes to whichever project directory it runs in,
+        # so set it from inside the newly generated project rather than passing a folder.
+        $outputRoot = if ($result.outputDir) { $result.outputDir } else { (Get-Location).Path }
+        $projectFolder = Join-Path -Path $outputRoot -ChildPath $Name
+        if (-not (Test-Path -LiteralPath $projectFolder -PathType Container)) {
+            throw "Generated project folder '$projectFolder' does not exist."
+        }
+        Push-Location -LiteralPath $projectFolder
+        try {
+            Set-SalesforceTargetOrg -Value $DefaultUserName @commonParams | Out-Null
+        } finally {
+            Pop-Location
+        }
     }
     return $result
 }
@@ -324,16 +334,22 @@ function Test-SalesforceApex {
     $result = Invoke-Salesforce -Command $command @commonParams
     $result = $result | ConvertFrom-Json
 
+    $summary = $result.result.summary
+    if ($null -eq $summary) {
+        Write-Debug ($result | ConvertTo-Json -Depth 10)
+        throw "Salesforce CLI returned no test summary. $($result.message)".Trim()
+    }
+
     $result.result.tests
-    if ($result.result.summary.outcome -ne 'Passed') {
-        throw ($result.result.summary.failing.tostring() + " Tests Failed")
+    if ($summary.outcome -ne 'Passed') {
+        throw ("$($summary.failing) Tests Failed")
     }
 
     if ((-not $CodeCoverage) -and (-not $CodeCoverageDetailed)) {
         return
     }
 
-    [int]$codeCoverage = ($result.result.summary.testRunCoverage -replace '%')
+    [int]$codeCoverage = ($summary.testRunCoverage -replace '%')
     if ($codeCoverage -lt 75) {
         $result.result.coverage.coverage
         throw "Insufficient code coverage ${codeCoverage}%"
@@ -659,10 +675,13 @@ function Get-SalesforceType {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $FileName)
 
-    if ($FileName.EndsWith(".cls")) {
+    if ([string]::IsNullOrWhiteSpace($FileName)) {
+        return ""
+    }
+    if ($FileName.EndsWith(".cls", [System.StringComparison]::OrdinalIgnoreCase)) {
         return "ApexClass"
     }
-    if ($FileName.EndsWith(".trigger")) {
+    if ($FileName.EndsWith(".trigger", [System.StringComparison]::OrdinalIgnoreCase)) {
         return "ApexTrigger"
     }
     return ""
@@ -672,7 +691,12 @@ function Get-SalesforceName {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $FileName)
 
-    $name = (Get-Item $FileName).Basename
+    if ([string]::IsNullOrWhiteSpace($FileName)) {
+        return ""
+    }
+    # Parse the path rather than calling Get-Item: the watcher also fires for files that
+    # have already been renamed or deleted by the time this runs.
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($FileName)
     Write-Verbose ("Apex Name: " + $name)
     return $name
 }
@@ -731,7 +755,7 @@ function Get-SalesforceApexTestClassNamesFromFile {
     $testFiles = Get-ChildItem -Path $rootFolder -Recurse -Filter '*.cls' -File -ErrorAction SilentlyContinue
     $matchingTests = $testFiles | Where-Object {
         (Select-String -Path $_.FullName -Pattern '@isTest' -SimpleMatch -Quiet) -and
-        (Select-String -Path $_.FullName -Pattern $className -SimpleMatch -Quiet)
+        (Test-SalesforceApexTestReference -Path $_.FullName -ClassName $className)
     }
 
     $matchingTests | ForEach-Object {
@@ -760,7 +784,9 @@ function New-SalesforceApexClass {
         [Parameter(Mandatory = $false)][string]
             [ValidateSet('DefaultApexClass', 'ApexUnitTest', 'InboundEmailService')]
             $Template = 'DefaultApexClass',
-        [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/classes'
+        # No default: when omitted, --output-dir is left off so the CLI picks the
+        # project's own default package directory.
+        [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
     $command = "sf apex generate class"
     $command += " --name $Name"
@@ -783,13 +809,15 @@ function New-SalesforceApexTrigger {
             [ValidateSet('before insert', 'before update', 'before delete', 'after insert', 'after update', 'after delete', 'after undelete')]
             $Event = 'before insert',
         [Parameter(Mandatory = $false)][string] $SObject,
-        [Parameter(Mandatory = $false)][string] $OutputDirectory = 'force-app/main/default/triggers'
+        # No default: when omitted, --output-dir is left off so the CLI picks the
+        # project's own default package directory.
+        [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
     $command = "sf apex generate trigger"
     $command += " --name $Name"
     $command += " --event $Event"
     if ($SObject) { $command += " --sobject $SObject" }
-        if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
+    if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
         }

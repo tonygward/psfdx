@@ -375,6 +375,97 @@ Describe 'Get-SalesforceApexTestClassNamesFromFile' {
     }
 }
 
+Describe 'Test-SalesforceApexTestReference' {
+    # Lives in psfdx-shared, which is imported into the psfdx-development module scope
+    InModuleScope 'psfdx-development' {
+        It 'does not treat a substring match as a reference' {
+            # 'AccountHelperTest' contains 'Account' but tests AccountHelper, not Account
+            $dir = Join-Path $TestDrive 'classes'
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            $file = Join-Path $dir 'AccountHelperTest.cls'
+            Set-Content -Path $file -Value '@isTest public class AccountHelperTest { AccountHelper h; }' -Encoding UTF8
+
+            Test-SalesforceApexTestReference -Path $file -ClassName 'Account'       | Should -BeFalse
+            Test-SalesforceApexTestReference -Path $file -ClassName 'AccountHelper' | Should -BeTrue
+        }
+
+        It 'matches the <Class>Test / <Class>Tests / Test<Class> naming conventions' {
+            $dir = Join-Path $TestDrive 'conv'
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            foreach ($name in 'SampleTest', 'SampleTests', 'TestSample') {
+                $file = Join-Path $dir "$name.cls"
+                Set-Content -Path $file -Value "@isTest public class $name {}" -Encoding UTF8
+                Test-SalesforceApexTestReference -Path $file -ClassName 'Sample' | Should -BeTrue -Because "$name follows the convention"
+            }
+        }
+
+        It 'matches a whole-word reference in the test body' {
+            $dir = Join-Path $TestDrive 'body'
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+            $file = Join-Path $dir 'SomeOtherSuite.cls'
+            Set-Content -Path $file -Value '@isTest public class SomeOtherSuite { Order o = Order.build(); }' -Encoding UTF8
+            Test-SalesforceApexTestReference -Path $file -ClassName 'Order'    | Should -BeTrue
+            Test-SalesforceApexTestReference -Path $file -ClassName 'OrderXyz' | Should -BeFalse
+        }
+    }
+}
+
+Describe 'Get-SalesforceApexTestClassNamesFromFile false positives' {
+    InModuleScope 'psfdx-development' {
+        It 'excludes a test class that merely shares a name prefix' {
+            $root = Join-Path $TestDrive 'force-app'
+            $classes = Join-Path $root 'classes'
+            New-Item -ItemType Directory -Path $classes -Force | Out-Null
+            Set-Content -Path (Join-Path $classes 'Account.cls') -Value 'public class Account {}' -Encoding UTF8
+            Set-Content -Path (Join-Path $classes 'AccountHelperTest.cls') -Value '@isTest public class AccountHelperTest { AccountHelper h; }' -Encoding UTF8
+
+            $result = Get-SalesforceApexTestClassNamesFromFile -FilePath (Join-Path $classes 'Account.cls')
+            @($result) | Should -Not -Contain 'AccountHelperTest'
+        }
+    }
+}
+
+Describe 'Watcher helpers tolerate missing files' {
+    InModuleScope 'psfdx-development' {
+        It 'Get-SalesforceType returns empty for a null file name' {
+            Get-SalesforceType -FileName $null | Should -Be ''
+        }
+        It 'Get-SalesforceName parses the path without touching the filesystem' {
+            # The watcher also fires for files already renamed or deleted
+            Get-SalesforceName -FileName (Join-Path $TestDrive 'never-existed\Deleted.cls') | Should -Be 'Deleted'
+        }
+    }
+}
+
+Describe 'Test-SalesforceApex with an unusable CLI response' {
+    InModuleScope 'psfdx-development' {
+        It 'reports a missing summary instead of a null method call' {
+            Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
+            { Test-SalesforceApex -ClassName 'Foo' -ErrorAction Stop } |
+                Should -Throw -ExpectedMessage '*no test summary*'
+        }
+    }
+}
+
+Describe 'New-SalesforceProject -DefaultUserName' {
+    InModuleScope 'psfdx-development' {
+        It 'sets the target org by value from inside the generated project' {
+            $work = Join-Path $TestDrive 'work'
+            $project = Join-Path $work 'DemoProj'
+            New-Item -ItemType Directory -Path $project -Force | Out-Null
+
+            Mock Invoke-Salesforce { '{"status":0,"result":{"outputDir":"' + ($work -replace '\\', '\\') + '"}}' }
+            Mock Set-SalesforceTargetOrg { }
+
+            New-SalesforceProject -Name 'DemoProj' -DefaultUserName 'me@example.com' | Out-Null
+
+            # -Value is the only parameter Set-SalesforceTargetOrg accepts; the old code
+            # passed -DefaultUserName/-ProjectFolder and always failed to bind.
+            Assert-MockCalled Set-SalesforceTargetOrg -Times 1 -ParameterFilter { $Value -eq 'me@example.com' }
+        }
+    }
+}
+
 Describe 'Get-SalesforceApexClass' {
     InModuleScope 'psfdx-development' {
         BeforeEach {

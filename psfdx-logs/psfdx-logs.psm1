@@ -172,27 +172,34 @@ function Convert-SalesforceDebugLog {
         [Parameter(ValueFromPipeline, Mandatory = $true)][string] $Log
     )
 
-    Write-Warning "Function still in Development"
-
-    $results = @()
-    $lines = ($Log -split "`r?`n") | Select-Object -Skip 1 # Skip Header
-    foreach ($line in $lines) {
-        if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        $statements = $line.Split('|')
-
-        $result = New-Object -TypeName PSObject
-        $dt = if ($statements.Count -ge 1) { ($statements[0]).Trim() } else { $null }
-        $lt = if ($statements.Count -ge 2) { ($statements[1]).Trim() } else { $null }
-        $st = if ($statements.Count -ge 3) { ($statements[2]).Trim() } else { $null }
-        $de = if ($statements.Count -ge 4) { ($statements[3]).Trim() } else { $null }
-        foreach ($v in @('dt','lt','st','de')) { if ((Get-Variable $v -ValueOnly) -eq 'NULL') { Set-Variable -Name $v -Value $null } }
-        $result | Add-Member -MemberType NoteProperty -Name 'DateTime' -Value $dt
-        $result | Add-Member -MemberType NoteProperty -Name 'LogType' -Value $lt
-        if ($st -ne $null -and $st -ne '') { $result | Add-Member -MemberType NoteProperty -Name 'SubType' -Value $st }
-        if ($de -ne $null -and $de -ne '') { $result | Add-Member -MemberType NoteProperty -Name 'Detail' -Value $de }
-        $results += $result
+    begin {
+        Write-Warning "Function still in Development"
     }
-    return $results
+
+    process {
+        $results = @()
+        $lines = ($Log -split "`r?`n") | Select-Object -Skip 1 # Skip Header
+        foreach ($line in $lines) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            $statements = $line.Split('|')
+
+            $result = New-Object -TypeName PSObject
+            $dt = if ($statements.Count -ge 1) { ($statements[0]).Trim() } else { $null }
+            $lt = if ($statements.Count -ge 2) { ($statements[1]).Trim() } else { $null }
+            $st = if ($statements.Count -ge 3) { ($statements[2]).Trim() } else { $null }
+            $de = if ($statements.Count -ge 4) { ($statements[3]).Trim() } else { $null }
+            if ($dt -eq 'NULL') { $dt = $null }
+            if ($lt -eq 'NULL') { $lt = $null }
+            if ($st -eq 'NULL') { $st = $null }
+            if ($de -eq 'NULL') { $de = $null }
+            $result | Add-Member -MemberType NoteProperty -Name 'DateTime' -Value $dt
+            $result | Add-Member -MemberType NoteProperty -Name 'LogType' -Value $lt
+            if (($null -ne $st) -and ($st -ne '')) { $result | Add-Member -MemberType NoteProperty -Name 'SubType' -Value $st }
+            if (($null -ne $de) -and ($de -ne '')) { $result | Add-Member -MemberType NoteProperty -Name 'Detail' -Value $de }
+            $results += $result
+        }
+        return $results
+    }
 }
 
 #endregion
@@ -202,7 +209,7 @@ function Convert-SalesforceDebugLog {
 function Get-SalesforceFlowInterviews {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidateSet('Error','Paused','Running', 'Completed', 'VersionPaused', 'Autosaved', 'Expired', 'All')] [string] $Type = 'All',
+        [Parameter(Mandatory = $false)][ValidateSet('Error','Paused','Running', 'Completed', 'VersionPaused', 'Autosaved', 'Expired', 'All')] [string] $Type = 'All',
         [Parameter(Mandatory = $false)][datetime] $After,
         [Parameter(Mandatory = $false)][int] $Limit = 200,
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -252,7 +259,8 @@ function Get-SalesforceLoginHistory {
     $conditions = @()
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
-    if ($Username) { $conditions += ("Username = '" + ($Username -replace "'", "''") + "'") }
+    # LoginHistory has no Username column, so filter through a User subquery on UserId
+    if ($Username) { $conditions += ("UserId IN (SELECT Id FROM User WHERE Username = '" + ($Username -replace "'", "''") + "')") }
     if ($conditions.Count -gt 0) { $query += (" WHERE " + ($conditions -join " AND ")) }
     $query += " ORDER BY LoginTime DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
@@ -444,11 +452,24 @@ function Export-SalesforceEventFiles {
 function Out-Notepad {
     [CmdletBinding()]
     Param([Parameter(ValueFromPipeline, Mandatory = $true)][string] $Content)
-    $filename = New-TemporaryFile
-    $Content | Out-File -FilePath $filename -Encoding utf8
-    if ($IsWindows) {
+
+    process {
+        # $IsWindows does not exist on Windows PowerShell 5.1, where it would silently
+        # evaluate to $null and skip the launch entirely.
+        if (-not (Test-SalesforceIsWindows)) {
+            Write-Verbose "Out-Notepad is only supported on Windows"
+            return
+        }
+        $filename = New-TemporaryFile
+        $Content | Out-File -FilePath $filename -Encoding utf8
         Start-Process -FilePath 'notepad' -ArgumentList $filename | Out-Null
     }
+}
+
+function Test-SalesforceIsWindows {
+    [CmdletBinding()]
+    Param()
+    return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
 }
 
 #endregion

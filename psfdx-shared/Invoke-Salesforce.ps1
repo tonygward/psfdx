@@ -24,14 +24,14 @@ function Get-PsfdxCommonParameterSplat {
 }
 
 function Invoke-Salesforce {
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    # Deliberately does not declare SupportsShouldProcess: callers pipe the return value
+    # straight into Show-SalesforceResult, whose -Result parameter is Mandatory, so
+    # suppressing the call would make every cmdlet fail on a null argument instead of
+    # performing a dry run. Declare ShouldProcess on the public cmdlets instead.
+    [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Command
     )
-
-    if (-not $PSCmdlet.ShouldProcess($Command, 'Invoke Salesforce CLI command')) {
-        return
-    }
 
     Write-Verbose $Command
     return Invoke-Expression -Command $Command

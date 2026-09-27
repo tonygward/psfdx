@@ -174,6 +174,50 @@ Describe 'Get-SalesforceLoginHistory' {
     }
 }
 
+Describe 'Get-SalesforceLoginHistory -Username filter' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0}' }
+            Mock Show-SalesforceResult { @() }
+            Mock Get-SalesforceUsers { @() }
+        }
+        It 'filters through a User subquery because LoginHistory has no Username column' {
+            Get-SalesforceLoginHistory -Username "o'brien@example.com" | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Command -like "*UserId IN (SELECT Id FROM User WHERE Username = 'o''brien@example.com')*") -and
+                ($Command -notlike '*LoginHistory WHERE Username*')
+            }
+        }
+    }
+}
+
+Describe 'Convert-SalesforceDebugLog pipeline input' {
+    It 'processes every piped log, not just the last one' {
+        $logs = @(
+            "header`n2024-01-01T00:00:00.000Z|USER_DEBUG|NULL|First",
+            "header`n2024-01-01T00:00:01.000Z|USER_DEBUG|NULL|Second",
+            "header`n2024-01-01T00:00:02.000Z|USER_DEBUG|NULL|Third"
+        )
+        $rows = $logs | Convert-SalesforceDebugLog -WarningAction SilentlyContinue
+        @($rows).Count | Should -Be 3
+        $rows.Detail | Should -Be @('First', 'Second', 'Third')
+    }
+
+    It 'maps the literal NULL placeholder to $null' {
+        $rows = Convert-SalesforceDebugLog -Log "header`n2024-01-01T00:00:00.000Z|USER_DEBUG|NULL|Only" -WarningAction SilentlyContinue
+        $rows.PSObject.Properties.Match('SubType').Count | Should -Be 0
+    }
+}
+
+Describe 'Get-SalesforceFlowInterviews' {
+    It 'does not make -Type mandatory, so its default can apply' {
+        $mandatory = (Get-Command Get-SalesforceFlowInterviews).Parameters['Type'].Attributes |
+            Where-Object { $_ -is [Parameter] } |
+            ForEach-Object { $_.Mandatory }
+        $mandatory | Should -Not -Contain $true
+    }
+}
+
 Describe 'Get-SalesforceLoginFailures' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {

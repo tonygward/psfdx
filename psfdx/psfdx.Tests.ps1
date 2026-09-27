@@ -176,5 +176,87 @@ Describe 'psfdx module' {
                 $out.ok | Should -BeTrue
             }
         }
+
+        Context 'Select-SalesforceRecords non-JSON result formats' {
+            It 'returns csv output untouched instead of parsing it as JSON' {
+                Mock Invoke-Salesforce { "Id,Name`n001,Acme" } -ModuleName $module.Name
+                $out = Select-SalesforceRecords -Query 'SELECT Id FROM Account' -ResultFormat csv
+                $out | Should -Match 'Acme'
+            }
+
+            It 'returns human output untouched instead of parsing it as JSON' {
+                Mock Invoke-Salesforce { "ID   NAME`n001  Acme" } -ModuleName $module.Name
+                $out = Select-SalesforceRecords -Query 'SELECT Id FROM Account' -ResultFormat human
+                $out | Should -Match 'Acme'
+            }
+
+            It 'throws on a failed json result without first emitting the raw payload' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"MALFORMED_QUERY"}' } -ModuleName $module.Name
+                $emitted = @()
+                try { $emitted = @(Select-SalesforceRecords -Query 'bad' -ErrorAction Stop) } catch { }
+                $emitted.Count | Should -Be 0
+            }
+        }
+
+        Context 'Get-SalesforceLatestApiVersion' {
+            It 'compares versions numerically, not as strings' {
+                Mock Get-SalesforceApiVersions {
+                    @(
+                        [pscustomobject]@{ version = '99.0' },
+                        [pscustomobject]@{ version = '100.0' },
+                        [pscustomobject]@{ version = '64.0' }
+                    )
+                } -ModuleName $module.Name
+                Get-SalesforceLatestApiVersion | Should -Be 'v100.0'
+            }
+
+            It 'returns null when no versions are reported' {
+                Mock Get-SalesforceApiVersions { @() } -ModuleName $module.Name
+                Get-SalesforceLatestApiVersion | Should -BeNullOrEmpty
+            }
+        }
+
+        Context 'Limit helpers with unusable data' {
+            It 'returns null when the DataStorageMB row is absent' {
+                Mock Get-SalesforceLimits { @([pscustomobject]@{ Name = 'Other'; max = 10; remaining = 5 }) } -ModuleName $module.Name
+                Get-SalesforceDataStorage | Should -BeNullOrEmpty
+            }
+
+            It 'does not divide by zero when max is 0' {
+                Mock Get-SalesforceLimits { @([pscustomobject]@{ Name = 'DailyApiRequests'; max = 0; remaining = 0 }) } -ModuleName $module.Name
+                { Get-SalesforceApiUsage -ErrorAction Stop } | Should -Not -Throw
+            }
+        }
+    }
+}
+
+Describe 'Get-SalesforceAlias' {
+    It 'declares a Param block so common parameters are honoured' {
+        # Without Param(), [CmdletBinding()] is inert and -Verbose is silently swallowed
+        (Get-Command Get-SalesforceAlias).Parameters.Keys | Should -Contain 'Verbose'
+    }
+}
+
+Describe 'Invoke-Salesforce' {
+    # Resolved inside the module scope: psfdx-shared is imported there, not into the session
+    InModuleScope 'psfdx' {
+        It 'does not declare SupportsShouldProcess' {
+            # Suppressing the call would return $null into Show-SalesforceResult -Result,
+            # which is Mandatory, breaking every cmdlet under -WhatIf.
+            $command = Get-Command Invoke-Salesforce -ErrorAction Stop
+            $binding = @($command.ScriptBlock.Attributes | Where-Object { $_ -is [CmdletBinding] })
+            $binding.Count | Should -Be 1 -Because 'the CmdletBinding attribute must be present to assert against'
+            $binding[0].SupportsShouldProcess | Should -BeFalse
+        }
+
+        It 'still runs every cmdlet when $WhatIfPreference is set' {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+            $WhatIfPreference = $true
+            try {
+                { Connect-Salesforce -Alias 'foo' -ErrorAction Stop } | Should -Not -Throw
+            } finally {
+                $WhatIfPreference = $false
+            }
+        }
     }
 }

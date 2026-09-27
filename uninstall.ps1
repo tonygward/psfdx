@@ -9,7 +9,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path -Path $PSScriptRoot -ChildPath 'modules.ps1')
 $modules = Get-PsfdxModules
 
-# Determine uninstall targets based on Scope (mirror install-linux.ps1)
+# Determine uninstall targets based on Scope (mirror install.ps1)
 if ($Scope -eq 'AllUsers') {
     $destinations = @((Join-Path -Path $PSHOME -ChildPath 'Modules'))
 } elseif ($Scope -eq 'Both') {
@@ -49,15 +49,15 @@ if ($removed.Count -gt 0) {
     Write-Host 'Removed modules:' -ForegroundColor Green
     $removed | Sort-Object -Unique | ForEach-Object { Write-Host "  $_" }
 } else {
-    Write-Host 'No installed modules were found to remove for $Scope (try -Scope Both).' -ForegroundColor Yellow
+    Write-Host "No installed modules were found to remove for scope '$Scope' (try -Scope Both)." -ForegroundColor Yellow
 }
 
 if ($failed.Count -gt 0) {
     Write-Host 'Failed to remove (permission required for system paths).' -ForegroundColor Red
     $failed | Sort-Object -Unique | ForEach-Object { Write-Host "  $_" }
     Write-Host 'Try running with sudo, for example:' -ForegroundColor Yellow
-    Write-Host '  sudo pwsh -NoProfile -File ./uninstall-linux.ps1 -Scope AllUsers -Confirm:$false' -ForegroundColor Yellow
-    Write-Host '  sudo pwsh -NoProfile -File ./uninstall-linux.ps1 -Scope Both -Confirm:$false' -ForegroundColor Yellow
+    Write-Host '  sudo pwsh -NoProfile -File ./uninstall.ps1 -Scope AllUsers -Confirm:$false' -ForegroundColor Yellow
+    Write-Host '  sudo pwsh -NoProfile -File ./uninstall.ps1 -Scope Both -Confirm:$false' -ForegroundColor Yellow
 }
 
 Write-Verbose 'Uninstall complete.'

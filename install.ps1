@@ -22,7 +22,7 @@ if (-not (Test-Path -Path $dest)) {
 }
 
 foreach ($m in $modules) {
-    $src = Join-Path -Path (Get-Location).Path -ChildPath $m
+    $src = Join-Path -Path $PSScriptRoot -ChildPath $m
     if (-not (Test-Path -Path $src)) {
         Write-Verbose "Skipping missing module source: $src"
         continue

@@ -26,6 +26,7 @@
         'Describe-SalesforceObject',
         'Describe-SalesforceFields',
         'Describe-SalesforceMetadataTypes',
+        'Clear-SalesforceMetadataTypeCache',
         'Build-SalesforceQuery'
     )
     CmdletsToExport       = @()

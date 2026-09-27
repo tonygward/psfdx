@@ -54,16 +54,49 @@ function Import-PsfdxSharedModule {
 
 Import-PsfdxSharedModule
 
+# GetValidValues() runs on every parameter bind and every tab-completion, and the org
+# round-trip behind it costs seconds, so it is resolved once per session. Call
+# Clear-SalesforceMetadataTypeCache after connecting to an org (or re-import the module)
+# to pick up types that were not visible when the cache was first populated.
+$script:SalesforceMetadataTypeCache = $null
+
 class SalesforceMetadataTypeGenerator : System.Management.Automation.IValidateSetValuesGenerator {
     [string[]] GetValidValues() {
-        $types = Describe-SalesforceMetadataTypes
-        if (-not $types -or $types.Count -eq 0) {
-            $types = Get-SalesforceMetadataTypesDefault
-        }
-        return (@($types) + 'CustomField', 'ValidationRule') |
-            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-            Sort-Object -Unique
+        return Get-SalesforceMetadataTypeValidValues
     }
+}
+
+function Get-SalesforceMetadataTypeValidValues {
+    [CmdletBinding()]
+    Param()
+
+    if ($script:SalesforceMetadataTypeCache) {
+        return $script:SalesforceMetadataTypeCache
+    }
+
+    $types = $null
+    try {
+        $types = Describe-SalesforceMetadataTypes
+    } catch {
+        Write-Verbose ("Could not list metadata types from the org: " + $_.Exception.Message)
+    }
+
+    if (-not $types -or (@($types).Count -eq 0)) {
+        Write-Verbose "Falling back to the built-in metadata type list"
+        $types = Get-SalesforceMetadataTypesDefault
+    }
+
+    $script:SalesforceMetadataTypeCache = (@($types) + 'CustomField', 'ValidationRule') |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        Sort-Object -Unique
+
+    return $script:SalesforceMetadataTypeCache
+}
+
+function Clear-SalesforceMetadataTypeCache {
+    [CmdletBinding()]
+    Param()
+    $script:SalesforceMetadataTypeCache = $null
 }
 
 function Get-SalesforceMetadataTypesDefault {
@@ -272,6 +305,10 @@ function Retrieve-SalesforceComponent {
 
     if ($ChildName -and -not $Name) {
         throw "Specify -Name when using -ChildName."
+    }
+
+    if ([string]::IsNullOrWhiteSpace($Type)) {
+        throw "Specify -Type when retrieving a component."
     }
 
     $command = "sf project retrieve start --metadata $Type"
@@ -612,13 +649,13 @@ function Build-SalesforceQuery {
         )
         $fieldNames = $fieldNames | Where-Object { $contextFields -notcontains $_ }
     }
-    $value = "SELECT "
-    foreach ($fieldName in $fieldNames) {
-        $value += $fieldName + ","
+    $fieldNames = @($fieldNames)
+    if ($fieldNames.Count -eq 0) {
+        # Every field was excluded; 'SELECT FROM X' is not valid SOQL
+        return ""
     }
-    $value = $value.TrimEnd(",")
-    $value += " FROM $ObjectName"
-    return $value
+
+    return "SELECT " + ($fieldNames -join ",") + " FROM $ObjectName"
 }
 
 #endregion
