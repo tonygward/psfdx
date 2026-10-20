@@ -17,11 +17,11 @@ The development, logs, metadata and packages manifests declare `PowerShellVersio
 
 - Ternary `?:`, `??`, `??=`, `?.`, or the pipeline-chain operators `&&` and `||`.
 - `Join-Path` with more than two arguments. Nest it instead: `Join-Path $a (Join-Path $b $c)`.
-- `$IsWindows`, `$IsMacOS` or `$IsLinux`, which are `$null` on 5.1. Use `Test-SalesforceIsWindows` (psfdx-logs) or `Test-SalesforceIsMacOS` (psfdx). They aren't in psfdx-shared, so calling either from another module adds a dependency. Tests may use `$IsWindows`, since they only run under `pwsh`.
+- `$IsWindows`, `$IsMacOS` or `$IsLinux`, which are `$null` on 5.1. Use `[System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)` (or `::OSX` / `::Linux`). `Test-SalesforceIsWindows` (psfdx-logs) and `Test-SalesforceIsMacOS` (psfdx) wrap this, but they're private: neither is in `FunctionsToExport`, so other modules can't call them. If a third module needs one, move it into psfdx-shared. Tests may use `$IsWindows`, since they only run under `pwsh`.
 - PowerShell classes and `IValidateSetValuesGenerator`. **Known exception:** psfdx-metadata's `SalesforceMetadataTypeGenerator` class, used as `[ValidateSet([SalesforceMetadataTypeGenerator])]`, is PowerShell 6+ only, so that module doesn't load on 5.1 today. Don't spread the pattern. For dynamic values, prefer an `[ArgumentCompleter]`.
 
 ## Culture
 
-- Build SOQL datetime literals with `$Date.ToString('s') + 'Z'`, as `Get-SalesforceDateTime` and the psfdx-logs query builders do.
+- Build SOQL datetime literals with `$Date.ToUniversalTime().ToString('s') + 'Z'`. `'s'` is culture-invariant, and `ToUniversalTime()` is what makes the `Z` true. The existing `$Date.ToString('s') + 'Z'` in `Get-SalesforceDateTime` and the psfdx-logs query builders leaves out the conversion and is off by the UTC offset. Don't copy it.
 - Parse dates and numbers with `[System.Globalization.CultureInfo]::InvariantCulture`, as `Get-SalesforceSandboxRefreshStatus` does.
 - Use `ToLowerInvariant()` and `[System.StringComparison]::OrdinalIgnoreCase` for comparisons, as the Apex watcher helpers do.

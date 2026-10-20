@@ -45,10 +45,20 @@ Run non-`sf` commands through `Invoke-Salesforce` too, so tests can mock them an
 
 ## Always
 
+- Always declare a `Param()` block, even an empty one. Without it `[CmdletBinding()]` has no effect and `-Verbose` is silently ignored (`psfdx.Tests.ps1` checks this for `Get-SalesforceAlias`).
 - Forward common parameters with `Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters` and splat `@commonParams`, so that `-Verbose` prints the command.
 - **`Invoke-Salesforce` runs the string through `Invoke-Expression`.** Wrap every path and every free-text value (descriptions, names with spaces, queries) in escaped quotes, like `` `"$Value`" ``. Validate paths with `Test-Path -LiteralPath` before building the command, and throw `"Output directory '$X' does not exist."`-style messages.
 - Escape values interpolated into SOQL: `$Value -replace "'", "''"`. See `Get-SalesforceSandboxRefreshStatus` and `Get-SalesforceLoginHistory`.
 - `Invoke-Salesforce` deliberately has **no** `SupportsShouldProcess` (see the comment in the file). New destructive cmdlets declare `[CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]` themselves, and wrap the `Invoke-Salesforce` call in `if ($PSCmdlet.ShouldProcess(...))`. No existing cmdlet does this yet.
+  `Get-PsfdxCommonParameterSplat` also forwards `WhatIf` and `Confirm`, and `Invoke-Salesforce` doesn't accept them, so `-Confirm:$false` fails with "A parameter cannot be found that matches parameter name 'Confirm'". In these cmdlets, remove both keys before splatting:
+  ```powershell
+  $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+  $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+  if ($PSCmdlet.ShouldProcess($TargetOrg, 'Delete sandbox')) {
+      $result = Invoke-Salesforce -Command $command @commonParams
+  }
+  ```
+  The better long-term fix is to stop the helper forwarding them.
 - Group cmdlets in `#region` / `#endregion` blocks.
 - Keep the `Retrieve-`, `Describe-` and `Promote-` verbs, even though PowerShell doesn't approve them.
 
@@ -58,6 +68,7 @@ Some older code predates these rules. Don't treat it as precedent:
 - Unquoted paths and free text: `--output-dir $OutputDirectory` (psfdx-development), `--file $ApexFile`, `--definition-file`, `--output-file`, and `--description $Description` (psfdx-packages, which breaks on spaces).
 - Unescaped SOQL: `Get-SalesforceUsers -Username`, `Get-SalesforceRecordType`, `Get-SalesforceApexClass`, and the `EventType` filters in psfdx-logs.
 - The plain `if ($TargetOrg)` in `Get-SalesforcePackagesInstalled`.
+- `$Date.ToString('s') + 'Z'` (`Get-SalesforceDateTime` and the psfdx-logs `-After`/`-Before` filters). It labels local time as UTC, so in BST 12:00 local is sent as `12:00:00Z` instead of `11:00:00Z`. Use `$Date.ToUniversalTime().ToString('s') + 'Z'`.
 
 ## Modules and helpers
 
