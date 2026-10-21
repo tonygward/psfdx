@@ -1,157 +1,197 @@
 # psfdx — Code Review
 
-**Date:** 2026-09-09
-**Commit reviewed:** `0817630` (branch `master`, clean tree)
-**Scope:** all six modules, shared helpers, install/uninstall scripts, CI workflow, docs
-**Test suite at time of review:** 79/79 Pester tests passing
+**Date:** 2026-10-21
+**Commit reviewed:** `737dd29` (branch `main`, clean tree)
+**Scope:** all six modules, shared helpers, manifests, CI workflow, docs
+**Test suite at time of review:** 149/149 Pester tests passing (PowerShell 7.6). Every module was also imported under Windows PowerShell 5.1.
+
+This replaces the review from 2026-09-09 (commit `0817630`). The items from that review that have since been fixed are listed at the end.
 
 ---
 
 ## Overall
 
-Well-organised for what it is: a thin, consistent wrapper over the `sf` CLI. Six modules with clear separation, a shared `Invoke-Salesforce`/`Show-SalesforceResult` pair, a real test suite, and CI. The consistent `if ($X) { $command += " --flag $X" }` idiom makes the code easy to scan.
+The codebase is in better shape than at the last review. The blocking bugs are gone, every module now has a test file, and the suite has nearly doubled. However, the manifests declare Windows PowerShell 5.1 support that one module doesn't have, and the `Invoke-Expression` problem has moved from theoretical to reproduced.
 
-Findings below are ordered worst-first. Everything marked *reproduced* was executed against the working tree, not inferred from reading.
+Findings are ordered worst-first. Everything marked *reproduced* was run against the working tree, not just inferred from reading the code.
 
 ---
 
-## Blocking bugs
+## Blocking
 
-### 1. `psfdx-metadata`: the `-Type` ValidateSet rejects every real metadata type
+### 1. `psfdx-metadata` does not load on Windows PowerShell 5.1 (*reproduced*)
 
-`psfdx-metadata/psfdx-metadata.psm1:4`
-
-`Describe-SalesforceMetadataTypes` ends with `Select-Object xmlName` (`psfdx-metadata/psfdx-metadata.psm1:274`), returning `PSCustomObject`s rather than strings. `SalesforceMetadataTypeGenerator.GetValidValues()` then stringifies them into `@{xmlName=ApexClass}`.
-
-Reproduced:
+`psfdx-metadata/psfdx-metadata.psm1:63`, `:297`, `:429`
 
 ```
-PS> Retrieve-SalesforceComponent -Type 'ApexClass' -Name 'Foo'
-Cannot validate argument on parameter 'Type'. The argument "ApexClass" does not belong
-to the set "CustomField,ValidationRule" specified by the ValidateSet attribute.
+PS 5.1> Import-Module ./psfdx-metadata/psfdx-metadata.psd1
+Unable to find type [System.Management.Automation.IValidateSetValuesGenerator].
 ```
 
-`Retrieve-SalesforceComponent` and `Deploy-SalesforceComponent` are therefore unusable for anything except `CustomField` / `ValidationRule` (the two literals appended by hand in the generator). `Retrieve-SalesforceField` and `Retrieve-SalesforceValidationRule` still work for that reason.
+`IValidateSetValuesGenerator` and `[ValidateSet([Type])]` require PowerShell 6 or later. The manifest declares `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Desktop','Core')`.
 
-**Fix:** `Select-Object -ExpandProperty xmlName`.
+**Fix:** replace the ValidateSet with an `[ArgumentCompleter({...})]` that calls `Get-SalesforceMetadataTypeValidValues`, and validate `-Type` inside the function. An argument completer never blocks parameter binding, so binding also stops needing the org.
 
-**Two related problems in the same generator:**
+### 2. CI cannot catch #1
 
-- It shells out to `sf org list metadata-types` during *parameter binding*, so every call — and every tab-completion — makes an authenticated network round-trip. It fails outright when unauthenticated or offline.
-- Consider a static list, or dropping the `ValidateSet` in favour of an `ArgumentCompleter`, which does not block binding.
+`.github/workflows/ci.yml` runs only on `ubuntu-latest` under `pwsh`, and only for `pull_request`.
 
-### 2. `Export-SalesforceEventFiles` builds invalid SOQL
-
-`psfdx-logs/psfdx-logs.psm1:350` — `=` instead of `+=`, clobbering the SELECT clause.
-
-Reproduced (mocked `Invoke-Salesforce`, captured command):
-
-```
-sf data query --query " FROM EventLogFile WHERE EventType = 'ApiEvent' ORDER BY LogDate DESC LIMIT 5" --result-format json
-```
-
-The function can never succeed. `Select-SalesforceEventFiles`, ten lines above, builds the same query correctly — the two should share one query builder.
-
-### 3. `New-SalesforceProject -DefaultUserName` throws
-
-`psfdx-development/psfdx-development.psm1:37`
-
-Calls `Set-SalesforceTargetOrg -DefaultUserName ... -ProjectFolder ...`, but that function accepts only `-Value` and `-Global`. Parameter-binding error. The surrounding code also creates a `.sfdx` directory that `sf config set` does not consume that way.
+**Fix:** add a `windows-latest` job with `shell: powershell` (Windows PowerShell 5.1), and also trigger on `push` to `master`.
 
 ---
 
 ## Security
 
-### 4. `Invoke-Salesforce` runs `Invoke-Expression` on a concatenated string
+### 3. Code execution through `Invoke-Expression` (*reproduced*)
 
-`psfdx-shared/Invoke-Salesforce.ps1:8`
+`psfdx-shared/Invoke-Salesforce.ps1`
 
-Every parameter in the repo is interpolated into that string unquoted, so any value containing `;`, a backtick, `$(...)`, or `|` executes as PowerShell.
-
-Reproduced:
+Every value interpolated inside a double-quoted `--query "..."` is evaluated by `Invoke-Expression`. The repro used a harmless payload:
 
 ```powershell
-$Alias = 'x; Write-Host "INJECTED: arbitrary code ran"'
-# → alias-set-x
-#   INJECTED: arbitrary code ran
+Get-SalesforceUsers -Username 'bob$(Write-Host PWNED)@example.com'
+# PWNED
+# sf receives: ... WHERE Username = 'bob@example.com'
 ```
 
-Low risk when arguments are typed by hand; a real hole the moment a value comes from a CSV, a CI variable, or an org record.
+SOQL escaping (`'` → `''`) does not help, so the cmdlets that already escape (`Get-SalesforceLoginHistory`, `Get-SalesforceSandboxRefreshStatus`) are affected as well. This is the outstanding `& sf @args` refactor. Treat it as the top non-blocking item: change `Invoke-Salesforce` to accept an argument array, then migrate one module at a time.
 
-**Structural fix:** build `$args` as an array and invoke `& sf @args`. No `Invoke-Expression`, no quoting concerns. This is a large refactor, but it also removes the scattered `` `"$X`" `` quoting that currently only some parameters receive.
+### 4. Unescaped SOQL values
 
-### 5. SOQL injection in query builders
+These break the CLAUDE.md rule `$Value -replace "'", "''"`:
 
-Interpolate straight into SOQL with no escaping:
+- `Get-SalesforceUsers -Username` (`psfdx/psfdx.psm1:379`)
+- `Get-SalesforceRecordType -ObjectType` (`psfdx/psfdx.psm1:437`)
+- `Get-SalesforceApexClass -Name` (`psfdx-development/psfdx-development.psm1:772`)
+- `-EventType` in `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles` (`psfdx-logs/psfdx-logs.psm1:343`, `:419`)
 
-- `Get-SalesforceUsers -Username` (`psfdx/psfdx.psm1`)
-- `Get-SalesforceApexClass -Name` (`psfdx-development/psfdx-development.psm1`)
-- `Get-SalesforceRecordType -ObjectType` (`psfdx/psfdx.psm1`)
-- `Select-SalesforceEventFiles -EventType` (`psfdx-logs/psfdx-logs.psm1`)
+As a side effect, `Get-SalesforceLoginHistory` escapes `$Username` for its own query but then passes the raw value to `Get-SalesforceUsers` (`psfdx-logs/psfdx-logs.psm1:283`). A username containing `'` therefore breaks the second query.
 
-`Get-SalesforceSandboxRefreshStatus` and `Get-SalesforceLoginHistory` already do it right (`$Name -replace "'", "''"`). Apply that consistently.
+### 5. Secrets in `-Verbose` output
 
-### 6. Credentials typed as plain `[string]`
+- `Invoke-Salesforce` calls `Write-Verbose $Command`, so `New-SalesforcePackageVersion -InstallationKey` prints the key (`psfdx-packages/psfdx-packages.psm1:226`).
+- `Connect-SalesforceApi` still takes `-Password`, `-Token` and `-ClientSecret` as plain `[string]`, so they end up in history and transcripts. Use `[securestring]` or `[pscredential]`.
 
-`Connect-SalesforceApi` takes `$Password`, `$Token`, and `$ClientSecret` as `[string]`, so they land in PowerShell history and transcripts. `[securestring]` or `[pscredential]` would be idiomatic.
+### 6. No `SupportsShouldProcess` anywhere
 
-### 7. No `SupportsShouldProcess` on destructive cmdlets
+No public cmdlet supports `-WhatIf` or `-Confirm`. The most urgent case is `Remove-SalesforceScratchOrgs`, which deletes **every** scratch org with `--no-prompt` and asks for no confirmation. These also need it:
 
-- `Remove-SalesforceScratchOrgs` — deletes *every* scratch org, no prompt
+- `Remove-SalesforceScratchOrg`
 - `Remove-SalesforceSandbox`
 - `Remove-SalesforcePackage`
 - `Remove-SalesforcePackageVersion`
-- `Disconnect-Salesforce -All`
+- `Disconnect-Salesforce`
 
-`uninstall.ps1` gets this right; the modules should too, with `ConfirmImpact='High'`.
-
----
-
-## Correctness / usability
-
-- **Installers only work from the repo directory.** `install.ps1:25` and `install-windows.ps1:29` use `(Get-Location).Path` instead of `$PSScriptRoot`. Running `pwsh -File C:\dev\psfdx\install.ps1` from anywhere else silently installs nothing — the skip goes to `Write-Verbose`. Same bug in both files.
-- **`Out-Notepad` is a silent no-op on Windows PowerShell 5.1** (`psfdx-logs/psfdx-logs.psm1:390`). `$IsWindows` does not exist there, so it evaluates to `$null`. The manifest claims `Desktop` edition support.
-- **`Select-SalesforceRecords -ResultFormat csv|human` crashes** (`psfdx/psfdx.psm1:194`). The result is unconditionally piped to `ConvertFrom-Json`. Either drop the non-JSON choices or branch on them, as `Test-SalesforceApex` does.
-- **`Get-SalesforceFlowInterviews -Type` is `Mandatory` *and* has a default** (`psfdx-logs/psfdx-logs.psm1:148`). The `= 'All'` never applies; users get prompted.
-- **Duplicate ValidateSet entry**: `'ApexUnitTest'` listed twice at `psfdx-development/psfdx-development.psm1:580`.
-- **`Convert-SalesforceDebugLog` and `Out-Notepad` declare `ValueFromPipeline` but have no `process` block** — piping multiple items silently processes only the last.
-- **`Select-SalesforceRecords` writes `$result` to the pipeline before throwing** on error, emitting a bogus object alongside the exception.
-- `Convert-SalesforceDebugLog`'s `Get-Variable`/`Set-Variable` loop over `@('dt','lt','st','de')` does by reflection what four plain `if` statements would do more clearly.
-- `uninstall.ps1:52` uses single quotes around a message containing `$Scope`, so the variable is printed literally rather than interpolated.
-- `uninstall.ps1` help text refers to `uninstall-linux.ps1`, a filename that no longer exists in the repo.
+Use `ConfirmImpact = 'High'` on the bulk and delete cmdlets.
 
 ---
 
-## Packaging
+## Correctness
 
-- **`psfdx-development` declares `RequiredModules = @('psfdx-metadata')` but actually depends on `psfdx`.** `Get-SalesforceCodeCoverage` and `Get-SalesforceApexClass` call `Select-SalesforceRecords`, which lives in `psfdx`. It works today only because the tests import `psfdx` manually.
-- **`psfdx-shared` is installed as a module directory but contains no manifest**, and the modules reach it via `Join-Path $PSScriptRoot '..' 'psfdx-shared'`. That sibling-directory coupling blocks PowerShell Gallery publishing and breaks if a module is installed alone.
-- **`Prerelease = 'beta'`** in `psfdx-development.psd1` marks the whole module prerelease — likely unintended at v0.8.
-- **`psfdx.psd1` and `psfdx-sandbox.psd1` are missing** `PowerShellVersion`, `CompatiblePSEditions`, and `PrivateData.PSData`, which the other four manifests have.
-- **No LICENSE file** anywhere in the repo, and no `LicenseUri` in any manifest.
-- **Unapproved verbs** (`Retrieve-`, `Describe-`, `Promote-`) produce an import warning on every load. If you keep them, `Export-ModuleMember` an approved-verb alias (`Get-` / `Publish-`).
-- **No comment-based help on any of the ~90 exported functions** — `Get-Help Connect-Salesforce -Examples` returns nothing. The README carries all of it.
-- **CHANGELOG**: everything sits under `## Unreleased` while all six manifests report `ModuleVersion = '0.8'`.
+### 7. Local time sent as UTC (*reproduced*)
+
+At 08:47 BST, `Get-SalesforceDateTime` returned `2026-10-21T08:47:12Z`, an hour out. The `$dt.ToString('s') + 'Z'` pattern appears in:
+
+- `Get-SalesforceDateTime` (`psfdx/psfdx.psm1:579`)
+- `Get-SalesforceFlowInterviews -After` (`psfdx-logs/psfdx-logs.psm1:229`)
+- `Get-SalesforceLoginHistory -After/-Before` (`:260`, `:261`)
+- `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles` `-After/-Before` (`:344`, `:345`, `:420`, `:421`)
+
+**Fix:** call `.ToUniversalTime()` first, using one shared helper.
+
+### 8. `Get-SalesforcePackagesInstalled` probably always returns `@()`
+
+`psfdx-packages/psfdx-packages.psm1:137-143`
+
+The function calls `Show-SalesforceResult -ReturnRecords`, but `sf package installed list --json` returns `result` as an array, not as `{ records: [] }`. The test mocks the wrong shape, so it passes anyway. The command it runs, `sf force package installed list`, is also deprecated; use `sf package installed list`. *Verify the JSON shape against a real org.*
+
+### 9. Unquoted paths and free text break on spaces
+
+Under `Invoke-Expression`, these values split into extra arguments:
+
+- `New-SalesforcePackage`: `--description`, `--path` (`psfdx-packages/psfdx-packages.psm1:103`, `:105`)
+- `New-SalesforcePackageVersion`: `--version-name`, `--version-description`, `--definition-file` (`:217`, `:218`, `:221`)
+- `--output-dir` in `New-SalesforceProject`, `Test-SalesforceApex`, `New-SalesforceApexClass` and `New-SalesforceApexTrigger` (`psfdx-development/psfdx-development.psm1:79`, `:318`, `:798`, `:824`)
+- `Invoke-SalesforceApex --file` (`:471`) and `New-SalesforceScratchOrg --definition-file` (`:248`)
+- `Select-SalesforceRecords --output-file` (`psfdx/psfdx.psm1:348`)
+
+As a result, a multi-word `-Description` fails today, and so does any path under a profile such as `C:\Users\Jane Doe`. The `& sf @args` refactor (#3) makes this whole class of bug go away.
+
+### 10. `Open-Salesforce -BrowserPrivateMode` should be a switch
+
+`psfdx/psfdx.psm1:199`, `:204`
+
+The parameter is a `[string]` and is emitted as `--private <value>`, but `sf org open --private` is a boolean flag.
+
+### 11. Package-name lookups silently fall through
+
+- `Get-SalesforcePackageVersions -PackageName X` lists versions for *all* packages when `X` doesn't exist.
+- `New-SalesforcePackageVersion -PackageName X` emits `--package ` with no value.
+
+Both should throw "package not found".
+
+### 12. `Retrieve-SalesforceOrg` uses a deprecated command
+
+`psfdx-metadata/psfdx-metadata.psm1:404`
+
+It runs `sf force source manifest create`; the current command is `sf project generate manifest`. It also hard-codes the output to `.`.
+
+### 13. `psfdx-development` depends on `psfdx` without declaring it
+
+`Get-SalesforceCodeCoverage` and `Get-SalesforceApexClass` call `Select-SalesforceRecords` from `psfdx`, but `psfdx-development.psd1` declares `RequiredModules = @()`. This only works through command autoloading. `psfdx-logs` declares the same dependency correctly.
 
 ---
 
-## Tests & CI
+## Consistency / maintainability
 
-The suite is genuinely useful — 79 tests, good `Invoke-Salesforce` mocking, and it asserts exact command strings, which is the right shape for a CLI wrapper. Gaps:
+- **`Import-PsfdxSharedModule` has drifted in `psfdx-development`.** That copy adds `-ForceImport`, which breaks the "identical in all six modules" rule. The parameter exists only for a defensive re-import in `Get-SalesforceCliApexTestParams` (`psfdx-development/psfdx-development.psm1:370`), which shouldn't be needed. Remove the re-import and restore the identical copy.
+- **`Get-SalesforceCliApexTestParams` (development) and `Get-SalesforceApexCliTestParams` (shared)** have near-identical names but do different jobs. Rename one, or fold it into the shared helper.
+- **`Export-SalesforceEventFiles` still duplicates the query builder** from `Select-SalesforceEventFiles`. It should call `Select-SalesforceEventFiles`.
+- **Some error handling bypasses `Show-SalesforceResult`**: `Select-SalesforceRecords`, `Get-SalesforceSandboxRefreshStatus` and `Get-SalesforceDebugLogs -Raw`. Their errors therefore lose the deploy and test failure detail.
+- **`Export-SalesforceDebugLogs`** never calls `Write-Progress -Completed`.
 
-- **`psfdx-metadata` has no test file at all** — which is precisely why finding #1 shipped. It is also the module with the most logic (the type generator, `Build-SalesforceQuery`).
-- **`Export-SalesforceEventFiles` has a passing test** despite emitting invalid SOQL, because the test never asserts the query string. Asserting `--query` content would have caught it.
-- **CI runs on `pull_request` only** — nothing validates pushes to `master`. The three doc-only commits at the tip of `master` never ran.
-- **The `os` matrix has `fail-fast: false` and matrix scaffolding for exactly one OS** (`ubuntu-latest`). For a project that ships a separate `install-windows.ps1` and has `$IsWindows` branching, add `windows-latest`.
-- **No PSScriptAnalyzer step.** It would flag several items above mechanically.
-- Running the suite writes a `.csv` into the repo root (from the `Export-SalesforceEventFiles` test). Tests should write to `$TestDrive`.
+---
+
+## Tests & docs
+
+- **25 exported cmdlets have no test**, against the CLAUDE.md rule. Notable ones are `Remove-SalesforceScratchOrgs`, `Get-SalesforceCodeCoverage`, `New-SalesforceScratchOrg`, `Disconnect-Salesforce`, `Open-Salesforce`, `Export-SalesforceDebugLogs`, `Get-SalesforceEventFile`, `Promote-SalesforcePackageVersion` and `Remove-SalesforcePackageVersion`.
+- **Mocks that return the wrong JSON shape hide real bugs** (see #8). Mock with captured `sf ... --json` output.
+- **README** has no rows for `Get-SalesforceLatestApiVersion` or `Clear-SalesforceMetadataTypeCache`.
+- **CHANGELOG** says `Promote-SalesforcePackageVersion` was renamed to `Publish-SalesforcePackageVersion` with an alias. The code still has `Promote-` and `AliasesToExport = @()`. Correct the entry.
+- **CLAUDE.md** says every manifest declares `PowerShellVersion = '5.1'`. `psfdx`, `psfdx-sandbox` and `psfdx-shared` don't.
+
+---
+
+## Still open from 2026-09-09
+
+- `Invoke-Expression` → `& sf @args` (now #3), SOQL escaping (#4), plain-string credentials (#5), `SupportsShouldProcess` (#6).
+- `psfdx-development` `RequiredModules` (#13).
+- `Prerelease = 'beta'` is still set in `psfdx-development.psd1`.
+- `psfdx.psd1` and `psfdx-sandbox.psd1` still lack `PowerShellVersion`, `CompatiblePSEditions` and `PrivateData.PSData`.
+- There is no LICENSE file, and no manifest has a `LicenseUri`.
+- No exported function has comment-based help.
+- There is no PSScriptAnalyzer step in CI. CI also has no Windows job and doesn't run on push (#2).
+
+## Fixed since 2026-09-09
+
+- The metadata `-Type` ValidateSet stringified objects, and it called the org on every bind. It is now cached per session.
+- `Export-SalesforceEventFiles` clobbered its SELECT clause.
+- `New-SalesforceProject -DefaultUserName` threw.
+- The `Get-SalesforceLoginHistory -Username` SOQL was invalid.
+- `Select-SalesforceRecords -ResultFormat csv|human` crashed, and failed queries emitted the payload before throwing.
+- `Out-Notepad` didn't work on 5.1, and the pipeline cmdlets lacked `process` blocks.
+- The duplicate `ApexUnitTest` ValidateSet entry is gone.
+- The installers now use `$PSScriptRoot`, and the `uninstall.ps1` message and help text are corrected.
+- `psfdx-metadata` now has a test file, and `psfdx-shared` now has a manifest.
 
 ---
 
 ## Suggested order of work
 
-1. Fix findings #1, #2, #3 — three small edits, each turning a dead command back on.
-2. Add a `psfdx-metadata` test file; assert query strings in the logs tests.
-3. Fix `$PSScriptRoot` in both installers.
-4. Add `SupportsShouldProcess` to the six destructive cmdlets, and SOQL-escape the four injection points.
-5. Plan the `Invoke-Expression` → `& sf @args` refactor as its own change, behind the now-solid test suite.
+Use one branch or PR per step, each with tests and a CHANGELOG entry.
+
+1. **5.1 compatibility:** #1 and #2. Verify with `powershell.exe -NoProfile -Command "Import-Module ./psfdx-metadata/psfdx-metadata.psd1"`.
+2. **Quick correctness:** #7, #10, #11, #8 and #4.
+3. **Safety:** #6 and #5.
+4. **`& sf @args` refactor (#3).** This also fixes #9, so skip piecemeal quoting fixes unless the refactor slips. Every `-Command` assertion in the tests will change.
+5. **Cleanup:** #12, #13, then the consistency, tests and docs items.
