@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- CI: Pin Pester to 5.x. `Install-Module Pester` started pulling Pester 6, where `Assert-MockCalled` no longer loads, so every mock assertion failed.
 - psfdx-metadata: The module failed to import on Windows PowerShell 5.1 (`Unable to find type [System.Management.Automation.IValidateSetValuesGenerator]`) despite declaring 5.1 support. `-Type` on `Retrieve-SalesforceComponent` and `Deploy-SalesforceComponent` now uses an argument completer and is validated inside the cmdlet, so binding no longer queries the org and unknown types still throw.
 - psfdx-shared: Remove `SupportsShouldProcess` from `Invoke-Salesforce` and `Get-SalesforceApexCliTestParams`. Suppressing them returned `$null` into `Show-SalesforceResult -Result` (a mandatory parameter), so setting `$WhatIfPreference` made nearly every cmdlet fail on a null argument instead of performing a dry run.
 - psfdx-logs: `Get-SalesforceLoginHistory -Username` (and therefore `Get-SalesforceLoginFailures -Username`) built invalid SOQL. `LoginHistory` has no `Username` column, so the filter now goes through a `UserId IN (SELECT Id FROM User WHERE Username = ...)` subquery.

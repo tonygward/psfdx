@@ -24,11 +24,13 @@ jobs:
         shell: pwsh
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-          Install-Module Pester -Force -Scope CurrentUser
+          # The tests use Pester 5 syntax (Assert-MockCalled); Pester 6 can't load it
+          Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser
 
       - name: Run Pester tests
         shell: pwsh
         run: |
-          Write-Host "Pester version: $((Get-Module Pester -ListAvailable | Sort-Object Version -Descending | Select-Object -First 1).Version)"
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
+          Write-Host "Pester version: $((Get-Module Pester).Version)"
           Invoke-Pester -Path . -CI
 
