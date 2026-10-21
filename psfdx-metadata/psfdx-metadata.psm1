@@ -54,15 +54,28 @@ function Import-PsfdxSharedModule {
 
 Import-PsfdxSharedModule
 
-# GetValidValues() runs on every parameter bind and every tab-completion, and the org
-# round-trip behind it costs seconds, so it is resolved once per session. Call
+# The valid -Type values feed tab-completion and Assert-SalesforceMetadataType, and the org
+# round-trip behind them costs seconds, so they are resolved once per session. Call
 # Clear-SalesforceMetadataTypeCache after connecting to an org (or re-import the module)
 # to pick up types that were not visible when the cache was first populated.
+# -Type uses an ArgumentCompleter rather than [ValidateSet([Generator])] because
+# IValidateSetValuesGenerator needs PowerShell 6+ and this module supports 5.1. The completer
+# scriptblock runs in the caller's scope, so it calls back into the module to reach the private helper.
 $script:SalesforceMetadataTypeCache = $null
 
-class SalesforceMetadataTypeGenerator : System.Management.Automation.IValidateSetValuesGenerator {
-    [string[]] GetValidValues() {
-        return Get-SalesforceMetadataTypeValidValues
+function Complete-SalesforceMetadataType {
+    Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+    Get-SalesforceMetadataTypeValidValues |
+        Where-Object { $_ -like "$wordToComplete*" } |
+        ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_) }
+}
+
+function Assert-SalesforceMetadataType {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $true)][string] $Type)
+    $validTypes = Get-SalesforceMetadataTypeValidValues
+    if ($validTypes -notcontains $Type) {
+        throw "Unknown metadata type '$Type'. Run Describe-SalesforceMetadataTypes to list valid types, or Clear-SalesforceMetadataTypeCache after connecting to a different org."
     }
 }
 
@@ -294,7 +307,7 @@ function Get-SalesforceMetadataTypesDefault {
 function Retrieve-SalesforceComponent {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
+        [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ChildName,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
@@ -310,6 +323,7 @@ function Retrieve-SalesforceComponent {
     if ([string]::IsNullOrWhiteSpace($Type)) {
         throw "Specify -Type when retrieving a component."
     }
+    Assert-SalesforceMetadataType -Type $Type
 
     $command = "sf project retrieve start --metadata $Type"
     if ($Name) {
@@ -426,7 +440,7 @@ function Retrieve-SalesforceOrg {
 function Deploy-SalesforceComponent {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string][ValidateSet([SalesforceMetadataTypeGenerator])] $Type,
+        [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $SourceDir,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
@@ -458,6 +472,8 @@ function Deploy-SalesforceComponent {
     if (-not $Type -and $Name) {
         throw "Specify -Type when using -Name."
     }
+
+    if ($Type) { Assert-SalesforceMetadataType -Type $Type }
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
