@@ -18,7 +18,7 @@ The development, logs, metadata and packages manifests declare `PowerShellVersio
 - Ternary `?:`, `??`, `??=`, `?.`, or the pipeline-chain operators `&&` and `||`.
 - `Join-Path` with more than two arguments. Nest it instead: `Join-Path $a (Join-Path $b $c)`.
 - `$IsWindows`, `$IsMacOS` or `$IsLinux`, which are `$null` on 5.1. Use `[System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)` (or `::OSX` / `::Linux`). `Test-SalesforceIsWindows` (psfdx-logs) and `Test-SalesforceIsMacOS` (psfdx) wrap this, but they're private: neither is in `FunctionsToExport`, so other modules can't call them. If a third module needs one, move it into psfdx-shared. Tests may use `$IsWindows`, since they only run under `pwsh`.
-- PowerShell classes and `IValidateSetValuesGenerator`. **Known exception:** psfdx-metadata's `SalesforceMetadataTypeGenerator` class, used as `[ValidateSet([SalesforceMetadataTypeGenerator])]`, is PowerShell 6+ only, so that module doesn't load on 5.1 today. Don't spread the pattern. For dynamic values, prefer an `[ArgumentCompleter]`.
+- PowerShell classes and `IValidateSetValuesGenerator` (`[ValidateSet([SomeType])]`), which are PowerShell 6+ only. For dynamic values, use an `[ArgumentCompleter]` and validate inside the function, as psfdx-metadata's `-Type` does. The completer scriptblock runs in the caller's scope, so to reach a private helper it has to call back into the module: `& (Get-Module psfdx-metadata | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args`.
 
 ## Culture
 

@@ -16,17 +16,10 @@ Import-Module $moduleManifest -Force | Out-Null
 
 Describe 'Retrieve-SalesforceComponent' {
     InModuleScope 'psfdx-metadata' {
-        BeforeAll {
-            # The -Type validate set generator runs inside a PowerShell class at parameter-binding
-            # time, which bypasses Pester mocks and invokes the real sf CLI. Stub a global sf
-            # function so binding works without the CLI; empty metadataObjects makes the
-            # generator fall back to its built-in default type list.
-            function global:sf { '{"status":0,"result":{"metadataObjects":[]}}' }
-        }
-        AfterAll {
-            Remove-Item -Path Function:\sf -Force -ErrorAction SilentlyContinue
-        }
         BeforeEach {
+            # -Type is validated against the org's metadata types; fall back to the built-in list instead
+            Clear-SalesforceMetadataTypeCache
+            Mock Describe-SalesforceMetadataTypes { @() }
             Mock Invoke-Salesforce {}
         }
         It 'retrieves a metadata type' {
@@ -69,14 +62,10 @@ Describe 'Retrieve-SalesforceComponent' {
 
 Describe 'Retrieve-SalesforceField and Retrieve-SalesforceValidationRule' {
     InModuleScope 'psfdx-metadata' {
-        BeforeAll {
-            # Stub sf CLI for the class-based -Type validate set generator (see Retrieve-SalesforceComponent)
-            function global:sf { '{"status":0,"result":{"metadataObjects":[]}}' }
-        }
-        AfterAll {
-            Remove-Item -Path Function:\sf -Force -ErrorAction SilentlyContinue
-        }
         BeforeEach {
+            # -Type is validated against the org's metadata types; fall back to the built-in list instead
+            Clear-SalesforceMetadataTypeCache
+            Mock Describe-SalesforceMetadataTypes { @() }
             Mock Invoke-Salesforce {}
         }
         It 'retrieves a custom field as CustomField:Object.Field' {
@@ -174,14 +163,10 @@ Describe 'Retrieve-SalesforceOrg' {
 
 Describe 'Deploy-SalesforceComponent' {
     InModuleScope 'psfdx-metadata' {
-        BeforeAll {
-            # Stub sf CLI for the class-based -Type validate set generator (see Retrieve-SalesforceComponent)
-            function global:sf { '{"status":0,"result":{"metadataObjects":[]}}' }
-        }
-        AfterAll {
-            Remove-Item -Path Function:\sf -Force -ErrorAction SilentlyContinue
-        }
         BeforeEach {
+            # -Type is validated against the org's metadata types; fall back to the built-in list instead
+            Clear-SalesforceMetadataTypeCache
+            Mock Describe-SalesforceMetadataTypes { @() }
             Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
         }
         It 'throws when neither Type nor SourceDir is provided' {
@@ -401,5 +386,54 @@ Describe 'Metadata type valid-set caching' {
             $values | Should -Contain 'ValidationRule'
             $values | Should -Contain 'ApexClass'
         }
+    }
+}
+
+Describe 'Metadata -Type validation and completion' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce {}
+            Mock Get-SalesforceMetadataTypeValidValues { @('ApexClass', 'ApexTrigger', 'CustomField') }
+        }
+        It 'declares -Type without a class-based ValidateSet, so the module loads on Windows PowerShell 5.1' {
+            foreach ($name in 'Retrieve-SalesforceComponent', 'Deploy-SalesforceComponent') {
+                $attributes = (Get-Command $name).Parameters['Type'].Attributes
+                @($attributes | Where-Object { $_ -is [System.Management.Automation.ValidateSetAttribute] }).Count | Should -Be 0
+                @($attributes | Where-Object { $_ -is [System.Management.Automation.ArgumentCompleterAttribute] }).Count | Should -Be 1
+            }
+        }
+        It 'Retrieve-SalesforceComponent rejects an unknown type without calling sf' {
+            { Retrieve-SalesforceComponent -Type 'NotAType' } |
+                Should -Throw -ExpectedMessage "Unknown metadata type 'NotAType'*"
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'Deploy-SalesforceComponent rejects an unknown type without calling sf' {
+            { Deploy-SalesforceComponent -Type 'NotAType' } |
+                Should -Throw -ExpectedMessage "Unknown metadata type 'NotAType'*"
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'accepts a known type case-insensitively, as ValidateSet did' {
+            Retrieve-SalesforceComponent -Type 'apexclass' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata apexclass' }
+        }
+        It 'completes -Type from the valid values' {
+            $completions = @(Complete-SalesforceMetadataType 'Retrieve-SalesforceComponent' 'Type' 'Apex' $null @{})
+            $completions.CompletionText | Should -Be @('ApexClass', 'ApexTrigger')
+        }
+    }
+}
+
+Describe 'Metadata -Type argument completer' {
+    # Runs outside InModuleScope on purpose: PowerShell invokes the completer from the caller's
+    # scope, so it must reach the module's private helpers without help from the test.
+    BeforeAll {
+        Mock Describe-SalesforceMetadataTypes { @() } -ModuleName 'psfdx-metadata'
+        & (Get-Module psfdx-metadata) { Clear-SalesforceMetadataTypeCache }
+    }
+    It 'completes -Type on <_>' -ForEach 'Retrieve-SalesforceComponent', 'Deploy-SalesforceComponent' {
+        $completer = (Get-Command $_).Parameters['Type'].Attributes |
+            Where-Object { $_ -is [System.Management.Automation.ArgumentCompleterAttribute] }
+        $completions = @(& $completer.ScriptBlock $_ 'Type' 'ApexTr' $null @{})
+        $completions.CompletionText | Should -Be @('ApexTrigger')
     }
 }
