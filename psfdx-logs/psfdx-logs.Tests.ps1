@@ -263,6 +263,54 @@ Describe 'Enable-SalesforceDebugLogging' {
     }
 }
 
+Describe 'Enable-SalesforceDebugLogging by name' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"id":"7tf000000000001AAA","success":true}}' }
+            $script:LookupJson = '{"status":0,"result":{"records":[{"attributes":{"type":"X"},"Id":"0XX000000000001AAA"}]}}'
+            Mock Invoke-Salesforce { $script:LookupJson } -ModuleName 'psfdx'
+        }
+        It 'does not look up an Id when -TracedEntityId is given' {
+            Enable-SalesforceDebugLogging -TracedEntityId '005000000000001' -DebugLevel 'X' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 0
+        }
+        It 'resolves -Username to a user Id' {
+            Enable-SalesforceDebugLogging -Username 'me@example.com' -DebugLevel 'SFDC_DevConsole' -TargetOrg 'myorg' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''me@example.com'' LIMIT 2" --target-org myorg --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 0XX000000000001AAA --debug-level "SFDC_DevConsole" --target-org myorg --json' }
+        }
+        It 'resolves -ApexClass to a class Id' {
+            Enable-SalesforceDebugLogging -ApexClass 'AccountService' -DebugLevel 'X' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM ApexClass WHERE Name = ''AccountService'' LIMIT 2" --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 0XX000000000001AAA --debug-level "X" --json' }
+        }
+        It 'resolves -ApexTrigger to a trigger Id' {
+            Enable-SalesforceDebugLogging -ApexTrigger 'AccountTrigger' -DebugLevel 'X' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM ApexTrigger WHERE Name = ''AccountTrigger'' LIMIT 2" --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 0XX000000000001AAA --debug-level "X" --json' }
+        }
+        It 'escapes single quotes in the name' {
+            Enable-SalesforceDebugLogging -Username "o'brien@example.com" -DebugLevel 'X' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''o''''brien@example.com'' LIMIT 2" --result-format json' }
+        }
+        It 'throws and does not create a trace flag when the name is not found' {
+            $script:LookupJson = '{"status":0,"result":{"records":[]}}'
+            { Enable-SalesforceDebugLogging -ApexClass 'Missing' -DebugLevel 'X' } | Should -Throw -ExpectedMessage "No ApexClass found with Name 'Missing'."
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'throws when the name matches more than one record' {
+            $script:LookupJson = '{"status":0,"result":{"records":[{"Id":"01p000000000001AAA"},{"Id":"01p000000000002AAA"}]}}'
+            { Enable-SalesforceDebugLogging -ApexClass 'Dup' -DebugLevel 'X' } | Should -Throw -ExpectedMessage "More than one ApexClass found with Name 'Dup'. Use -TracedEntityId instead."
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'rejects more than one way of naming the entity' {
+            { Enable-SalesforceDebugLogging -Username 'a' -ApexClass 'B' -DebugLevel 'X' } | Should -Throw -ExpectedMessage '*Parameter set cannot be resolved*'
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 0
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+    }
+}
+
 Describe 'Get-SalesforceDebugLogging' {
     InModuleScope 'psfdx-logs' {
         BeforeEach {

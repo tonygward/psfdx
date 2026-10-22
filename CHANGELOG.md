@@ -4,6 +4,7 @@
 
 ### Added
 
+- psfdx-logs: `Enable-SalesforceDebugLogging` accepts `-Username`, `-ApexClass` or `-ApexTrigger` as an alternative to `-TracedEntityId`, and looks up the Id for you.
 - psfdx-logs: Add `Enable-SalesforceDebugLogging`, `Get-SalesforceDebugLogging` and `Disable-SalesforceDebugLogging`, wrapping `sf apex trace create`, `list` and `delete`. These need a Salesforce CLI release that includes the `apex trace` commands.
 
 ### Fixed

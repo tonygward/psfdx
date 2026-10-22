@@ -207,21 +207,44 @@ function Convert-SalesforceDebugLog {
 #region Debug Logging
 
 function Enable-SalesforceDebugLogging {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Id')]
     Param(
-        [Parameter(Mandatory = $true)][string] $TracedEntityId,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Id')][string] $TracedEntityId,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Username')][string] $Username,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ApexClass')][string] $ApexClass,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ApexTrigger')][string] $ApexTrigger,
         [Parameter(Mandatory = $true)][string] $DebugLevel,
         [Parameter(Mandatory = $false)][ValidateSet('DEVELOPER_LOG', 'USER_DEBUG')][string] $LogType,
         [Parameter(Mandatory = $false)][ValidateRange(1, 1440)][int] $Duration,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
+    if ($PSCmdlet.ParameterSetName -ne 'Id') {
+        switch ($PSCmdlet.ParameterSetName) {
+            'Username'    { $object = 'User';        $field = 'Username'; $name = $Username }
+            'ApexClass'   { $object = 'ApexClass';   $field = 'Name';     $name = $ApexClass }
+            'ApexTrigger' { $object = 'ApexTrigger'; $field = 'Name';     $name = $ApexTrigger }
+        }
+        $query = "SELECT Id FROM $object WHERE $field = '" + ($name -replace "'", "''") + "' LIMIT 2"
+        $records = @(Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg @commonParams)
+        if ($records.Count -eq 0) {
+            throw "No $object found with $field '$name'."
+        }
+        if ($records.Count -gt 1) {
+            # e.g. a managed package class with the same name as a local one
+            throw "More than one $object found with $field '$name'. Use -TracedEntityId instead."
+        }
+        $TracedEntityId = $records[0].Id
+        Write-Verbose "Resolved $object '$name' to $TracedEntityId"
+    }
+
     $command = "sf apex trace create --traced-entity-id $TracedEntityId"
     $command += " --debug-level `"$DebugLevel`""
     if ($LogType) { $command += " --log-type $LogType" }
     if ($Duration) { $command += " --duration $Duration" }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     $command += " --json"
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -Command $command @commonParams
     return Show-SalesforceResult -Result $result
 }
