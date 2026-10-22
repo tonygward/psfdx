@@ -278,7 +278,7 @@ Get-Command -Module psfdx*
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Enable-SalesforceDebugLogging` | Turn on debug logging for a user, Apex class or trigger by creating a trace flag (debug level, log type, duration in minutes). |
+| `Enable-SalesforceDebugLogging` | Turn on debug logging for a user, Apex class or trigger by creating a trace flag. Name it with `-Username`, `-ApexClass` or `-ApexTrigger`, or pass `-TracedEntityId` (debug level, log type, duration in minutes). |
 | `Get-SalesforceDebugLogging` | List trace flags with their debug level, traced entity and Active/Expired status. |
 | `Disable-SalesforceDebugLogging` | Turn off debug logging early by deleting a trace flag (accepts pipeline input from `Get-SalesforceDebugLogging`; supports `-WhatIf`). |
 
