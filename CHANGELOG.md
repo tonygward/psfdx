@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- psfdx-logs: Add `Enable-SalesforceDebugLogging`, `Get-SalesforceDebugLogging` and `Disable-SalesforceDebugLogging`, wrapping `sf apex trace create`, `list` and `delete`. These need a Salesforce CLI release that includes the `apex trace` commands.
+
 ### Fixed
 
 - CI: Pin Pester to 5.x. `Install-Module Pester` started pulling Pester 6, where `Assert-MockCalled` no longer loads, so every mock assertion failed.
