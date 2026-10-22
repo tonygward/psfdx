@@ -237,3 +237,70 @@ Describe 'Get-SalesforceLoginFailures' {
         }
     }
 }
+
+Describe 'Enable-SalesforceDebugLogging' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"id":"7tf000000000001AAA","success":true}}' }
+            Mock Show-SalesforceResult { [pscustomobject]@{ id = '7tf000000000001AAA'; success = $true } }
+        }
+        It 'builds create command with required flags' {
+            $out = Enable-SalesforceDebugLogging -TracedEntityId '005000000000001' -DebugLevel 'SFDC_DevConsole'
+            $out.id | Should -Be '7tf000000000001AAA'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 005000000000001 --debug-level "SFDC_DevConsole" --json' }
+            Assert-MockCalled Show-SalesforceResult -Times 1
+        }
+        It 'adds log type, duration and target org' {
+            Enable-SalesforceDebugLogging -TracedEntityId '01p000000000001' -DebugLevel 'MyLevel' -LogType USER_DEBUG -Duration 120 -TargetOrg 'user@example' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 01p000000000001 --debug-level "MyLevel" --log-type USER_DEBUG --duration 120 --target-org user@example --json' }
+        }
+        It 'rejects an invalid log type' {
+            { Enable-SalesforceDebugLogging -TracedEntityId '005' -DebugLevel 'X' -LogType 'PROFILING' } | Should -Throw
+        }
+        It 'rejects a duration over 24 hours' {
+            { Enable-SalesforceDebugLogging -TracedEntityId '005' -DebugLevel 'X' -Duration 1441 } | Should -Throw
+        }
+    }
+}
+
+Describe 'Get-SalesforceDebugLogging' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":[{"Id":"7tf000000000001AAA","Status":"Active"}]}' }
+        }
+        It 'lists trace flags with json' {
+            $out = Get-SalesforceDebugLogging
+            $out.Id | Should -Be '7tf000000000001AAA'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace list --json' }
+        }
+        It 'adds target org when provided' {
+            Get-SalesforceDebugLogging -TargetOrg 'user@example' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace list --target-org user@example --json' }
+        }
+    }
+}
+
+Describe 'Disable-SalesforceDebugLogging' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"id":"7tf000000000001AAA","success":true}}' }
+        }
+        It 'builds delete command' {
+            Disable-SalesforceDebugLogging -TraceId '7tf000000000001AAA' -TargetOrg 'user@example' -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace delete --trace-flag-id 7tf000000000001AAA --target-org user@example --json' }
+        }
+        It 'does not call sf with -WhatIf' {
+            Disable-SalesforceDebugLogging -TraceId '7tf000000000001AAA' -WhatIf
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'deletes each trace flag piped from Get-SalesforceDebugLogging' {
+            $flags = @(
+                [pscustomobject]@{ Id = '7tf000000000001AAA'; Status = 'Expired' },
+                [pscustomobject]@{ Id = '7tf000000000002AAA'; Status = 'Expired' }
+            )
+            $flags | Disable-SalesforceDebugLogging -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace delete --trace-flag-id 7tf000000000001AAA --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace delete --trace-flag-id 7tf000000000002AAA --json' }
+        }
+    }
+}

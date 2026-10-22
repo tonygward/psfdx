@@ -204,6 +204,61 @@ function Convert-SalesforceDebugLog {
 
 #endregion
 
+#region Debug Logging
+
+function Enable-SalesforceDebugLogging {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $TracedEntityId,
+        [Parameter(Mandatory = $true)][string] $DebugLevel,
+        [Parameter(Mandatory = $false)][ValidateSet('DEVELOPER_LOG', 'USER_DEBUG')][string] $LogType,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 1440)][int] $Duration,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $command = "sf apex trace create --traced-entity-id $TracedEntityId"
+    $command += " --debug-level `"$DebugLevel`""
+    if ($LogType) { $command += " --log-type $LogType" }
+    if ($Duration) { $command += " --duration $Duration" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceDebugLogging {
+    [CmdletBinding()]
+    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
+    $command = "sf apex trace list"
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    $command += " --json"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Disable-SalesforceDebugLogging {
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('Id', 'TraceFlagId')][string] $TraceId,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    process {
+        $command = "sf apex trace delete --trace-flag-id $TraceId"
+        if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+        $command += " --json"
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+        if ($PSCmdlet.ShouldProcess($TraceId, 'Disable debug logging (delete trace flag)')) {
+            $result = Invoke-Salesforce -Command $command @commonParams
+            Show-SalesforceResult -Result $result
+        }
+    }
+}
+
+#endregion
+
 #region Flows
 
 function Get-SalesforceFlowInterviews {
