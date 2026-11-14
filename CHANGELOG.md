@@ -4,6 +4,7 @@
 
 ### Added
 
+- psfdx: Prepare a single bundled `psfdx` package for the PowerShell Gallery. The modules now also find each other when they are nested in one package. Publishing is switched off until the owner turns it on, so install from a clone or the release zip for now.
 - Releases are now published on GitHub with a single zip to download.
 - psfdx-logs: `Enable-SalesforceDebugLogging` accepts `-Username`, `-ApexClass` or `-ApexTrigger` as an alternative to `-TracedEntityId`, and looks up the Id for you.
 - psfdx-logs: Add `Enable-SalesforceDebugLogging`, `Get-SalesforceDebugLogging` and `Disable-SalesforceDebugLogging`, wrapping `sf apex trace create`, `list` and `delete`. These need a Salesforce CLI release that includes the `apex trace` commands.

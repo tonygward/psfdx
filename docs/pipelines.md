@@ -22,6 +22,8 @@ Every workflow name starts with one of four prefixes, so its kind is clear at a 
 | `Housekeeping - Archive merged prompt` | `housekeeping-archive-prompt.yml` | Housekeeping | A merged `matrix/` pull request, or by hand |
 | `CI - Release scripts` | `ci-release-scripts.yml` | CI | Pull requests changing `scripts/release/**` or the CD workflows |
 | `CD - Bump version` | `cd-bump-version.yml` | CD | Push to `main`; see [releases](release.md) |
+| `CD - Publish to PowerShell Gallery` | `cd-publish-gallery.yml` | CD | A GitHub release being published (or by hand); dry run until `scripts/release/gallery.json` says `"publish": true`; see [releases](release.md#powershell-gallery) |
+| `CI - Gallery install check` | `ci-gallery-install.yml` | CI | After the Gallery publish; installs `psfdx` from the Gallery on Ubuntu, Windows PowerShell 7 and Windows PowerShell 5.1 |
 | `CD - Publish release` | `cd-publish-release.yml` | CD | Push of a `v*.*.*` tag; see [releases](release.md) |
 | `Housekeeping - Claude on mention` | `claude.yml` | Housekeeping | `@claude` mentions |
 | `Housekeeping - Claude code review` | `claude-code-review.yml` | Housekeeping | Pull requests |

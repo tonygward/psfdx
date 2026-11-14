@@ -4,7 +4,7 @@ function Import-PsfdxSharedModule {
         [string] $ModuleName = 'psfdx-shared'
     )
 
-    if (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue) {
+    if (Get-Module -Name $ModuleName -All -ErrorAction SilentlyContinue) {
         return
     }
 
@@ -307,7 +307,7 @@ function Get-SalesforceMetadataTypesDefault {
 function Retrieve-SalesforceComponent {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
+        [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata -All | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ChildName,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
@@ -440,7 +440,7 @@ function Retrieve-SalesforceOrg {
 function Deploy-SalesforceComponent {
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
+        [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata -All | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $SourceDir,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,

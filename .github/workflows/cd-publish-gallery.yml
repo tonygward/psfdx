@@ -1,0 +1,115 @@
+name: CD - Publish to PowerShell Gallery
+
+# Publishes the one bundled `psfdx` package (every module) for a release that has already been published on GitHub.
+# Order: Matrix tests in its container -> CI passes on the pull request -> merge -> version bump and tag -> CD - Publish release
+# creates the GitHub release -> this workflow publishes the same version.
+# scripts/release/gallery.json decides whether it really uploads: with "publish": false it runs everything up to a dry-run
+# upload (Publish-PSResource -WhatIf) and reports what it would publish. The owner flips the switch once, in a pull request.
+# Gallery versions are permanent, so it never retries with a changed package.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to publish (for example 0.8.1), for repairs
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cd-publish-gallery
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish psfdx to the PowerShell Gallery
+    runs-on: ubuntu-latest
+    # The API key lives in this protected environment, which only main can use.
+    environment: psgallery
+    steps:
+      - name: Work out the release tag
+        id: tag
+        shell: bash
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${INPUT_VERSION:-}" ]; then tag="v${INPUT_VERSION#v}"; else tag="$EVENT_TAG"; fi
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Not a release tag: $tag"; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+          fetch-depth: 2
+
+      - name: Check the tag matches VERSION and the manifests
+        shell: pwsh
+        run: |
+          $tag = '${{ steps.tag.outputs.tag }}'
+          $version = (Get-Content -Path VERSION -Raw).Trim()
+          if ($tag -ne "v$version") { throw "Tag $tag does not match VERSION $version" }
+          foreach ($manifest in Get-ChildItem -Recurse -Filter 'psfdx*.psd1') {
+            $found = (Import-PowerShellDataFile -Path $manifest.FullName).ModuleVersion
+            if ($found -ne $version) { throw "$($manifest.Name) is $found, expected $version" }
+          }
+
+      - name: Check CI passed on the merged pull request's exact head commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The tag is the [release] commit; its parent is the merge that caused it.
+          parent=$(git rev-parse HEAD^)
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$parent/pulls" --jq '.[0].number')
+          if [ -z "$pr" ] || [ "$pr" = "null" ]; then echo "::error::No pull request found for $parent; publishing nothing."; exit 1; fi
+          head=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq '.head.sha')
+          result=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$head&event=pull_request" \
+            --jq '[.workflow_runs[] | select(.name == "CI - Pester tests")] | sort_by(.created_at) | last | "\(.status) \(.conclusion)"')
+          echo "Pull request #$pr, head $head, CI: ${result:-none}"
+          [ "$result" = "completed success" ] || { echo "::error::CI - Pester tests did not pass on $head; publishing nothing."; exit 1; }
+
+      - name: Build the bundle and check its manifest
+        shell: pwsh
+        run: |
+          $out = ./scripts/release/Build-GalleryPackage.ps1
+          Test-ModuleManifest -Path (Join-Path $out 'psfdx.psd1') -ErrorAction Stop | Out-Null
+          "BUNDLE=$out" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $manifest = Import-PowerShellDataFile -Path (Join-Path $out 'psfdx.psd1')
+          Write-Host "Bundle psfdx $($manifest.ModuleVersion): $(@($manifest.FunctionsToExport).Count) functions from $(@($manifest.NestedModules).Count) modules"
+
+      - name: Is this version already on the Gallery?
+        id: exists
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Path VERSION -Raw).Trim()
+          $status = 0
+          try { $status = (Invoke-WebRequest -Uri "https://www.powershellgallery.com/api/v2/Packages(Id='psfdx',Version='$version')" -UseBasicParsing -TimeoutSec 30).StatusCode }
+          catch { if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode } else { throw } }
+          if ($status -eq 200) { Write-Host "psfdx $version is already on the Gallery; nothing to publish. Versions can't be replaced."; "exists=true" >> $env:GITHUB_OUTPUT }
+          elseif ($status -eq 404) { "exists=false" >> $env:GITHUB_OUTPUT }
+          else { throw "The Gallery answered $status; not publishing" }
+
+      - name: Publish (or dry-run) with Publish-PSResource
+        if: steps.exists.outputs.exists == 'false'
+        shell: pwsh
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          $publish = (Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json).publish -eq $true
+          if (-not (Get-Command Publish-PSResource -ErrorAction SilentlyContinue)) { Install-Module Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser }
+          if (-not $publish) {
+            Write-Host 'publish is false in scripts/release/gallery.json: dry run only. Nothing is uploaded.'
+            Publish-PSResource -Path $env:BUNDLE -Repository PSGallery -ApiKey 'dry-run' -WhatIf
+            Get-ChildItem -Path $env:BUNDLE -Recurse -File | ForEach-Object { $_.FullName.Substring($env:BUNDLE.Length).TrimStart('/', '\') } | Sort-Object | ForEach-Object { Write-Host "would publish: $_" }
+            return
+          }
+          if ([string]::IsNullOrEmpty($env:PSGALLERY_API_KEY)) { throw 'PSGALLERY_API_KEY is not available in the psgallery environment' }
+          Write-Host "::add-mask::$env:PSGALLERY_API_KEY"
+          Publish-PSResource -Path $env:BUNDLE -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY -ErrorAction Stop
+          Write-Host 'Published.'

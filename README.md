@@ -9,7 +9,17 @@ PowerShell for Windows or Linux
 https://github.com/PowerShell/PowerShell/releases
 
 
-### 2. Import Scripts
+### 2. Install psfdx
+
+#### From the PowerShell Gallery (recommended once a release has been published there)
+One package, `psfdx`, holds every module:
+```
+Install-Module psfdx
+Import-Module psfdx
+```
+Update later with `Update-Module psfdx`. Gallery publishing is switched on by the owner (see `docs/release.md`); until the first Gallery release exists, use one of the routes below.
+
+#### Or from a clone
 
 #### Mac or Linux
 ```

@@ -1,0 +1,79 @@
+name: CI - Gallery install check
+
+# After CD - Publish to PowerShell Gallery has published a version, install psfdx from the Gallery into a temporary module path on
+# both PowerShell editions, import it, and check that the exported commands match the module manifests in the repository.
+# With "publish": false in scripts/release/gallery.json nothing was published, so this skips (with a notice).
+on:
+  workflow_run:
+    workflows: ["CD - Publish to PowerShell Gallery"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to check (for example 0.8.1)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    name: Gallery install (${{ matrix.name }})
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: 'ubuntu, pwsh', os: ubuntu-latest, shell: pwsh }
+          - { name: 'windows, pwsh', os: windows-latest, shell: pwsh }
+          - { name: 'windows, powershell 5.1', os: windows-latest, shell: powershell }
+    steps:
+      - name: Checkout the released commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Install from the Gallery and compare the commands
+        shell: ${{ matrix.shell }}
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = if ($env:INPUT_VERSION) { $env:INPUT_VERSION.TrimStart('v') } else { (Get-Content -Path VERSION -Raw).Trim() }
+          $publish = (Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json).publish -eq $true
+          if (-not $publish -and -not $env:INPUT_VERSION) { Write-Host "::notice::publish is false in scripts/release/gallery.json, so nothing was published; skipping."; return }
+
+          # Expected: the union of every module manifest's FunctionsToExport.
+          . ./modules.ps1
+          $expected = @()
+          foreach ($module in Get-PsfdxModules) { $expected += @((Import-PowerShellDataFile -Path (Join-Path (Join-Path '.' $module) "$module.psd1")).FunctionsToExport) }
+          $expected = @($expected | Sort-Object)
+
+          if ($PSVersionTable.PSEdition -eq 'Desktop') {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null
+          }
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+
+          # The Gallery can take a few minutes to list a new version.
+          $temp = Join-Path ([IO.Path]::GetTempPath()) ("psfdx-gallery-" + [guid]::NewGuid().ToString('N'))
+          New-Item -ItemType Directory -Path $temp | Out-Null
+          $saved = $false
+          for ($attempt = 1; $attempt -le 12 -and -not $saved; $attempt++) {
+            try { Save-Module -Name psfdx -RequiredVersion $version -Repository PSGallery -Path $temp -Force -ErrorAction Stop; $saved = $true }
+            catch { Write-Host "Attempt ${attempt}: psfdx $version is not available yet ($($_.Exception.Message))"; Start-Sleep -Seconds 30 }
+          }
+          if (-not $saved) { throw "psfdx $version could not be installed from the PowerShell Gallery" }
+
+          # A clean session that sees only the saved copy.
+          $separator = [IO.Path]::PathSeparator
+          $command = "`$ErrorActionPreference = 'Stop'; `$env:PSModulePath = '$temp' + '$separator' + `$env:PSModulePath; Import-Module psfdx -RequiredVersion $version -WarningAction SilentlyContinue; (Get-Command -Module psfdx | Where-Object { `$_.CommandType -eq 'Function' } | Sort-Object Name | ForEach-Object Name) -join ','"
+          $shellPath = (Get-Process -Id $PID).Path
+          $output = & $shellPath -NoProfile -NonInteractive -Command $command
+          if ($LASTEXITCODE -ne 0) { throw "Import-Module psfdx failed: $output" }
+          $installed = @(($output | Select-Object -Last 1) -split ',')
+          $missing = @($expected | Where-Object { $_ -notin $installed })
+          $extra = @($installed | Where-Object { $_ -notin $expected })
+          if ($missing.Count -or $extra.Count) { throw "The installed commands differ from the manifests. Missing: $($missing -join ', '). Extra: $($extra -join ', ')" }
+          Write-Host "psfdx $version installed from the Gallery on PowerShell $($PSVersionTable.PSVersion) and exposes $($installed.Count) commands, as the manifests say."
