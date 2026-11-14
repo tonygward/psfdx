@@ -124,12 +124,13 @@ export function select(scanResult, tasks = {}, limit = 1) {
 }
 
 // Reads prompts from the fetched base branch with git ls-tree and git show. `run` is injectable for tests.
-export function readPromptFiles({ cwd, ref = 'refs/remotes/origin/main', promptDirectory = 'prompts', git = 'git', run = spawnSync }) {
+export function readPromptFiles({ cwd, ref = 'refs/remotes/origin/main', promptDirectory = 'prompts', git = 'git', run = spawnSync, fetchBranch = null }) {
   const exec = args => {
     const result = run(git, args, { cwd, encoding: 'utf8', shell: false, windowsHide: true, maxBuffer: 16 * 1024 * 1024 });
     if (result.error || result.status !== 0) throw new Error('Git could not read the base branch');
     return result.stdout;
   };
+  if (fetchBranch) exec(['fetch', '--no-tags', 'origin', fetchBranch]);
   const revision = exec(['rev-parse', '--verify', `${ref}^{commit}`]).trim();
   if (!/^[a-f0-9]{40,64}$/.test(revision)) throw new Error('Base branch revision is not a commit');
   const names = exec(['ls-tree', '-r', '--name-only', revision, '--', promptDirectory]).split('\n').filter(n => n.endsWith('.md'));

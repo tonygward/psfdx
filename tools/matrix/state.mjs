@@ -36,7 +36,9 @@ export function locked(directory, fn) {
 export const emptyState = () => ({ schema: 1, tasks: {}, events: [], history: [] });
 
 // Never replaces a corrupt or unreadable file with an empty one: an empty state could erase who owns what.
-export function readState(directory) {
+// restart: true (the default) is for a worker starting up. A running board tick passes restart: false so that it never
+// marks a live claim as interrupted.
+export function readState(directory, { restart = true } = {}) {
   const file = path.join(directory, 'state.json');
   if (!fs.existsSync(file)) return emptyState();
   let state;
@@ -46,7 +48,7 @@ export function readState(directory) {
     throw new Error('Matrix state is invalid; restore a verified backup (it was not replaced)');
   }
   // A claimed task on load means a restart happened mid-run.
-  for (const task of Object.values(state.tasks)) {
+  if (restart) for (const task of Object.values(state.tasks)) {
     if (task.state === 'claimed') { task.state = 'interrupted'; task.reason = 'Worker restarted; inspect retained work before retry'; }
   }
   return state;

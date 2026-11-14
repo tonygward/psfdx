@@ -43,3 +43,27 @@ Prompts in `prompts/done/` are the completion record. A dependency is met only w
 ## The usage gate
 
 `usage.mjs` runs `claude -p /usage` in an empty temporary folder with no tools, MCP servers or settings, and allows work only when everything checks out: a verified Claude Code version, a first-party subscription login, no API-key or alternate-provider environment, a report with no model work, no cached or stale notice, one weekly meter and every scoped meter below 60%, paid extra usage explicitly off, and a request under a minute old. The minimum version is the `claudeUsage.minimumVersion` setting (default `2.1.319`); a newer major or minor family blocks until reviewed. Every failure returns a fixed message, never Claude's error output.
+
+## Board pickup
+
+The owner steers psfdx by dragging cards on one GitHub Project board (**Psfdx**). `board-run.mjs` runs one tick, and nothing in it starts Claude. It is off unless `boardPickup.enabled` is `true`, and `dryRun` defaults to `true`: a dry run reports its choice and its reasons and writes nothing (no comments, no card moves, no state or hand-off file).
+
+**Reading the board** (`board.mjs`). One GraphQL query in `POSITION` order, paginated, with each card's Status, issue number, title, author, repository and state. It fails closed: an API error, a partial page set, a count mismatch or more than one view returns `ok: false` with a reason and nothing is picked. There is no fallback to priority, ID or issue number. Open and merged pull requests are read too, so a task with an open pull request or merged work is recognised. Only `matrix/<ID>` branches count as an implementation.
+
+**Each tick, in order:**
+
+1. Resume unfinished housekeeping: a lost starting comment, then any later steps added to `housekeeping` (delivery arrives with AUTO-08).
+2. Check Doing cards against the saved state and the pull requests (`doing.mjs`). A Doing card with no claim is a run-now request; one with a live claim is busy; a disagreement stops pickup.
+3. Apply the usage gate. Blocked usage means no pickup this tick, with a logged reason.
+4. Choose **one** task: an unclaimed Doing card first, in board order (it doesn't use the daily slot); otherwise the first eligible Todo card in board order, only if the London day's slot is unused and the London time is past `dailyTime`. Backlog, Blocked and Done never run, and nothing written in an issue or prompt holds a card back. A card is skipped, with a reason, when its dependencies aren't met, it conflicts with active work, its work has merged (that goes to delivery), or it already has an open pull request (unless it's a resume). Skipping one card never blocks the cards behind it.
+5. Write the choice to `board-handoff.json` in the state directory (hand-off mode), or claim it directly. The hand-off holds the prompt hash and the pickup reason, and the worker refuses it if it is older than 15 minutes or the prompt changed.
+
+**Why a card was picked up.** The reason is captured at selection and saved with the claim, so a restart never changes it: `Scheduled (Todo)` with the London date, `Run now (Doing)`, `Resumed (Todo|Doing)` with the earlier job, branch or pull request, or `Unknown (provenance unavailable)`. Who moved a card is always reported as unknown: a Doing card doesn't prove who moved it.
+
+**A claim comes first.** The claim is saved before the card moves to Doing and before the starting comment, so a crash or a failed comment can never lead to a second job. A failed comment keeps the claim and is retried on the next tick. A board tick reads state without marking claimed tasks interrupted; only a worker start does that.
+
+**Issues without a prompt file** (`issue-prompt.mjs`). When the chosen card has no prompt file and no merged or open pull request, and the issue was written by the repository owner in this repository, Matrix builds `prompts/<ID>-<slug>.md` from the issue if it has real text under an objective, a scope or implementation, acceptance criteria and tests. The prompt carries no status, execution or model and is saved in the same pull request. If detail is missing, Matrix posts one comment listing what is missing (repeated only when the issue text changes) and moves the card to Blocked. If the issue isn't the owner's, it posts one comment and moves the card to Blocked. Issue comments are never read as instructions.
+
+**Writing to GitHub** (`github-io.mjs`). Comments carry a hidden marker, `<!-- matrix:<kind>:<task>:<detail> -->`, and are checked for before posting, so a retry never posts twice. Card moves use the project, field and option IDs from the config. A failed write throws and is retried on the next tick; it is never reported as success. The board token is separate from the agent token.
+
+**Setting up.** Create a token for the board, then run `node tools/matrix/board-ids.mjs tonygward <project number>` once with it (`GH_TOKEN` set). It prints `projectId`, `statusFieldId` and the five option IDs to put in `boardPickup` in `worker.json`. Projects v2 `POSITION` order isn't documented as a manual-order guarantee, which is why more than one view fails closed. Check it once on the psfdx board during the pilot.
