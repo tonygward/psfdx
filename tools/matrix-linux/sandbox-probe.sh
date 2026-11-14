@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run by the test broker as the test user, inside the test sandbox, to prove what that user can and cannot do.
 # Usage: sandbox-probe.sh <worktree> <results file> <scratch folder>. Prints PASS or FAIL lines; the self-test reads them.
-worktree=$1; results=$2; scratch=$3
+worktree=$1; results=$2; scratch=$3; netns=${4:-unknown}
 pass() { echo "PASS  $1"; }
 bad()  { echo "FAIL  $1"; }
 # Success means the probe was ALLOWED to do the thing, so for a forbidden action `allowed` is a failure.
@@ -30,7 +30,19 @@ touch "$scratch/probe" 2>/dev/null && pass "can write its scratch folder" || bad
 # Network: a new namespace with a loopback device only, no proxy settings, and no route to the proxy or the internet.
 [ -z "${HTTPS_PROXY:-}${HTTP_PROXY:-}${https_proxy:-}${http_proxy:-}" ] && pass "no proxy variables" || bad "proxy variables are set"
 devices=$(tail -n +3 /proc/net/dev | cut -d: -f1 | tr -d ' ' | grep -v '^lo$' | head -1)
-[ -z "$devices" ] && pass "no network device except loopback" || bad "network device present: $devices"
-if node -e "require('net').connect({host:'psfdx-matrix-egress',port:3128,timeout:2000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1)).on('timeout',()=>process.exit(1))" 2>/dev/null; then bad "can reach the egress proxy"; else pass "cannot reach the egress proxy"; fi
+if [ "$netns" = proxyauth ]; then
+  # No network namespace is available here, so the test user shares the container network. It must still get nowhere: the proxy
+  # demands a credential only the agent can read, and everything else is blocked by the internal network.
+  pass "network isolation is by proxy credential (no namespace available)"
+  status=$(node -e "
+const http=require('http');
+const r=http.request({host:'psfdx-matrix-egress',port:3128,method:'CONNECT',path:'api.github.com:443',timeout:8000});
+r.on('connect',res=>{console.log(res.statusCode);process.exit(0)});r.on('error',()=>{console.log('error');process.exit(0)});r.on('timeout',()=>{console.log('timeout');process.exit(0)});r.end();" 2>/dev/null)
+  [ "$status" = 407 ] && pass "the proxy refuses the test user without the credential (407)" || bad "the proxy did not refuse the test user (status $status)"
+  forbid sh -c "cat /proc/1/environ" && pass "cannot read another process's environment" || bad "can read another process's environment"
+else
+  [ -z "$devices" ] && pass "no network device except loopback" || bad "network device present: $devices"
+  if node -e "require('net').connect({host:'psfdx-matrix-egress',port:3128,timeout:2000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1)).on('timeout',()=>process.exit(1))" 2>/dev/null; then bad "can reach the egress proxy"; else pass "cannot reach the egress proxy"; fi
+fi
 if node -e "require('net').connect({host:'1.1.1.1',port:443,timeout:2000}).on('connect',()=>process.exit(0)).on('error',()=>process.exit(1)).on('timeout',()=>process.exit(1))" 2>/dev/null; then bad "can reach the internet"; else pass "cannot reach the internet"; fi
 exit 0

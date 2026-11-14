@@ -2,7 +2,7 @@
 
 This runs the [Matrix worker](../matrix/README.md) where a mistake or a hostile prompt can't reach the owner's files, the home network or any publishing credential. It is a non-root container whose only way out is an allow-list proxy to Anthropic and GitHub.
 
-**Status: not yet verified on the host.** Everything here is written and statically checked (`node --test`, a shell syntax check and a PowerShell parse test), but the image has not been built and `Verify` has not been run. Those are owner steps. See [what is not proven](#what-this-does-not-prove).
+**Status: built and verified on one host, not yet used for real work.** On 14 November 2026 `Build` produced the image and `Verify` ended with `ALL CHECKS PASSED` on a WSL 2 host (kernel 6.18). That host's container runtime blocks network namespaces, so the test sandbox uses the [proxy credential](#the-test-sandbox) fallback. The worker has not run against real GitHub or Claude, and `Login` has not been done. See [what is not proven](#what-this-does-not-prove).
 
 ## Separate from any other worker
 
@@ -26,7 +26,7 @@ The two workers never share a volume, network, lock file or token. `Start-Matrix
 | No way to gain privilege | No sudo, no set-id programs (stripped at build), no Docker CLI, no Docker socket | `Verify` |
 | The image can't be changed | The worker code is copied into the image (root-owned, read-only), never mounted from the host | `Verify`: `/opt/matrix` and `/` not writable |
 | Only the proxy leads out | The agent is on an internal-only network; the squid proxy is the only container with a route out | `Verify` (with the proxy): direct internet and the home network are blocked |
-| Only the allow-listed hosts | The proxy allows HTTPS `CONNECT` on port 443 to `api.anthropic.com`, `claude.ai`, `claude.com`, `anthropic.com` (sign-in and usage), `github.com`, `api.github.com`, `codeload.github.com` and `objects.githubusercontent.com`, and refuses private and LAN addresses | `Verify`: allowed hosts connect; `example.com`, the PowerShell Gallery, npm and a LAN address are refused |
+| Only the allow-listed hosts | The proxy allows HTTPS `CONNECT` on port 443, with its credential, to `anthropic.com` (which covers `api.anthropic.com`), `claude.ai` and `claude.com` (sign-in and usage), `github.com`, `api.github.com`, `codeload.github.com` and `objects.githubusercontent.com`, and refuses private and LAN addresses | `Verify`: allowed hosts connect; `example.com`, the PowerShell Gallery, npm and a LAN address are refused |
 | Secrets stay small | A secrets folder outside any repository is mounted read-only at `/opt/host-secrets`, a root-only folder. The entrypoint gives the agent private copies of `agent_github_token` (psfdx only; Contents and Pull requests) and `board_token` (Projects and Issues). Never the `RELEASE_TOKEN`; no Anthropic API key | `Verify`: no release, publishing or API-key variable, the raw mount is closed to the agent |
 | Subscription login only | The usage gate refuses API keys and alternate providers, so there is no key anywhere | The worker's usage check |
 | PowerShell 7 and Pester 5 | Installed at build time at pinned exact versions (`versions.json`), because the proxy refuses the PowerShell Gallery at run time | `Verify`: the versions match the pins |
@@ -39,10 +39,14 @@ Matrix runs Pester in the container before anything is pushed (AUTO-07). The cod
 - The worker calls `run-tests-sandboxed <worktree> <results file> <seconds>`, which writes a request file and waits. The broker is the only thing that can run code as the test user.
 - **The command is fixed in the broker.** A request only chooses which worktree (it must be exactly `/work/worktrees/<PSF|AUTO>-<n>/repo`, a plain directory), where the results go (that task's `testResults.xml`) and how long (30 to 3600 seconds). It can't supply a command.
 - The broker gives that one worktree to the test user while the tests run, and hands it back afterwards. The test user can read and write only that worktree, its results file and a scratch folder. It can't read the secrets, the Claude sign-in, the state folder, the source clone or any other worktree, and it can't write outside those places.
-- **No network.** The tests run in a new network namespace that holds only a loopback device, with no proxy settings and no route out. The broker tries, in order: the test user makes its own namespace (`unshare --user --map-current-user --net`, needs unprivileged user namespaces), then root makes it (`unshare --net`, needs `CAP_SYS_ADMIN`). **If neither works, the broker refuses every request** (exit code 125) and the worker stops in Blocked, so tests never run without isolation. `Verify` prints which method applies (`network isolation for the test user: userns` or `rootns`) and fails if it is `none`.
+- **No network.** The broker picks the strongest method the runtime allows and `Verify` prints it (`network isolation for the test user: ...`):
+  1. `userns`: the tests run in a new network namespace that holds only a loopback device (the test user makes its own, `unshare --user --map-current-user --net`);
+  2. `rootns`: the same, made by root (needs `CAP_SYS_ADMIN`);
+  3. `proxyauth`: used when the runtime's seccomp profile blocks `unshare` (as on the verified host). The test user shares the container network, but the only way out is the egress proxy, which **demands a credential** (a generated password kept outside the repository, given only to the agent's environment; the test user runs with an empty environment and can't read another process's). Direct connections are already blocked by the internal network. This is weaker than a namespace: the test user can open a TCP connection to the proxy and be refused with 407. The broker only picks it after checking that the proxy really answers 407 without the credential;
+  4. `none`: **the broker refuses every request** (exit code 125), the worker stops in Blocked, and tests never run without isolation.
 - Exit codes: `0` passed, `1` failed, `124` timed out (the process tree is killed), `125` refused, `3` sandbox error.
 
-`Verify` proves it with a probe that runs as the test user inside the sandbox: it can't read a secret, the state folder, the source clone, the broker's inbox or another worktree; can't write `/etc`, `/opt/matrix`, the state folder or other worktrees; has no capabilities; sees no network device except loopback; and can't reach the proxy or the internet. It can write its own worktree and scratch folder.
+`Verify` proves it with a probe that runs as the test user inside the sandbox: it can't read a secret, the state folder, the source clone, the broker's inbox or another worktree; can't write `/etc`, `/opt/matrix`, the state folder or other worktrees; has no capabilities; and can't reach the internet. With a namespace it sees no network device except loopback and can't reach the proxy; with `proxyauth` the proxy refuses it (407). It can write its own worktree and scratch folder.
 
 ## Running it
 
@@ -99,7 +103,7 @@ The self-test proves this container is **configured as designed**. It does not p
 
 - wslc has no read-only root file system, capability-drop, no-new-privileges or PID-limit flags. File permissions and the entrypoint do that work instead, and `Verify` checks the result.
 - The container starts as root for a few seconds, and the root test broker keeps running beside the worker. The broker is small and validates every request, but a bug in it would be a root bug inside the container.
-- The test sandbox relies on the kernel allowing the network namespace. If it doesn't, tests don't run (by design).
+- With `proxyauth` the test user is kept off the network by a credential rather than a namespace (see above). Stray test processes are killed after each run (`pkill -u matrix-test`) because there is no PID namespace either.
 - The proxy limits where the container can connect, not what it sends to the allowed hosts. The agent token can write to psfdx, so keep it a fine-grained token for that one repository.
 - Pull requests that Matrix opens are still checked by hosted CI and the merge gate, which are the real safeguards for what reaches `main`.
 - Anything that widens the allow-list (for example the PowerShell Gallery check that AUTO-11 turns on) needs a person.

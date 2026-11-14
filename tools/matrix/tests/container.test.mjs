@@ -68,9 +68,13 @@ test('the version check rejects loose, wrong-family and wrong-major pins', () =>
 test('the egress allow-list names exactly the hosts the policy allows and refuses private ranges', () => {
   const squid = read('squid/squid.conf');
   const hosts = [...squid.matchAll(/^acl allowed_hosts dstdomain (.+)$/gm)].flatMap(m => m[1].trim().split(/\s+/)).sort();
-  assert.deepEqual(hosts, ['.anthropic.com', '.claude.ai', '.claude.com', 'api.anthropic.com', 'api.github.com', 'codeload.github.com', 'github.com', 'objects.githubusercontent.com'].sort());
+  assert.deepEqual(hosts, ['.anthropic.com', '.claude.ai', '.claude.com', 'api.github.com', 'codeload.github.com', 'github.com', 'objects.githubusercontent.com'].sort());
   assert.match(squid, /http_access deny private_dst/);
-  assert.match(squid, /http_access allow agent_net CONNECT ssl_ports allowed_hosts\nhttp_access deny all/);
+  assert.match(squid, /http_access allow agent_net authed CONNECT ssl_ports allowed_hosts\r?\nhttp_access deny all/);
+  assert.match(squid, /auth_param basic program \/usr\/lib\/squid\/basic_ncsa_auth \/etc\/squid\/passwd/);
+  assert.match(squid, /acl authed proxy_auth REQUIRED/);
+  // Squid refuses a host listed beside a parent domain, so no entry may be a subdomain of another.
+  for (const a of hosts) for (const b of hosts) if (a !== b && b.startsWith('.') && a.endsWith(b)) assert.fail(a + ' is redundant next to ' + b);
   assert.match(squid, /acl ssl_ports port 443/);
   assert.doesNotMatch(squid, /powershellgallery|npmjs/);
 });
@@ -185,4 +189,18 @@ test('never newer than the latest tag, never trusts a version with no publish ti
 test('a registry with no stable latest, or a bad current version, never updates', () => {
   assert.equal(choose({ 'dist-tags': {}, versions: {}, time: {} }).action, 'none');
   assert.throws(() => choose(registry([['2.1.330', 10]]), { current: 'next' }));
+});
+
+test('without a network namespace the broker only runs tests if the proxy demands a credential, and kills stray processes', () => {
+  const broker = read('test-broker.sh');
+  assert.match(broker, /elif proxy_demands_auth; then echo proxyauth/);
+  assert.match(broker, /\[ "\$status" = 407 \]/);
+  assert.match(broker, /pkill -KILL -u "\$TEST_UID"/);
+  assert.match(read('Dockerfile'), /util-linux procps/);
+  const launcher = read('Start-MatrixPsfdx.ps1');
+  assert.match(launcher, /function Get-ProxyCredential/);
+  assert.match(launcher, /'proxy\.passwd'\):\/etc\/squid\/passwd:ro/);
+  assert.match(launcher, /HTTPS_PROXY=http:\/\/matrix:\$\{proxyPassword\}@/);
+  assert.ok(!/proxy-password/.test(read('worker.config.json')), 'the credential never goes in the config');
+  assert.match(read('sandbox-probe.sh'), /the proxy refuses the test user without the credential \(407\)/);
 });
