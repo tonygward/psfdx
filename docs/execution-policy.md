@@ -51,7 +51,7 @@ The process has nine parts. Each has one owning document or section.
 Summary of the decisions. The workflows and scripts that implement them arrive with AUTO-02, AUTO-03 and AUTO-04, and those prompts add the detail here.
 
 - **CI:** one workflow, `CI - Pester tests`, on every pull request. A docs-only pull request gets a quick run that tests nothing, so the gate always has a result.
-- **Merge gate:** Matrix pull requests merge automatically once CI passed on the exact head commit and every rule holds. Workflows, the gate scripts, the Dockerfile, shell and PowerShell scripts outside the modules, and the egress allow-list always need a person.
+- **Merge gate:** Matrix pull requests merge automatically once CI passed on the exact head commit and every rule holds. Workflows, the gate scripts, the Dockerfile, shell and PowerShell scripts outside the modules, and the egress allow-list always need a person. That means anything under `.github/`, `scripts/`, `install*.ps1`, `uninstall*.ps1`, `VERSION`, the Dockerfile and the allow-list. Rules and lanes are in [pipelines](pipelines.md#gate---matrix-auto-merge); a person's own pull request is never merged automatically.
 - **Versions:** one `VERSION` file that every module manifest matches. Each source merge to `main` bumps the third part and moves the `## Unreleased` notes into the new version. Major and minor bumps are owner decisions. Any change users will notice adds plain-language bullets under `## Unreleased`, prefixed with the module name; see [releases](release.md).
 - **Release:** one GitHub release per version, tagged `vX.Y.Z`, with exactly one asset, `psfdx-X.Y.Z.zip`.
 

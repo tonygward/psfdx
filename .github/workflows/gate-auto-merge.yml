@@ -1,0 +1,125 @@
+name: Gate - Matrix auto-merge
+
+# Merges a Matrix pull request once CI - Pester tests has succeeded for its exact head commit and every
+# rule in scripts/matrix/automerge.mjs holds. Runs from main's copy of the workflow and scripts; pull
+# request code is never checked out or executed here. The merge uses RELEASE_TOKEN so that the push
+# to main starts CD - Bump version. Switch off with the repository variable MATRIX_AUTOMERGE_ENABLED=false
+# (it must be 'true' for the gate to run at all).
+on:
+  workflow_run:
+    workflows: ["CI - Pester tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: gate-auto-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    name: Decide and merge
+    if: >-
+      vars.MATRIX_AUTOMERGE_ENABLED == 'true' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (startsWith(github.event.workflow_run.head_branch, 'matrix/') ||
+       startsWith(github.event.workflow_run.head_branch, 'housekeeping/archive-'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main (trusted scripts only)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Gather facts about the pull request and the run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || { echo "No pull request is linked to this run"; exit 1; }
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" > pr.json
+          gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[].filename' > files.txt
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs" --jq '.jobs[] | {name, conclusion}' | jq -s '.' > jobs.json
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$RUN_SHA" --jq '.workflow_runs[] | {name, conclusion}' | jq -s '.' > otherRuns.json
+          jq -n --arg repo "$GITHUB_REPOSITORY" --slurpfile pr pr.json --rawfile files files.txt \
+            --slurpfile jobs jobs.json --slurpfile otherRuns otherRuns.json \
+            --arg conclusion "$RUN_CONCLUSION" --arg event "$RUN_EVENT" --arg sha "$RUN_SHA" --arg name "$RUN_NAME" '{
+              repository: $repo,
+              pr: { state: ($pr[0].state | ascii_upcase), baseRefName: $pr[0].base.ref, headRefName: $pr[0].head.ref,
+                    headRefOid: $pr[0].head.sha, headRepository: $pr[0].head.repo.full_name,
+                    author: $pr[0].user.login, body: ($pr[0].body // "") },
+              files: ($files | split("\n") | map(select(length > 0))),
+              jobs: $jobs[0], otherRuns: $otherRuns[0],
+              run: { name: $name, conclusion: $conclusion, event: $event, head_sha: $sha } }' > facts.json
+
+      - name: Decide
+        id: gate
+        run: |
+          set +e
+          node scripts/matrix/gate-cli.mjs facts.json | tee decision.json
+          code=${PIPESTATUS[0]}
+          { echo '### Matrix auto-merge decision'; echo '```json'; cat decision.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [[ "$code" == 0 || "$code" == 1 ]]
+
+      - name: Say why the gate declined (once per commit)
+        if: steps.gate.outputs.code == '1' && github.event.workflow_run.conclusion == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          [[ -n "$GH_TOKEN" ]] || { echo '::warning::RELEASE_TOKEN is not set; cannot comment'; exit 0; }
+          marker="<!-- matrix-gate:$RUN_SHA -->"
+          if gh api --paginate "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --jq '.[].body' | grep -qF "$marker"; then
+            echo "Already commented for this commit"; exit 0
+          fi
+          {
+            echo "Matrix auto-merge did not merge this pull request, so a person needs to decide:"
+            echo
+            jq -r '.reasons[] | "- " + .' decision.json
+            echo
+            echo "$marker"
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+
+      - name: Mark ready and merge
+        if: steps.gate.outputs.code == '0'
+        env:
+          # A scoped token is required so the merge to main starts CD - Bump version.
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          set -euo pipefail
+          [[ -n "$GH_TOKEN" ]] || { echo '::error::Configure RELEASE_TOKEN'; exit 1; }
+          lane=$(jq -r .lane decision.json)
+          {
+            echo "Matrix auto-merge checked and approved this pull request (lane: $lane):"
+            echo
+            echo "- CI - Pester tests succeeded for exactly $RUN_SHA: $RUN_URL"
+            echo "- every changed file is inside the permitted scope for the lane"
+            echo "- no workflow, script, installer, version file or gate was changed"
+            echo "- branch from this repository, opened by the agent identity"
+          } > comment.md
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+          if [[ "$(jq -r .draft pr.json)" == "true" ]]; then gh pr ready "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"; fi
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --squash --delete-branch --match-head-commit "$RUN_SHA"
