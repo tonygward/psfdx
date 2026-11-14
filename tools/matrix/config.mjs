@@ -5,7 +5,8 @@ import { BATCH_LIMIT } from './policy.mjs';
 
 const TOP = ['repositorySlug', 'baseBranch', 'sourceDirectory', 'stateDirectory', 'worktreeRoot', 'promptDirectory', 'idPrefixes',
   'dailyTime', 'batchLimit', 'claudeUsage', 'worker', 'boardPickup'];
-const WORKER = ['maximumPrompts', 'maximumTurns', 'maximumBudgetUsd', 'timeoutSeconds', 'maximumRunMinutes', 'maximumRepairs', 'maximumTokens'];
+const WORKER = ['enabled', 'maximumPrompts', 'maximumTurns', 'maximumBudgetUsd', 'timeoutSeconds', 'maximumRunMinutes', 'maximumRepairs', 'maximumLocalRepairs',
+  'maximumTokens', 'testTimeoutSeconds', 'ciTimeoutSeconds', 'pollSeconds', 'gitExecutable', 'ghExecutable', 'tokenFile', 'testRunner'];
 const isAbsolute = value => typeof value === 'string' && (path.posix.isAbsolute(value) || path.win32.isAbsolute(value));
 const positiveInteger = value => Number.isInteger(value) && value > 0;
 
@@ -26,7 +27,11 @@ export function validateConfig(config) {
   if (typeof worker !== 'object' || Array.isArray(worker)) fail('worker must be an object');
   for (const key of Object.keys(worker)) if (!WORKER.includes(key)) fail(`unknown worker key ${key}`);
   if (worker.maximumPrompts !== undefined && worker.maximumPrompts !== 1) fail('worker.maximumPrompts must be 1');
-  for (const key of ['maximumTurns', 'timeoutSeconds', 'maximumRunMinutes', 'maximumRepairs']) {
+  if (worker.enabled !== undefined && typeof worker.enabled !== 'boolean') fail('worker.enabled must be true or false');
+  for (const key of ['gitExecutable', 'ghExecutable', 'tokenFile', 'testRunner']) if (worker[key] !== undefined && !isAbsolute(worker[key])) fail(`worker.${key} must be an absolute path`);
+  const within = (key, low, high) => { if (worker[key] !== undefined && !(Number.isInteger(worker[key]) && worker[key] >= low && worker[key] <= high)) fail(`worker.${key} must be an integer from ${low} to ${high}`); };
+  within('maximumRepairs', 0, 3); within('maximumLocalRepairs', 0, 10); within('testTimeoutSeconds', 30, 3600); within('ciTimeoutSeconds', 300, 7200); within('pollSeconds', 5, 300);
+  for (const key of ['maximumTurns', 'timeoutSeconds', 'maximumRunMinutes']) {
     if (worker[key] !== undefined && !positiveInteger(worker[key])) fail(`worker.${key} must be a positive integer`);
   }
   if (worker.maximumBudgetUsd !== undefined && !(typeof worker.maximumBudgetUsd === 'number' && worker.maximumBudgetUsd > 0)) fail('worker.maximumBudgetUsd must be a positive number');

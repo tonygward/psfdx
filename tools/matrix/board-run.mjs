@@ -87,7 +87,7 @@ export async function boardTick(config, deps) {
   // Resume anything half-way before considering new work: a lost starting comment, then later steps.
   if (!dryRun) {
     if (!promptBlock) await recoverPickupComments(dir, { revision, io, limits });
-    for (const step of housekeeping) await step({ dir, board, pulls: pulled.pulls, io });
+    for (const step of housekeeping) await step({ dir, board, pulls: pulled.pulls, io, clock });
     state = readState(dir, { restart: false });
   }
 
