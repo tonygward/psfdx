@@ -36,7 +36,7 @@ export function inCoreScope(file) {
   if (!safePath(file)) return false;
   if (/\.(exe|dll|cmd|bat|ps1|sh|cmake)$/i.test(file)) return false;
   return /^tools\/matrix\/(?:tests\/)?[A-Za-z0-9._-]+\.(?:mjs|json|md)$/.test(file)
-    || file === 'tools/matrix-linux/worker.config.json'
+    || /^tools\/matrix-linux\/(?:worker\.config\.json|README\.md)$/.test(file)
     || file === 'docs/execution-policy.md';
 }
 

@@ -1,0 +1,22 @@
+#!/bin/sh
+# The sandbox wrapper the worker calls (worker.testRunner): run-tests-sandboxed <worktree> <results file> <timeout seconds> [ignored...]
+# It asks the root test broker (test-broker.sh) to run Pester as the test user in a sandbox with no network, and waits for the answer.
+# Anything after the third argument is ignored on purpose: the command that runs is fixed in the broker, never supplied by the caller.
+# Exit codes: 0 tests passed, 1 tests failed, 124 timed out, 125 the sandbox refused (or is unavailable), 3 sandbox error.
+set -u
+worktree=${1:?worktree}; results=${2:?results file}; seconds=${3:?timeout}
+mode=${PSFDX_SANDBOX_MODE:-tests}
+IN=/work/broker/in
+OUT=/work/broker/out
+id="$(date +%s)-$$"
+[ -d "$IN" ] || { echo "The test broker is not running" >&2; exit 125; }
+{ printf '%s\n%s\n%s\n' "$worktree" "$results" "$seconds"; [ "$mode" = probe ] && printf 'probe\n'; } > "$IN/$id.tmp"
+mv "$IN/$id.tmp" "$IN/$id.req"
+waited=0
+limit=$((seconds + 180))
+while [ "$waited" -lt "$limit" ]; do
+  if [ -f "$OUT/$id.rc" ]; then rc=$(cat "$OUT/$id.rc"); rm -f "$OUT/$id.rc"; exit "$rc"; fi
+  sleep 1; waited=$((waited + 1))
+done
+echo "The test broker did not answer" >&2
+exit 3
