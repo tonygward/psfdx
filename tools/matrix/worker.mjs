@@ -29,7 +29,7 @@ const BRANCH = /^matrix\/(?:PSF|AUTO)-\d+(?:-[a-z0-9]+)*$/;
 
 // Fails closed when the container is not configured as designed. Facts come from the running process.
 export function preflight({ env = process.env, exists = fs.existsSync, status = () => fs.readFileSync('/proc/self/status', 'utf8'), uid = process.getuid?.() } = {}) {
-  if (uid === 0 || uid === undefined) throw new Error('Isolation check failed: must not run as root');
+  if (uid === 0 || uid === undefined || uid === null) throw new Error('Isolation check failed: must not run as root');
   if (exists('/var/run/docker.sock') || exists('/run/docker.sock')) throw new Error('Isolation check failed: Docker socket is present');
   const bad = Object.keys(env).filter(k => env[k] && FORBIDDEN_ENV.test(k));
   if (bad.length) throw new Error(`Isolation check failed: credentials in environment (${bad.join(', ')})`);

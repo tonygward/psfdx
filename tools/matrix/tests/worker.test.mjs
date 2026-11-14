@@ -374,7 +374,7 @@ test('preflight fails closed', () => {
   const ok = { env: { HTTPS_PROXY: 'http://proxy:3128' }, exists: () => false, status: () => 'CapEff:\t0000000000000000\n', uid: 1000 };
   assert.doesNotThrow(() => preflight(ok));
   assert.throws(() => preflight({ ...ok, uid: 0 }), /root/);
-  assert.throws(() => preflight({ ...ok, uid: undefined }), /root/);
+  assert.throws(() => preflight({ ...ok, uid: null }), /root/);
   assert.throws(() => preflight({ ...ok, exists: p => p === '/var/run/docker.sock' }), /Docker socket/);
   assert.throws(() => preflight({ ...ok, env: { ...ok.env, GH_TOKEN: 'x' } }), /credentials in environment \(GH_TOKEN\)/);
   assert.throws(() => preflight({ ...ok, env: {} }), /egress proxy/);
