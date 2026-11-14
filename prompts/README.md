@@ -1,12 +1,14 @@
 # psfdx prompts
 
-These prompts set up board-driven, autonomous development for psfdx. **Matrix** is a trusted orchestrator. It picks one card at a time from a GitHub Project board, has Claude write the change in an isolated container, opens a pull request, waits for CI, merges once the checks pass, releases a patch version, then closes the issue and moves the card to Done.
+These prompts set up board-driven, autonomous development for psfdx. **Matrix** is a trusted orchestrator running on the Matrix server. It picks one card at a time from a GitHub Project board, has Claude write the change and its tests in an isolated container, **runs Pester there until it passes**, opens a pull request, hands over to GitHub CI for the wider check (Windows, Windows PowerShell 5.1), merges once the checks pass, releases a patch version (and, once AUTO-11 is set up, publishes it to the PowerShell Gallery), then closes the issue and moves the card to Done.
+
+**Where work runs:** Matrix writes, builds and tests the code; GitHub CI tests it on more platforms; CD publishes. The owner's development machine (Cybertron) writes prompts and reviews; it never builds or runs tests.
 
 The design is ported from the Matrix orchestrator in [`tonygward/audio-plugins`](https://github.com/tonygward/audio-plugins/tree/9e7e14a09f7e3b45c3dd11c2887d580f9cbea999). Every prompt links to its reference files at that pinned commit. **Port the behaviour and its tests, not the Songsmith specifics** (JUCE builds, two installers, R2, the beta website). Where psfdx differs, the prompt says so.
 
 ## Order
 
-Run these by hand (in Claude Code, one prompt per pull request, in this order) until AUTO-10 has proved the worker. After that, new work goes through the board.
+Until the psfdx worker exists, run these **on the Matrix server** in an interactive Claude Code session (one prompt per pull request, in this order), never on Cybertron. After AUTO-10 has proved the worker, new work goes through the board, AUTO-11 included.
 
 | ID | Prompt | Depends on | Needs a person to merge |
 |---|---|---|---|
@@ -20,6 +22,7 @@ Run these by hand (in Claude Code, one prompt per pull request, in this order) u
 | AUTO-08 | [Delivery: verify, final comment, close, Done](AUTO-08-delivery.md) | AUTO-07, AUTO-03 | yes |
 | AUTO-09 | [Isolated Linux container](AUTO-09-linux-container.md) | AUTO-07 | yes (Dockerfile, scripts) |
 | AUTO-10 | [Supervised end-to-end pilot](AUTO-10-supervised-pilot.md) | AUTO-08, AUTO-09 | not applicable: owner-run |
+| AUTO-11 | [Publish releases to the PowerShell Gallery](AUTO-11-powershell-gallery.md) (**Backlog**: waits for the owner's Gallery account and API key) | AUTO-03, AUTO-08 | yes (workflows, secrets) |
 
 AUTO-05 to AUTO-08 can each be built and unit-tested without a live board, Claude or container: every outside call goes through an injected adapter.
 
@@ -32,7 +35,8 @@ AUTO-05 to AUTO-08 can each be built and unit-tested without a live board, Claud
 | Board | A new GitHub Project, **psfdx Development**, with one table view and the Status options Backlog, Todo, Doing, Blocked, Done |
 | Selection | Same as Songsmith: Doing runs now, Todo runs one card a London day after 02:00, Backlog and Blocked wait, one task at a time, nothing new at or above 60% weekly Claude usage, Sonnet only |
 | Version | One `VERSION` file (`0.8.0` to start) that every module manifest matches. Each source merge to `main` bumps the third part |
-| Delivery | One GitHub release per version, `vX.Y.Z`, with exactly one asset: `psfdx-X.Y.Z.zip`. The final comment links to the release page. PowerShell Gallery publishing is out of scope until the owner decides otherwise |
+| Testing | Matrix runs Pester (PowerShell 7) in its container, in a sandbox with no network or secrets, and pushes only when it passes. GitHub CI then runs Ubuntu, Windows PowerShell 7 and Windows PowerShell 5.1 |
+| Delivery | One GitHub release per version, `vX.Y.Z`, with exactly one asset: `psfdx-X.Y.Z.zip`. The final comment links to the release page. PowerShell Gallery publishing follows once CI has passed and the release exists, as **one bundled `psfdx` module** containing every module (AUTO-11, a To Do until the owner sets up the Gallery account) |
 | Worker language | Node.js 24, no npm packages, `node --test` (the same as the reference, so the ported tests carry across) |
 | Host | The same always-on PC as the Songsmith worker, in a separate container with its own name, volumes, secrets folder, board token and state |
 | Public repository | psfdx is public, so Matrix acts only on issues opened by the owner and on cards the owner placed. Pull requests from forks never merge automatically. See AUTO-06 and AUTO-04 |
@@ -45,6 +49,7 @@ AUTO-05 to AUTO-08 can each be built and unit-tested without a live board, Claud
 4. Turn on branch protection for `main` and require the `CI - Pester tests` checks.
 5. Build the container, run the isolation self-test, and sign in once with the Claude subscription (AUTO-09).
 6. Supervise the pilot (AUTO-10).
+7. When ready for AUTO-11: a PowerShell Gallery account, an API key scoped to the single `psfdx` package (one bundled module), and the `PSGALLERY_API_KEY` secret in a protected `psgallery` environment.
 
 ## Open prompts
 
@@ -52,7 +57,7 @@ This is an index, not the queue: the board decides what runs and in what order.
 
 | ID | Prompt | Tracking issue |
 |---|---|---|
-| AUTO-01 to AUTO-10 | See the order above | Create one issue per prompt, titled `AUTO-0N: <title>` |
+| AUTO-01 to AUTO-11 | See the order above | Create one issue per prompt, titled `AUTO-NN: <title>` |
 
 ## Merged implementation archive
 

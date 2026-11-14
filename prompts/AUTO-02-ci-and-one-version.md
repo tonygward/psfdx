@@ -12,7 +12,7 @@ Tracking issue: create `AUTO-02: CI named by kind, one version number` and link 
 
 ## Objective and user value
 
-Give every pull request one trustworthy result the merge gate can rely on, including Windows PowerShell 5.1, which the coding agent can never run itself. Give psfdx one version number, so releases (AUTO-03) have something to bump.
+Give every pull request one trustworthy result the merge gate can rely on. Matrix runs Pester on PowerShell 7 in its Linux container before pushing (AUTO-07); CI is the wider check on more platforms, including Windows and Windows PowerShell 5.1, which the container can't run. Give psfdx one version number, so releases (AUTO-03) have something to bump.
 
 ## Current behaviour
 

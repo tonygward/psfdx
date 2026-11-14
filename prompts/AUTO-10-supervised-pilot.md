@@ -31,23 +31,24 @@ This is a runbook the owner follows with Claude's help; it changes little code. 
 ### Live run
 
 5. Set `dryRun: false`, rebuild and restart the container, move the card to Todo before 02:00 (or Doing for an immediate run).
-6. Watch and record the timestamps of: starting comment, draft pull request, CI result, CI-passed note, gate merge, `[release]` commit, tag, release, archived prompt, final comment, issue closed, card Done.
-7. Check the release has exactly one zip, the changelog bullet is in plain language, and the zip installs and imports in Windows PowerShell 5.1 and PowerShell 7 on the owner's machine (into a temporary module path, not the real one).
+6. Watch and record the timestamps of: starting comment, local Pester runs in the container (and how many local repairs), draft pull request, CI result, CI-passed note, gate merge, `[release]` commit, tag, release, archived prompt, final comment, issue closed, card Done.
+7. Check the release has exactly one zip and the changelog bullet is in plain language. Installing the zip on Windows PowerShell 5.1 and PowerShell 7 is covered by CI; don't build or test on the owner's development machine (Cybertron).
 
 ### Failure drills (one each)
 
 8. **Blocked:** set `maximumBudgetUsd` very low on a second small task; check one Blocked comment naming the limit and the card in Blocked. Move it back to Doing with normal limits; check it resumes on the same branch and pull request without duplication.
 9. **Restart during CI:** stop the container while CI runs, start it, and check recovery hands the task back to the gate without running Claude or pushing.
-10. **Usage gate:** temporarily set the threshold below the current reading; check no pickup and a logged reason. Restore it.
+10. **Local test failure:** give Matrix a task whose acceptance criteria include a test that fails until the change is right; check from the log that it repaired locally, pushed only after Pester passed, and that the sandbox self-test still passes.
+11. **Usage gate:** temporarily set the threshold below the current reading; check no pickup and a logged reason. Restore it.
 
 ### After the pilot
 
-11. Leave Matrix as the only worker on psfdx for a week with `dryRun: false`, then record the outcome and any follow-up issues in the ADR.
+12. Leave Matrix as the only worker on psfdx for a week with `dryRun: false`, then record the outcome and any follow-up issues in the ADR.
 
 ## Acceptance criteria
 
 - One task reached Done with every timestamp above recorded and no manual step after moving the card.
-- All three drills behaved as described, with links to the comments and runs.
+- All four drills behaved as described, with links to the comments and runs.
 - Every gap found has its own issue (`AUTO-11` onwards) on the board in Backlog.
 
 ## Tests
