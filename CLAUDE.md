@@ -89,6 +89,10 @@ Work is chosen from a GitHub Project board: Todo and Doing cards run, Backlog an
 
 Every task is a GitHub issue titled with a stable ID (`PSF-##` for modules, `AUTO-##` for automation). Prompts live in `prompts/` and move to `prompts/done/` when merged. See [docs/backlog-issue-prompt-contract.md](docs/backlog-issue-prompt-contract.md).
 
+## Release notes
+
+Any change users will notice adds plain-language bullets under `## Unreleased` in `CHANGELOG.md`, prefixed with the module name. No commit hashes, pull request titles or prompt IDs. See [docs/release.md](docs/release.md).
+
 ## Git
 
 - PRs target `main`. `master` is stale (many commits behind); don't use it. CI (`.github/workflows/ci.yml`) runs Pester on `ubuntu-latest` for pull requests only.

@@ -16,6 +16,9 @@ Every workflow name starts with one of four prefixes, so its kind is clear at a 
 | Workflow | File | Kind | Runs on |
 |---|---|---|---|
 | `CI - Pester tests` | `ci.yml` | CI | Pull requests to `main`, and manual runs |
+| `CI - Release scripts` | `ci-release-scripts.yml` | CI | Pull requests changing `scripts/release/**` or the CD workflows |
+| `CD - Bump version` | `cd-bump-version.yml` | CD | Push to `main`; see [releases](release.md) |
+| `CD - Publish release` | `cd-publish-release.yml` | CD | Push of a `v*.*.*` tag; see [releases](release.md) |
 | `Housekeeping - Claude on mention` | `claude.yml` | Housekeeping | `@claude` mentions |
 | `Housekeeping - Claude code review` | `claude-code-review.yml` | Housekeeping | Pull requests |
 
