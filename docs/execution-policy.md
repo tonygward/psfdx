@@ -52,7 +52,7 @@ Summary of the decisions. The workflows and scripts that implement them arrive w
 
 - **CI:** one workflow, `CI - Pester tests`, on every pull request. A docs-only pull request gets a quick run that tests nothing, so the gate always has a result.
 - **Merge gate:** Matrix pull requests merge automatically once CI passed on the exact head commit and every rule holds. Workflows, the gate scripts, the Dockerfile, shell and PowerShell scripts outside the modules, and the egress allow-list always need a person.
-- **Versions:** one `VERSION` file that every module manifest matches. Each source merge to `main` bumps the third part and moves the `## Unreleased` notes into the new version. Major and minor bumps are owner decisions.
+- **Versions:** one `VERSION` file that every module manifest matches. Each source merge to `main` bumps the third part and moves the `## Unreleased` notes into the new version. Major and minor bumps are owner decisions. Any change users will notice adds plain-language bullets under `## Unreleased`, prefixed with the module name; see [releases](release.md).
 - **Release:** one GitHub release per version, tagged `vX.Y.Z`, with exactly one asset, `psfdx-X.Y.Z.zip`.
 
 ## 8. Finishing a task
