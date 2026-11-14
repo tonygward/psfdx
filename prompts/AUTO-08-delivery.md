@@ -29,12 +29,13 @@ Runs in the board tick for every task whose pull request has merged and whose ca
 3. **Release:** a published (not draft, not pre-release unless the policy says so) GitHub release `vX.Y.Z` exists, its tag points at that bump commit, and it has **exactly one asset** named `psfdx-X.Y.Z.zip` with a non-zero size.
 4. **Notes:** the release notes are non-empty and match that version's section in `CHANGELOG.md` at the tag.
 5. **Prompt archived:** the task's prompt is in `prompts/done/` on `main` (generated or hand-written).
+6. **PowerShell Gallery** (only when `delivery.psGallery.enabled` is `true`, which AUTO-11 turns on): every module in the release is listed on the Gallery at version `X.Y.Z`. While it is `false`, the final comment says "Not published to the PowerShell Gallery yet". Build the verifier list from config so AUTO-11 only has to switch it on.
 
 Downloads are not tested.
 
 ### Finish, in stages saved in state
 
-1. **Comment** on the issue: task done; pull request; merge commit; version; release; download link (the release page). Deduplicated by marker.
+1. **Comment** on the issue: task done; pull request; merge commit; version; release; download link (the release page); and, once AUTO-11 is live, the install command `Install-Module psfdx -RequiredVersion X.Y.Z` with the Gallery link. Deduplicated by marker.
 2. **Close** the issue as completed.
 3. **Move** the card to Done.
 
