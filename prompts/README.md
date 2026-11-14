@@ -36,7 +36,7 @@ AUTO-05 to AUTO-08 can each be built and unit-tested without a live board, Claud
 | Selection | Same as Songsmith: Doing runs now, Todo runs one card a London day after 02:00, Backlog and Blocked wait, one task at a time, nothing new at or above 60% weekly Claude usage, Sonnet only |
 | Version | One `VERSION` file (`0.8.0` to start) that every module manifest matches. Each source merge to `main` bumps the third part |
 | Testing | Matrix runs Pester (PowerShell 7) in its container, in a sandbox with no network or secrets, and pushes only when it passes. GitHub CI then runs Ubuntu, Windows PowerShell 7 and Windows PowerShell 5.1 |
-| Delivery | One GitHub release per version, `vX.Y.Z`, with exactly one asset: `psfdx-X.Y.Z.zip`. The final comment links to the release page. PowerShell Gallery publishing follows once CI has passed and the release exists (AUTO-11, a To Do until the owner sets up the Gallery account) |
+| Delivery | One GitHub release per version, `vX.Y.Z`, with exactly one asset: `psfdx-X.Y.Z.zip`. The final comment links to the release page. PowerShell Gallery publishing follows once CI has passed and the release exists, as **one bundled `psfdx` module** containing every module (AUTO-11, a To Do until the owner sets up the Gallery account) |
 | Worker language | Node.js 24, no npm packages, `node --test` (the same as the reference, so the ported tests carry across) |
 | Host | The same always-on PC as the Songsmith worker, in a separate container with its own name, volumes, secrets folder, board token and state |
 | Public repository | psfdx is public, so Matrix acts only on issues opened by the owner and on cards the owner placed. Pull requests from forks never merge automatically. See AUTO-06 and AUTO-04 |
@@ -49,7 +49,7 @@ AUTO-05 to AUTO-08 can each be built and unit-tested without a live board, Claud
 4. Turn on branch protection for `main` and require the `CI - Pester tests` checks.
 5. Build the container, run the isolation self-test, and sign in once with the Claude subscription (AUTO-09).
 6. Supervise the pilot (AUTO-10).
-7. When ready for AUTO-11: a PowerShell Gallery account, an API key scoped to the psfdx package names, and the `PSGALLERY_API_KEY` secret in a protected `psgallery` environment.
+7. When ready for AUTO-11: a PowerShell Gallery account, an API key scoped to the single `psfdx` package (one bundled module), and the `PSGALLERY_API_KEY` secret in a protected `psgallery` environment.
 
 ## Open prompts
 
