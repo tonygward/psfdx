@@ -123,7 +123,7 @@ Describe 'psfdx module' {
 '@
                 Mock Invoke-Salesforce { $json } -ModuleName $module.Name
                 $rows = Select-SalesforceRecords -Query 'SELECT Id FROM Account LIMIT 1' -TargetOrg 'me'
-                $rows.Count | Should -Be 1
+                @($rows).Count | Should -Be 1
                 $rows[0].Id | Should -Be '001xx0000000001'
             }
         }
@@ -135,7 +135,7 @@ Describe 'psfdx module' {
 '@
                 Mock Invoke-Salesforce { $json } -ModuleName $module.Name
                 $rows = Get-SalesforceUsers -Username 'user@example.com' -ActiveOnly -Limit 5 -TargetOrg 'me'
-                $rows.Count | Should -Be 1
+                @($rows).Count | Should -Be 1
                 $rows[0].Id | Should -Be '005xx0000000001'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
                     ($Command -like 'sf data query --query *FROM User*') -and

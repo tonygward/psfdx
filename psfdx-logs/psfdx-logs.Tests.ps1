@@ -231,7 +231,7 @@ Describe 'Get-SalesforceLoginFailures' {
         }
         It 'returns only failed login history' {
             $rows = Get-SalesforceLoginFailures -Username 'user'
-            $rows.Count | Should -Be 1
+            @($rows).Count | Should -Be 1
             $rows[0].Id   | Should -Be '2'
             Assert-MockCalled Get-SalesforceLoginHistory -Times 1
         }

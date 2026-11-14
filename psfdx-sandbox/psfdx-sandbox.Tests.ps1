@@ -30,15 +30,15 @@ Describe 'psfdx-sandbox module' {
                 }
 
                 $bySandbox = Get-SalesforceSandboxes -Name 'Dev1'
-                $bySandbox.Count | Should -Be 1
+                @($bySandbox).Count | Should -Be 1
                 $bySandbox[0].sandboxName | Should -Be 'Dev1'
 
                 $byUser = Get-SalesforceSandboxes -Name 'dev2@example.com'
-                $byUser.Count | Should -Be 1
+                @($byUser).Count | Should -Be 1
                 $byUser[0].sandboxName | Should -Be 'Dev2'
 
                 $byAlias = Get-SalesforceSandboxes -Name 'dev1'
-                $byAlias.Count | Should -Be 1
+                @($byAlias).Count | Should -Be 1
             }
         }
 
