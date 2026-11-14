@@ -1,6 +1,7 @@
 {
   "repositorySlug": "tonygward/psfdx",
   "baseBranch": "main",
+  "sourceDirectory": "/matrix/source",
   "stateDirectory": "/matrix/state",
   "worktreeRoot": "/matrix/worktrees",
   "promptDirectory": "prompts",
@@ -16,5 +17,20 @@
     "maximumRunMinutes": 120,
     "maximumRepairs": 3
   },
-  "boardPickup": {}
+  "boardPickup": {
+    "enabled": false,
+    "dryRun": true,
+    "projectId": "PVT_replace_with_board_ids_output",
+    "statusFieldId": "PVTSSF_replace_with_board_ids_output",
+    "options": {
+      "backlog": "replace",
+      "todo": "replace",
+      "doing": "replace",
+      "blocked": "replace",
+      "done": "replace"
+    },
+    "repository": "tonygward/psfdx",
+    "ownerLogin": "tonygward",
+    "tokenFile": "/matrix/secrets/board-token"
+  }
 }
