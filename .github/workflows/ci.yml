@@ -1,26 +1,59 @@
-name: CI
+name: CI - Pester tests
 
 on:
   pull_request:
-    branches: ["**"]
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  test:
-    name: Pester on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.classify.outputs.docs_only }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
+          docs_only=true
+          for f in $files; do
+            case "$f" in
+              *.md|prompts/*|docs/*|images/*|*.png|*.jpg|*.jpeg|*.gif|*.svg) ;;
+              *) docs_only=false ;;
+            esac
+          done
+          echo "Changed files:"; echo "$files"
+          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+
+  pester-ubuntu:
+    name: Pester (ubuntu, pwsh)
+    needs: changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docs only, nothing to test
+        if: needs.changes.outputs.docs_only == 'true'
+        run: echo "Docs-only change; tests skipped."
+
+      - name: Checkout
+        if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/checkout@v4
 
       - name: Install Pester
+        if: needs.changes.outputs.docs_only != 'true'
         shell: pwsh
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
@@ -28,9 +61,94 @@ jobs:
           Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser
 
       - name: Run Pester tests
+        if: needs.changes.outputs.docs_only != 'true'
         shell: pwsh
         run: |
           Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
           Write-Host "Pester version: $((Get-Module Pester).Version)"
           Invoke-Pester -Path . -CI
 
+      - name: Upload results
+        if: needs.changes.outputs.docs_only != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testResults-ubuntu-pwsh
+          path: testResults.xml
+          if-no-files-found: ignore
+
+  pester-windows-pwsh:
+    name: Pester (windows, pwsh)
+    needs: changes
+    runs-on: windows-latest
+    steps:
+      - name: Docs only, nothing to test
+        if: needs.changes.outputs.docs_only == 'true'
+        shell: pwsh
+        run: Write-Host "Docs-only change; tests skipped."
+
+      - name: Checkout
+        if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/checkout@v4
+
+      - name: Install Pester
+        if: needs.changes.outputs.docs_only != 'true'
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser
+
+      - name: Run Pester tests
+        if: needs.changes.outputs.docs_only != 'true'
+        shell: pwsh
+        run: |
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
+          Write-Host "Pester version: $((Get-Module Pester).Version)"
+          Invoke-Pester -Path . -CI
+
+      - name: Upload results
+        if: needs.changes.outputs.docs_only != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testResults-windows-pwsh
+          path: testResults.xml
+          if-no-files-found: ignore
+
+  pester-windows-powershell:
+    name: Pester (windows, powershell 5.1)
+    needs: changes
+    runs-on: windows-latest
+    steps:
+      - name: Docs only, nothing to test
+        if: needs.changes.outputs.docs_only == 'true'
+        shell: powershell
+        run: Write-Host "Docs-only change; tests skipped."
+
+      - name: Checkout
+        if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/checkout@v4
+
+      - name: Install Pester
+        if: needs.changes.outputs.docs_only != 'true'
+        shell: powershell
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          # Windows ships Pester 3.4, so skip the publisher check when installing 5.x
+          Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser -SkipPublisherCheck
+
+      - name: Run Pester tests
+        if: needs.changes.outputs.docs_only != 'true'
+        shell: powershell
+        run: |
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
+          Write-Host "PowerShell $($PSVersionTable.PSVersion), Pester $((Get-Module Pester).Version)"
+          Invoke-Pester -Path . -CI
+
+      - name: Upload results
+        if: needs.changes.outputs.docs_only != 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testResults-windows-powershell
+          path: testResults.xml
+          if-no-files-found: ignore
