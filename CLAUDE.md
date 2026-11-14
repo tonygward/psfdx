@@ -81,7 +81,15 @@ Manifests declare `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Des
 5. Add an entry under `## Unreleased` in `CHANGELOG.md`, prefixed with the module name (`- psfdx-logs: ...`). Mark renames and moves as `Breaking:`.
 6. A new module also needs adding to `modules.ps1`.
 
+## How work runs
+
+Work is chosen from a GitHub Project board: Todo and Doing cards run, Backlog and Blocked wait. Matrix, the orchestrator, builds and tests each change in a container, opens a pull request, merges it once CI passes, then releases a patch version and finishes the issue. The full rules are in [docs/execution-policy.md](docs/execution-policy.md).
+
+## Backlog
+
+Every task is a GitHub issue titled with a stable ID (`PSF-##` for modules, `AUTO-##` for automation). Prompts live in `prompts/` and move to `prompts/done/` when merged. See [docs/backlog-issue-prompt-contract.md](docs/backlog-issue-prompt-contract.md).
+
 ## Git
 
-- PRs target `master`. CI (`.github/workflows/ci.yml`) runs Pester on `ubuntu-latest` for pull requests only.
+- PRs target `main`. `master` is stale (many commits behind); don't use it. CI (`.github/workflows/ci.yml`) runs Pester on `ubuntu-latest` for pull requests only.
 - `CODE-REVIEW.md` is a review from 2026-09-09. Many of its findings have since been fixed (see `CHANGELOG.md`), so check the current code before acting on it. The `Invoke-Expression` → `& sf @args` refactor is still outstanding.
