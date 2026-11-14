@@ -17,11 +17,27 @@ TEST_UID=10002
 TEST_GID=10002
 DROP="setpriv --reuid=$TEST_UID --regid=$TEST_GID --clear-groups --bounding-set=-all --inh-caps=-all --no-new-privs"
 
-# Which kind of network namespace can be made? userns: the test user makes its own (needs unprivileged user namespaces);
-# rootns: root makes it (needs CAP_SYS_ADMIN). Neither works: refuse everything.
+# How is the test user kept off the network? In order of strength:
+#   userns:    the test user makes its own network namespace (needs unprivileged user namespaces)
+#   rootns:    root makes it (needs CAP_SYS_ADMIN)
+#   proxyauth: no namespace is possible (a container runtime whose seccomp profile blocks unshare). The test user shares the
+#              container network, but the only way out is the egress proxy, which refuses anyone without the proxy credential,
+#              and only the agent can read that credential. Direct connections are already blocked by the internal network.
+#              This is weaker (the test user can open a TCP connection to the proxy and be refused), and it is only used when the
+#              proxy really does demand credentials, which is checked here.
+#   none:      refuse every request.
+proxy_demands_auth() {
+  [ -n "${HTTPS_PROXY:-}" ] || return 1
+  status=$(node -e "
+const http=require('http');const u=new URL(process.env.HTTPS_PROXY);
+const r=http.request({host:u.hostname,port:u.port,method:'CONNECT',path:'api.github.com:443',timeout:8000});
+r.on('connect',res=>{console.log(res.statusCode);process.exit(0)});r.on('error',()=>{console.log('error');process.exit(0)});r.on('timeout',()=>{console.log('timeout');process.exit(0)});r.end();" 2>/dev/null)
+  [ "$status" = 407 ]
+}
 detect() {
   if $DROP unshare --user --map-current-user --net true 2>/dev/null; then echo userns
   elif unshare --net true 2>/dev/null; then echo rootns
+  elif proxy_demands_auth; then echo proxyauth
   else echo none; fi
 }
 NETNS=$(detect)
@@ -51,11 +67,16 @@ handle() {
   : > "$results" && chown "$TEST_UID:$TEST_GID" "$results" && chmod 0600 "$results"
   # Only this worktree is handed to the test user, and only while it runs.
   chown -R --no-dereference "$TEST_UID:$TEST_GID" "$worktree"
+  # The test user must be able to walk to its worktree and results file, but not list its siblings: open only this task folder.
+  chmod 0711 "$task"
 
-  if [ "$NETNS" = userns ]; then unsh="unshare --user --map-current-user --net --pid --fork --kill-child"; else unsh="unshare --net --pid --fork --kill-child"; fi
-  if [ "$NETNS" = rootns ]; then launch="$unsh $DROP"; else launch="$DROP $unsh"; fi
+  case "$NETNS" in
+    userns) launch="$DROP unshare --user --map-current-user --net --pid --fork --kill-child" ;;
+    rootns) launch="unshare --net --pid --fork --kill-child $DROP" ;;
+    *) launch="$DROP" ;;   # proxyauth: no namespace; the proxy credential keeps the test user off the network
+  esac
   if [ "$mode" = probe ]; then
-    command="/opt/matrix/sandbox-probe.sh $worktree $results $scratch"
+    command="/opt/matrix/sandbox-probe.sh $worktree $results $scratch $NETNS"
   else
     # Fixed Pester 5 command. The results file is NUnit XML in the task folder, outside the repository.
     command="pwsh -NoProfile -NonInteractive -Command"
@@ -70,8 +91,10 @@ handle() {
   fi
   rc=$?
   cd /
+  # Without a PID namespace nothing else stops stray processes, so end everything the test user still owns.
+  pkill -KILL -u "$TEST_UID" 2>/dev/null
   # Hand everything back to the agent and clean up.
-  chown -R --no-dereference 10001:10001 "$worktree"; chown 10001:10001 "$results"; chmod 0600 "$results"
+  chown -R --no-dereference 10001:10001 "$worktree"; chown 10001:10001 "$results"; chmod 0600 "$results"; chmod 0700 "$task"
   rm -rf "$scratch"
   if [ "$rc" = 0 ]; then reply "$id" 0
   elif [ "$rc" = 124 ] || [ "$rc" = 137 ]; then reply "$id" 124

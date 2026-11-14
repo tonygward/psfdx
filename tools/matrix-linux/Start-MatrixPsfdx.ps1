@@ -27,6 +27,9 @@ $homeVolume = 'psfdx-matrix-home'   # holds the Claude sign-in
 $workVolume = 'psfdx-matrix-work'   # holds state, worktrees and logs
 $squidImage = 'ubuntu/squid:6.6-24.04_edge'
 $here = $PSScriptRoot
+# Outside the repository: the proxy credential (see Get-ProxyCredential).
+$dataRoot = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { Join-Path $HOME '.local' }
+$dataDir = Join-Path $dataRoot 'psfdx-matrix'
 $root = (Resolve-Path (Join-Path (Join-Path $here '..') '..')).Path
 
 function Invoke-Wslc { & wslc @args; if ($LASTEXITCODE -ne 0) { throw "wslc $($args -join ' ') failed ($LASTEXITCODE)" } }
@@ -41,13 +44,51 @@ function Get-Pins {
     $pins
 }
 
+# The egress proxy demands a credential. Only the agent process can read it, so the sandboxed test user (which shares the container
+# network when the runtime blocks network namespaces) is refused. It is generated once and kept outside the repository.
+function Get-ProxyCredential {
+    if (-not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
+    $file = Join-Path $dataDir 'proxy-password'
+    if (-not (Test-Path $file)) {
+        $bytes = New-Object byte[] 24
+        $generator = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+        $generator.GetBytes($bytes)
+        $generator.Dispose()
+        Set-Content -Path $file -Value (($bytes | ForEach-Object { $_.ToString('x2') }) -join '') -Encoding ASCII
+    }
+    $password = (Get-Content -Path $file -Raw).Trim()
+    # Squid's password helper accepts an Apache-style apr1 hash (not {SHA}). The proxy image has openssl, so make the hash there.
+    # It is only rebuilt when the password changes.
+    $passwd = Join-Path $dataDir 'proxy.passwd'
+    $stamp = Join-Path $dataDir 'proxy.passwd.for'
+    $current = if (Test-Path $stamp) { (Get-Content -Path $stamp -Raw).Trim() } else { '' }
+    $marker = [System.BitConverter]::ToString([System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($password))).Replace('-', '')
+    if (-not (Test-Path $passwd) -or $current -ne $marker) {
+        $hash = (& wslc run --rm --entrypoint openssl $squidImage passwd -apr1 $password | Out-String).Trim()
+        if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^\$apr1\$') { throw 'Could not create the proxy password hash with openssl in the proxy image.' }
+        # Unix line endings and no byte-order mark: the helper reads this file as it is.
+        [System.IO.File]::WriteAllText($passwd, "matrix:$hash`n", (New-Object System.Text.UTF8Encoding($false)))
+        [System.IO.File]::WriteAllText($stamp, $marker, (New-Object System.Text.UTF8Encoding($false)))
+    }
+    $password
+}
+
 function Start-Egress {
     if (-not (Test-Wslc network inspect $network)) { Invoke-Wslc network create --internal $network | Out-Null }
+    Get-ProxyCredential | Out-Null
+    # A proxy that exists but is not running (for example it rejected its configuration) is recreated, not just restarted.
+    if ((Test-Wslc inspect $proxy) -and -not (@(& wslc list 2>$null | Select-String -SimpleMatch $proxy).Count -gt 0)) {
+        & wslc start $proxy *> $null
+        Start-Sleep -Seconds 2
+        if (-not (@(& wslc list 2>$null | Select-String -SimpleMatch $proxy).Count -gt 0)) { Invoke-Wslc remove --force $proxy }
+    }
     if (-not (Test-Wslc inspect $proxy)) {
-        Invoke-Wslc run -d --name $proxy --network $network -v "$(Join-Path (Join-Path $here 'squid') 'squid.conf'):/etc/squid/squid.conf:ro" $squidImage | Out-Null
+        Invoke-Wslc run -d --name $proxy --network $network -v "$(Join-Path (Join-Path $here 'squid') 'squid.conf'):/etc/squid/squid.conf:ro" -v "$(Join-Path $dataDir 'proxy.passwd'):/etc/squid/passwd:ro" $squidImage | Out-Null
         # The proxy is the only container with a route out; the agent network itself stays internal.
         Invoke-Wslc network connect bridge $proxy
-    } else { & wslc start $proxy *> $null }
+        Start-Sleep -Seconds 2
+        if (-not (@(& wslc list 2>$null | Select-String -SimpleMatch $proxy).Count -gt 0)) { throw "$proxy did not stay running; see: wslc logs $proxy" }
+    }
 }
 
 # Hardening available in wslc: memory and CPU limits, an internal network and a read-only secrets mount. The container starts as root
@@ -55,9 +96,10 @@ function Start-Egress {
 # wslc has no read-only-root, capability-drop, no-new-privileges or PID-limit flags (see the README), so the entrypoint and the file
 # permissions do that work, and Verify proves it.
 function Get-AgentArguments([switch]$Secrets) {
+    $proxyPassword = Get-ProxyCredential
     $arguments = @('--memory', '4G', '--cpus', '2', '--tmpfs', '/tmp',
         '-v', "${workVolume}:/work", '-v', "${homeVolume}:/home/agent",
-        '--network', $network, '-e', "HTTPS_PROXY=http://${proxy}:3128", '-e', "HTTP_PROXY=http://${proxy}:3128", '-e', "NO_PROXY=$proxy")
+        '--network', $network, '-e', "HTTPS_PROXY=http://matrix:${proxyPassword}@${proxy}:3128", '-e', "HTTP_PROXY=http://matrix:${proxyPassword}@${proxy}:3128", '-e', "NO_PROXY=$proxy")
     if ($Secrets) {
         if (-not $SecretsDirectory -or -not (Test-Path (Join-Path $SecretsDirectory 'agent_github_token'))) { throw 'Pass -SecretsDirectory <folder containing agent_github_token and board_token>' }
         $arguments += @('-v', "${SecretsDirectory}:/opt/host-secrets:ro")
@@ -71,6 +113,8 @@ switch ($Action) {
         # The pins must be exact stable versions, and Claude Code must be in the family the usage gate accepts.
         & node (Join-Path $here 'claude-version.mjs') check --claude $pins.claudeCode --powershell $pins.powershell --pester $pins.pester
         if ($LASTEXITCODE -ne 0) { throw 'The pinned versions are not acceptable (see the message above).' }
+        # Remove any old proxy so the next start picks up the current squid.conf.
+        if (Test-Wslc inspect $proxy) { Invoke-Wslc remove --force $proxy }
         Invoke-Wslc build --build-arg "CLAUDE_CODE_VERSION=$($pins.claudeCode)" --build-arg "POWERSHELL_VERSION=$($pins.powershell)" --build-arg "PESTER_VERSION=$($pins.pester)" -f (Join-Path $here 'Dockerfile') -t $image $root
         Write-Output "Built $image with Claude Code $($pins.claudeCode), PowerShell $($pins.powershell) and Pester $($pins.pester)."
     }

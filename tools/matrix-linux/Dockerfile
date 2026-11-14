@@ -15,7 +15,7 @@ RUN test -n "$CLAUDE_CODE_VERSION" && test -n "$POWERSHELL_VERSION" && test -n "
 
 # PowerShell and Pester are installed now, at build time, because the egress proxy does not allow the PowerShell Gallery at run time.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl git gnupg jq util-linux \
+ && apt-get install -y --no-install-recommends ca-certificates curl git gnupg jq util-linux procps \
  && install -d -m 0755 /etc/apt/keyrings \
  && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /etc/apt/keyrings/githubcli.gpg \
  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \

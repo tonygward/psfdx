@@ -16,7 +16,8 @@ if [ "$(id -u)" = "0" ]; then
   install -d -o 10001 -g 10001 -m 0711 /work/worktrees
   install -d -m 0711 /work/scratch /work/broker
   install -d -o 10001 -g 10001 -m 0700 /work/broker/in
-  install -d -m 0755 /work/broker/out
+  # The agent reads and removes the broker's answers, so it owns the answers folder (the test user can't enter /work/broker/out).
+  install -d -o 10001 -g 10001 -m 0700 /work/broker/out
   # The raw mount (/opt/host-secrets) is root-only. The agent gets private copies it alone can read.
   for name in agent_github_token board_token; do
     if [ -r "/opt/host-secrets/$name" ]; then install -m 0400 -o 10001 -g 10001 "/opt/host-secrets/$name" "/run/matrix-secrets/$name"; fi
