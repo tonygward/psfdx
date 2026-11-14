@@ -30,9 +30,14 @@ Describe 'Release zip' {
 
     It 'has module manifests that load from the extracted folder' {
         . (Join-Path $script:Root 'modules.ps1')
+        # Required modules resolve from the extracted folder, as they would once installed
+        $oldPath = $env:PSModulePath
+        $env:PSModulePath = $script:Extract + [System.IO.Path]::PathSeparator + $oldPath
+        try {
         foreach ($module in @(Get-PsfdxModules)) {
             $manifest = Join-Path (Join-Path $script:Extract $module) "$module.psd1"
             { Test-ModuleManifest -Path $manifest -ErrorAction Stop -WarningAction SilentlyContinue | Out-Null } | Should -Not -Throw
         }
+        } finally { $env:PSModulePath = $oldPath }
     }
 }
