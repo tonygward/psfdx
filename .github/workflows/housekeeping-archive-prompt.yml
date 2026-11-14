@@ -1,0 +1,106 @@
+name: Housekeeping - Archive merged prompt
+
+# A prompt counts as done once its Matrix pull request is merged. This moves it to prompts/done/ on a
+# housekeeping/archive-<ID> branch and opens a docs-only pull request, which the gate merges after the
+# quick CI run (pushing straight to main would bypass branch protection). Archive pull requests never
+# cause a version bump. Run it by hand with a pull request number (and a task ID if the branch has none).
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Merged pull request number
+        required: true
+      id:
+        description: Task ID (for example AUTO-04), if the branch name does not carry it
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: housekeeping-archive-prompt
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    name: Archive prompt
+    if: >-
+      vars.MATRIX_AUTOMERGE_ENABLED == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.pull_request.merged == true &&
+        startsWith(github.event.pull_request.head.ref, 'matrix/') &&
+        !startsWith(github.event.pull_request.head.ref, 'matrix/core/')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out latest main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Work out the task
+        id: task
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_PR: ${{ github.event.pull_request.number }}
+          EVENT_BRANCH: ${{ github.event.pull_request.head.ref }}
+          INPUT_PR: ${{ inputs.pr }}
+          INPUT_ID: ${{ inputs.id }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            number="$INPUT_PR"
+            merged=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" --jq '.merged')
+            [[ "$merged" == "true" ]] || { echo "::error::Pull request $number is not merged"; exit 1; }
+            branch=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" --jq '.head.ref')
+            arg="${INPUT_ID:-$branch}"
+          else
+            number="$EVENT_PR"; arg="$EVENT_BRANCH"
+          fi
+          [[ "$number" =~ ^[0-9]+$ ]] || { echo "::error::Bad pull request number"; exit 1; }
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "arg=$arg" >> "$GITHUB_OUTPUT"
+
+      - name: Move the prompt to done/
+        id: move
+        env:
+          ARG: ${{ steps.task.outputs.arg }}
+        run: |
+          set +e
+          out=$(node scripts/matrix/archive-cli.mjs "$ARG")
+          code=$?
+          echo "$out"
+          if [[ "$code" == 3 ]]; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          [[ "$code" == 0 ]] || exit "$code"
+          id=$(node -e "const a=process.argv[1];const m=/^(?:(?:PSF|AUTO)-\d+)$/.test(a)?a:(/^matrix\/((?:PSF|AUTO)-\d+)/.exec(a)||[])[1];process.stdout.write(m||'')" "$ARG")
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Commit and open the pull request
+        if: steps.move.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          ID: ${{ steps.move.outputs.id }}
+          NUMBER: ${{ steps.task.outputs.number }}
+        run: |
+          set -euo pipefail
+          [[ "$ID" =~ ^(PSF|AUTO)-[0-9]+$ ]] || { echo "::error::Could not work out the task ID"; exit 1; }
+          branch="housekeeping/archive-$ID"
+          git config user.name "psfdx release bot"
+          git config user.email "psfdx-release-bot@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -A prompts
+          git commit -m "[archive] $ID"
+          git push --force-with-lease origin "$branch"
+          printf 'Housekeeping: archive merged prompt\n\nMoves the %s prompt to `prompts/done/` after pull request #%s merged.\n' "$ID" "$NUMBER" > body.md
+          gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --title "[archive] $ID" --body-file body.md
