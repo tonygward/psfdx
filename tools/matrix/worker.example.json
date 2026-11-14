@@ -1,0 +1,20 @@
+{
+  "repositorySlug": "tonygward/psfdx",
+  "baseBranch": "main",
+  "stateDirectory": "/matrix/state",
+  "worktreeRoot": "/matrix/worktrees",
+  "promptDirectory": "prompts",
+  "idPrefixes": ["PSF", "AUTO"],
+  "dailyTime": "02:00",
+  "batchLimit": 1,
+  "claudeUsage": { "enabled": true, "executable": "/usr/local/bin/claude" },
+  "worker": {
+    "maximumPrompts": 1,
+    "maximumTurns": 30,
+    "maximumBudgetUsd": 5,
+    "timeoutSeconds": 1800,
+    "maximumRunMinutes": 120,
+    "maximumRepairs": 3
+  },
+  "boardPickup": {}
+}

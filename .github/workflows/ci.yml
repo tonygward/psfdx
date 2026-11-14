@@ -32,7 +32,7 @@ jobs:
           docs_only=true
           for f in $files; do
             case "$f" in
-              *.md|prompts/*|docs/*|images/*|*.png|*.jpg|*.jpeg|*.gif|*.svg) ;;
+              *.md|prompts/*|docs/*|tools/*|images/*|*.png|*.jpg|*.jpeg|*.gif|*.svg) ;;
               *) docs_only=false ;;
             esac
           done
