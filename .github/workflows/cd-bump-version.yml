@@ -1,0 +1,96 @@
+name: CD - Bump version
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Two merges must not bump at once. The second waits, then bumps from the new main.
+concurrency:
+  group: cd-bump-version
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    name: Bump version after a source merge
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Decide whether to bump
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          subject=$(git log -1 --format=%s "$SHA")
+          if [[ "$subject" == "[release] "* ]]; then
+            echo "Bump commit; nothing to do."; echo "bump=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            files=$(git diff-tree --no-commit-id --name-only -r "$SHA")
+          else
+            files=$(git diff --name-only "$BEFORE" "$SHA")
+          fi
+          docs_only=true
+          for f in $files; do
+            case "$f" in
+              *.md|prompts/*|docs/*|images/*|*.png|*.jpg|*.jpeg|*.gif|*.svg) ;;
+              *) docs_only=false ;;
+            esac
+          done
+          if [ "$docs_only" = "true" ]; then
+            echo "Docs-only change; nothing to do."; echo "bump=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+
+          # Find the merged pull request and its exact head commit
+          pr=$(gh api "repos/${{ github.repository }}/commits/$SHA/pulls" --jq '.[0].number')
+          if [ -z "$pr" ] || [ "$pr" = "null" ]; then
+            echo "::error::No pull request found for $SHA; refusing to bump."; exit 1
+          fi
+          head=$(gh api "repos/${{ github.repository }}/pulls/$pr" --jq '.head.sha')
+          echo "Pull request #$pr, head $head"
+
+          # Wait up to 15 minutes for CI - Pester tests on that exact commit
+          for i in $(seq 1 30); do
+            result=$(gh api "repos/${{ github.repository }}/actions/runs?head_sha=$head&event=pull_request" \
+              --jq '[.workflow_runs[] | select(.name == "CI - Pester tests")] | sort_by(.created_at) | last | "\(.status) \(.conclusion)"')
+            echo "CI state: ${result:-none}"
+            case "$result" in
+              "completed success") break ;;
+              "completed "*) echo "::error::CI - Pester tests did not pass on $head ($result); not bumping."; exit 1 ;;
+              "") echo "::error::No CI - Pester tests run found for $head; not bumping."; exit 1 ;;
+            esac
+            sleep 30
+          done
+          if [ "$result" != "completed success" ]; then
+            echo "::error::Timed out waiting for CI on $head; not bumping."; exit 1
+          fi
+          echo "bump=true" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node
+        if: steps.decide.outputs.bump == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Bump, commit, tag and push
+        if: steps.decide.outputs.bump == 'true'
+        shell: bash
+        run: |
+          version=$(node scripts/release/bump.mjs)
+          git config user.name "psfdx release bot"
+          git config user.email "psfdx-release-bot@users.noreply.github.com"
+          git add VERSION CHANGELOG.md psfdx*/psfdx*.psd1
+          git commit -m "[release] $version"
+          git tag "v$version"
+          git push origin HEAD:main "v$version"

@@ -1,0 +1,74 @@
+name: CD - Publish release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+
+      - name: Check the tag matches VERSION and the manifests
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $version = (Get-Content -Path VERSION -Raw).Trim()
+          if ($tag -ne "v$version") { throw "Tag $tag does not match VERSION $version" }
+          foreach ($manifest in Get-ChildItem -Recurse -Filter 'psfdx*.psd1') {
+            $found = (Import-PowerShellDataFile -Path $manifest.FullName).ModuleVersion
+            if ($found -ne $version) { throw "$($manifest.Name) is $found, expected $version" }
+          }
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser
+
+      - name: Final Pester run
+        shell: pwsh
+        run: |
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
+          Invoke-Pester -Path . -CI
+
+      - name: Build zip
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Path VERSION -Raw).Trim()
+          ./scripts/release/New-ReleaseZip.ps1 -Version $version -OutputFolder "$env:RUNNER_TEMP/release"
+
+      - name: Create the release with exactly one asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          version=$(tr -d '\r\n ' < VERSION)
+          tag="v$version"
+          zip="$RUNNER_TEMP/release/psfdx-$version.zip"
+          node -e "
+            import('./scripts/release/bump-lib.mjs').then(({sectionFor}) => {
+              const fs = require('fs');
+              const notes = sectionFor(fs.readFileSync('CHANGELOG.md','utf8'), '$version');
+              if (!notes) { console.error('No changelog section for $version'); process.exit(1); }
+              fs.writeFileSync(process.env.RUNNER_TEMP + '/notes.md', notes + '\n');
+            });
+          "
+          if gh release view "$tag" >/dev/null 2>&1; then
+            assets=$(gh release view "$tag" --json assets --jq '[.assets[].name] | join(",")')
+            if [ "$assets" = "psfdx-$version.zip" ]; then
+              echo "Release $tag already exists and matches; nothing to do."; exit 0
+            fi
+            echo "::error::Release $tag exists with different assets ($assets); not overwriting."; exit 1
+          fi
+          gh release create "$tag" "$zip" --title "$tag" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
+          assets=$(gh release view "$tag" --json assets --jq '[.assets[].name] | join(",")')
+          if [ "$assets" != "psfdx-$version.zip" ]; then
+            echo "::error::Release assets are '$assets', expected only psfdx-$version.zip"; exit 1
+          fi
