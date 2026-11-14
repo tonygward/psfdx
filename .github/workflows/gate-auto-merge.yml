@@ -7,7 +7,7 @@ name: Gate - Matrix auto-merge
 # (it must be 'true' for the gate to run at all).
 on:
   workflow_run:
-    workflows: ["CI - Pester tests"]
+    workflows: ["CI - Pester tests", "CI - Matrix orchestration tests"]
     types: [completed]
 
 permissions:

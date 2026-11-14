@@ -1,0 +1,29 @@
+name: CI - Matrix orchestration tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/matrix/**'
+      - 'tools/matrix-linux/**'
+      - '!tools/**/*.md'
+      - '.github/workflows/ci-matrix-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    name: Matrix tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test "tools/matrix/tests/*.test.mjs"
