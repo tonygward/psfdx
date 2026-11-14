@@ -66,7 +66,7 @@ Describe 'Gallery bundle (one psfdx package)' {
 
     It 'lets each module find the shared helpers and the core module as siblings' {
         $manifest = Join-Path $script:Out 'psfdx.psd1'
-        $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$manifest' -WarningAction SilentlyContinue; foreach (`$name in 'psfdx-logs','psfdx-development','psfdx-sandbox','psfdx-metadata','psfdx-packages') { `$m = Get-Module `$name -All | Select-Object -First 1; if (-not (& `$m { (Get-Command Invoke-Salesforce -ErrorAction SilentlyContinue) -and (Get-Command Select-SalesforceRecords -ErrorAction SilentlyContinue) })) { throw `"`$name cannot see its siblings`" } }; 'ok'"
+        $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$manifest' -WarningAction SilentlyContinue; foreach (`$name in 'psfdx-logs','psfdx-development','psfdx-sandbox','psfdx-metadata','psfdx-packages') { `$m = Get-Module `$name -All | Select-Object -First 1; if (-not (& `$m { (Get-Command Invoke-Salesforce -ErrorAction SilentlyContinue) -and (Get-Command Select-SalesforceRecords -ErrorAction SilentlyContinue) })) { throw (`$name + ' cannot see its siblings') } }; 'ok'"
         (& $script:Shell -NoProfile -NonInteractive -Command $command | Select-Object -Last 1) | Should -Be 'ok'
     }
 
