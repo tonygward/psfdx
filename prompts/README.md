@@ -12,15 +12,15 @@ Until the psfdx worker exists, run these **on the Matrix server** in an interact
 
 | ID | Prompt | Depends on | Needs a person to merge |
 |---|---|---|---|
-| AUTO-01 | [Execution policy, backlog contract and prompt layout](AUTO-01-execution-policy-and-backlog.md) | none | no (docs only) |
-| AUTO-02 | [CI named by kind, one version number](AUTO-02-ci-and-one-version.md) | AUTO-01 | yes (workflows) |
-| AUTO-03 | [Automatic patch versions and GitHub releases](AUTO-03-automatic-patch-release.md) | AUTO-02 | yes (workflows) |
-| AUTO-04 | [Merge gate and prompt archive](AUTO-04-merge-gate-and-archive.md) | AUTO-03 | yes (workflows, gate) |
-| AUTO-05 | [Matrix foundation: config, state, prompt scan, usage gate](AUTO-05-matrix-foundation.md) | AUTO-01 | yes (first Matrix code) |
-| AUTO-06 | [Board pickup, issue as prompt, pickup reason](AUTO-06-board-pickup.md) | AUTO-05 | yes |
-| AUTO-07 | [Bounded Claude agent loop with CI repair, Blocked and resume](AUTO-07-bounded-agent-loop.md) | AUTO-06, AUTO-04 | yes |
-| AUTO-08 | [Delivery: verify, final comment, close, Done](AUTO-08-delivery.md) | AUTO-07, AUTO-03 | yes |
-| AUTO-09 | [Isolated Linux container](AUTO-09-linux-container.md) | AUTO-07 | yes (Dockerfile, scripts) |
+| AUTO-01 | [Execution policy, backlog contract and prompt layout](done/AUTO-01-execution-policy-and-backlog.md) | none | no (docs only) |
+| AUTO-02 | [CI named by kind, one version number](done/AUTO-02-ci-and-one-version.md) | AUTO-01 | yes (workflows) |
+| AUTO-03 | [Automatic patch versions and GitHub releases](done/AUTO-03-automatic-patch-release.md) | AUTO-02 | yes (workflows) |
+| AUTO-04 | [Merge gate and prompt archive](done/AUTO-04-merge-gate-and-archive.md) | AUTO-03 | yes (workflows, gate) |
+| AUTO-05 | [Matrix foundation: config, state, prompt scan, usage gate](done/AUTO-05-matrix-foundation.md) | AUTO-01 | yes (first Matrix code) |
+| AUTO-06 | [Board pickup, issue as prompt, pickup reason](done/AUTO-06-board-pickup.md) | AUTO-05 | yes |
+| AUTO-07 | [Bounded Claude agent loop with CI repair, Blocked and resume](done/AUTO-07-bounded-agent-loop.md) | AUTO-06, AUTO-04 | yes |
+| AUTO-08 | [Delivery: verify, final comment, close, Done](done/AUTO-08-delivery.md) | AUTO-07, AUTO-03 | yes |
+| AUTO-09 | [Isolated Linux container](done/AUTO-09-linux-container.md) | AUTO-07 | yes (Dockerfile, scripts) |
 | AUTO-10 | [Supervised end-to-end pilot](AUTO-10-supervised-pilot.md) | AUTO-08, AUTO-09 | not applicable: owner-run |
 | AUTO-11 | [Publish releases to the PowerShell Gallery](AUTO-11-powershell-gallery.md) (**Backlog**: waits for the owner's Gallery account and API key) | AUTO-03, AUTO-08 | yes (workflows, secrets) |
 
