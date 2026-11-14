@@ -4,7 +4,7 @@ function Import-PsfdxSharedModule {
         [string] $ModuleName = 'psfdx-shared'
     )
 
-    if (Get-Module -Name $ModuleName -All -ErrorAction SilentlyContinue) {
+    if (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue) {
         return
     }
 

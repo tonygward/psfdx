@@ -7,7 +7,7 @@ function Import-PsfdxSharedModule {
 
     $forceImport = $ForceImport.IsPresent
 
-    if (-not $forceImport -and (Get-Module -Name $ModuleName -All -ErrorAction SilentlyContinue)) {
+    if (-not $forceImport -and (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue)) {
         return
     }
 
