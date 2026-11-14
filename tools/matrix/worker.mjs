@@ -18,6 +18,7 @@ import { readHandoff, adoptHandoff, boardFields, clearHandoff } from './handoff.
 import { postPickupComment } from './pickup.mjs';
 import { postCiPassedComment } from './ci-comment.mjs';
 import { githubIo } from './github-io.mjs';
+import { readIo } from './verifiers.mjs';
 import { boardTick, ghGraphql, promptLoader } from './board-run.mjs';
 import { standardHousekeeping } from './housekeeping.mjs';
 import { readConfig } from './config.mjs';
@@ -360,7 +361,8 @@ export async function runOnce(config, options = {}) {
   const boardGh = async args => (await exec(w.ghExecutable, args, cwd, { ...base, GH_TOKEN: boardToken() })).stdout;
   const claude = (args, where, input, timeoutMs) => run(config.claudeUsage.executable, args, { cwd: where, env: { ...base, CLAUDE_CODE_MAX_OUTPUT_TOKENS: '8192' }, input, timeoutMs });
   const b = config.boardPickup ?? {};
-  const io = githubIo(boardGh, { projectId: b.projectId, statusFieldId: b.statusFieldId, options: b.options });
+  // Writes (comments, card moves, closing) use the board token; reads of the repository, releases and the Gallery use the agent token.
+  const io = { ...githubIo(boardGh, { projectId: b.projectId, statusFieldId: b.statusFieldId, options: b.options }), ...readIo(gh) };
   const jobId = `matrix-${new Date(clock()).toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
   const loadPrompts = promptLoader(config, { git: w.gitExecutable });
   const tick = await boardTick(config, { graphql: ghGraphql(boardGh), io, loadUsage, loadPrompts, jobId, clock, handoff: true, limits: limitsText(config), housekeeping: standardHousekeeping() });

@@ -10,6 +10,7 @@ import { pickUp, recoverPickupComments } from './pickup.mjs';
 import { writeHandoff, clearHandoff } from './handoff.mjs';
 import { resolveFromIssues } from './issue-prompt.mjs';
 import { dailyDue, londonDay, DAILY_TIME } from './policy.mjs';
+import { recordMerge } from './delivery.mjs';
 
 // A board tick must keep an active claim intact: it only adds or refreshes tasks that are still unclaimed.
 // The board column decides what runs; wording in a prompt never does.
@@ -22,21 +23,21 @@ export function refreshTasks(state, prompts, revision, now = new Date().toISOStr
   }
 }
 
-// A claimed task whose Matrix pull request has merged enters the delivery lifecycle (AUTO-08 plugs in through housekeeping).
+// A claimed task whose Matrix pull request has merged enters the delivery lifecycle.
 export function syncMerges(state, pulls, prefixes) {
   const recorded = [];
   for (const task of Object.values(state.tasks)) {
     if (!task.job || !task.itemId || state.deliveries?.[task.id]) continue;
     const pull = pulls.find(p => p.state === 'MERGED' && matrixBranchTask(p, prefixes) === task.id);
-    if (pull) { (state.mergedPulls ??= {})[task.id] = { repository: pull.repository, pull: pull.number }; recorded.push(task.id); }
+    if (pull) { recordMerge(state, task.id, { repository: pull.repository, pull: pull.number }); recorded.push(task.id); }
   }
   return recorded;
 }
 
 /**
  * deps: { graphql, io, loadUsage(config), loadPrompts(), jobId, clock, handoff, limits, housekeeping[] }
- * housekeeping: async functions run first, each given { dir, board, pulls, io }. Later prompts add the delivery and
- * blocked-card steps here.
+ * housekeeping: async functions run first, each given { dir, board, pulls, io, clock, config } (CI notes, restart recovery,
+ * delivery, resume and Blocked: see housekeeping.mjs).
  */
 export async function boardTick(config, deps) {
   const settings = config.boardPickup;
@@ -87,7 +88,7 @@ export async function boardTick(config, deps) {
   // Resume anything half-way before considering new work: a lost starting comment, then later steps.
   if (!dryRun) {
     if (!promptBlock) await recoverPickupComments(dir, { revision, io, limits });
-    for (const step of housekeeping) await step({ dir, board, pulls: pulled.pulls, io, clock });
+    for (const step of housekeeping) await step({ dir, board, pulls: pulled.pulls, io, clock, config });
     state = readState(dir, { restart: false });
   }
 

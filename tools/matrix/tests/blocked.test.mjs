@@ -185,7 +185,7 @@ test('housekeeping runs the standard steps in order and parks stopped work in Bl
   const dir = temp(t); seed(dir, stopped());
   const cards = board(node({ number: 1, title: 'PSF-01: a', status: 'Doing' }));
   const steps = standardHousekeeping();
-  assert.equal(steps.length, 4);
+  assert.equal(steps.length, 5);
   for (const step of steps) await step({ dir, board: cards, pulls: [], io: fakeIo(), clock: () => 0 });
   assert.equal(cards.cards[0].status, 'Blocked');
 });
