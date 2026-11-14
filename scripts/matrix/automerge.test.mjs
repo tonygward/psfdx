@@ -129,6 +129,8 @@ test('core lane never covers the gate, workflows or scripts', () => {
     assert.equal(evaluate(core({ files: [file] })).merge, false, file);
   }
   assert.ok(inCoreScope('docs/execution-policy.md'));
+  assert.ok(inCoreScope('tools/matrix-linux/README.md'));
+  assert.ok(!inCoreScope('tools/matrix-linux/Dockerfile'));
   assert.ok(!inCoreScope('tools/matrix/sub/x.mjs'));
 });
 
