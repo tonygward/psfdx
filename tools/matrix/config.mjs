@@ -4,7 +4,7 @@ import { validateUsageConfig } from './usage.mjs';
 import { BATCH_LIMIT } from './policy.mjs';
 
 const TOP = ['repositorySlug', 'baseBranch', 'sourceDirectory', 'stateDirectory', 'worktreeRoot', 'promptDirectory', 'idPrefixes',
-  'dailyTime', 'batchLimit', 'claudeUsage', 'worker', 'boardPickup'];
+  'dailyTime', 'batchLimit', 'claudeUsage', 'worker', 'boardPickup', 'delivery'];
 const WORKER = ['enabled', 'maximumPrompts', 'maximumTurns', 'maximumBudgetUsd', 'timeoutSeconds', 'maximumRunMinutes', 'maximumRepairs', 'maximumLocalRepairs',
   'maximumTokens', 'testTimeoutSeconds', 'ciTimeoutSeconds', 'pollSeconds', 'gitExecutable', 'ghExecutable', 'tokenFile', 'testRunner'];
 const isAbsolute = value => typeof value === 'string' && (path.posix.isAbsolute(value) || path.win32.isAbsolute(value));
@@ -37,6 +37,11 @@ export function validateConfig(config) {
   if (worker.maximumBudgetUsd !== undefined && !(typeof worker.maximumBudgetUsd === 'number' && worker.maximumBudgetUsd > 0)) fail('worker.maximumBudgetUsd must be a positive number');
   if (worker.maximumTokens !== undefined && !(Number.isInteger(worker.maximumTokens) && worker.maximumTokens >= 10000 && worker.maximumTokens <= 100000000)) fail('worker.maximumTokens must be an integer from 10,000 to 100,000,000');
   if (config.boardPickup !== undefined) validateBoardPickup(config.boardPickup, fail);
+  if (config.delivery !== undefined) {
+    const d = config.delivery;
+    if (!d || typeof d !== 'object' || Array.isArray(d) || Object.keys(d).some(k => k !== 'psGallery')) fail('delivery may only hold psGallery');
+    if (d.psGallery !== undefined && (!d.psGallery || typeof d.psGallery !== 'object' || Object.keys(d.psGallery).some(k => k !== 'enabled') || typeof d.psGallery.enabled !== 'boolean')) fail('delivery.psGallery must be { enabled: true|false }');
+  }
   return config;
 }
 

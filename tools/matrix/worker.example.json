@@ -47,5 +47,10 @@
     "repository": "tonygward/psfdx",
     "ownerLogin": "tonygward",
     "tokenFile": "/matrix/secrets/board-token"
+  },
+  "delivery": {
+    "psGallery": {
+      "enabled": false
+    }
   }
 }

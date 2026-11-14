@@ -57,14 +57,21 @@ Summary of the decisions. The workflows and scripts that implement them arrive w
 
 ## 8. Finishing a task
 
-After the merge, Matrix finishes the task itself:
+After the merge, Matrix finishes the task itself. Each check reads from GitHub only; downloads are not tested.
 
-1. **Verify delivery:** the release exists, contains the merge commit and has exactly the one asset; the version and changelog match; the prompt is archived in `prompts/done/`.
-2. **Comment** on the issue with the pull request, merge commit, version and release link.
-3. **Close** the issue.
+1. **Verify delivery:**
+   - the pull request merged into `main` (the merge commit is recorded);
+   - a `[release] X.Y.Z` commit on `main` follows the merge commit (the first one after it);
+   - a published GitHub release `vX.Y.Z` exists (not a draft or pre-release), its tag points at that bump commit, and it has exactly one non-empty asset, `psfdx-X.Y.Z.zip`;
+   - the release notes are not empty and match that version's section of `CHANGELOG.md` at the tag;
+   - the task's prompt is archived in `prompts/done/` on `main`;
+   - once the PowerShell Gallery is switched on (`delivery.psGallery.enabled`), the bundled `psfdx` package is listed there at that version.
+   A change that was docs-only (Markdown, prompts, docs, tools or images) is not released, so the version, release and notes checks are replaced by "No release needed (docs only)".
+2. **Comment** on the issue: the pull request, merge commit, release, the download link (the release page) and, when the Gallery is on, the install command. While the Gallery is off it says it is not published there yet. Posted once (hidden marker).
+3. **Close** the issue as completed.
 4. **Move** the card to **Done**.
 
-Each stage is saved. While a check is missing, the issue stays open and the card stays in Doing, with one comment saying what is missing.
+Each stage is saved, so a restart resumes at the stage that failed. While a check is missing, the issue stays open and the card stays in Doing, with one comment saying what is missing (repeated only when that list changes). A failed final comment blocks closing and Done; a failed close or Done is retried on its own without a second comment. Two tasks that merge before one bump are both delivered by that release.
 
 ## 9. Archive and traceability
 

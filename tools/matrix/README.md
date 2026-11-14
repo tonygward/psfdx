@@ -97,3 +97,18 @@ When `CI - Pester tests` passes for the exact pull request head commit, the work
 ## Restart recovery
 
 A worker start marks any `claimed` task `interrupted`. If that task has a pushed branch and an open pull request, `recover.mjs` looks it up again by branch and exact head commit. Passing or running CI returns it to `awaiting-review`; a failed build, a head commit Matrix didn't push, or no result within 90 minutes leaves it interrupted, so it is reported and parked in Blocked. Recovery never starts Claude and never pushes.
+
+## Delivery
+
+A merged pull request is not delivery. For every task whose pull request has merged and whose card isn't Done, the board tick runs `delivery.mjs`. It reads from GitHub only (`verifiers.mjs`), holds no credentials and downloads nothing. Each verifier returns `{ ok, evidence, missing }`, and one unavailable verifier can't hide another's findings:
+
+1. **Merge.** The pull request merged into `main`; the merge commit is recorded.
+2. **Version.** The first `[release] X.Y.Z` commit on `main` after the merge commit (found with the compare API, oldest first). If two tasks merge before one bump, that one release is the evidence for both.
+3. **Release.** `vX.Y.Z` is published (not a draft or pre-release), its tag points at that bump commit, and it has exactly one asset, `psfdx-X.Y.Z.zip`, with a non-zero size.
+4. **Notes.** The release notes are not empty and match that version's section of `CHANGELOG.md` at the tag (line endings ignored).
+5. **Prompt archived.** The task's prompt is in `prompts/done/` on `main`, whether generated or hand-written.
+6. **PowerShell Gallery.** Only when `delivery.psGallery.enabled` is `true` in the config (AUTO-11 turns it on): `psfdx` is listed on the Gallery at `X.Y.Z`. While it is off, the final comment says it is not published there yet.
+
+A change that touched only Markdown, prompts, docs, tools or images (the same rule as CI and `CD - Bump version`, checked by a test) was never bumped, so checks 2 to 4 are replaced by "No release needed (docs only)".
+
+Then, in stages saved in state: **comment** (once, hidden marker `<!-- matrix-final:<task> -->`; it gives the pull request, merge commit, release, download link and, when the Gallery is on, `Install-Module psfdx -RequiredVersion X.Y.Z`), **close** the issue as completed, and **move the card to Done**. While any check is missing, the issue stays open and the card stays in Doing with one comment saying what is missing (the marker includes a hash of the list, so it is repeated only when the list changes). A failed final comment blocks closing and Done; a failed close or Done is retried on the next tick without a second comment. A restart resumes at the stage that failed. Finished work leaves the active states, so it can never hold the single job slot.
