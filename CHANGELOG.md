@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.1 - 2026-11-15
+
 ### Added
 
 - psfdx: Prepare a single bundled `psfdx` package for the PowerShell Gallery. The modules now also find each other when they are nested in one package. Publishing is switched off until the owner turns it on, so install from a clone or the release zip for now.

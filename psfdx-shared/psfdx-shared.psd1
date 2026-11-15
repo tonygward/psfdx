@@ -1,6 +1,6 @@
 @{
     RootModule = 'psfdx-shared.psm1'
-    ModuleVersion = '0.8.0'
+    ModuleVersion = '0.8.1'
     GUID = '32273e30-b48e-46a0-a566-a74261704f38'
     Author = 'Tony Ward'
     Description = 'Shared helpers for psfdx PowerShell modules'
