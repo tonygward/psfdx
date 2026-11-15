@@ -103,7 +103,7 @@ function Connect-SalesforceAuthUrl {
     }
 
     $segments = [System.Collections.Generic.List[string]]::new()
-    $segments.Add('sf auth sfdxurl store') | Out-Null
+    $segments.Add('sf org login sfdx-url') | Out-Null
     $segments.Add("--sfdx-url-file `"$SfdxUrlFile`"") | Out-Null
     if ($Alias) { $segments.Add("--alias $Alias") | Out-Null }
     if ($SetDefault) { $segments.Add('--set-default') | Out-Null }
@@ -521,22 +521,15 @@ function Install-SalesforceCli {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    if (Test-SalesforceIsMacOS) {
-        Invoke-Salesforce -Command "brew install sfdx-cli/tap/sf" @commonParams
-    } else {
-        Invoke-Salesforce -Command "npm install --global @salesforce/cli" @commonParams
-    }
+    # npm is the Salesforce-supported install on Windows, Linux and macOS
+    Invoke-Salesforce -Command "npm install --global @salesforce/cli" @commonParams
 }
 
 function Update-SalesforceCli {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    if (Test-SalesforceIsMacOS) {
-        Invoke-Salesforce -Command "brew upgrade sfdx-cli/tap/sf" @commonParams
-    } else {
-        Invoke-Salesforce -Command "npm update --global @salesforce/cli" @commonParams
-    }
+    Invoke-Salesforce -Command "npm update --global @salesforce/cli" @commonParams
 }
 
 function Install-SalesforcePlugin {

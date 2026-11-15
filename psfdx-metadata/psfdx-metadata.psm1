@@ -415,7 +415,7 @@ function Retrieve-SalesforceOrg {
         [Parameter(Mandatory = $false)][switch] $IncludePackages
     )
 
-    $command = "sf force source manifest create"
+    $command = "sf project generate manifest"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
         $command += " --from-org $TargetOrg"
     }

@@ -96,21 +96,13 @@ Describe 'Get-SalesforcePackagesInstalled' {
 
         It 'builds command with target org and json' {
             Get-SalesforcePackagesInstalled -TargetOrg 'me@example.com' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like 'sf force package installed list*') -and
-                ($Command -like '* --target-org me@example.com*') -and
-                ($Command -like '* --json*')
-            }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf package installed list --target-org me@example.com --json' }
             Assert-MockCalled Show-SalesforceResult -Times 1 -ParameterFilter { $ReturnRecords }
         }
 
         It 'adds api version when provided' {
             Get-SalesforcePackagesInstalled -ApiVersion '60.0' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like 'sf force package installed list*') -and
-                ($Command -like '* --api-version 60.0*') -and
-                ($Command -notlike '* --target-org *')
-            }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf package installed list --api-version 60.0 --json' }
         }
     }
 }

@@ -43,8 +43,8 @@ cd psfdx
    Import-Module psfdx
    Install-SalesforceCli
    ```
-   On macOS it uses Homebrew (`brew install sfdx-cli/tap/sf`).<br>
-   On Windows and Linux it defaults to npm (`npm install --global @salesforce/cli`).
+   On Windows, Linux and macOS it uses npm (`npm install --global @salesforce/cli`), the install method Salesforce supports. `Update-SalesforceCli` runs `npm update --global @salesforce/cli`.<br>
+   If you installed the CLI with the old Homebrew tap (`sfdx-cli/tap/sf`), uninstall it with `brew uninstall sfdx-cli/tap/sf` before running `Install-SalesforceCli`.
 
 # Examples
 **1. Connect to a Salesforce Sandbox Org**

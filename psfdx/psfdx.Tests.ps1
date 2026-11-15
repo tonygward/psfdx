@@ -60,12 +60,7 @@ Describe 'psfdx module' {
                 Mock Show-SalesforceResult { [pscustomobject]@{ alias = 'my'; username = 'user'; accessToken = 'tok'; refreshToken = 'ref' } } -ModuleName $module.Name
                 $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -Alias 'my' -SetDefault -SetDefaultDevHub
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
-                    ($Command -like 'sf auth sfdxurl store*') -and
-                    ($Command -like '*--sfdx-url-file "./auth.txt"*') -and
-                    ($Command -like '* --alias my*') -and
-                    ($Command -like '* --set-default*') -and
-                    ($Command -like '* --set-default-dev-hub*') -and
-                    ($Command -like '* --json')
+                    $Command -eq 'sf org login sfdx-url --sfdx-url-file "./auth.txt" --alias my --set-default --set-default-dev-hub --json'
                 }
                 $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
                 $result.PSObject.Properties.Match('refreshToken').Count | Should -Be 0
@@ -83,14 +78,21 @@ Describe 'psfdx module' {
         }
 
         Context 'Install-SalesforceCli' {
-            It 'uses brew on macOS' {
+            It 'uses npm on macOS' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Mock Test-SalesforceIsMacOS { $true } -ModuleName $module.Name
                 Install-SalesforceCli
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'brew install sfdx-cli/tap/sf' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm install --global @salesforce/cli' }
             }
 
-            It 'falls back to npm elsewhere' {
+            It 'updates with npm on macOS' {
+                Mock Invoke-Salesforce {} -ModuleName $module.Name
+                Mock Test-SalesforceIsMacOS { $true } -ModuleName $module.Name
+                Update-SalesforceCli
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm update --global @salesforce/cli' }
+            }
+
+            It 'uses npm elsewhere' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Mock Test-SalesforceIsMacOS { $false } -ModuleName $module.Name
                 Install-SalesforceCli
