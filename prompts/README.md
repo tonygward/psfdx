@@ -62,3 +62,4 @@ This is an index, not the queue: the board decides what runs and in what order.
 ## Merged implementation archive
 
 Merged prompts move to [`done/`](done/). An archived prompt means the work merged, not that it was released.
+
