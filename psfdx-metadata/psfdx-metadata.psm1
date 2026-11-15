@@ -547,6 +547,240 @@ function Deploy-SalesforceMetadata {
 
 #endregion
 
+#region Deploy lifecycle
+
+function Get-SalesforceDeployJobParams {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent
+    )
+
+    if ($JobId -and $UseMostRecent) {
+        throw "Specify only one of -JobId or -UseMostRecent."
+    }
+    if (-not $JobId -and -not $UseMostRecent) {
+        throw "Specify -JobId or -UseMostRecent."
+    }
+    if ($JobId) {
+        if ($JobId -notmatch '^0Af[a-zA-Z0-9]{12}([a-zA-Z0-9]{3})?$') {
+            throw "Job ID '$JobId' is not a valid deploy job ID. Expected a 15 or 18 character ID starting with 0Af."
+        }
+        return " --job-id $JobId"
+    }
+    return " --use-most-recent"
+}
+
+function Test-SalesforceDeployWaitParams {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][bool] $HasWait,
+        [Parameter(Mandatory = $false)][bool] $Async
+    )
+    if ($HasWait -and $Async) {
+        throw "Specify only one of -Wait or -Async."
+    }
+}
+
+function Test-SalesforceDeployResultOptions {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][bool] $ConciseResults,
+        [Parameter(Mandatory = $false)][bool] $DetailedResults
+    )
+    if ($ConciseResults -and $DetailedResults) {
+        throw "Specify only one of -ConciseResults or -DetailedResults."
+    }
+}
+
+function Test-SalesforceValidDeployWait {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][int] $Wait
+    )
+    if ($Wait -lt 0) {
+        throw "-Wait must be zero or greater (minutes)."
+    }
+}
+
+function Test-SalesforceDeploy {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $Manifest,
+        [Parameter(Mandatory = $false)][string] $SourceDir,
+        [Parameter(Mandatory = $false)][string] $InputDir,
+        [Parameter(Mandatory = $false)][switch] $ManifestPackage,
+        [Parameter(Mandatory = $false)][ValidateSet(
+            'NoTests',
+            'SpecificTests',
+            'ReferencedTests',
+            'TestsInFolder',
+            'TestsInOrg',
+            'TestsInOrgAndPackages')][string] $TestLevel = 'TestsInOrg',
+        [Parameter(Mandatory = $false)][string[]] $Tests,
+        [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $optionsProvided = 0
+    if ($Manifest) { $optionsProvided++ }
+    if ($SourceDir) { $optionsProvided++ }
+    if ($InputDir) { $optionsProvided++ }
+    if ($optionsProvided -ne 1) {
+        throw "Specify exactly one of -Manifest, -SourceDir, or -InputDir."
+    }
+    if ($ManifestPackage -and -not $InputDir) {
+        throw "-ManifestPackage can only be used with -InputDir."
+    }
+    Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
+    Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    if ($Manifest -and -not (Test-Path -LiteralPath $Manifest -PathType Leaf)) {
+        throw "Manifest file '$Manifest' does not exist."
+    }
+    if ($SourceDir -and -not (Test-Path -LiteralPath $SourceDir)) {
+        throw "Source path '$SourceDir' does not exist."
+    }
+    if ($InputDir -and -not (Test-Path -LiteralPath $InputDir -PathType Container)) {
+        throw "Input directory '$InputDir' does not exist."
+    }
+
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
+    $command = "sf project deploy validate"
+    if ($Manifest) { $command += " --manifest `"$Manifest`"" }
+    if ($SourceDir) { $command += " --source-dir `"$SourceDir`"" }
+    if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
+    if ($ManifestPackage) { $command += " --single-package" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($Async) { $command += " --async" }
+    $command += Get-SalesforceApexCliTestParams @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
+    if ($ConciseResults) { $command += " --concise" }
+    if ($DetailedResults) { $command += " --verbose" }
+    $command += " --json"
+    $result = Invoke-Salesforce -Command $command @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Start-SalesforceQuickDeploy {
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
+    Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
+    Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $command = "sf project deploy quick" + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($Async) { $command += " --async" }
+    if ($ConciseResults) { $command += " --concise" }
+    if ($DetailedResults) { $command += " --verbose" }
+    $command += " --json"
+
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($JobId) { $JobId } else { 'most recent validated deployment' }
+    if ($PSCmdlet.ShouldProcess($target, 'Quick deploy validated deployment')) {
+        $result = Invoke-Salesforce -Command $command @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Get-SalesforceDeployStatus {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $command = "sf project deploy report" + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    $command += " --json"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Resume-SalesforceDeploy {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
+    Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $command = "sf project deploy resume" + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($ConciseResults) { $command += " --concise" }
+    if ($DetailedResults) { $command += " --verbose" }
+    $command += " --json"
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -Command $command @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Stop-SalesforceDeploy {
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
+    Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $command = "sf project deploy cancel" + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($Async) { $command += " --async" }
+    $command += " --json"
+
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($JobId) { $JobId } else { 'most recent deployment' }
+    if ($PSCmdlet.ShouldProcess($target, 'Cancel deployment')) {
+        $result = Invoke-Salesforce -Command $command @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+#endregion
+
 #region Describe
 
 function Describe-SalesforceObjects {

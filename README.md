@@ -182,6 +182,22 @@ Get-Command -Module psfdx*
 | :--- | :--- |
 | `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
 | `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
+| `Test-SalesforceDeploy` | Validate a deployment without saving it (check-only); returns a job ID for quick deploy. |
+| `Start-SalesforceQuickDeploy` | Quick deploy a validated deployment by `-JobId` or `-UseMostRecent` (asks for confirmation). |
+| `Get-SalesforceDeployStatus` | Report the status of a deployment by `-JobId` or `-UseMostRecent`. |
+| `Resume-SalesforceDeploy` | Resume watching a deployment that is still running. |
+| `Stop-SalesforceDeploy` | Cancel a running deployment (asks for confirmation). |
+
+Validate, then quick deploy, and resume or report on a running deployment:
+
+```powershell
+$validation = Test-SalesforceDeploy -SourceDir force-app -TestLevel TestsInOrg -TargetOrg prod -Wait 30
+Start-SalesforceQuickDeploy -JobId $validation.id -TargetOrg prod
+
+Resume-SalesforceDeploy -UseMostRecent -Wait 10
+Get-SalesforceDeployStatus -JobId 0AfXXXXXXXXXXXXXXX -TargetOrg prod
+Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
+```
 
 ### Describe
 
