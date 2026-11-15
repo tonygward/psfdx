@@ -146,7 +146,8 @@ test('core lane with Markdown only uses the quick CI run', () => {
 // Archive lane
 function archive(overrides = {}) {
   const base = task({ files: ['prompts/README.md', 'prompts/done/AUTO-01-x.md', 'prompts/AUTO-01-x.md'] });
-  return { ...base, pr: { ...base.pr, headRefName: 'housekeeping/archive-AUTO-01', body: ARCHIVE_STATEMENT }, ...overrides };
+  // Archive pull requests come from the archive workflow (RELEASE_TOKEN), so the author is the release identity, not the worker.
+  return { ...base, releaseLogin: 'release', pr: { ...base.pr, author: 'release', headRefName: 'housekeeping/archive-AUTO-01', body: ARCHIVE_STATEMENT }, ...overrides };
 }
 
 test('archive lane merges a prompts-only pull request', () => {
@@ -156,6 +157,8 @@ test('archive lane merges a prompts-only pull request', () => {
 test('archive lane refuses other files, a wrong author or a missing statement', () => {
   assert.equal(evaluate(archive({ files: ['prompts/x.md', 'psfdx/psfdx.psm1'] })).merge, false);
   assert.equal(evaluate(withPr(archive(), { author: 'x' })).merge, false);
+  assert.equal(evaluate(withPr(archive(), { author: 'agent' })).merge, false, 'the worker is not the archive author');
+  assert.equal(evaluate(archive({ releaseLogin: undefined })).merge, false);
   assert.equal(evaluate(withPr(archive(), { body: '' })).merge, false);
 });
 

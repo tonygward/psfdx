@@ -6,7 +6,7 @@ import { evaluate } from './automerge.mjs';
 try {
   const facts = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
   const config = JSON.parse(fs.readFileSync(new URL('./gate.config.json', import.meta.url), 'utf8'));
-  const result = evaluate({ ...facts, agentLogin: config.agentLogin });
+  const result = evaluate({ ...facts, agentLogin: config.agentLogin, releaseLogin: config.releaseLogin });
   console.log(JSON.stringify(result, null, 2));
   process.exit(result.merge ? 0 : 1);
 } catch (error) {

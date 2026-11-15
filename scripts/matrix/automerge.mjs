@@ -104,12 +104,13 @@ function evaluateCore(facts) {
   return { merge: reasons.length === 0, reasons, lane: 'core' };
 }
 
+// Archive pull requests are opened by the archive workflow with RELEASE_TOKEN, so their author is the release identity, not the worker.
 function evaluateArchive(facts) {
-  const { pr, agentLogin } = facts;
+  const { pr, releaseLogin } = facts;
   const reasons = [];
   const no = reason => reasons.push(reason);
   commonChecks(facts, inArchiveScope, 'archive', no);
-  if (!agentLogin || pr?.author !== agentLogin) no('Pull request was not opened by the agent identity');
+  if (!releaseLogin || pr?.author !== releaseLogin) no('Pull request was not opened by the release identity');
   if (!String(pr?.body ?? '').includes(ARCHIVE_STATEMENT)) no('Description does not carry the archive statement');
   runChecks(facts, BUILD_RUN, REQUIRED_JOBS, no);
   return { merge: reasons.length === 0, reasons, lane: 'archive' };
