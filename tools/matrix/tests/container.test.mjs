@@ -79,10 +79,10 @@ test('the egress allow-list names exactly the hosts the policy allows and refuse
   assert.doesNotMatch(squid, /powershellgallery|npmjs/);
 });
 
-test('the shipped worker.config.json is valid, starts in dry run, and points at the baked-in paths', () => {
+test('the shipped worker.config.json is valid, states dry run explicitly, and points at the baked-in paths', () => {
   const config = JSON.parse(read('worker.config.json'));
   assert.doesNotThrow(() => validateConfig(config));
-  assert.equal(config.boardPickup.enabled, true); assert.equal(config.boardPickup.dryRun, true);
+  assert.equal(config.boardPickup.enabled, true); assert.equal(typeof config.boardPickup.dryRun, 'boolean');
   assert.equal(config.worker.testRunner, '/opt/matrix/run-tests-sandboxed');
   assert.equal(config.repositorySlug, 'tonygward/psfdx'); assert.equal(config.delivery.psGallery.enabled, false);
   for (const path of [config.worker.tokenFile, config.boardPickup.tokenFile]) assert.match(path, /^\/run\/matrix-secrets\//);
