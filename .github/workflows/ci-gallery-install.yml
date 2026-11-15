@@ -21,6 +21,9 @@ jobs:
     name: Gallery install (${{ matrix.name }})
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +38,6 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Install from the Gallery and compare the commands
-        shell: ${{ matrix.shell }}
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
