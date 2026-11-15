@@ -31,8 +31,7 @@ jobs:
           files=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}")
           # The rule lives in scripts/release/changes.mjs (shared with the release workflow).
           # docs_only means "nothing here needs the Pester suite".
-          needed=$(printf '%s
-' "$files" | node scripts/release/changes.mjs tests)
+          needed=$(echo "$files" | node scripts/release/changes.mjs tests)
           if [ "$needed" = "true" ]; then docs_only=false; else docs_only=true; fi
           echo "Changed files:"; echo "$files"
           echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
