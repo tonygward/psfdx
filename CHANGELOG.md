@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.8.3 - 2026-11-15
+
+- Maintenance release.
+
 ## 0.8.2 - 2026-11-15
 
 - Maintenance release.
