@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- psfdx-metadata: Fix `Resume-SalesforceDeploy` (added in 0.8.4). It no longer has a `-TargetOrg` parameter, because `sf project deploy resume` rejects `--target-org` and takes the org from the cached deployment.
+- psfdx-metadata: Fix `Test-SalesforceDeploy` (added in 0.8.4). `-TestLevel NoTests` is removed, because `sf project deploy validate` requires tests and rejects `NoTestRun`. Supported levels are `SpecificTests`, `ReferencedTests`, `TestsInFolder`, `TestsInOrg` (default), `TestsInOrgAndPackages` and the new `RelevantTests` (`RunRelevantTests`).
+
 ## 0.8.4 - 2026-11-15
 
 - psfdx-metadata: Add deployment lifecycle cmdlets wrapping `sf project deploy`: `Test-SalesforceDeploy` (validate), `Start-SalesforceQuickDeploy` (quick deploy a validated deployment), `Get-SalesforceDeployStatus` (report), `Resume-SalesforceDeploy` and `Stop-SalesforceDeploy` (cancel). Quick deploy and cancel ask for confirmation and support `-WhatIf`. Job IDs are checked before the CLI runs.
