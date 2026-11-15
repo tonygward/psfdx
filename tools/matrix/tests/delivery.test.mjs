@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { verifyDelivery, advanceDelivery, finalComment, finalMarker, blockerMarker, recordMerge } from '../delivery.mjs';
-import { verifyMerge, verifyVersion, verifyRelease, verifyNotes, verifyPromptArchived, verifyGallery, isDocsOnly, readIo, DOCS_ONLY_PATTERNS } from '../verifiers.mjs';
+import { verifyMerge, verifyVersion, verifyRelease, verifyNotes, verifyPromptArchived, verifyGallery, shipsNothing, readIo } from '../verifiers.mjs';
 import { emptyState, writeState, readState } from '../state.mjs';
 import { syncMerges } from '../board-run.mjs';
 import { standardHousekeeping } from '../housekeeping.mjs';
@@ -117,28 +117,15 @@ test('6. the Gallery is only checked when switched on, and the comment says so w
   assert.equal((await verifyGallery(world({ gallery: true }).io, '0.8.1')).ok, true);
 });
 
-test('a docs-only task needs no release: versions, release and notes are replaced by one plain sentence', async () => {
+test('a task that ships nothing needs no release: versions, release and notes are replaced by one plain sentence', async () => {
   const w = world({ pullFilesList: ['prompts/AUTO-01-x.md', 'docs/execution-policy.md', 'CLAUDE.md'], commits: [], release: null });
   const result = await verifyDelivery(delivery(), w.io);
   assert.equal(result.verified, true); assert.equal(result.evidence.docsOnly, true);
-  assert.match(finalComment({ taskId: 'AUTO-01', job: 'j', evidence: result.evidence }), /No release needed \(docs only\)/);
+  assert.match(finalComment({ taskId: 'AUTO-01', job: 'j', evidence: result.evidence }), /No release needed \(nothing in this change ships\)/);
   assert.doesNotMatch(finalComment({ taskId: 'AUTO-01', job: 'j', evidence: result.evidence }), /Download|Gallery/);
   const stillNeedsArchive = await verifyDelivery(delivery(), world({ pullFilesList: ['prompts/x.md'], archived: false }).io);
   assert.equal(stillNeedsArchive.verified, false);
-  assert.equal(isDocsOnly(['psfdx/x.psm1', 'docs/x.md']), false); assert.equal(isDocsOnly([]), false); assert.equal(isDocsOnly(['tools/matrix/x.mjs', 'images/a.png']), true);
-});
-
-test('the docs-only rule matches the CI and bump workflows', () => {
-  for (const file of ['ci.yml', 'cd-bump-version.yml']) {
-    const text = fs.readFileSync(new URL(`../../../.github/workflows/${file}`, import.meta.url), 'utf8');
-    const line = /^\s*\*\.md\|[^)]*\) ;;/m.exec(text)?.[0];
-    assert.ok(line, `${file} has the docs-only case line`);
-    const globs = line.trim().replace(/\) ;;$/, '').split('|');
-    const covers = sample => globs.some(g => new RegExp(`^${g.replace(/[.+?^${}()[\]\\]/g, '\\$&').replace(/\*/g, '.*')}$`).test(sample));
-    for (const sample of ['README.md', 'prompts/x.txt', 'docs/a/b.txt', 'tools/matrix/x.mjs', 'images/x.bin', 'a.png', 'a.jpg', 'a.jpeg', 'a.gif', 'a.svg']) assert.equal(covers(sample), true, `${file}: ${sample}`);
-    for (const sample of ['psfdx/x.psm1', 'scripts/x.mjs', '.github/workflows/ci.yml', 'VERSION', 'modules.ps1']) assert.equal(covers(sample), false, `${file}: ${sample}`);
-  }
-  assert.ok(DOCS_ONLY_PATTERNS.length >= 6);
+  assert.equal(shipsNothing(['psfdx/x.psm1', 'docs/x.md']), false); assert.equal(shipsNothing([]), false); assert.equal(shipsNothing(['tools/matrix/x.mjs', '.github/workflows/ci.yml', 'images/a.png']), true);
 });
 
 test('a verifier that throws cannot hide the others, and a failure to list the files stops verification', async () => {

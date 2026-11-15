@@ -239,10 +239,10 @@ test('Claude gets file tools only, no web, no MCP, no settings and never a token
 });
 
 test('change scope matches the gate, and the agent never edits prompts', () => {
-  const { allowed, rejected } = splitChanges(['psfdx/psfdx.psm1', 'tests/x.Tests.ps1', 'README.md', 'CHANGELOG.md', 'modules.ps1', 'docs/x.md',
+  const { allowed, rejected } = splitChanges(['psfdx/psfdx.psm1', 'psfdx/x.Tests.ps1', 'README.md', 'CHANGELOG.md', 'modules.ps1', 'docs/x.md',
     '.github/workflows/ci.yml', 'scripts/release/bump.mjs', 'VERSION', 'install.ps1', 'prompts/AUTO-07-x.md', 'psfdx/../x', 'tools/matrix/x.mjs']);
-  assert.deepEqual(allowed, ['psfdx/psfdx.psm1', 'tests/x.Tests.ps1', 'README.md', 'CHANGELOG.md', 'modules.ps1', 'docs/x.md']);
-  assert.equal(rejected.length, 7);
+  assert.deepEqual(allowed, ['psfdx/psfdx.psm1', 'psfdx/x.Tests.ps1', 'README.md', 'CHANGELOG.md', 'modules.ps1']);
+  assert.equal(rejected.length, 8);
 });
 
 test('the Claude result is parsed strictly, and limits are explained from result fields only', () => {

@@ -152,11 +152,11 @@ test('the tests run in the worktree with the configured time limit, results outs
 test('changes outside the allowed scope are reverted and reported; an empty change blocks', async t => {
   const world = makeWorld(t); world.seed();
   world.tracked = ['.github/workflows/ci.yml', 'psfdx/psfdx.psm1'];
-  world.untracked = ['scripts/x.mjs', 'prompts/PSF-01-do-the-thing.md', 'tests/new.Tests.ps1'];
+  world.untracked = ['scripts/x.mjs', 'prompts/PSF-01-do-the-thing.md', 'psfdx/new.Tests.ps1'];
   world.agentScript = [async ({ cwd }) => { fs.mkdirSync(path.join(cwd, 'scripts'), { recursive: true }); fs.writeFileSync(path.join(cwd, 'scripts', 'x.mjs'), 'x'); }];
   await runTask(world.config, world.deps);
   const added = world.gitCalls.find(c => c.args[0] === 'add').args.slice(2);
-  assert.deepEqual(added.sort(), ['psfdx/psfdx.psm1', 'tests/new.Tests.ps1']);
+  assert.deepEqual(added.sort(), ['psfdx/new.Tests.ps1', 'psfdx/psfdx.psm1']);
   assert.ok(world.gitCalls.some(c => c.args.join(' ') === 'checkout HEAD -- .github/workflows/ci.yml'));
   assert.equal(fs.existsSync(path.join(world.config.worktreeRoot, 'PSF-01', 'repo', 'scripts', 'x.mjs')), false);
   const only = makeWorld(t); only.seed(); only.agentScript = [async () => { only.untracked = ['.github/workflows/x.yml']; }];

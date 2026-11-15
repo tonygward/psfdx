@@ -1,7 +1,7 @@
 Describe 'Gallery bundle (one psfdx package)' {
     BeforeAll {
-        $script:Root = Split-Path -Parent $PSScriptRoot
-        $script:Build = Join-Path (Join-Path (Join-Path $script:Root 'scripts') 'release') 'Build-GalleryPackage.ps1'
+        $script:Root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        $script:Build = Join-Path $PSScriptRoot 'Build-GalleryPackage.ps1'
         $script:Out = Join-Path $TestDrive 'psfdx'
         & $script:Build -OutputFolder $script:Out | Out-Null
         $script:Version = (Get-Content -Path (Join-Path $script:Root 'VERSION') -Raw).Trim()

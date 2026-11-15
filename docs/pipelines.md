@@ -30,7 +30,7 @@ Every workflow name starts with one of four prefixes, so its kind is clear at a 
 
 ## CI - Pester tests
 
-A first job, `Changes`, classifies the changed files. If every file is Markdown, under `prompts/`, `docs/` or `tools/`, or an image, it sets `docs_only=true`. The test jobs then skip their steps (the job itself still succeeds), so a required check never waits forever.
+A first job, `Changes`, classifies the changed files. If no changed file can affect the Pester suite, it sets `docs_only=true`. That is every file that is Markdown, under `prompts/`, `docs/` or `images/`, an image, or under `tools/` (except the Matrix launcher's PowerShell, which Pester tests). The rule is `scripts/release/changes.mjs` (`node scripts/release/changes.mjs tests`), the same file `CD - Bump version` uses to decide whether a change ships. The test jobs then skip their steps (the job itself still succeeds), so a required check never waits forever.
 
 Pester is pinned to 5.x on every leg: the tests use `Assert-MockCalled`, which Pester 6 can't load. On Windows PowerShell 5.1, Pester 5 is installed with `-SkipPublisherCheck` because Windows ships Pester 3.4. Each leg uploads its `testResults.xml`.
 
@@ -53,8 +53,8 @@ Windows runners use more minutes than Linux. psfdx is public, so Actions minutes
 
 Runs from `main`'s own copy and never checks out pull request code. It only runs when the repository variable `MATRIX_AUTOMERGE_ENABLED` is `true`. The decision is the pure function in `scripts/matrix/automerge.mjs`; the identities are in `scripts/matrix/gate.config.json`: `agentLogin` (the worker account, which opens task and core pull requests) and `releaseLogin` (the owner identity behind `RELEASE_TOKEN`, which opens the archive pull requests). It merges (squash, with `RELEASE_TOKEN`, matching the exact head commit) only when every rule holds, and otherwise comments once per commit with the reasons. There are three lanes:
 
-- **Task:** branch `matrix/PSF-##-...` or `matrix/AUTO-##-...`, opened by the agent, with a `Matrix job:` line in the description. Files only under `psfdx*/`, `tests/`, `prompts/`, `docs/`, `images/`, `README.md`, `CHANGELOG.md` and `modules.ps1`.
-- **Core:** branch `matrix/core/<name>` with the statement `Matrix core change: owner-approved lane`. Files only under `tools/matrix/` (code, JSON, Markdown and its tests), `tools/matrix-linux/worker.config.json` and `tools/matrix-linux/README.md` (the Dockerfile, scripts, proxy allow-list and version pins stay with a person) and `docs/execution-policy.md`. It waits for `CI - Matrix orchestration tests` unless only Markdown changed.
+- **Task:** branch `matrix/PSF-##-...` or `matrix/AUTO-##-...`, opened by the agent, with a `Matrix job:` line in the description. Files only under `psfdx*/` (module tests live there), `prompts/`, `images/`, `README.md`, `CHANGELOG.md` and `modules.ps1`. Never `docs/`, the root `tests/`, `scripts/`, `tools/` or `.github/`.
+- **Core:** branch `matrix/core/<name>` with the statement `Matrix core change: owner-approved lane`. Files only under `tools/matrix/` (code, JSON, Markdown and its tests), `tools/matrix-linux/worker.config.json` and `tools/matrix-linux/README.md` (the Dockerfile, scripts, proxy allow-list and version pins stay with a person). The execution policy and every other file under `docs/` stay with a person too. It waits for `CI - Matrix orchestration tests` unless only Markdown changed.
 - **Archive:** branch `housekeeping/archive-<ID>` with the statement `Housekeeping: archive merged prompt`, touching only `prompts/`.
 
 In every lane the `CI - Pester tests` run must have succeeded for the pull request's exact head commit with all four required jobs successful (not skipped), and no other non-advisory run for that commit may have failed. Fork pull requests never merge.

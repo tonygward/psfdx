@@ -16,7 +16,7 @@ function task(overrides = {}) {
       state: 'OPEN', baseRefName: 'main', headRefName: 'matrix/PSF-12-field-usage', headRefOid: SHA,
       headRepository: 'tonygward/psfdx', author: 'agent', body: 'Implements PSF-12.\n\nMatrix job: job-123\n',
     },
-    files: ['psfdx-logs/psfdx-logs.psm1', 'tests/x.Tests.ps1', 'CHANGELOG.md'],
+    files: ['psfdx-logs/psfdx-logs.psm1', 'psfdx-logs/psfdx-logs.Tests.ps1', 'CHANGELOG.md'],
     jobs: goodJobs,
     otherRuns: [],
     run: { name: BUILD_RUN, conclusion: 'success', event: 'pull_request', head_sha: SHA },
@@ -128,7 +128,7 @@ test('core lane never covers the gate, workflows or scripts', () => {
   for (const file of ['scripts/matrix/automerge.mjs', '.github/workflows/gate-auto-merge.yml', 'tools/matrix/run.ps1', 'tools/matrix/Dockerfile', 'psfdx/psfdx.psm1']) {
     assert.equal(evaluate(core({ files: [file] })).merge, false, file);
   }
-  assert.ok(inCoreScope('docs/execution-policy.md'));
+  assert.ok(!inCoreScope('docs/execution-policy.md'), 'the policy needs a person, even in the core lane');
   assert.ok(inCoreScope('tools/matrix-linux/README.md'));
   assert.ok(!inCoreScope('tools/matrix-linux/Dockerfile'));
   assert.ok(!inCoreScope('tools/matrix/sub/x.mjs'));
@@ -193,4 +193,13 @@ test('relinkMoved updates links to the moved file only', () => {
   assert.equal(out, '| [one](done/AUTO-01-x.md) | [two](AUTO-02-x.md#top) | [ext](https://x/AUTO-01-x.md) |');
   const blob = relinkMoved('https://github.com/o/r/blob/main/prompts/AUTO-01-x.md', 'README.md', 'prompts/AUTO-01-x.md', 'prompts/done/AUTO-01-x.md');
   assert.equal(blob, 'https://github.com/o/r/blob/main/prompts/done/AUTO-01-x.md');
+});
+
+test('a task cannot change infrastructure, the policy docs or the repository-rule tests', () => {
+  for (const file of ['tests/Repository.Tests.ps1', 'docs/execution-policy.md', 'docs/pipelines.md', 'scripts/release/changes.mjs',
+    'scripts/release/New-ReleaseZip.Tests.ps1', 'tools/matrix/worker.mjs', 'tools/matrix-linux/Start-MatrixPsfdx.Tests.ps1', '.github/workflows/ci.yml', 'VERSION']) {
+    assert.equal(inScope(file), false, file);
+    assert.equal(evaluate(task({ files: [file] })).merge, false, file);
+  }
+  for (const file of ['psfdx-logs/psfdx-logs.Tests.ps1', 'prompts/PSF-1-x.md', 'README.md', 'CHANGELOG.md']) assert.equal(inScope(file), true, file);
 });

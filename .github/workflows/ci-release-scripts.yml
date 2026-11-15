@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/release/**'
       - '.github/workflows/cd-*.yml'
+      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
