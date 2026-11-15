@@ -35,10 +35,10 @@
     "projectId": "PVT_kwHOAJUDvc4Broa9",
     "statusFieldId": "PVTSSF_lAHOAJUDvc4Broa9zhp6PRs",
     "options": {
-      "backlog": "REPLACE_WITH_board-ids_OUTPUT",
+      "backlog": "70822ebe",
       "todo": "f75ad846",
-      "doing": "REPLACE_WITH_board-ids_OUTPUT",
-      "blocked": "REPLACE_WITH_board-ids_OUTPUT",
+      "doing": "47fc9ee4",
+      "blocked": "9fb7cb74",
       "done": "98236657"
     },
     "repository": "tonygward/psfdx",
