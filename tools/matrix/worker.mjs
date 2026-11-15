@@ -127,7 +127,7 @@ export async function runTask(config, deps) {
     Object.assign(task, boardFields(handed, new Date(clock()).toISOString())); clearHandoff(dir);
     if (handed.status === 'Todo') state.lastWorkerDaily = londonDay(new Date(clock())); // a Doing (run-now) pickup does not use the slot
     save();
-    const posted = await postPickupComment(dir, state, p.id, { revision: loaded.revision, io: githubIo(boardGh, config.boardPickup ? { projectId: config.boardPickup.projectId, statusFieldId: config.boardPickup.statusFieldId, options: config.boardPickup.options } : {}), limits: limitsText(config) });
+    const posted = await postPickupComment(dir, state, p.id, { revision: loaded.revision, io: githubIo(boardGh, config.boardPickup ? { projectId: config.boardPickup.projectId, statusFieldId: config.boardPickup.statusFieldId, options: config.boardPickup.options, issueGh: gh } : { issueGh: gh }), limits: limitsText(config) });
     log(p.id, 'board-pickup', { job: handed.job, commented: posted.posted === true });
     if (posted.posted !== true) {
       finish(state, p.id, 'interrupted', { phase: 'claimed', reason: 'Starting comment or Doing move failed; no code written. Return to Todo to retry' });
@@ -300,7 +300,7 @@ export async function runTask(config, deps) {
       // 7. Wait for hosted CI on the exact head commit and repair within the limit.
       const announce = async (sha, runId) => {
         if (!config.boardPickup?.enabled) return;
-        const result = await postCiPassedComment(task, { sha, pr: url, runUrl: runId ? `https://github.com/${slug}/actions/runs/${runId}` : null }, githubIo(boardGh, { projectId: config.boardPickup.projectId, statusFieldId: config.boardPickup.statusFieldId, options: config.boardPickup.options }), () => new Date(clock()).toISOString());
+        const result = await postCiPassedComment(task, { sha, pr: url, runUrl: runId ? `https://github.com/${slug}/actions/runs/${runId}` : null }, githubIo(boardGh, { projectId: config.boardPickup.projectId, statusFieldId: config.boardPickup.statusFieldId, options: config.boardPickup.options, issueGh: gh }), () => new Date(clock()).toISOString());
         save(); log(p.id, 'ci-comment', { sha, posted: result.posted });
       };
       for (let repair = 0; ; repair++) {
@@ -369,8 +369,9 @@ export async function runOnce(config, options = {}) {
   const boardGh = async args => (await exec(w.ghExecutable, args, cwd, { ...base, GH_TOKEN: boardToken() })).stdout;
   const claude = (args, where, input, timeoutMs) => run(config.claudeUsage.executable, args, { cwd: where, env: { ...base, CLAUDE_CODE_MAX_OUTPUT_TOKENS: '8192' }, input, timeoutMs });
   const b = config.boardPickup ?? {};
-  // Writes (comments, card moves, closing) use the board token; reads of the repository, releases and the Gallery use the agent token.
-  const io = { ...githubIo(boardGh, { projectId: b.projectId, statusFieldId: b.statusFieldId, options: b.options }), ...readIo(gh) };
+  // Card moves use the board token (Projects scope only). Issue comments, closing and reads of the repository, releases and the Gallery use the
+  // agent token (the worker account: Issues write, no admin), so the board token never needs repository access.
+  const io = { ...githubIo(boardGh, { projectId: b.projectId, statusFieldId: b.statusFieldId, options: b.options, issueGh: gh }), ...readIo(gh) };
   const jobId = `matrix-${new Date(clock()).toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
   const loadPrompts = promptLoader(config, { git: w.gitExecutable });
   const tick = await boardTick(config, { graphql: ghGraphql(boardGh), io, loadUsage, loadPrompts, jobId, clock, handoff: true, limits: limitsText(config), housekeeping: standardHousekeeping() });

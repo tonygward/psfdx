@@ -191,6 +191,17 @@ test('github io: markers, moves with the configured IDs, and no shell', async ()
   assert.equal(commentMarker('kind', 'PSF-01', 'd'), '<!-- matrix:kind:PSF-01:d -->');
 });
 
+test('github io: card moves use the board token, issue reads, comments and closing use the issue token', async () => {
+  const board = [], issues = [];
+  const boardGh = async args => { board.push(args); return ''; };
+  const issueGh = async args => { issues.push(args); return args.includes('comments') ? JSON.stringify({ comments: [] }) : JSON.stringify({ body: 'text' }); };
+  const io = githubIo(boardGh, { projectId: 'P', statusFieldId: 'F', options: { doing: 'D', blocked: 'B', done: 'X' }, issueGh });
+  await io.issueBody(REPO, 1); await io.hasComment(REPO, 1, 'm'); await io.comment(REPO, 1, 'c'); await io.closeIssue(REPO, 1);
+  await io.moveToDoing('item-1'); await io.moveToBlocked('item-2'); await io.moveToDone('item-3');
+  assert.deepEqual(board.map(a => a[0]), ['api', 'api', 'api']);
+  assert.deepEqual(issues.map(a => a.slice(0, 2).join(' ')), ['issue view', 'issue view', 'issue comment', 'issue close']);
+});
+
 test('github io: a missing field is an error and a failed write is never reported as success', async () => {
   const io = githubIo(async () => '', { projectId: 'P', statusFieldId: 'F', options: {} });
   await assert.rejects(io.moveToDoing('i'), /Doing field is not configured|doing field is not configured/i);
