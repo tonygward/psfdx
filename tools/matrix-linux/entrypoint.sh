@@ -13,6 +13,8 @@ if [ "$(id -u)" = "0" ]; then
   # ---- root: setup only ----
   install -d -m 0711 /work
   install -d -o 10001 -g 10001 -m 0700 "$STATE"
+  # The agent clones the repository here. Only the agent can enter it (the test user and other users cannot).
+  install -d -o 10001 -g 10001 -m 0700 "$SOURCE"
   install -d -o 10001 -g 10001 -m 0711 /work/worktrees
   install -d -m 0711 /work/scratch /work/broker
   install -d -o 10001 -g 10001 -m 0700 /work/broker/in
