@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { runTask, branchFor, ciOutcome, resolveChangelogConflict, resumePathsValid, limitsText, preflight, baseEnvironment } from '../worker.mjs';
+import { runTask, branchFor, ciOutcome, resolveChangelogConflict, resumePathsValid, limitsText, preflight, baseEnvironment, tickReport } from '../worker.mjs';
 import { readState } from '../state.mjs';
 import { readHandoff } from '../handoff.mjs';
 import { makeWorld, PROMPT_TEXT, PASSING_XML, failingXml, PR_URL, REVISION } from './worker-harness.mjs';
@@ -385,4 +385,15 @@ test('preflight fails closed', () => {
 test('the base environment carries no tokens', () => {
   const env = baseEnvironment({ PATH: '/bin', HTTPS_PROXY: 'p', GH_TOKEN: 'x', ANTHROPIC_API_KEY: 'y', RELEASE_TOKEN: 'z' });
   assert.deepEqual(Object.keys(env).sort(), ['DISABLE_AUTOUPDATER', 'GIT_CONFIG_GLOBAL', 'GIT_CONFIG_NOSYSTEM', 'GIT_TERMINAL_PROMPT', 'HTTPS_PROXY', 'NO_COLOR', 'PATH']);
+});
+
+test('tickReport: idle when nothing is selected, the choice and reasons in a dry run, and null (run the worker) otherwise', () => {
+  assert.deepEqual(tickReport({ selected: null, blocker: 'No eligible card' }), { ran: true, idle: true, blocker: 'No eligible card' });
+  assert.deepEqual(tickReport({ selected: null }), { ran: true, idle: true, blocker: null });
+  const dry = tickReport({ dryRun: true, selected: { id: 'PSF-28' }, decisions: [{ id: 'PSF-28', reason: 'first eligible' }] });
+  assert.equal(dry.dryRun, true);
+  assert.equal(dry.ran, true);
+  assert.deepEqual(dry.wouldPick, { id: 'PSF-28' });
+  assert.equal(dry.decisions.length, 1);
+  assert.equal(tickReport({ dryRun: false, selected: { id: 'PSF-28' } }), null);
 });
