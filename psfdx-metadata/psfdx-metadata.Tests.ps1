@@ -244,6 +244,157 @@ Describe 'Deploy-SalesforceMetadata' {
     }
 }
 
+Describe 'Deploy lifecycle cmdlets' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"id":"0Af000000000001AAA","status":"Succeeded"}}' }
+        }
+
+        Context 'Test-SalesforceDeploy' {
+            It 'validates a source directory with local tests by default' {
+                $dir = New-Item -Path (Join-Path $TestDrive 'force-app') -ItemType Directory
+                $result = Test-SalesforceDeploy -SourceDir $dir.FullName -TargetOrg 'prod' -Wait 30
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --target-org prod --wait 30 --test-level RunLocalTests --json" }
+                @($result)[0].id | Should -Be '0Af000000000001AAA'
+            }
+            It 'validates a manifest with specific tests, async and concise' {
+                $manifest = New-Item -Path (Join-Path $TestDrive 'package.xml') -ItemType File
+                Test-SalesforceDeploy -Manifest $manifest.FullName -TestLevel SpecificTests -Tests 'MyTest' -IgnoreWarnings -Async -ConciseResults | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like "sf project deploy validate --manifest `"$($manifest.FullName)`" --ignore-warnings --async --test-level RunSpecifiedTests*--concise --json" }
+            }
+            It 'validates a metadata directory as a single package with detailed results' {
+                $dir = New-Item -Path (Join-Path $TestDrive 'mdapi') -ItemType Directory
+                Test-SalesforceDeploy -InputDir $dir.FullName -ManifestPackage -TestLevel NoTests -DetailedResults | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($dir.FullName)`" --single-package --test-level NoTestRun --verbose --json" }
+            }
+            It 'throws unless exactly one source option is given' {
+                { Test-SalesforceDeploy } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
+                { Test-SalesforceDeploy -Manifest 'a.xml' -SourceDir 'b' } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws for conflicting or missing options' {
+                $dir = New-Item -Path (Join-Path $TestDrive 'src') -ItemType Directory
+                { Test-SalesforceDeploy -SourceDir $dir.FullName -Wait 5 -Async } | Should -Throw -ExpectedMessage 'Specify only one of -Wait or -Async.'
+                { Test-SalesforceDeploy -SourceDir $dir.FullName -ConciseResults -DetailedResults } | Should -Throw -ExpectedMessage 'Specify only one of -ConciseResults or -DetailedResults.'
+                { Test-SalesforceDeploy -SourceDir (Join-Path $TestDrive 'missing') } | Should -Throw -ExpectedMessage "Source path '*missing' does not exist."
+                { Test-SalesforceDeploy -Manifest (Join-Path $TestDrive 'missing.xml') } | Should -Throw -ExpectedMessage "Manifest file '*missing.xml' does not exist."
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws when the CLI reports failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Deploy failed"}' }
+                $dir = New-Item -Path (Join-Path $TestDrive 'failsrc') -ItemType Directory
+                { Test-SalesforceDeploy -SourceDir $dir.FullName } | Should -Throw
+            }
+        }
+
+        Context 'Start-SalesforceQuickDeploy' {
+            It 'quick deploys by job id' {
+                Start-SalesforceQuickDeploy -JobId '0Af000000000001AAA' -TargetOrg 'prod' -Wait 10 -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy quick --job-id 0Af000000000001AAA --target-org prod --wait 10 --json' }
+            }
+            It 'quick deploys the most recent validation asynchronously with concise output' {
+                Start-SalesforceQuickDeploy -UseMostRecent -Async -ConciseResults -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy quick --use-most-recent --async --concise --json' }
+            }
+            It 'supports detailed results' {
+                Start-SalesforceQuickDeploy -JobId '0Af000000000001' -DetailedResults -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy quick --job-id 0Af000000000001 --verbose --json' }
+            }
+            It 'does not deploy with -WhatIf' {
+                Start-SalesforceQuickDeploy -JobId '0Af000000000001AAA' -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws without a valid job id' {
+                { Start-SalesforceQuickDeploy -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
+                { Start-SalesforceQuickDeploy -JobId 'abc' -Confirm:$false } | Should -Throw -ExpectedMessage "Job ID 'abc' is not a valid deploy job ID*"
+                { Start-SalesforceQuickDeploy -JobId '0Af000000000001AAA' -UseMostRecent -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify only one of -JobId or -UseMostRecent.'
+                { Start-SalesforceQuickDeploy -UseMostRecent -Wait 5 -Async -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify only one of -Wait or -Async.'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws when the CLI reports failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Quick deploy failed"}' }
+                { Start-SalesforceQuickDeploy -UseMostRecent -Confirm:$false } | Should -Throw
+            }
+        }
+
+        Context 'Get-SalesforceDeployStatus' {
+            It 'reports by job id' {
+                $result = Get-SalesforceDeployStatus -JobId '0Af000000000001AAA' -TargetOrg 'me' -Wait 5
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy report --job-id 0Af000000000001AAA --target-org me --wait 5 --json' }
+                @($result)[0].status | Should -Be 'Succeeded'
+            }
+            It 'reports the most recent deployment' {
+                Get-SalesforceDeployStatus -UseMostRecent | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy report --use-most-recent --json' }
+            }
+            It 'throws without a valid job id or with a negative wait' {
+                { Get-SalesforceDeployStatus } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
+                { Get-SalesforceDeployStatus -JobId 'bad id' } | Should -Throw -ExpectedMessage "Job ID 'bad id' is not a valid deploy job ID*"
+                { Get-SalesforceDeployStatus -UseMostRecent -Wait -1 } | Should -Throw -ExpectedMessage '-Wait must be zero or greater (minutes).'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws when the CLI reports failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"No deploy found"}' }
+                { Get-SalesforceDeployStatus -UseMostRecent } | Should -Throw
+            }
+        }
+
+        Context 'Resume-SalesforceDeploy' {
+            It 'resumes by job id' {
+                Resume-SalesforceDeploy -JobId '0Af000000000001AAA' -TargetOrg 'me' -Wait 20 -ConciseResults | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --job-id 0Af000000000001AAA --target-org me --wait 20 --concise --json' }
+            }
+            It 'resumes the most recent deployment with detailed results' {
+                Resume-SalesforceDeploy -UseMostRecent -DetailedResults | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --use-most-recent --verbose --json' }
+            }
+            It 'throws for missing job id or conflicting result options' {
+                { Resume-SalesforceDeploy } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
+                { Resume-SalesforceDeploy -UseMostRecent -ConciseResults -DetailedResults } | Should -Throw -ExpectedMessage 'Specify only one of -ConciseResults or -DetailedResults.'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws when the deployment failed' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Deploy failed"}' }
+                { Resume-SalesforceDeploy -UseMostRecent } | Should -Throw
+            }
+        }
+
+        Context 'Stop-SalesforceDeploy' {
+            It 'cancels by job id' {
+                Stop-SalesforceDeploy -JobId '0Af000000000001AAA' -TargetOrg 'me' -Wait 5 -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy cancel --job-id 0Af000000000001AAA --target-org me --wait 5 --json' }
+            }
+            It 'cancels the most recent deployment asynchronously' {
+                Stop-SalesforceDeploy -UseMostRecent -Async -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy cancel --use-most-recent --async --json' }
+            }
+            It 'does not cancel with -WhatIf' {
+                Stop-SalesforceDeploy -JobId '0Af000000000001AAA' -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws without a valid job id' {
+                { Stop-SalesforceDeploy -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
+                { Stop-SalesforceDeploy -JobId '123' -Confirm:$false } | Should -Throw -ExpectedMessage "Job ID '123' is not a valid deploy job ID*"
+                { Stop-SalesforceDeploy -UseMostRecent -Wait 5 -Async -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify only one of -Wait or -Async.'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws when the CLI reports failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Cannot cancel"}' }
+                { Stop-SalesforceDeploy -UseMostRecent -Confirm:$false } | Should -Throw
+            }
+        }
+
+        Context 'Manifest exports' {
+            It 'exports the lifecycle cmdlets' {
+                $exported = (Get-Module 'psfdx-metadata').ExportedFunctions.Keys
+                foreach ($name in 'Test-SalesforceDeploy','Start-SalesforceQuickDeploy','Get-SalesforceDeployStatus','Resume-SalesforceDeploy','Stop-SalesforceDeploy') {
+                    $exported | Should -Contain $name
+                }
+            }
+        }
+    }
+}
+
 Describe 'Describe-SalesforceObjects' {
     InModuleScope 'psfdx-metadata' {
         BeforeEach {

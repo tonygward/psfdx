@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-metadata: Add deployment lifecycle cmdlets wrapping `sf project deploy`: `Test-SalesforceDeploy` (validate), `Start-SalesforceQuickDeploy` (quick deploy a validated deployment), `Get-SalesforceDeployStatus` (report), `Resume-SalesforceDeploy` and `Stop-SalesforceDeploy` (cancel). Quick deploy and cancel ask for confirmation and support `-WhatIf`. Job IDs are checked before the CLI runs.
+
 ## 0.8.3 - 2026-11-15
 
 - Maintenance release.
