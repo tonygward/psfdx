@@ -342,6 +342,14 @@ export async function runTask(config, deps) {
   });
 }
 
+// What a board tick tells the log. Nothing selected means idle. In a dry run the worker step is skipped: nothing was handed off, so it would
+// only idle, and the useful part is which card the tick chose and why. Returns null when the worker should run.
+export function tickReport(tick) {
+  if (!tick.selected) return { ran: true, idle: true, blocker: tick.blocker ?? null };
+  if (tick.dryRun) return { ran: true, dryRun: true, wouldPick: tick.selected, decisions: tick.decisions ?? null };
+  return null;
+}
+
 // Wires the real adapters and runs one board tick followed by the worker. The tick holds no Claude access.
 export async function runOnce(config, options = {}) {
   const { run = runProcess, loadUsage = checkClaudeUsage, clock = Date.now, check = preflight, environment = process.env,
@@ -366,7 +374,8 @@ export async function runOnce(config, options = {}) {
   const jobId = `matrix-${new Date(clock()).toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
   const loadPrompts = promptLoader(config, { git: w.gitExecutable });
   const tick = await boardTick(config, { graphql: ghGraphql(boardGh), io, loadUsage, loadPrompts, jobId, clock, handoff: true, limits: limitsText(config), housekeeping: standardHousekeeping() });
-  if (!tick.selected) return { ran: true, idle: true, blocker: tick.blocker ?? null };
+  const report = tickReport(tick);
+  if (report) return report;
   return { ran: true, ...await runTask(config, { git, gitRemote, gh, boardGh, claude, sandbox: sandboxRunner(w.testRunner, run), loadUsage, loadPrompts, clock }) };
 }
 
