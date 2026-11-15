@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.5 - 2026-11-15
+
 - psfdx-metadata: Fix `Resume-SalesforceDeploy` (added in 0.8.4). It no longer has a `-TargetOrg` parameter, because `sf project deploy resume` rejects `--target-org` and takes the org from the cached deployment.
 - psfdx-metadata: Fix `Test-SalesforceDeploy` (added in 0.8.4). `-TestLevel NoTests` is removed, because `sf project deploy validate` requires tests and rejects `NoTestRun`. Supported levels are `SpecificTests`, `ReferencedTests`, `TestsInFolder`, `TestsInOrg` (default), `TestsInOrgAndPackages` and the new `RelevantTests` (`RunRelevantTests`).
 
