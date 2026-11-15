@@ -41,15 +41,11 @@ jobs:
           else
             files=$(git diff --name-only "$BEFORE" "$SHA")
           fi
-          docs_only=true
-          for f in $files; do
-            case "$f" in
-              *.md|prompts/*|docs/*|tools/*|images/*|*.png|*.jpg|*.jpeg|*.gif|*.svg) ;;
-              *) docs_only=false ;;
-            esac
-          done
-          if [ "$docs_only" = "true" ]; then
-            echo "Docs-only change; nothing to do."; echo "bump=false" >> "$GITHUB_OUTPUT"; exit 0
+          # Only a change to what users install (psfdx*/, modules.ps1, install scripts, VERSION) releases.
+          # The rule lives in scripts/release/changes.mjs, shared with CI and Matrix's delivery check.
+          ships=$(echo "$files" | node scripts/release/changes.mjs ships)
+          if [ "$ships" != "true" ]; then
+            echo "Nothing in this change ships; no release."; echo "bump=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
 
           # Find the merged pull request and its exact head commit

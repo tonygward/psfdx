@@ -22,22 +22,23 @@ function safePath(file) {
   return !file.split('/').some(part => part === '..' || part === '.' || part.startsWith('.'));
 }
 
-// Files a task pull request may change. Workflows, scripts, installers, VERSION and anything else need a person.
+// Files a task pull request may change: the product modules, prompts, images, README, CHANGELOG and the module list.
+// Everything that is infrastructure needs a person: workflows, scripts, installers, VERSION, docs/ (the policy) and the
+// root tests/ (repository rules). Module tests sit inside the module folders, so tasks can still add them.
 export function inScope(file) {
   if (!safePath(file)) return false;
   return /^psfdx[^/]*\//.test(file)
-    || /^(?:tests|prompts|docs|images)\//.test(file)
+    || /^(?:prompts|images)\//.test(file)
     || ['README.md', 'CHANGELOG.md', 'modules.ps1'].includes(file);
 }
 
-// Matrix core lane: Matrix's own controller code, its tests, container configuration and the execution policy.
-// The gate, workflows, scripts, the Dockerfile and the egress allow-list are never in any lane.
+// Matrix core lane: Matrix's own controller code, its tests and container configuration.
+// The gate, workflows, scripts, the Dockerfile, the egress allow-list and docs/ (including the execution policy) are never in any lane.
 export function inCoreScope(file) {
   if (!safePath(file)) return false;
   if (/\.(exe|dll|cmd|bat|ps1|sh|cmake)$/i.test(file)) return false;
   return /^tools\/matrix\/(?:tests\/)?[A-Za-z0-9._-]+\.(?:mjs|json|md)$/.test(file)
-    || /^tools\/matrix-linux\/(?:worker\.config\.json|README\.md)$/.test(file)
-    || file === 'docs/execution-policy.md';
+    || /^tools\/matrix-linux\/(?:worker\.config\.json|README\.md)$/.test(file);
 }
 
 // The archive lane may only touch prompts.

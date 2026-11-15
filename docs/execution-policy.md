@@ -50,8 +50,8 @@ The process has nine parts. Each has one owning document or section.
 
 Summary of the decisions. The workflows and scripts that implement them arrive with AUTO-02, AUTO-03 and AUTO-04, and those prompts add the detail here.
 
-- **CI:** one workflow, `CI - Pester tests`, on every pull request. A docs-only pull request gets a quick run that tests nothing, so the gate always has a result.
-- **Merge gate:** Matrix pull requests merge automatically once CI passed on the exact head commit and every rule holds. Workflows, the gate scripts, the Dockerfile, shell and PowerShell scripts outside the modules, and the egress allow-list always need a person. That means anything under `.github/`, `scripts/`, `install*.ps1`, `uninstall*.ps1`, `VERSION`, the Dockerfile and the allow-list. Rules and lanes are in [pipelines](pipelines.md#gate---matrix-auto-merge); a person's own pull request is never merged automatically.
+- **CI:** one workflow, `CI - Pester tests`, on every pull request. A pull request that cannot affect the Pester suite (documentation, prompts, images, Matrix Node code) gets a quick run that tests nothing, so the gate always has a result. The rule is in `scripts/release/changes.mjs`.
+- **Merge gate:** Matrix pull requests merge automatically once CI passed on the exact head commit and every rule holds. Workflows, the gate scripts, the Dockerfile, shell and PowerShell scripts outside the modules, and the egress allow-list always need a person. That means anything under `.github/`, `scripts/`, `docs/` (including this policy), the root `tests/`, `install*.ps1`, `uninstall*.ps1`, `VERSION`, the Dockerfile and the allow-list. A task may change only the product modules (including their own tests), `prompts/`, `images/`, `README.md`, `CHANGELOG.md` and `modules.ps1`. Rules and lanes are in [pipelines](pipelines.md#gate---matrix-auto-merge); a person's own pull request is never merged automatically.
 - **Versions:** one `VERSION` file that every module manifest matches. Each source merge to `main` bumps the third part and moves the `## Unreleased` notes into the new version. Major and minor bumps are owner decisions. Any change users will notice adds plain-language bullets under `## Unreleased`, prefixed with the module name; see [releases](release.md).
 - **Release:** one GitHub release per version, tagged `vX.Y.Z`, with exactly one asset, `psfdx-X.Y.Z.zip`.
 
@@ -66,7 +66,7 @@ After the merge, Matrix finishes the task itself. Each check reads from GitHub o
    - the release notes are not empty and match that version's section of `CHANGELOG.md` at the tag;
    - the task's prompt is archived in `prompts/done/` on `main`;
    - once the PowerShell Gallery is switched on (`delivery.psGallery.enabled`), the bundled `psfdx` package is listed there at that version.
-   A change that was docs-only (Markdown, prompts, docs, tools or images) is not released, so the version, release and notes checks are replaced by "No release needed (docs only)".
+   A change that ships nothing (nothing under `psfdx*/` other than tests and Markdown, no `modules.ps1`, install or uninstall script or `VERSION`) is not released, so the version, release and notes checks are replaced by "No release needed (nothing in this change ships)". Workflows, scripts, tools and documentation never cause a release.
 2. **Comment** on the issue: the pull request, merge commit, release, the download link (the release page) and, when the Gallery is on, the install command. While the Gallery is off it says it is not published there yet. Posted once (hidden marker).
 3. **Close** the issue as completed.
 4. **Move** the card to **Done**.

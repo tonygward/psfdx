@@ -22,7 +22,7 @@ This is a runbook the owner follows with Claude's help; it changes little code. 
 
 1. Owner steps from `prompts/README.md` done: board created and IDs in `worker.config.json`, tokens in the secrets folder, `RELEASE_TOKEN` secret, branch protection requiring the `CI - Pester tests` checks, container built, self-test passed, Claude login done.
 2. Re-verify board ordering on the psfdx board: create three throwaway cards, drag them into each order, and check a dry-run tick lists them in the dragged order each time.
-3. Pick one low-risk task with an owner-written issue in the contract format: a small fix with a clear Pester test (for example, an outstanding finding in `CODE-REVIEW.md` that touches one cmdlet; not the `Invoke-Expression` refactor).
+3. Pick one low-risk task with an owner-written issue in the contract format: a small fix with a clear Pester test (for example, an outstanding finding in `docs/CODE-REVIEW.md` that touches one cmdlet; not the `Invoke-Expression` refactor).
 
 ### Dry run
 

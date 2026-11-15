@@ -15,6 +15,24 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `psfdx-shared/` | Internal helpers (`Invoke-Salesforce`, `Show-SalesforceResult`, Apex test-param helpers, `Get-PsfdxCommonParameterSplat`) |
 | `modules.ps1` | Canonical module list used by the install/uninstall scripts |
 
+**Everything above, plus `install*.ps1`, `uninstall*.ps1` and `VERSION`, is the product** (what users install). **Everything below is infrastructure** (how the product is built, tested and released). Keep the two apart:
+
+| Path | Purpose |
+| :--- | :--- |
+| `.github/workflows/` | CI, gate, release and housekeeping pipelines ([docs/pipelines.md](docs/pipelines.md)) |
+| `scripts/release/` | Version bump, release zip, Gallery bundle, and the shared "does this change ship / need tests" rule (`changes.mjs`) |
+| `scripts/matrix/` | The merge gate and prompt archiving |
+| `tools/matrix/` | Matrix, the Node orchestrator that runs board work |
+| `tools/matrix-linux/` | The container, proxy and launcher Matrix runs in |
+| `tests/` | Repository-wide rules only (`Repository.Tests.ps1`). Other infrastructure tests sit beside the code they test |
+| `docs/`, `prompts/` | Policy, pipelines, release rules; backlog prompts. `docs/CODE-REVIEW.md` is an old review |
+
+Rules that keep them apart:
+- Only a change to the product releases. Workflows, scripts, tools, tests and docs never bump the version. The rule is `scripts/release/changes.mjs`; don't copy it into a workflow.
+- Infrastructure tests live next to their code (`scripts/release/*.Tests.ps1`, `tools/matrix-linux/*.Tests.ps1`, `*.test.mjs`), not in the root `tests/`.
+- Matrix task pull requests may change only `psfdx*/`, `prompts/`, `images/`, `README.md`, `CHANGELOG.md` and `modules.ps1`. Infrastructure and `docs/` need a person.
+- Infrastructure changes get no `CHANGELOG.md` entry; the changelog is for users.
+
 Each module has `<name>.psd1` (manifest), `<name>.psm1` (code) and `<name>.Tests.ps1` (Pester).
 
 ## Commands
@@ -93,7 +111,11 @@ Every task is a GitHub issue titled with a stable ID (`PSF-##` for modules, `AUT
 
 Any change users will notice adds plain-language bullets under `## Unreleased` in `CHANGELOG.md`, prefixed with the module name. No commit hashes, pull request titles or prompt IDs. See [docs/release.md](docs/release.md).
 
+## Commits and pull requests
+
+Start every commit and PR title with its area so the history separates product from infrastructure: a module name (`psfdx-logs: ...`) for product changes, `infra: ...` for workflows, scripts and tools (`infra(matrix): ...` for Matrix), `docs: ...` for documentation. The title must describe what the change does. Automated `[release]` and `[archive]` commits keep their own prefixes.
+
 ## Git
 
 - PRs target `main`. `master` is stale (many commits behind); don't use it. CI (`.github/workflows/ci.yml`) runs Pester on `ubuntu-latest` for pull requests only.
-- `CODE-REVIEW.md` is a review from 2026-09-09. Many of its findings have since been fixed (see `CHANGELOG.md`), so check the current code before acting on it. The `Invoke-Expression` → `& sf @args` refactor is still outstanding.
+- `docs/CODE-REVIEW.md` is a review from 2026-09-09. Many of its findings have since been fixed (see `CHANGELOG.md`), so check the current code before acting on it. The `Invoke-Expression` → `& sf @args` refactor is still outstanding.

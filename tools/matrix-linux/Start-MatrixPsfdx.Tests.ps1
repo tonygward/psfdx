@@ -1,6 +1,6 @@
 Describe 'Start-MatrixPsfdx.ps1' {
     BeforeAll {
-        $script:Script = Join-Path (Join-Path (Join-Path (Split-Path -Parent $PSScriptRoot) 'tools') 'matrix-linux') 'Start-MatrixPsfdx.ps1'
+        $script:Script = Join-Path $PSScriptRoot 'Start-MatrixPsfdx.ps1'
         $script:Errors = $null
         $script:Ast = [System.Management.Automation.Language.Parser]::ParseFile($script:Script, [ref]$null, [ref]$script:Errors)
     }

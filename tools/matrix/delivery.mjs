@@ -6,7 +6,7 @@
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { atomic, locked, readState, record } from './state.mjs';
-import { verifyMerge, verifyVersion, verifyRelease, verifyNotes, verifyPromptArchived, verifyGallery, isDocsOnly, assetName } from './verifiers.mjs';
+import { verifyMerge, verifyVersion, verifyRelease, verifyNotes, verifyPromptArchived, verifyGallery, shipsNothing, assetName } from './verifiers.mjs';
 
 export const STAGES = ['pending', 'verified', 'commented', 'closed', 'done'];
 export const finalMarker = task => `<!-- matrix-final:${task} -->`;
@@ -25,10 +25,10 @@ export async function verifyDelivery(delivery, io, { psGallery = false } = {}) {
     const merge = await verifyMerge(io, delivery);
     if (!merge.ok) return { verified: false, missing: merge.missing, evidence };
     evidence.pull = merge.evidence;
-    // A docs-only change was not bumped or released: there is nothing to verify beyond the merge and the archive.
+    // A change that ships nothing was not bumped or released: there is nothing to verify beyond the merge and the archive.
     const files = await attempt('Changed files', () => io.pullFiles(delivery.repository, delivery.pull));
     if (files === null) return { verified: false, missing, evidence };
-    if (isDocsOnly(files)) {
+    if (shipsNothing(files)) {
       evidence.docsOnly = true;
     } else {
       const version = await verifyVersion(io, delivery.repository, merge.evidence.mergeSha);
@@ -66,7 +66,7 @@ export function finalComment({ taskId, job, evidence }) {
     `- Pull request: ${pull.url ?? `#${pull.number}`} (merge commit \`${short(pull.mergeSha)}\`)`,
     `- Matrix job: \`${job}\``,
     ...(docsOnly
-      ? ['- Release: No release needed (docs only). This change does not ship in a release.']
+      ? ['- Release: No release needed (nothing in this change ships).']
       : [`- Release: ${release.tag} (${release.url})`, `- Download: ${release.url} (\`${release.asset}\`)`]),
     ...(docsOnly ? [] : psGallery?.url
       ? [`- PowerShell Gallery: \`Install-Module psfdx -RequiredVersion ${release.version}\` (${psGallery.url})`]

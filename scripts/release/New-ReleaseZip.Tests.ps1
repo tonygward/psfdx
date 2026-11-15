@@ -1,7 +1,7 @@
 Describe 'Release zip' {
     BeforeAll {
-        $script:Root = Split-Path -Parent $PSScriptRoot
-        $script:Script = Join-Path (Join-Path (Join-Path $script:Root 'scripts') 'release') 'New-ReleaseZip.ps1'
+        $script:Root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+        $script:Script = Join-Path $PSScriptRoot 'New-ReleaseZip.ps1'
         $script:Zip = & $script:Script -Version '9.9.9' -OutputFolder (Join-Path $TestDrive 'out')
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $archive = [System.IO.Compression.ZipFile]::OpenRead($script:Zip)

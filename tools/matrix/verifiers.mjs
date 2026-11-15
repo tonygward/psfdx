@@ -2,10 +2,9 @@
 // holds no credentials and writes nothing. Downloads are not tested.
 import { sectionFor } from '../../scripts/release/bump-lib.mjs';
 
-// The same rule as CI and CD - Bump version: a change that is only Markdown, prompts, docs, tools or images has nothing
-// to release. tests/DocsOnly.Tests.ps1-style drift is caught by a test that compares this with the workflow files.
-export const DOCS_ONLY_PATTERNS = [/\.md$/, /^prompts\//, /^docs\//, /^tools\//, /^images\//, /\.(?:png|jpe?g|gif|svg)$/];
-export const isDocsOnly = files => Array.isArray(files) && files.length > 0 && files.every(file => DOCS_ONLY_PATTERNS.some(p => p.test(file)));
+// Whether a change was released is decided by CD - Bump version with the same shared rule (scripts/release/changes.mjs),
+// so the two cannot drift: only a change to what users install (psfdx*/, modules.ps1, install scripts, VERSION) is released.
+export { shipsNothing } from '../../scripts/release/changes.mjs';
 
 export const RELEASE_SUBJECT = /^\[release\] (\d+\.\d+\.\d+)$/;
 export const assetName = version => `psfdx-${version}.zip`;
