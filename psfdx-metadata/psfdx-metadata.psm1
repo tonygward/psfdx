@@ -611,12 +611,12 @@ function Test-SalesforceDeploy {
         [Parameter(Mandatory = $false)][string] $InputDir,
         [Parameter(Mandatory = $false)][switch] $ManifestPackage,
         [Parameter(Mandatory = $false)][ValidateSet(
-            'NoTests',
             'SpecificTests',
             'ReferencedTests',
             'TestsInFolder',
             'TestsInOrg',
-            'TestsInOrgAndPackages')][string] $TestLevel = 'TestsInOrg',
+            'TestsInOrgAndPackages',
+            'RelevantTests')][string] $TestLevel = 'TestsInOrg',
         [Parameter(Mandatory = $false)][string[]] $Tests,
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
         [Parameter(Mandatory = $false)][int] $Wait,
@@ -731,16 +731,15 @@ function Resume-SalesforceDeploy {
         [Parameter(Mandatory = $false)][switch] $UseMostRecent,
         [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
-        [Parameter(Mandatory = $false)][switch] $DetailedResults,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
     )
 
     $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
     Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
     if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
 
+    # sf project deploy resume has no --target-org; the org comes from the cached deployment.
     $command = "sf project deploy resume" + $jobParams
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
     if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
     if ($ConciseResults) { $command += " --concise" }
     if ($DetailedResults) { $command += " --verbose" }

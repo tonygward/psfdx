@@ -264,8 +264,29 @@ Describe 'Deploy lifecycle cmdlets' {
             }
             It 'validates a metadata directory as a single package with detailed results' {
                 $dir = New-Item -Path (Join-Path $TestDrive 'mdapi') -ItemType Directory
-                Test-SalesforceDeploy -InputDir $dir.FullName -ManifestPackage -TestLevel NoTests -DetailedResults | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($dir.FullName)`" --single-package --test-level NoTestRun --verbose --json" }
+                Test-SalesforceDeploy -InputDir $dir.FullName -ManifestPackage -DetailedResults | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($dir.FullName)`" --single-package --test-level RunLocalTests --verbose --json" }
+            }
+            It 'rejects NoTests during parameter validation' {
+                $dir = New-Item -Path (Join-Path $TestDrive 'notests') -ItemType Directory
+                { Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel NoTests } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'maps each supported test level to a CLI value' {
+                $dir = New-Item -Path (Join-Path $TestDrive 'levels') -ItemType Directory
+                Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel TestsInOrgAndPackages | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunAllTestsInOrg --json" }
+                Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel TestsInOrg | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunLocalTests --json" }
+                Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel SpecificTests -Tests 'MyTest' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunSpecifiedTests --tests MyTest --json" }
+                Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel RelevantTests | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunRelevantTests --json" }
+            }
+            It 'requires test names for SpecificTests' {
+                $dir = New-Item -Path (Join-Path $TestDrive 'specific') -ItemType Directory
+                { Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel SpecificTests } | Should -Throw -ExpectedMessage 'Provide one or more -Tests when using -TestLevel SpecificTests.'
+                Assert-MockCalled Invoke-Salesforce -Times 0
             }
             It 'throws unless exactly one source option is given' {
                 { Test-SalesforceDeploy } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
@@ -341,8 +362,15 @@ Describe 'Deploy lifecycle cmdlets' {
 
         Context 'Resume-SalesforceDeploy' {
             It 'resumes by job id' {
-                Resume-SalesforceDeploy -JobId '0Af000000000001AAA' -TargetOrg 'me' -Wait 20 -ConciseResults | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --job-id 0Af000000000001AAA --target-org me --wait 20 --concise --json' }
+                Resume-SalesforceDeploy -JobId '0Af000000000001AAA' -Wait 20 -ConciseResults | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --job-id 0Af000000000001AAA --wait 20 --concise --json' }
+            }
+            It 'has no TargetOrg parameter and never emits --target-org' {
+                (Get-Command Resume-SalesforceDeploy).Parameters.ContainsKey('TargetOrg') | Should -BeFalse
+                { Resume-SalesforceDeploy -UseMostRecent -TargetOrg 'me' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0
+                Resume-SalesforceDeploy -UseMostRecent | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --use-most-recent --json' }
             }
             It 'resumes the most recent deployment with detailed results' {
                 Resume-SalesforceDeploy -UseMostRecent -DetailedResults | Out-Null

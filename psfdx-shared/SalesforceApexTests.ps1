@@ -29,7 +29,8 @@ function Get-SalesforceApexCliTestParams {
             'ReferencedTests',
             'TestsInFolder',
             'TestsInOrg',
-            'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
+            'TestsInOrgAndPackages',
+            'RelevantTests')][string] $TestLevel = 'NoTests',
         [Parameter(Mandatory = $false)][string[]] $Tests
     )
 
@@ -41,6 +42,7 @@ function Get-SalesforceApexCliTestParams {
         'TestsInFolder'         = 'RunSpecifiedTests'
         'TestsInOrg'            = 'RunLocalTests'
         'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
+        'RelevantTests'         = 'RunRelevantTests'
     }
     $value += " --test-level " + $testLevelMap[$TestLevel]
 
