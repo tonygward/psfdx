@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- psfdx-metadata: `Retrieve-SalesforceOrg` now uses `sf project generate manifest` instead of the legacy `sf force source manifest create`. Parameters and behaviour are unchanged.
+- psfdx-packages: `Get-SalesforcePackagesInstalled` now uses `sf package installed list` instead of the legacy `sf force package installed list`. Parameters and returned records are unchanged.
+- psfdx: `Connect-SalesforceAuthUrl` now uses `sf org login sfdx-url` instead of the legacy `sf auth sfdxurl store`. Parameters and token hiding are unchanged.
+- psfdx: `Install-SalesforceCli` and `Update-SalesforceCli` now use npm on macOS too, instead of the outdated `sfdx-cli/tap/sf` Homebrew tap. If you installed with that tap, run `brew uninstall sfdx-cli/tap/sf` first.
+
 ## 0.8.5 - 2026-11-15
 
 - psfdx-metadata: Fix `Resume-SalesforceDeploy` (added in 0.8.4). It no longer has a `-TargetOrg` parameter, because `sf project deploy resume` rejects `--target-org` and takes the org from the cached deployment.

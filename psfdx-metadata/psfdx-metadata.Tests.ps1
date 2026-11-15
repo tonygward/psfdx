@@ -151,12 +151,12 @@ Describe 'Retrieve-SalesforceOrg' {
         }
         It 'creates a manifest then retrieves using it' {
             Retrieve-SalesforceOrg -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf force source manifest create --from-org me --name=allMetadata --output-dir .' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project generate manifest --from-org me --name=allMetadata --output-dir .' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --target-org me --manifest allMetadata.xml' }
         }
         It 'includes unlocked packages when requested' {
             Retrieve-SalesforceOrg -IncludePackages | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf force source manifest create --name=allMetadata --output-dir . --include-packages=unlocked' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project generate manifest --name=allMetadata --output-dir . --include-packages=unlocked' }
         }
     }
 }

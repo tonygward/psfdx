@@ -134,7 +134,7 @@ function Get-SalesforcePackagesInstalled {
         [Parameter(Mandatory = $false)][string] $ApiVersion
     )
 
-    $command = "sf force package installed list"
+    $command = "sf package installed list"
     if ($TargetOrg) { $command += " --target-org $TargetOrg" }
     if ($ApiVersion) { $command += " --api-version $ApiVersion" }
     $command += " --json"
