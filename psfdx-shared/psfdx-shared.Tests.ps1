@@ -91,13 +91,46 @@ InModuleScope 'psfdx-shared' {
         }
     }
 
-    Describe 'Invoke-Salesforce with a fake executable' -Skip:($IsWindows) {
+    # A harmless fake "sf" that prints each argument it receives as <arg>, so the tests see the exact argv.
+    # Linux/macOS: a shell script. Windows: a tiny console exe compiled with the .NET Framework csc that ships
+    # with Windows, so this also covers native argument passing on Windows PowerShell 5.1 and PowerShell 7.
+    # (Do not guard with $IsWindows: it does not exist on Windows PowerShell 5.1, which would run the shell script there.)
+    Describe 'Invoke-Salesforce with a fake executable' {
         BeforeAll {
+            $script:onWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
             $script:fakeDir = Join-Path $TestDrive 'fake bin'
             New-Item -ItemType Directory -Path $script:fakeDir | Out-Null
-            $script:fake = Join-Path $script:fakeDir 'fakesf'
-            Set-Content -LiteralPath $script:fake -Value "#!/bin/sh`nfor a in `"`$@`"; do printf '<%s>\n' `"`$a`"; done" -Encoding ascii
-            & chmod +x $script:fake
+            if ($script:onWindows) {
+                $script:fake = Join-Path $script:fakeDir 'fakesf.exe'
+                $source = Join-Path $script:fakeDir 'fakesf.cs'
+                Set-Content -LiteralPath $source -Encoding ascii -Value @'
+using System;
+using System.IO;
+using System.Text;
+public static class FakeSf {
+    public static int Main(string[] args) {
+        var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
+        foreach (var a in args) { writer.Write("<" + a + ">\n"); }
+        writer.Flush();
+        return 0;
+    }
+}
+'@
+                $csc = Join-Path $env:windir (Join-Path 'Microsoft.NET' (Join-Path 'Framework64' (Join-Path 'v4.0.30319' 'csc.exe')))
+                & $csc /nologo "/out:$($script:fake)" $source | Out-Null
+                if (-not (Test-Path -LiteralPath $script:fake)) { throw 'Could not build the fake executable.' }
+                # PowerShell decodes native output with the console encoding; the fake writes UTF-8.
+                $script:savedEncoding = [Console]::OutputEncoding
+                [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+            } else {
+                $script:fake = Join-Path $script:fakeDir 'fakesf'
+                Set-Content -LiteralPath $script:fake -Value "#!/bin/sh`nfor a in `"`$@`"; do printf '<%s>\n' `"`$a`"; done" -Encoding ascii
+                & chmod +x $script:fake
+            }
+        }
+
+        AfterAll {
+            if ($script:onWindows -and $script:savedEncoding) { [Console]::OutputEncoding = $script:savedEncoding }
         }
 
         It 'passes the exact argv' {

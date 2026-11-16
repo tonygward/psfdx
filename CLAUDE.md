@@ -70,7 +70,7 @@ function Verb-SalesforceNoun {
 - Always forward common parameters with `Get-PsfdxCommonParameterSplat`, so `-Verbose` shows the `sf` command.
 - `Show-SalesforceResult` throws on a non-zero `status`. Don't pipe non-JSON output (`csv`/`human` result formats) into it.
 - `Invoke-Salesforce` deliberately has **no** `SupportsShouldProcess` (see the comment in `psfdx-shared/Invoke-Salesforce.ps1`). Put `ShouldProcess` on the public cmdlet instead.
-- **`Invoke-Salesforce` runs the string through `Invoke-Expression`.** Wrap paths and free text in quotes (`` " --file `"$Path`"" ``). Escape values that go into SOQL with `$Value -replace "'", "''"`.
+- **`Invoke-Salesforce` splits the string into an executable and an argument list and runs it directly** (`ConvertTo-PsfdxArgumentList`). It never goes through `Invoke-Expression` or a shell, so `;`, `|`, `&` and `$(...)` in a value are plain text. Quoting still decides where one argument ends: wrap paths and free text in quotes (`` " --file `"$Path`"" ``), and escape a double quote inside a value with a backtick, or it can end the argument early and add extra `sf` options. Escape values that go into SOQL with `$Value -replace "'", "''"`. Never add an `Invoke-Expression` call. On Windows, arguments containing `%`, a double quote or a line break are rejected for the `.cmd` shims (`sf`, `npm`, `yarn`).
 - The `Retrieve-`, `Describe-` and `Promote-` verbs are intentional, even though PowerShell doesn't approve them. Keep using them for consistency.
 - Each `.psm1` starts with an identical copy of `Import-PsfdxSharedModule`. If you change it, change all six.
 - Use `#region` / `#endregion` blocks to group cmdlets, as the existing files do.
@@ -118,4 +118,4 @@ Start every commit and PR title with its area so the history separates product f
 ## Git
 
 - PRs target `main`. `master` is stale (many commits behind); don't use it. CI (`.github/workflows/ci.yml`) runs Pester on `ubuntu-latest` for pull requests only.
-- `docs/CODE-REVIEW.md` is a review from 2026-09-09. Many of its findings have since been fixed (see `CHANGELOG.md`), so check the current code before acting on it. The `Invoke-Expression` → `& sf @args` refactor is still outstanding.
+- `docs/CODE-REVIEW.md` is a review from 2026-09-09. Many of its findings have since been fixed (see `CHANGELOG.md`), so check the current code before acting on it. The `Invoke-Expression` finding (#3) is fixed.
