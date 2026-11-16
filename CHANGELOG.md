@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-shared: On Windows, `%` is no longer rejected in arguments passed to the `sf` `.cmd` shim, so SOQL wildcard queries such as `Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name LIKE 'Acme%'"` work again, and a literal `%NAME%` is passed to `sf` unchanged instead of being expanded. Double quotes and line breaks are still rejected, and `-Verbose` still masks secrets.
+
 ## 0.8.7 - 2026-11-16
 
 - psfdx-shared: `Invoke-Salesforce` no longer runs commands through `Invoke-Expression`. The command is split into an executable and an argument list and run directly, so characters such as `;`, `|`, `&` and `$(...)` in values are passed to `sf` as plain text instead of being executed. Cmdlet parameters and output are unchanged.

@@ -118,6 +118,8 @@ function Get-PsfdxRedactedCommand {
     return [regex]::Replace($Command, $secretOption, '$1$2********')
 }
 
+$script:PsfdxPercentVariable = 'PSFDX_PERCENT'
+
 function Test-PsfdxIsWindows {
     return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
 }
@@ -147,11 +149,17 @@ function Resolve-PsfdxNativeArguments {
     $prepared = New-Object 'System.Collections.Generic.List[string]'
     foreach ($argument in $Arguments) {
         if ($isShim) {
-            if ($argument -match '[%\r\n"\x00]') {
-                throw "Argument contains a character that cannot be passed safely to '$FilePath' on Windows (%, double quote or line break)."
+            if ($argument -match '[\r\n"\x00]') {
+                throw "Argument contains a character that cannot be passed safely to '$FilePath' on Windows (double quote or line break)."
             }
             if ($argument -notmatch '\s' -and $argument -match '[&|<>^]') {
                 throw "Argument contains a shell metacharacter that cannot be passed safely to '$FilePath' on Windows."
+            }
+            # cmd.exe expands %NAME% in the command line, in a single pass. Each % becomes a
+            # reference to a variable whose value is a literal %, so it reaches the tool unchanged
+            # (e.g. LIKE 'Acme%' or a literal %NAME%). Invoke-Salesforce defines the variable.
+            if ($argument.Contains('%')) {
+                $argument = $argument.Replace('%', '%' + $script:PsfdxPercentVariable + '%')
             }
         }
         if ($legacy -and $argument -match '\s' -and $argument -match '\\+$') {
@@ -180,5 +188,21 @@ function Invoke-Salesforce {
     $parsed = ConvertTo-PsfdxArgumentList -Command $Command
     $nativeArguments = Resolve-PsfdxNativeArguments -FilePath $parsed.FilePath -Arguments $parsed.Arguments
     $filePath = $parsed.FilePath
-    return & $filePath @nativeArguments
+
+    $percentToken = '%' + $script:PsfdxPercentVariable + '%'
+    $needsPercent = $false
+    foreach ($nativeArgument in $nativeArguments) {
+        if ($nativeArgument.Contains($percentToken)) { $needsPercent = $true; break }
+    }
+    if (-not $needsPercent) {
+        return & $filePath @nativeArguments
+    }
+
+    $previous = [System.Environment]::GetEnvironmentVariable($script:PsfdxPercentVariable)
+    [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, '%')
+    try {
+        return & $filePath @nativeArguments
+    } finally {
+        [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, $previous)
+    }
 }
