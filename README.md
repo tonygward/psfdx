@@ -182,7 +182,7 @@ Get-Command -Module psfdx*
 | :--- | :--- |
 | `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
 | `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
-| `Test-SalesforceDeploy` | Validate a deployment without saving it (check-only); returns a job ID for quick deploy. Tests always run (`NoTests` is not allowed); `-TestLevel` is `SpecificTests`, `ReferencedTests`, `TestsInFolder`, `TestsInOrg` (default), `TestsInOrgAndPackages` or `RelevantTests`. |
+| `Test-SalesforceDeploy` | Validate a deployment without saving it (check-only); use `-Manifest`, `-SourceDir` or `-InputDir` (a Metadata API directory or `.zip`); returns a job ID for quick deploy. Tests always run (`NoTests` is not allowed); `-TestLevel` is `SpecificTests`, `ReferencedTests`, `TestsInFolder`, `TestsInOrg` (default), `TestsInOrgAndPackages` or `RelevantTests`. |
 | `Start-SalesforceQuickDeploy` | Quick deploy a validated deployment by `-JobId` or `-UseMostRecent` (asks for confirmation). |
 | `Get-SalesforceDeployStatus` | Report the status of a deployment by `-JobId` or `-UseMostRecent`. |
 | `Resume-SalesforceDeploy` | Resume watching a deployment that is still running, by `-JobId` or `-UseMostRecent`. The org comes from the cached deployment, so there is no `-TargetOrg`. |

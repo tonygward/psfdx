@@ -267,6 +267,30 @@ Describe 'Deploy lifecycle cmdlets' {
                 Test-SalesforceDeploy -InputDir $dir.FullName -ManifestPackage -DetailedResults | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($dir.FullName)`" --single-package --test-level RunLocalTests --verbose --json" }
             }
+            It 'validates a Metadata API ZIP whose path contains spaces as one --metadata-dir value' {
+                $folder = New-Item -Path (Join-Path $TestDrive 'my folder') -ItemType Directory
+                $zip = New-Item -Path (Join-Path $folder.FullName 'mdapi package.zip') -ItemType File
+                Test-SalesforceDeploy -InputDir $zip.FullName -TargetOrg 'my-org' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($zip.FullName)`" --target-org my-org --test-level RunLocalTests --json" }
+            }
+            It 'validates a Metadata API ZIP as a single package' {
+                $zip = New-Item -Path (Join-Path $TestDrive 'single.ZIP') -ItemType File
+                Test-SalesforceDeploy -InputDir $zip.FullName -ManifestPackage | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($zip.FullName)`" --single-package --test-level RunLocalTests --json" }
+            }
+            It 'throws for a missing or unsupported -InputDir path' {
+                $txt = New-Item -Path (Join-Path $TestDrive 'mdapi.txt') -ItemType File
+                { Test-SalesforceDeploy -InputDir (Join-Path $TestDrive 'missing.zip') } | Should -Throw -ExpectedMessage "Input path '*missing.zip' does not exist."
+                { Test-SalesforceDeploy -InputDir $txt.FullName } | Should -Throw -ExpectedMessage "Input path '*mdapi.txt' must be a directory or a .zip file."
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'rejects -InputDir combined with another source option' {
+                $zip = New-Item -Path (Join-Path $TestDrive 'excl.zip') -ItemType File
+                $dir = New-Item -Path (Join-Path $TestDrive 'excl-src') -ItemType Directory
+                { Test-SalesforceDeploy -InputDir $zip.FullName -SourceDir $dir.FullName } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
+                { Test-SalesforceDeploy -SourceDir $dir.FullName -ManifestPackage } | Should -Throw -ExpectedMessage '-ManifestPackage can only be used with -InputDir.'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
             It 'rejects NoTests during parameter validation' {
                 $dir = New-Item -Path (Join-Path $TestDrive 'notests') -ItemType Directory
                 { Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel NoTests } | Should -Throw
