@@ -646,8 +646,16 @@ function Test-SalesforceDeploy {
     if ($SourceDir -and -not (Test-Path -LiteralPath $SourceDir)) {
         throw "Source path '$SourceDir' does not exist."
     }
-    if ($InputDir -and -not (Test-Path -LiteralPath $InputDir -PathType Container)) {
-        throw "Input directory '$InputDir' does not exist."
+    if ($InputDir) {
+        if (-not (Test-Path -LiteralPath $InputDir)) {
+            throw "Input path '$InputDir' does not exist."
+        }
+        if (-not (Test-Path -LiteralPath $InputDir -PathType Container)) {
+            $inputExtension = [System.IO.Path]::GetExtension($InputDir)
+            if (-not [string]::Equals($inputExtension, '.zip', [System.StringComparison]::OrdinalIgnoreCase)) {
+                throw "Input path '$InputDir' must be a directory or a .zip file."
+            }
+        }
     }
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
