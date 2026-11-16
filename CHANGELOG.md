@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.7 - 2026-11-16
+
 - psfdx-shared: `Invoke-Salesforce` no longer runs commands through `Invoke-Expression`. The command is split into an executable and an argument list and run directly, so characters such as `;`, `|`, `&` and `$(...)` in values are passed to `sf` as plain text instead of being executed. Cmdlet parameters and output are unchanged.
 - psfdx-shared: `-Verbose` output now masks the values of `--password`, `--client-secret`, `--sfdx-url`, token and similar options.
 - psfdx-shared: On Windows, arguments containing `%`, a double quote or a line break (or `& | < > ^` without spaces) are rejected rather than passed to the `.cmd` shim of `sf`, `npm` or `yarn`, because `cmd.exe` would interpret them.
