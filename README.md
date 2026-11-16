@@ -359,3 +359,9 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 | `Promote-SalesforcePackageVersion` | Promote a version (optional no-prompt). |
 | `Remove-SalesforcePackageVersion` | Delete a version (optional no-prompt). |
 | `Install-SalesforcePackageVersion` | Install a version to a target org (waits/publish-wait, no-prompt). |
+
+### psfdx-shared
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Invoke-Salesforce` | Internal executor. Runs `sf` (and `npm`/`yarn`) with an argument array, never through `Invoke-Expression`; secret values are masked in `-Verbose` output. |
