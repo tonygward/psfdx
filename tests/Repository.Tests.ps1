@@ -17,6 +17,11 @@ Describe 'Repository rules' {
         }
     }
 
+    It 'the core manifest sets LicenseUri to the repository LICENSE file' {
+        $data = Import-PowerShellDataFile -Path (Join-Path (Join-Path $script:Root 'psfdx') 'psfdx.psd1')
+        $data.PrivateData.PSData.LicenseUri | Should -Be 'https://github.com/tonygward/psfdx/blob/main/LICENSE'
+    }
+
     It 'CHANGELOG.md starts with # Changelog then ## Unreleased' {
         $lines = @(Get-Content -Path (Join-Path $script:Root 'CHANGELOG.md') | Where-Object { $_.Trim() -ne '' })
         $lines[0] | Should -Be '# Changelog'
