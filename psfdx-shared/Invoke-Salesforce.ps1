@@ -194,13 +194,14 @@ function Invoke-Salesforce {
 
     Write-Verbose (Get-PsfdxRedactedCommand -Command $Command)
     $parsed = ConvertTo-PsfdxArgumentList -Command $Command
-    $nativeArguments = Resolve-PsfdxNativeArguments -FilePath $parsed.FilePath -Arguments $parsed.Arguments
+    # Wrap in @() so an empty result is an empty array, not $null (Windows PowerShell 5.1 runs a foreach once over $null).
+    $nativeArguments = @(Resolve-PsfdxNativeArguments -FilePath $parsed.FilePath -Arguments $parsed.Arguments)
     $filePath = $parsed.FilePath
 
     $percentToken = '%' + $script:PsfdxPercentVariable + '%'
     $needsPercent = $false
     foreach ($nativeArgument in $nativeArguments) {
-        if ($nativeArgument.Contains($percentToken)) { $needsPercent = $true; break }
+        if ($null -ne $nativeArgument -and $nativeArgument.Contains($percentToken)) { $needsPercent = $true; break }
     }
     if (-not $needsPercent) {
         return & $filePath @nativeArguments
