@@ -124,6 +124,17 @@ function Test-PsfdxIsWindows {
     return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
 }
 
+function Test-PsfdxIsCmdShim {
+    # True when the executable resolves to a .cmd/.bat shim (or cannot be resolved, so the safe path applies).
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $FilePath
+    )
+    $application = Get-Command -Name $FilePath -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $application) { return $true }
+    return [bool]($application.Source -match '(?i)\.(cmd|bat)$')
+}
+
 function Resolve-PsfdxNativeArguments {
     # Prepares arguments for native execution. On non-Windows the argv is passed untouched.
     # On Windows, tools such as sf, npm and yarn are .cmd shims run through cmd.exe, so
@@ -140,10 +151,7 @@ function Resolve-PsfdxNativeArguments {
         return [string[]]$Arguments
     }
 
-    $isShim = $false
-    $application = Get-Command -Name $FilePath -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($application -and $application.Source -match '(?i)\.(cmd|bat)$') { $isShim = $true }
-    if (-not $application) { $isShim = $true }
+    $isShim = Test-PsfdxIsCmdShim -FilePath $FilePath
 
     $legacy = -not (Test-Path -LiteralPath 'Variable:PSNativeCommandArgumentPassing')
     $prepared = New-Object 'System.Collections.Generic.List[string]'

@@ -78,7 +78,7 @@ InModuleScope 'psfdx-shared' {
     Describe 'Resolve-PsfdxNativeArguments for Windows .cmd shims' {
         BeforeEach {
             Mock Test-PsfdxIsWindows { $true }
-            Mock Get-Command { [pscustomobject]@{ Source = 'C:\sf\bin\sf.cmd' } }
+            Mock Test-PsfdxIsCmdShim { $true }
         }
 
         It 'keeps % usable by routing it through a variable that expands to a literal %' {
