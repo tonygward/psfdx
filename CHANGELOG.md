@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.14 - 2026-11-17
+
 - psfdx, psfdx-sandbox, psfdx-shared: The module manifests now declare Windows PowerShell 5.1 as the minimum version and both the Desktop and Core editions, matching the other modules, so the PowerShell Gallery shows the same requirements for every module.
 
 - psfdx: psfdx is now on the PowerShell Gallery: install it with `Install-Module psfdx`.
