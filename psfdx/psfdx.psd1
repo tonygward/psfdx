@@ -1,6 +1,6 @@
 @{
     RootModule = 'psfdx.psm1'
-    ModuleVersion = '0.8.7'
+    ModuleVersion = '0.8.9'
     GUID = '2785d2bf-775f-4f2b-9d00-ee98f0163cf0'
     Author = 'Tony Ward'
     Description = 'PowerShell module that wraps Salesforce SFDX command line interface'
@@ -40,6 +40,7 @@
         PSData = @{
             Tags = @('Salesforce', 'SalesforceDX', 'sf', 'CLI', 'PSEdition_Desktop', 'PSEdition_Core', 'Windows', 'Linux', 'MacOS')
             ProjectUri = 'https://github.com/tonygward/psfdx'
+            LicenseUri = 'https://github.com/tonygward/psfdx/blob/main/LICENSE'
             IconUri = 'https://raw.githubusercontent.com/tonygward/psfdx/main/images/psfdx-logo.png'
         }
     }

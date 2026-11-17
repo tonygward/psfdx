@@ -24,6 +24,11 @@ Describe 'Release zip' {
         }
     }
 
+    It 'contains the licence' {
+        $script:Names | Should -Contain 'LICENSE'
+        (Get-Content -Path (Join-Path $script:Extract 'LICENSE') -Raw) | Should -Match 'MIT License'
+    }
+
     It 'contains no tests, prompts, docs or workflows' {
         @($script:Names | Where-Object { $_ -match '\.Tests\.ps1$|^prompts/|^docs/|^\.github/|^tests/|^scripts/' }).Count | Should -Be 0
     }
