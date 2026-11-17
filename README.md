@@ -264,15 +264,15 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Install-SalesforceLwcDevServer` | Install LWC dev server dependencies. |
-| `Start-SalesforceLwcDevServer` | Start LWC dev server. |
+| `Install-SalesforceLwcDevServer` | Install the `@salesforce/plugin-lightning-dev` CLI plugin. |
+| `Start-SalesforceLwcDevServer` | Start Lightning dev (`sf lightning dev app`, `component` or `site` via `-Mode`; optional `-Name`, `-DeviceType`, `-TargetOrg`). Fails with install guidance if the plugin is missing. |
 
 ### LWC/Jest Testing
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Install-SalesforceJest` | Add `@salesforce/sfdx-lwc-jest` via yarn/npm. |
-| `New-SalesforceJestTest` | Create Jest test for an LWC. |
+| `New-SalesforceJestTest` | Scaffold a Jest test in the LWC's `__tests__` folder (`-ProjectPath`, `-Force`). |
 | `Test-SalesforceJest` | Run Jest tests. |
 | `Debug-SalesforceJest` | Run Jest in debug mode. |
 | `Watch-SalesforceJest` | Run Jest in watch mode. |
