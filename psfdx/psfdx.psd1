@@ -41,7 +41,7 @@
             Tags = @('Salesforce', 'SalesforceDX', 'sf', 'CLI', 'PSEdition_Desktop', 'PSEdition_Core', 'Windows', 'Linux', 'MacOS')
             ProjectUri = 'https://github.com/tonygward/psfdx'
             LicenseUri = 'https://github.com/tonygward/psfdx/blob/main/LICENSE'
-            IconUri ='https://raw.githubusercontent.com/tonygward/psfdx/main/images/psfdx-logo.png'
+            IconUri = 'https://raw.githubusercontent.com/tonygward/psfdx/main/images/psfdx-logo.png'
         }
     }
 }

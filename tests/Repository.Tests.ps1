@@ -22,6 +22,12 @@ Describe 'Repository rules' {
         $data.PrivateData.PSData.LicenseUri | Should -Be 'https://github.com/tonygward/psfdx/blob/main/LICENSE'
     }
 
+    It 'LICENSE is the MIT licence' {
+        $text = Get-Content -Path (Join-Path $script:Root 'LICENSE') -Raw
+        $text | Should -Match '^MIT License'
+        $text | Should -Match 'Copyright \(c\) [0-9]{4} Tony Ward'
+    }
+
     It 'CHANGELOG.md starts with # Changelog then ## Unreleased' {
         $lines = @(Get-Content -Path (Join-Path $script:Root 'CHANGELOG.md') | Where-Object { $_.Trim() -ne '' })
         $lines[0] | Should -Be '# Changelog'
