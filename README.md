@@ -5,21 +5,24 @@ Cross platform PowerShell modules that wrap the Salesforce CLI.
 # Installation
 
 ## 1. Pre-Requisites
-PowerShell for Windows or Linux
+PowerShell 7 (Windows, Linux or macOS) or Windows PowerShell 5.1
 https://github.com/PowerShell/PowerShell/releases
 
 
 ## 2. Install psfdx
 
-### From the PowerShell Gallery (recommended once a release has been published there)
-One package, `psfdx`, holds every module:
+### From the PowerShell Gallery (recommended)
+One package, `psfdx`, holds every module, and it works in Windows PowerShell 5.1 and PowerShell 7 on Windows, Linux and macOS:
 ```
 Install-Module psfdx
 Import-Module psfdx
 ```
-Update later with `Update-Module psfdx`. Gallery publishing is switched on by the owner (see `docs/release.md`); until the first Gallery release exists, use one of the routes below.
+`Import-Module psfdx` loads the cmdlets of every module below. With this install you don't import `psfdx-logs`, `psfdx-metadata` and the others separately; the per-module `Import-Module` lines in the module sections apply to the clone install.
+
+Update later with `Update-Module psfdx`. The first time, PowerShell may ask you to trust the PSGallery repository. The package is at https://www.powershellgallery.com/packages/psfdx.
 
 ### Or from a clone
+Use this to work on psfdx itself, or if you can't reach the Gallery. It installs the modules separately. Don't install from both the Gallery and a clone on the same machine.
 
 ### Mac or Linux
 ```
