@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.9 - 2026-11-17
+
 - psfdx: psfdx is now released under the MIT licence. The `LICENSE` file ships in the release ZIP and the PowerShell Gallery package, the Gallery package lists it (`LicenseUri`), and the README links to it.
 
 ## 0.8.8 - 2026-11-16
