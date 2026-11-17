@@ -18,7 +18,13 @@ Import-Module psfdx
 ```
 `Import-Module psfdx` loads the cmdlets of every module below, so you don't import `psfdx-logs`, `psfdx-metadata` and the others separately.
 
-Update later with `Update-Module psfdx`. The first time, PowerShell may ask you to trust the PSGallery repository. The package is at https://www.powershellgallery.com/packages/psfdx.
+Update later with `Update-Module psfdx`. The package is at https://www.powershellgallery.com/packages/psfdx.
+
+The first time you install from the Gallery, PowerShell asks whether to install from the untrusted repository 'PSGallery'. That is normal PowerShell behaviour for any package from the Gallery, not something specific to psfdx. Answer `Y` (yes) or `A` (yes to all):
+
+![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
+
+To stop being asked, run `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`.
 
 ## 3. Salesforce CLI
 
