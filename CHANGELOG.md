@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: Added an offline Salesforce CLI compatibility check to the test suite. It flags removed commands, legacy flags and unknown command families in any module, naming the file, function and a suggested replacement, and writes a machine-readable report with the pinned CLI version. No org or credentials are needed.
+
 ## 0.8.12 - 2026-11-17
 
 - psfdx: The Salesforce CLI no longer returns access tokens, refresh tokens or auth URLs in ordinary `--json` output, so `Connect-SalesforceAuthUrl -IncludeToken` returns them only if your CLI version supplies them; nothing is fetched on your behalf. Tokens and auth URLs are still stripped by default, and `Connect-SalesforceJwt` now strips them too. No migration is needed unless you relied on `-IncludeToken` returning a token; use `sf org display --verbose --json` yourself for that.
