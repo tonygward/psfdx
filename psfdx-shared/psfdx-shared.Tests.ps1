@@ -75,6 +75,35 @@ InModuleScope 'psfdx-shared' {
         }
     }
 
+    Describe 'Resolve-PsfdxNativeArguments for Windows .cmd shims' {
+        BeforeEach {
+            Mock Test-PsfdxIsWindows { $true }
+            Mock Test-PsfdxIsCmdShim { $true }
+        }
+
+        It 'keeps % usable by routing it through a variable that expands to a literal %' {
+            $r = @(Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @("SELECT Id FROM Account WHERE Name LIKE 'Acme%'"))
+            $r[0] | Should -Be "SELECT Id FROM Account WHERE Name LIKE 'Acme%PSFDX_PERCENT%'"
+        }
+
+        It 'handles prefix, infix and literal %NAME% arguments' {
+            $r = @(Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('%a b', 'a%b c', '%NAME%'))
+            $r[0] | Should -Be '%PSFDX_PERCENT%a b'
+            $r[1] | Should -Be 'a%PSFDX_PERCENT%b c'
+            $r[2] | Should -Be '%PSFDX_PERCENT%NAME%PSFDX_PERCENT%'
+        }
+
+        It 'still rejects double quotes and unsafe metacharacters' {
+            { Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('a"b') } | Should -Throw
+            { Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('a&b') } | Should -Throw
+        }
+
+        It 'leaves % untouched on non-Windows' {
+            Mock Test-PsfdxIsWindows { $false }
+            @(Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @("x LIKE 'A%'"))[0] | Should -Be "x LIKE 'A%'"
+        }
+    }
+
     Describe 'Invoke-Salesforce' {
         It 'does not call Invoke-Expression' {
             (Get-Command Invoke-Salesforce).ScriptBlock.ToString() | Should -Not -Match 'Invoke-Expression\s+-|iex\s'
@@ -161,6 +190,90 @@ public static class FakeSf {
         It 'returns raw non-JSON output untouched (csv and human)' {
             $out = @(Invoke-Salesforce -Command "`"$($script:fake)`" data query --result-format csv")
             $out | Should -Be @('<data>', '<query>', '<--result-format>', '<csv>')
+        }
+    }
+}
+
+# Windows only: an offline sf.cmd shim (like the real one, it forwards %* to a program) that records argv.
+# Select-SalesforceRecords is run through the real Windows invocation path in PowerShell 7 and Windows PowerShell 5.1.
+Describe 'Select-SalesforceRecords through a Windows sf.cmd shim' {
+    BeforeAll {
+        $script:onWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+        if ($script:onWindows) {
+            $script:shimDir = Join-Path $TestDrive 'shim bin'
+            New-Item -ItemType Directory -Path $script:shimDir | Out-Null
+            $source = Join-Path $script:shimDir 'argvcapture.cs'
+            Set-Content -LiteralPath $source -Encoding ascii -Value @'
+using System;
+using System.IO;
+using System.Text;
+public static class ArgvCapture {
+    public static int Main(string[] args) {
+        var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
+        foreach (var a in args) { writer.Write("<" + a + ">\n"); }
+        writer.Flush();
+        return 0;
+    }
+}
+'@
+            $csc = Join-Path $env:windir (Join-Path 'Microsoft.NET' (Join-Path 'Framework64' (Join-Path 'v4.0.30319' 'csc.exe')))
+            & $csc /nologo "/out:$(Join-Path $script:shimDir 'argvcapture.exe')" $source | Out-Null
+            Set-Content -LiteralPath (Join-Path $script:shimDir 'sf.cmd') -Encoding ascii -Value "@echo off`r`n`"%~dp0argvcapture.exe`" %*"
+
+            $script:queries = @(
+                "SELECT Id FROM Account WHERE Name LIKE 'Acme%'",
+                "SELECT Id FROM Account WHERE Name LIKE '%Acme'",
+                "SELECT Id FROM Account WHERE Name LIKE 'Ac%me'",
+                "SELECT Id FROM Account WHERE Name = '%NAME%' AND Site = '%PATH%'",
+                "SELECT Id FROM Account WHERE Name = 'a&b|c^d<e>f;g' AND X > 1 AND Y = '`$(whoami)'",
+                "SELECT   Id   FROM Account WHERE Name LIKE '%two  spaces%'"
+            )
+            $script:queryFile = Join-Path $script:shimDir 'queries.json'
+            ConvertTo-Json -InputObject $script:queries | Set-Content -LiteralPath $script:queryFile -Encoding utf8
+            $script:runner = Join-Path $script:shimDir 'run.ps1'
+            Set-Content -LiteralPath $script:runner -Encoding utf8 -Value @'
+param([string] $ShimDir, [string] $QueryFile, [string] $Manifest, [string] $OutFile)
+$env:PATH = $ShimDir + ';' + $env:PATH
+Import-Module $Manifest -Force
+$queries = @(Get-Content -LiteralPath $QueryFile -Raw | ConvertFrom-Json | ForEach-Object { $_ })
+$results = @()
+foreach ($q in $queries) {
+    $lines = @(Select-SalesforceRecords -Query $q -TargetOrg my-org -ResultFormat csv)
+    $results += ,@($lines)
+}
+ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath $OutFile -Encoding utf8
+'@
+            $script:manifest = Join-Path (Split-Path -Parent $PSScriptRoot) (Join-Path 'psfdx' 'psfdx.psd1')
+        }
+    }
+
+    $windowsHost = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+    foreach ($shellCase in @(
+        @{ shell = 'pwsh'; available = ($windowsHost -and [bool](Get-Command 'pwsh' -CommandType Application -ErrorAction SilentlyContinue)) },
+        @{ shell = 'powershell'; available = ($windowsHost -and [bool](Get-Command 'powershell' -CommandType Application -ErrorAction SilentlyContinue)) }
+    )) {
+        It "passes % and metacharacters literally in $($shellCase.shell)" -TestCases @($shellCase) -Skip:(-not $shellCase.available) {
+            param($shell)
+            $outFile = Join-Path $script:shimDir "out-$shell.json"
+            & $shell -NoProfile -ExecutionPolicy Bypass -File $script:runner -ShimDir $script:shimDir -QueryFile $script:queryFile -Manifest $script:manifest -OutFile $outFile | Out-Null
+            # Windows PowerShell 5.1 returns the JSON array as one object, so iterate it with foreach (same on 5.1 and 7)
+            # and keep each inner argv array whole.
+            $parsed = Get-Content -LiteralPath $outFile -Raw | ConvertFrom-Json
+            $results = @()
+            foreach ($item in $parsed) { $results += , @($item) }
+            $results.Count | Should -Be $script:queries.Count
+            for ($n = 0; $n -lt $script:queries.Count; $n++) {
+                $argv = @($results[$n])
+                $argv.Count | Should -Be 8
+                $argv[0] | Should -Be '<data>'
+                $argv[1] | Should -Be '<query>'
+                $argv[2] | Should -Be '<--query>'
+                $argv[3] | Should -Be ('<' + $script:queries[$n] + '>')
+                $argv[4] | Should -Be '<--target-org>'
+                $argv[5] | Should -Be '<my-org>'
+                $argv[6] | Should -Be '<--result-format>'
+                $argv[7] | Should -Be '<csv>'
+            }
         }
     }
 }
