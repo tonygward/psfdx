@@ -65,6 +65,11 @@ foreach ($module in $modules) {
     }
 }
 
+# The licence text ships in the bundle root, next to the manifest.
+$licenseFile = Join-Path $Root 'LICENSE'
+if (-not (Test-Path -LiteralPath $licenseFile)) { throw "LICENSE not found at $licenseFile" }
+Copy-Item -LiteralPath $licenseFile -Destination (Join-Path $outputFull 'LICENSE')
+
 # 2. The Gallery metadata comes from one place: the core module's manifest (PrivateData.PSData).
 $core = Import-PowerShellDataFile -Path (Join-Path (Join-Path $Root 'psfdx') 'psfdx.psd1')
 $psData = $core.PrivateData.PSData
@@ -83,7 +88,7 @@ $lines = @(
     "    GUID                 = '$bundleGuid'"
     "    Author               = '$($core.Author)'"
     "    CompanyName          = 'psfdx'"
-    "    Copyright            = 'Copyright (c) psfdx contributors.'"
+    "    Copyright            = 'Copyright (c) 2020 Tony Ward.'"
     "    Description          = '$(([string]$core.Description).Replace("'", "''"))'"
     "    PowerShellVersion    = '5.1'"
     "    CompatiblePSEditions = @('Desktop', 'Core')"

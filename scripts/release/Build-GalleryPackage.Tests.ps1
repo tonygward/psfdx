@@ -55,6 +55,14 @@ Describe 'Gallery bundle (one psfdx package)' {
         $data.ReleaseNotes | Should -Be "https://github.com/tonygward/psfdx/releases/tag/v$script:Version"
     }
 
+    It 'carries the MIT licence text and a LicenseUri that points at it' {
+        $script:Manifest.PrivateData.PSData.LicenseUri | Should -Be 'https://github.com/tonygward/psfdx/blob/main/LICENSE'
+        $bundled = Join-Path $script:Out 'LICENSE'
+        $bundled | Should -Exist
+        (Get-Content -Path $bundled -Raw) | Should -Match 'MIT License'
+        (Get-Content -Path $bundled -Raw) | Should -Be (Get-Content -Path (Join-Path $script:Root 'LICENSE') -Raw)
+    }
+
     It 'imports in a fresh session and exposes every listed function and nothing else' {
         $manifest = Join-Path $script:Out 'psfdx.psd1'
         $command = "`$ErrorActionPreference = 'Stop'; Import-Module '$manifest' -WarningAction SilentlyContinue; (Get-Command -Module psfdx | Where-Object { `$_.CommandType -eq 'Function' } | Sort-Object Name | ForEach-Object Name) -join ','"

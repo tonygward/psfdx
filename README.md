@@ -82,6 +82,10 @@ Export-SalesforceDebugLogs -TargetOrg my@email.com
 Get-Command -Module psfdx*
 ```
 
+## Licence
+
+psfdx is released under the MIT licence. See [LICENSE](LICENSE).
+
 ## Modules
 | Module | Description |
 | :--- | :--- |

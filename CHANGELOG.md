@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: psfdx is now released under the MIT licence. The `LICENSE` file ships in the release ZIP and the PowerShell Gallery package, the Gallery package lists it (`LicenseUri`), and the README links to it.
+
 ## 0.8.8 - 2026-11-16
 
 - psfdx-metadata: `Test-SalesforceDeploy -InputDir` now accepts an existing Metadata API ZIP file as well as a directory, matching `sf project deploy validate --metadata-dir`. A missing path or a file that is not a `.zip` gives a clear error.
