@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- psfdx-development: `Start-SalesforceLwcDevServer` now supports `-Mode App|Component|Site` (default `App`, as before) with `-Name`, `-DeviceType` and `-TargetOrg`, and stops with a clear message pointing to `Install-SalesforceLwcDevServer` when the `@salesforce/plugin-lightning-dev` plugin is not installed.
+- psfdx-development: Breaking: `New-SalesforceJestTest` no longer calls the removed `sf force lightning lwc test create` command. It now writes `__tests__/<name>.test.js` itself, returns the created file instead of the CLI result, checks that the component exists, and refuses to overwrite an existing test unless `-Force` is used. New `-ProjectPath` and `-Force` parameters.
+
 ## 0.8.10 - 2026-11-17
 
 - psfdx-shared: On Windows, `%` is no longer rejected in arguments passed to the `sf` `.cmd` shim, so SOQL wildcard queries such as `Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name LIKE 'Acme%'"` work again, and a literal `%NAME%` is passed to `sf` unchanged instead of being expanded. Double quotes and line breaks are still rejected, and `-Verbose` still masks secrets.

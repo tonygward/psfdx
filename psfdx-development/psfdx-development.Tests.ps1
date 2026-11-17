@@ -21,6 +21,9 @@ Describe 'psfdx-development basics' {
             Mock Invoke-Salesforce {
                 param($Command)
                 switch -Regex ($Command) {
+                    'sf plugins --core --json' {
+                        return '[{"name":"@salesforce/plugin-lightning-dev","version":"1.0.0"}]'
+                    }
                     'sf config get target-dev-hub' {
                         return '{"status":0,"result":{"target-dev-hub":[{"name":"target-dev-hub","value":"DevHub"}]}}'
                     }
@@ -33,6 +36,58 @@ Describe 'psfdx-development basics' {
         It 'starts LWC dev server with sf command' {
             Start-SalesforceLwcDevServer | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev app' }
+        }
+        It 'starts LWC dev server in component mode with name and target org' {
+            Start-SalesforceLwcDevServer -Mode Component -Name 'my comp' -TargetOrg me | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev component --name "my comp" --target-org me' }
+        }
+        It 'starts LWC dev server in site mode' {
+            Start-SalesforceLwcDevServer -Mode Site -Name 'My Site' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev site --name "My Site"' }
+        }
+        It 'starts LWC dev server app with device type' {
+            Start-SalesforceLwcDevServer -Mode App -Name MyApp -DeviceType ios | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev app --name "MyApp" --device-type ios' }
+        }
+        It 'rejects device type outside app mode' {
+            { Start-SalesforceLwcDevServer -Mode Site -DeviceType ios } | Should -Throw -ExpectedMessage '-DeviceType is only supported with -Mode App.'
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf lightning dev*' }
+        }
+        It 'throws an actionable error when the lightning dev plugin is missing' {
+            Mock Invoke-Salesforce { return '[{"name":"@salesforce/plugin-apex"}]' }
+            { Start-SalesforceLwcDevServer } | Should -Throw -ExpectedMessage "*Install-SalesforceLwcDevServer*"
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf lightning dev*' }
+        }
+        It 'installs the lightning dev plugin' {
+            Install-SalesforceLwcDevServer | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf plugins install @salesforce/plugin-lightning-dev' }
+        }
+        It 'scaffolds a Jest test without calling sf' {
+            $project = Join-Path $TestDrive 'my project'
+            $lwc = Join-Path $project 'force-app/main/default/lwc/myComp'
+            New-Item -ItemType Directory -Path $lwc -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $lwc 'myComp.js') -Value '// component'
+            $file = New-SalesforceJestTest -LwcName myComp -ProjectPath $project
+            $file.Name | Should -Be 'myComp.test.js'
+            $text = Get-Content -LiteralPath $file.FullName -Raw
+            $text | Should -Match "import myComp from 'c/myComp';"
+            $text | Should -Match "createElement\('c-my-comp'"
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'refuses to overwrite an existing Jest test without -Force' {
+            $project = Join-Path $TestDrive 'proj2'
+            $lwc = Join-Path $project 'force-app/main/default/lwc/abc'
+            New-Item -ItemType Directory -Path (Join-Path $lwc '__tests__') -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $lwc 'abc.js') -Value '// component'
+            Set-Content -LiteralPath (Join-Path $lwc '__tests__/abc.test.js') -Value 'old'
+            { New-SalesforceJestTest -LwcName abc -ProjectPath $project } | Should -Throw -ExpectedMessage '*already exists*'
+            New-SalesforceJestTest -LwcName abc -ProjectPath $project -Force | Out-Null
+            (Get-Content -LiteralPath (Join-Path $lwc '__tests__/abc.test.js') -Raw) | Should -Match 'createElement'
+        }
+        It 'throws when the LWC component file is absent' {
+            $project = Join-Path $TestDrive 'proj3'
+            New-Item -ItemType Directory -Path $project -Force | Out-Null
+            { New-SalesforceJestTest -LwcName missing -ProjectPath $project } | Should -Throw -ExpectedMessage '*does not exist*'
         }
         It 'sets project target org with equals syntax' {
             Set-SalesforceTargetOrg -Value 'user@example' | Out-Null

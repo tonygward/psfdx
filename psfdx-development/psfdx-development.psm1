@@ -838,11 +838,38 @@ function Install-SalesforceLwcDevServer {
     Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev" @commonParams
 }
 
-function Start-SalesforceLwcDevServer {
+function Test-SalesforceLightningDevPluginInstalled {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command "sf lightning dev app" @commonParams
+    $raw = Invoke-Salesforce -Command "sf plugins --core --json" @commonParams
+    $text = ($raw | Out-String)
+    return ($text -match '@salesforce/plugin-lightning-dev')
+}
+
+function Start-SalesforceLwcDevServer {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidateSet('App', 'Component', 'Site')][string] $Mode = 'App',
+        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][ValidateSet('ios', 'android')][string] $DeviceType,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if ($PSBoundParameters.ContainsKey('DeviceType') -and $Mode -ne 'App') {
+        throw "-DeviceType is only supported with -Mode App."
+    }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    if (-not (Test-SalesforceLightningDevPluginInstalled @commonParams)) {
+        throw "The Salesforce CLI plugin '@salesforce/plugin-lightning-dev' is not installed. Run Install-SalesforceLwcDevServer, then try again."
+    }
+    $command = "sf lightning dev $($Mode.ToLowerInvariant())"
+    if (-not [string]::IsNullOrWhiteSpace($Name)) {
+        $escapedName = $Name -replace '"', '`"'
+        $command += " --name `"$escapedName`""
+    }
+    if ($DeviceType) { $command += " --device-type $DeviceType" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    Invoke-Salesforce -Command $command @commonParams
 }
 
 #endregion
@@ -862,12 +889,56 @@ function Install-SalesforceJest {
 
 function New-SalesforceJestTest {
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $LwcName)
-    $filePath = "force-app/main/default/lwc/$LwcName/$LwcName.js"
-    $command = "sf force lightning lwc test create --filepath $filePath --json"
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
-    return Show-SalesforceResult -Result $result
+    Param(
+        [Parameter(Mandatory = $true)][string] $LwcName,
+        [Parameter(Mandatory = $false)][string] $ProjectPath = '.',
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    # The legacy 'sf force lightning lwc test create' command was removed from the Salesforce CLI,
+    # so the Jest test scaffold is written directly.
+    if ($LwcName -notmatch '^[A-Za-z][A-Za-z0-9_]*$') {
+        throw "LWC name '$LwcName' is not valid. Use letters, numbers and underscores, starting with a letter."
+    }
+    if (-not (Test-Path -LiteralPath $ProjectPath -PathType Container)) {
+        throw "Project path '$ProjectPath' does not exist."
+    }
+    $lwcDir = Join-Path $ProjectPath (Join-Path 'force-app' (Join-Path 'main' (Join-Path 'default' (Join-Path 'lwc' $LwcName))))
+    $componentFile = Join-Path $lwcDir "$LwcName.js"
+    if (-not (Test-Path -LiteralPath $componentFile -PathType Leaf)) {
+        throw "LWC component file '$componentFile' does not exist."
+    }
+    $testsDir = Join-Path $lwcDir '__tests__'
+    $testFile = Join-Path $testsDir "$LwcName.test.js"
+    if ((Test-Path -LiteralPath $testFile) -and -not $Force) {
+        throw "Jest test '$testFile' already exists. Use -Force to overwrite it."
+    }
+    if (-not (Test-Path -LiteralPath $testsDir)) {
+        New-Item -ItemType Directory -Path $testsDir | Out-Null
+    }
+    $tag = ($LwcName -creplace '([A-Z])', '-$1').ToLowerInvariant()
+    $content = @"
+import { createElement } from 'lwc';
+import $LwcName from 'c/$LwcName';
+
+describe('c-$tag', () => {
+    afterEach(() => {
+        // The jsdom instance is shared across test cases in a single file so reset the DOM
+        while (document.body.firstChild) {
+            document.body.removeChild(document.body.firstChild);
+        }
+    });
+
+    it('renders', () => {
+        const element = createElement('c-$tag', { is: $LwcName });
+        document.body.appendChild(element);
+        expect(element).not.toBeNull();
+    });
+});
+"@
+    $content = $content -replace "`r`n", "`n"
+    $fullPath = Join-Path (Resolve-Path -LiteralPath $testsDir).ProviderPath "$LwcName.test.js"
+    [System.IO.File]::WriteAllText($fullPath, $content, (New-Object System.Text.UTF8Encoding($false)))
+    return Get-Item -LiteralPath $fullPath
 }
 
 function Test-SalesforceJest {
