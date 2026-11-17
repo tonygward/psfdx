@@ -96,6 +96,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
 | `psfdx-sandbox` | Salesforce sandbox lifecycle management. |
 | `psfdx-packages` | Salesforce packages: create, version, promote, install. |
+| `psfdx-agentforce` | Agentforce agent tests and activation through the Salesforce CLI agent plugin. |
 
 
 ### psfdx
@@ -290,6 +291,21 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 | `Copy-SalesforceSandbox` | Clone an existing sandbox into a new sandbox. |
 | `Resume-SalesforceSandbox` | Resume a pending or paused sandbox copy. |
 | `Remove-SalesforceSandbox` | Delete a sandbox from the production org, optionally specifying the target org. |
+
+### psfdx-agentforce
+
+`Import-Module psfdx-agentforce`
+
+Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with recent CLI versions; otherwise `sf plugins install @salesforce/plugin-agent`). Each cmdlet stops with install guidance if it is missing. Beta and developer-preview commands (authoring bundles, preview, agent creation) are not wrapped. See [docs/agentforce-parity.md](docs/agentforce-parity.md).
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Test-SalesforceAgentPlugin` | Check that the agent CLI plugin is installed. |
+| `Get-SalesforceAgentTests` | List agent test definitions in the org. |
+| `Start-SalesforceAgentTest` | Run an agent test by `-ApiName`; optional `-WaitMinutes`. Returns the job or results. |
+| `Get-SalesforceAgentTestResult` | Get the results of an agent test run by `-JobId`. |
+| `Enable-SalesforceAgent` | Activate an agent by `-ApiName` (optional `-Version`); asks for confirmation, supports `-WhatIf`. |
+| `Disable-SalesforceAgent` | Deactivate an agent by `-ApiName`; asks for confirmation, supports `-WhatIf`. |
 
 ### psfdx-logs
 
