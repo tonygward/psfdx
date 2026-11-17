@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: psfdx is now on the PowerShell Gallery: install it with `Install-Module psfdx`.
+
 ## 0.8.13 - 2026-11-17
 
 - psfdx-agentforce: New module for the Salesforce CLI agent plugin. It can list, run and read results of agent tests (`Get-SalesforceAgentTests`, `Start-SalesforceAgentTest`, `Get-SalesforceAgentTestResult`), activate and deactivate agents (`Enable-SalesforceAgent`, `Disable-SalesforceAgent`, both ask for confirmation and support `-WhatIf`), and check the plugin is installed (`Test-SalesforceAgentPlugin`). Beta commands are not wrapped.
