@@ -4,6 +4,8 @@
     GUID = '0904d3fb-5ee3-4217-b219-559afc4f1ec1'
     Author = 'Tony Ward'
     Description = 'Salesforce Sandbox management helpers for the Salesforce CLI.'
+    PowerShellVersion = '5.1'
+    CompatiblePSEditions = @('Desktop','Core')
     FunctionsToExport = @(
         'Get-SalesforceSandboxes',
         'New-SalesforceSandbox',
