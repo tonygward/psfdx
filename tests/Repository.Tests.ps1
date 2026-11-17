@@ -22,6 +22,16 @@ Describe 'Repository rules' {
         $data.PrivateData.PSData.LicenseUri | Should -Be 'https://github.com/tonygward/psfdx/blob/main/LICENSE'
     }
 
+    It 'every module manifest declares PowerShell 5.1 and both editions' {
+        $manifests = Get-ChildItem -Path $script:Root -Filter 'psfdx*.psd1' -Recurse
+        $manifests.Count | Should -BeGreaterThan 0
+        foreach ($manifest in $manifests) {
+            $data = Import-PowerShellDataFile -Path $manifest.FullName
+            "$($manifest.Name) $($data.PowerShellVersion)" | Should -Be "$($manifest.Name) 5.1"
+            "$($manifest.Name) $((@($data.CompatiblePSEditions) | Sort-Object) -join ',')" | Should -Be "$($manifest.Name) Core,Desktop"
+        }
+    }
+
     It 'LICENSE is the MIT licence' {
         $text = Get-Content -Path (Join-Path $script:Root 'LICENSE') -Raw
         $text | Should -Match '^MIT License'
