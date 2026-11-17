@@ -1,6 +1,8 @@
 {
   "pinnedCliVersion": "2.100.0",
   "knownCommands": [
+    "agent activate", "agent deactivate",
+    "agent test list", "agent test results", "agent test run",
     "alias list", "alias set", "alias unset",
     "api request rest",
     "apex generate class", "apex generate trigger",
