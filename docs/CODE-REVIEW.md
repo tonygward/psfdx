@@ -1,5 +1,55 @@
 # psfdx — Code Review
 
+## Follow-up review — 2026-11-17 (current main)
+
+**Scope:** follow-up static inspection of CLI compatibility policy, generated SOQL string filters and SOQL datetime handling. This is an addendum to the **historical 2026-10-21 review below**; do not interpret older findings as current without checking the newer source. No live Salesforce org queries or Pester executions were performed in this follow-up.
+
+### Updated findings and associated backlog
+
+| Issue | Finding | Source/evidence |
+| --- | --- | --- |
+| [#169](https://github.com/tonygward/psfdx/issues/169) | The compatibility test is **pinned to CLI 2.100.0**. User requirement is **always test latest stable Salesforce CLI**; no hardcoded version. The static allow-list cannot demonstrate latest CLI flag or JSON response compatibility. CI needs latest stable CLI installation, actual version reporting, help/flag validation and scheduled checks. | `tests/cli-compatibility.json`, `tests/CliCompatibility.Tests.ps1`, `docs/cli-compatibility.md` |
+| [#170](https://github.com/tonygward/psfdx/issues/170) | Unescaped dynamic string literal interpolation into built-in SOQL. Fix via Salesforce-aware shared escaping and regression tests, **not** generic SQL assumptions. | `psfdx/psfdx.psm1:401,459`; `psfdx-development/psfdx-development.psm1:772`; `psfdx-logs/psfdx-logs.psm1:421,497` |
+| [#171](https://github.com/tonygward/psfdx/issues/171) | Local datetime formatted as if UTC with `.ToString('s') + 'Z'`. Convert to UTC before `Z` and explicitly define unspecified DateTime semantics. | `psfdx-logs/psfdx-logs.psm1:307,338-339,422-423,498-499`; recheck core `Get-SalesforceDateTime` |
+| [#172](https://github.com/tonygward/psfdx/issues/172) | Generated SOQL and CLI JSON contracts need comprehensive, representative test fixtures; cover success/failure and unusual literals across platforms. | All generated SOQL wrappers and shared CLI executor |
+
+### Detailed SOQL input handling
+
+**Directly observed raw interpolation, requiring remediation:**
+
+1. `Get-SalesforceUsers -Username` builds `Username = '$Username'` without escaping (`psfdx/psfdx.psm1:401`).
+2. `Get-SalesforceRecordType -ObjectType` builds `SobjectType = '$ObjectType'` without escaping (`psfdx/psfdx.psm1:459`).
+3. `Get-SalesforceApexClass -Name` builds `Name = '$Name'` without escaping (`psfdx-development/psfdx-development.psm1:772`).
+4. `Select-SalesforceEventFiles -EventType` and `Export-SalesforceEventFiles -EventType` independently build `EventType = '$EventType'` without escaping (`psfdx-logs/psfdx-logs.psm1:421,497`). Factor the duplicated event query construction into one helper.
+
+**Existing protections to verify rather than overwrite blindly:** `Get-SalesforceLoginHistory` escapes apostrophes before building its nested Username query (`psfdx-logs/psfdx-logs.psm1:341`); `Get-SalesforceSandboxRefreshStatus` does the same for SandboxName (`psfdx-sandbox/psfdx-sandbox.psm1:177`); `Get-SalesforceFlowInterviews -Type` uses a fixed `ValidateSet`. Confirm correct **Salesforce SOQL** escaping for apostrophes, backslashes, quotes and control characters, including composed queries; SQL-style doubled quotes must not be assumed sufficient without verification.
+
+**Deliberate exception:** `Select-SalesforceRecords -Query` accepts a complete caller-authored SOQL query and must not blindly escape the entire query. The wrapper must still pass CLI arguments safely. Likewise, `Get-SalesforceCodeCoverage -ApexClassOrTrigger` filters results in PowerShell rather than interpolating its parameter into SOQL.
+
+**Different layers of safety:** The `Invoke-Expression` execution path from the October review was replaced in **v0.8.7** with a non-evaluating argument parser and direct invocation. This mitigates PowerShell code execution but does **not** make the generated SOQL literals safe. Separately, the parser and Windows `.cmd` shim require cross-platform tests, especially for quotes, backslashes, spaces, control characters and percent signs.
+
+**Timestamp accuracy:** `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, and both EventLogFile retrieval paths append `Z` to a naive `.ToString('s')` without ensuring UTC; these can produce incorrect date ranges on non-UTC machines. Fix separately in #171 with DST tests.
+
+### Status corrections to the October review
+
+- **October #1 / manifests:** dynamic metadata `ValidateSet` is replaced by an `ArgumentCompleter` and internal validation; the current changelog records PowerShell 5.1 manifest declarations in v0.8.14.
+- **October #3:** `Invoke-Expression` removal is recorded in v0.8.7. Continue reviewing argument parsing and platform escaping; do not keep reporting the old evaluation path as active.
+- **October #12:** `Retrieve-SalesforceOrg` was migrated to `sf project generate manifest` in v0.8.6.
+- **October LICENSE:** MIT licence and Gallery packaging appear in v0.8.9 onward; the October absence is no longer current.
+- **October deploy coverage:** validation/quick deploy/report/resume/cancel were added in v0.8.4–0.8.5.
+- **October coverage count (25 untested exported functions):** historical only; recalculate after the recent releases rather than repeat that count.
+- **October CI, destructive operations, package-name errors, API token handling and module dependencies:** retain as **unverified in this follow-up** until an updated audit establishes whether fixes were merged.
+
+### Requested delivery standard
+
+1. No fixed Salesforce CLI version in tests: dynamically install **latest stable** for compatibility validation, record the actual resolved CLI and plugin versions, and fail visibly on regressions.
+2. Remediate generated SOQL literal handling separately from argument-list transport and datetime formatting.
+3. Add Pester tests for all changed functions (PowerShell 5.1 and PowerShell 7 where supported), exact CLI argv, meaningful error shapes and safe inputs; do not require production credentials for ordinary CI.
+4. Update cmdlet documentation and changelog with each actual implementation, preserving the public API unless a breaking change is explicitly documented.
+
+---
+
+
 **Date:** 2026-10-21
 **Commit reviewed:** `737dd29` (branch `main`, clean tree)
 **Scope:** all six modules, shared helpers, manifests, CI workflow, docs
