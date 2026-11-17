@@ -68,7 +68,7 @@ test('the version check rejects loose, wrong-family and wrong-major pins', () =>
 test('the egress allow-list names exactly the hosts the policy allows and refuses private ranges', () => {
   const squid = read('squid/squid.conf');
   const hosts = [...squid.matchAll(/^acl allowed_hosts dstdomain (.+)$/gm)].flatMap(m => m[1].trim().split(/\s+/)).sort();
-  assert.deepEqual(hosts, ['.anthropic.com', '.claude.ai', '.claude.com', 'api.github.com', 'codeload.github.com', 'github.com', 'objects.githubusercontent.com'].sort());
+  assert.deepEqual(hosts, ['.anthropic.com', '.claude.ai', '.claude.com', 'api.github.com', 'codeload.github.com', 'github.com', 'objects.githubusercontent.com', 'www.powershellgallery.com'].sort());
   assert.match(squid, /http_access deny private_dst/);
   assert.match(squid, /http_access allow agent_net authed CONNECT ssl_ports allowed_hosts\r?\nhttp_access deny all/);
   assert.match(squid, /auth_param basic program \/usr\/lib\/squid\/basic_ncsa_auth \/etc\/squid\/passwd/);
@@ -76,15 +76,16 @@ test('the egress allow-list names exactly the hosts the policy allows and refuse
   // Squid refuses a host listed beside a parent domain, so no entry may be a subdomain of another.
   for (const a of hosts) for (const b of hosts) if (a !== b && b.startsWith('.') && a.endsWith(b)) assert.fail(a + ' is redundant next to ' + b);
   assert.match(squid, /acl ssl_ports port 443/);
-  assert.doesNotMatch(squid, /powershellgallery|npmjs/);
+  // The Gallery is allowed because the delivery check reads it; the npm registry still is not.
+  assert.match(squid, /www\.powershellgallery\.com/); assert.doesNotMatch(squid, /npmjs/);
 });
 
-test('the shipped worker.config.json is valid, states dry run explicitly, and points at the baked-in paths', () => {
+test('the shipped worker.config.json is valid, states dry run explicitly, and has Gallery delivery on, and points at the baked-in paths', () => {
   const config = JSON.parse(read('worker.config.json'));
   assert.doesNotThrow(() => validateConfig(config));
   assert.equal(config.boardPickup.enabled, true); assert.equal(typeof config.boardPickup.dryRun, 'boolean');
   assert.equal(config.worker.testRunner, '/opt/matrix/run-tests-sandboxed');
-  assert.equal(config.repositorySlug, 'tonygward/psfdx'); assert.equal(config.delivery.psGallery.enabled, false);
+  assert.equal(config.repositorySlug, 'tonygward/psfdx'); assert.equal(config.delivery.psGallery.enabled, true);
   for (const path of [config.worker.tokenFile, config.boardPickup.tokenFile]) assert.match(path, /^\/run\/matrix-secrets\//);
   assert.doesNotMatch(JSON.stringify(config), /RELEASE_TOKEN|ANTHROPIC_API_KEY/);
 });

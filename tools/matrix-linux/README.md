@@ -26,10 +26,10 @@ The two workers never share a volume, network, lock file or token. `Start-Matrix
 | No way to gain privilege | No sudo, no set-id programs (stripped at build), no Docker CLI, no Docker socket | `Verify` |
 | The image can't be changed | The worker code is copied into the image (root-owned, read-only), never mounted from the host | `Verify`: `/opt/matrix` and `/` not writable |
 | Only the proxy leads out | The agent is on an internal-only network; the squid proxy is the only container with a route out | `Verify` (with the proxy): direct internet and the home network are blocked |
-| Only the allow-listed hosts | The proxy allows HTTPS `CONNECT` on port 443, with its credential, to `anthropic.com` (which covers `api.anthropic.com`), `claude.ai` and `claude.com` (sign-in and usage), `github.com`, `api.github.com`, `codeload.github.com` and `objects.githubusercontent.com`, and refuses private and LAN addresses | `Verify`: allowed hosts connect; `example.com`, the PowerShell Gallery, npm and a LAN address are refused |
+| Only the allow-listed hosts | The proxy allows HTTPS `CONNECT` on port 443, with its credential, to `anthropic.com` (which covers `api.anthropic.com`), `claude.ai` and `claude.com` (sign-in and usage), `github.com`, `api.github.com`, `codeload.github.com`, `objects.githubusercontent.com` and `www.powershellgallery.com` (the delivery check reads the Gallery), and refuses private and LAN addresses | `Verify`: allowed hosts, including the Gallery, connect; `example.com`, npm and a LAN address are refused |
 | Secrets stay small | A secrets folder outside any repository is mounted read-only at `/opt/host-secrets`, a root-only folder. The entrypoint gives the agent private copies of `agent_github_token` (psfdx only; Contents and Pull requests) and `board_token` (Projects and Issues). Never the `RELEASE_TOKEN`; no Anthropic API key | `Verify`: no release, publishing or API-key variable, the raw mount is closed to the agent |
 | Subscription login only | The usage gate refuses API keys and alternate providers, so there is no key anywhere | The worker's usage check |
-| PowerShell 7 and Pester 5 | Installed at build time at pinned exact versions (`versions.json`), because the proxy refuses the PowerShell Gallery at run time | `Verify`: the versions match the pins |
+| PowerShell 7 and Pester 5 | Installed at build time at pinned exact versions (`versions.json`), because the proxy only allows the Gallery for the delivery check, not for installing tools at run time | `Verify`: the versions match the pins |
 | Agent-written code gets no more access than the agent | The test sandbox, below | `Verify`: the probe |
 
 ## The test sandbox
@@ -106,4 +106,4 @@ The self-test proves this container is **configured as designed**. It does not p
 - With `proxyauth` the test user is kept off the network by a credential rather than a namespace (see above). Stray test processes are killed after each run (`pkill -u matrix-test`) because there is no PID namespace either.
 - The proxy limits where the container can connect, not what it sends to the allowed hosts. The agent token can write to psfdx, so keep it a fine-grained token for that one repository.
 - Pull requests that Matrix opens are still checked by hosted CI and the merge gate, which are the real safeguards for what reaches `main`.
-- Anything that widens the allow-list (for example the PowerShell Gallery check that AUTO-11 turns on) needs a person.
+- Anything that widens the allow-list needs a person (the PowerShell Gallery check is already on).

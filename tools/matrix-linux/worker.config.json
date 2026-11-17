@@ -46,6 +46,6 @@
     "tokenFile": "/run/matrix-secrets/board_token"
   },
   "delivery": {
-    "psGallery": { "enabled": false }
+    "psGallery": { "enabled": true }
   }
 }

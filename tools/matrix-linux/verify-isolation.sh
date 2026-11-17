@@ -83,7 +83,7 @@ const http=require('http');const p=new URL(process.env.HTTPS_PROXY);
 const h={};if(p.username)h['Proxy-Authorization']='Basic '+Buffer.from(decodeURIComponent(p.username)+':'+decodeURIComponent(p.password)).toString('base64');
 const r=http.request({host:p.hostname,port:p.port,method:'CONNECT',path:process.argv[1]+':443',headers:h,timeout:8000});
 r.on('connect',res=>{console.log(res.statusCode);process.exit(0)});r.on('error',()=>{console.log('error');process.exit(0)});r.on('timeout',()=>{console.log('timeout');process.exit(0)});r.end();" "$1" 2>/dev/null; }
-  for host in example.com www.powershellgallery.com 192.168.1.1 registry.npmjs.org; do
+  for host in example.com 192.168.1.1 registry.npmjs.org; do
     status=$(connect "$host")
     [ "$status" != "200" ] && pass "proxy refuses $host ($status)" || bad "proxy allowed $host"
   done
@@ -93,7 +93,7 @@ const http=require('http');const p=new URL(process.env.HTTPS_PROXY);
 const r=http.request({host:p.hostname,port:p.port,method:'CONNECT',path:'api.github.com:443',timeout:8000});
 r.on('connect',res=>{console.log(res.statusCode);process.exit(0)});r.on('error',()=>{console.log('error');process.exit(0)});r.on('timeout',()=>{console.log('timeout');process.exit(0)});r.end();" 2>/dev/null)
   [ "$anon" = "407" ] && pass "proxy demands its credential (407 without it)" || bad "proxy answered $anon without a credential"
-  for host in api.anthropic.com api.github.com github.com; do
+  for host in api.anthropic.com api.github.com github.com www.powershellgallery.com; do
     status=$(connect "$host")
     [ "$status" = "200" ] && pass "proxy allows $host" || bad "proxy refused $host ($status)"
   done
