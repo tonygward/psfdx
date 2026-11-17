@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.13 - 2026-11-17
+
 - psfdx-agentforce: New module for the Salesforce CLI agent plugin. It can list, run and read results of agent tests (`Get-SalesforceAgentTests`, `Start-SalesforceAgentTest`, `Get-SalesforceAgentTestResult`), activate and deactivate agents (`Enable-SalesforceAgent`, `Disable-SalesforceAgent`, both ask for confirmation and support `-WhatIf`), and check the plugin is installed (`Test-SalesforceAgentPlugin`). Beta commands are not wrapped.
 - psfdx: Added an offline Salesforce CLI compatibility check to the test suite. It flags removed commands, legacy flags and unknown command families in any module, naming the file, function and a suggested replacement, and writes a machine-readable report with the pinned CLI version. No org or credentials are needed.
 
