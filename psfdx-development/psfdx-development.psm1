@@ -124,12 +124,13 @@ function Get-SalesforceTargetOrg {
     Param(
         [Parameter(Mandatory = $false)][switch] $Global
     )
-    $command = "sf config get target-org"
-    if ($Global) { $command += " --global" }
-    $command += " --json"
+    # 'sf config get' has no --global flag. Every entry it returns says whether it is Local or Global, so -Global filters on that.
+    $command = "sf config get target-org --json"
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -Command $command @commonParams
-    return Show-SalesforceResult -Result $result
+    $records = Show-SalesforceResult -Result $result
+    if ($Global) { return @($records | Where-Object { $_.location -eq 'Global' }) }
+    return $records
 }
 
 function Remove-SalesforceTargetOrg {
@@ -175,12 +176,13 @@ function Get-SalesforceTargetDevHub {
         [Parameter(Mandatory = $false)][switch] $Global
     )
 
-    $command = "sf config get target-dev-hub"
-    if ($Global) { $command += " --global" }
-    $command += " --json"
+    # 'sf config get' has no --global flag. Every entry it returns says whether it is Local or Global, so -Global filters on that.
+    $command = "sf config get target-dev-hub --json"
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -Command $command @commonParams
-    return Show-SalesforceResult -Result $result
+    $records = Show-SalesforceResult -Result $result
+    if ($Global) { return @($records | Where-Object { $_.location -eq 'Global' }) }
+    return $records
 }
 
 function Remove-SalesforceTargetDevHub {

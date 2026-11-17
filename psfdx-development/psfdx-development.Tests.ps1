@@ -113,9 +113,29 @@ Describe 'psfdx-development basics' {
             Get-SalesforceTargetDevHub | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --json' }
         }
-        It 'gets default dev hub globally' {
+        It 'gets default dev hub globally without passing --global, which sf config get does not accept' {
             Get-SalesforceTargetDevHub -Global | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --global --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like '*--global*' }
+        }
+        Context 'Get-SalesforceTargetOrg and Get-SalesforceTargetDevHub with -Global' {
+            It 'returns the entry only when it is set globally' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"target-org","value":"me@example.com","location":"Global","success":true}]}' }
+                $r = @(Get-SalesforceTargetOrg -Global)
+                $r.Count | Should -Be 1
+                $r[0].value | Should -Be 'me@example.com'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-org --json' }
+            }
+            It 'returns nothing when the value is only set locally' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"target-dev-hub","value":"hub","location":"Local","success":true}]}' }
+                @(Get-SalesforceTargetDevHub -Global).Count | Should -Be 0
+            }
+            It 'returns the entry whatever its location when -Global is not given' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"target-org","value":"me@example.com","location":"Local","success":true}]}' }
+                $r = @(Get-SalesforceTargetOrg)
+                $r.Count | Should -Be 1
+                $r[0].location | Should -Be 'Local'
+            }
         }
         It 'removes default dev hub' {
             Remove-SalesforceTargetDevHub | Out-Null

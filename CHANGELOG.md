@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- psfdx-sandbox: `Copy-SalesforceSandbox` works again. It ran `sf org clone sandbox`, which the Salesforce CLI no longer has, and now runs `sf org create sandbox --source-sandbox-name ... --name ...`. Parameters are unchanged.
+- psfdx-development: `Get-SalesforceTargetOrg -Global` and `Get-SalesforceTargetDevHub -Global` work again. They passed `--global` to `sf config get`, which the Salesforce CLI rejects. They now return the setting only when it is set globally, using the location the CLI reports.
+
 ## 0.8.14 - 2026-11-17
 
 - psfdx, psfdx-sandbox, psfdx-shared: The module manifests now declare Windows PowerShell 5.1 as the minimum version and both the Desktop and Core editions, matching the other modules, so the PowerShell Gallery shows the same requirements for every module.
