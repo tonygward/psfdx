@@ -235,7 +235,7 @@ public static class ArgvCapture {
 param([string] $ShimDir, [string] $QueryFile, [string] $Manifest, [string] $OutFile)
 $env:PATH = $ShimDir + ';' + $env:PATH
 Import-Module $Manifest -Force
-$queries = @(Get-Content -LiteralPath $QueryFile -Raw | ConvertFrom-Json)
+$queries = @(Get-Content -LiteralPath $QueryFile -Raw | ConvertFrom-Json | ForEach-Object { $_ })
 $results = @()
 foreach ($q in $queries) {
     $lines = @(Select-SalesforceRecords -Query $q -TargetOrg my-org -ResultFormat csv)
