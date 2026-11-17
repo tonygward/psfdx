@@ -1,0 +1,53 @@
+{
+  "pinnedCliVersion": "2.100.0",
+  "knownCommands": [
+    "alias list", "alias set", "alias unset",
+    "api request rest",
+    "apex generate class", "apex generate trigger",
+    "apex log get", "apex log list", "apex log tail",
+    "apex run", "apex run test",
+    "apex trace create", "apex trace delete", "apex trace list",
+    "config get", "config list", "config set", "config unset",
+    "data create record", "data query", "data update record",
+    "lightning dev",
+    "limits api display",
+    "org clone sandbox", "org create sandbox", "org create scratch",
+    "org delete sandbox", "org delete scratch",
+    "org list", "org list metadata-types",
+    "org login jwt", "org login sfdx-url", "org login web",
+    "org logout", "org open", "org resume sandbox",
+    "package create", "package delete", "package install",
+    "package installed list", "package list",
+    "package version create", "package version delete",
+    "package version list", "package version promote",
+    "plugins", "plugins install", "plugins update",
+    "project deploy cancel", "project deploy quick", "project deploy report",
+    "project deploy resume", "project deploy start", "project deploy validate",
+    "project generate", "project generate manifest",
+    "project retrieve start",
+    "sobject describe", "sobject list"
+  ],
+  "removedCommands": [
+    { "command": "force", "replacement": "the sf (v2) command with the same purpose, for example 'sf project deploy start' instead of 'sfdx force:source:deploy'" },
+    { "command": "deploy metadata", "replacement": "sf project deploy start" },
+    { "command": "retrieve metadata", "replacement": "sf project retrieve start" },
+    { "command": "project deploy metadata", "replacement": "sf project deploy start" },
+    { "command": "project retrieve metadata", "replacement": "sf project retrieve start" }
+  ],
+  "legacyFlags": {
+    "--targetusername": "--target-org",
+    "--targetdevhubusername": "--target-dev-hub",
+    "--sourcepath": "--source-dir",
+    "--resultformat": "--result-format",
+    "--outputdir": "--output-dir",
+    "--checkonly": "--dry-run",
+    "--testlevel": "--test-level",
+    "--runtests": "--tests",
+    "--apiversion": "--api-version",
+    "--setalias": "--alias",
+    "--setdefaultusername": "--set-default",
+    "--instanceurl": "--instance-url",
+    "--clientid": "--client-id",
+    "--jwtkeyfile": "--jwt-key-file"
+  }
+}
