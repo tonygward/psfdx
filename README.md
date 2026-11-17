@@ -11,32 +11,14 @@ https://github.com/PowerShell/PowerShell/releases
 
 ## 2. Install psfdx
 
-### From the PowerShell Gallery (recommended)
-One package, `psfdx`, holds every module, and it works in Windows PowerShell 5.1 and PowerShell 7 on Windows, Linux and macOS:
+One package, `psfdx`, holds every module. It works in Windows PowerShell 5.1 and PowerShell 7 on Windows, Linux and macOS:
 ```
 Install-Module psfdx
 Import-Module psfdx
 ```
-`Import-Module psfdx` loads the cmdlets of every module below. With this install you don't import `psfdx-logs`, `psfdx-metadata` and the others separately; the per-module `Import-Module` lines in the module sections apply to the clone install.
+`Import-Module psfdx` loads the cmdlets of every module below, so you don't import `psfdx-logs`, `psfdx-metadata` and the others separately.
 
 Update later with `Update-Module psfdx`. The first time, PowerShell may ask you to trust the PSGallery repository. The package is at https://www.powershellgallery.com/packages/psfdx.
-
-### Or from a clone
-Use this to work on psfdx itself, or if you can't reach the Gallery. It installs the modules separately. Don't install from both the Gallery and a clone on the same machine.
-
-### Mac or Linux
-```
-git clone https://github.com/tonygward/psfdx
-cd psfdx
-./install.ps1
-```
-
-### Windows
-```
-git clone https://github.com/tonygward/psfdx
-cd psfdx
-./install-windows.ps1
-```
 
 ## 3. Salesforce CLI
 
@@ -77,7 +59,6 @@ NB you only need to Import-Module psfdx once per PowerShell session
 
 **4. Export Salesforce Debug Logs to Files**
 ```
-Import-Module psfdx-logs
 Export-SalesforceDebugLogs -TargetOrg my@email.com
 ```
 
@@ -85,6 +66,11 @@ Export-SalesforceDebugLogs -TargetOrg my@email.com
 ```
 Get-Command -Module psfdx*
 ```
+
+
+## Working on psfdx
+The Gallery is the supported way to install psfdx. If you want to change psfdx itself, clone the repository and run `./install.ps1` (Mac or Linux) or `./install-windows.ps1` (Windows). That installs the modules separately, so each one is imported on its own (for example `Import-Module psfdx-logs`). Don't combine it with the Gallery install on the same machine. See [CLAUDE.md](CLAUDE.md) and [docs/](docs/) for how the project is built and tested.
+
 
 ## Licence
 
@@ -104,7 +90,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 
 ### psfdx
 
-`Import-Module psfdx`
+Included in the `psfdx` package.
 
 ### Authentication & Orgs
 
@@ -172,7 +158,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 
 ### psfdx-metadata
 
-`Import-Module psfdx-metadata`
+Included in the `psfdx` package.
 
 ### Retrieve
 
@@ -225,7 +211,7 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 
 ### psfdx-development
 
-`Import-Module psfdx-development`
+Included in the `psfdx` package.
 
 ### Projects & Config
 
@@ -284,7 +270,7 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 
 ### psfdx-sandbox
 
-`Import-Module psfdx-sandbox`
+Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -297,7 +283,7 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 
 ### psfdx-agentforce
 
-`Import-Module psfdx-agentforce`
+Included in the `psfdx` package.
 
 Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with recent CLI versions; otherwise `sf plugins install @salesforce/plugin-agent`). Each cmdlet stops with install guidance if it is missing. Beta and developer-preview commands (authoring bundles, preview, agent creation) are not wrapped. See [docs/agentforce-parity.md](docs/agentforce-parity.md).
 
@@ -312,7 +298,7 @@ Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with 
 
 ### psfdx-logs
 
-`Import-Module psfdx-logs`
+Included in the `psfdx` package.
 
 ### Debug Logs
 
@@ -362,7 +348,7 @@ Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with 
 
 ### psfdx-packages
 
-`Import-Module psfdx-packages`
+Included in the `psfdx` package.
 
 ### Packages
 
