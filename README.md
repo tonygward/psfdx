@@ -106,7 +106,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | Cmdlet | Description |
 | :--- | :--- |
 | `Connect-Salesforce` | Web-based org authentication. |
-| `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias/default flags and hides tokens unless `-IncludeToken`). |
+| `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias/default flags and hides tokens and auth URLs unless `-IncludeToken`; `-IncludeToken` only returns what the CLI itself provides). |
 | `Disconnect-Salesforce` | Logout from Salesforce org. |
 | `Connect-SalesforceJwt` | JWT-based authentication. |
 | `Open-Salesforce` | Open org in a browser or get URL. |

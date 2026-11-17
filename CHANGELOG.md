@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- psfdx: The Salesforce CLI no longer returns access tokens, refresh tokens or auth URLs in ordinary `--json` output, so `Connect-SalesforceAuthUrl -IncludeToken` returns them only if your CLI version supplies them; nothing is fetched on your behalf. Tokens and auth URLs are still stripped by default, and `Connect-SalesforceJwt` now strips them too. No migration is needed unless you relied on `-IncludeToken` returning a token; use `sf org display --verbose --json` yourself for that.
+- psfdx: `Get-SalesforceConnections` now stops with the CLI's error message on failure, and also works when the CLI returns `devHubs`, `sandboxes` and `other` instead of `nonScratchOrgs`.
+- psfdx-shared: Debug output and error handling for failed commands now mask access tokens, refresh tokens, passwords and SFDX auth URLs.
+
 ## 0.8.11 - 2026-11-17
 
 - psfdx-development: `Start-SalesforceLwcDevServer` now supports `-Mode App|Component|Site` (default `App`, as before) with `-Name`, `-DeviceType` and `-TargetOrg`, and stops with a clear message pointing to `Install-SalesforceLwcDevServer` when the `@salesforce/plugin-lightning-dev` plugin is not installed.

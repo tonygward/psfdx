@@ -2,6 +2,30 @@ Get-Module -Name 'psfdx-shared' -All | Remove-Module -Force -ErrorAction Silentl
 Import-Module (Join-Path $PSScriptRoot 'psfdx-shared.psd1') -Force
 
 InModuleScope 'psfdx-shared' {
+    Describe 'Show-SalesforceResult secret handling' {
+        It 'redacts credential fields and auth URLs from JSON' {
+            $json = '{"status":1,"message":"bad","result":{"accessToken":"00Dtoken","refreshToken":"5Aep","sfdxAuthUrl":"force://PlatformCLI::abc@my.salesforce.com","username":"u@example.com"}}'
+            $out = Get-SalesforceRedactedJson -Json $json
+            $out | Should -Not -Match '00Dtoken'
+            $out | Should -Not -Match '5Aep'
+            $out | Should -Not -Match 'PlatformCLI'
+            $out | Should -Match 'u@example.com'
+        }
+
+        It 'does not write secrets to the debug stream or exception text on failure' {
+            $json = '{"status":1,"message":"Login failed","result":{"accessToken":"00Dsecret","sfdxAuthUrl":"force://PlatformCLI::zzz@x.salesforce.com"}}'
+            { Show-SalesforceResult -Result $json } | Should -Throw -ExpectedMessage 'Login failed'
+            $debugOut = & { $DebugPreference = 'Continue'; try { Show-SalesforceResult -Result $json } catch { } } 5>&1 | Out-String
+            $debugOut | Should -Not -Match '00Dsecret'
+            $debugOut | Should -Not -Match 'PlatformCLI'
+        }
+
+        It 'returns non-auth results unchanged' {
+            $r = Show-SalesforceResult -Result '{"status":0,"result":{"records":[{"Id":"001","attributes":{"type":"Account"}}]}}' -ReturnRecords
+            @($r)[0].Id | Should -Be '001'
+        }
+    }
+
     Describe 'ConvertTo-PsfdxArgumentList' {
         It 'splits on whitespace into executable and arguments' {
             $r = ConvertTo-PsfdxArgumentList -Command 'sf org list --json'

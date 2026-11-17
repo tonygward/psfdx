@@ -8,7 +8,7 @@ function Show-SalesforceResult {
 
     $converted = $Result | ConvertFrom-Json
     if ($converted.status -ne 0) {
-        Write-Debug ($Result | ConvertTo-Json)
+        Write-Debug (Get-SalesforceRedactedJson -Json ([string]::Join([Environment]::NewLine, @($Result))))
         $message = Get-SalesforceErrorMessage -Result $converted
         throw $message
     }
@@ -23,6 +23,19 @@ function Show-SalesforceResult {
     return $out
 }
 
+function Get-SalesforceRedactedJson {
+    # Masks credential-like JSON fields and SFDX auth URLs so debug output never echoes them.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string] $Json
+    )
+
+    $keys = 'accessToken|refreshToken|sfdxAuthUrl|authUrl|password|clientSecret|privateKey|sessionId|securityToken'
+    $redacted = [regex]::Replace($Json, '(?i)("(?:' + $keys + ')"\s*:\s*)"(?:[^"\\]|\\.)*"', '$1"********"')
+    $redacted = [regex]::Replace($redacted, '(?i)force://[^\s"''\\,]+', 'force://********')
+    return $redacted
+}
+
 function Get-SalesforceErrorMessage {
     [CmdletBinding()]
     Param(
@@ -30,9 +43,9 @@ function Get-SalesforceErrorMessage {
     )
 
     if ($Result -is [string]) {
-        Write-Debug $Result
+        Write-Debug (Get-SalesforceRedactedJson -Json $Result)
     } else {
-        Write-Debug ($Result | ConvertTo-Json -Depth 10)
+        Write-Debug (Get-SalesforceRedactedJson -Json ($Result | ConvertTo-Json -Depth 10))
     }
 
     $messages = @()
