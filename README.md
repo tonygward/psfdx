@@ -11,22 +11,27 @@ https://github.com/PowerShell/PowerShell/releases
 
 ## 2. Install psfdx
 
-One package, `psfdx`, holds every module. It works in Windows PowerShell 5.1 and PowerShell 7 on Windows, Linux and macOS:
 ```
 Install-Module psfdx
-Import-Module psfdx
 ```
-`Import-Module psfdx` loads the cmdlets of every module below, so you don't import `psfdx-logs`, `psfdx-metadata` and the others separately.
 
-Update later with `Update-Module psfdx`. The package is at https://www.powershellgallery.com/packages/psfdx.
-
-The first time you install from the Gallery, PowerShell asks whether to install from the untrusted repository 'PSGallery'. That is normal PowerShell behaviour for any package from the Gallery, not something specific to psfdx. Answer `Y` (yes) or `A` (yes to all):
+PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-To stop being asked, run `Set-PSRepository -Name PSGallery -InstallationPolicy Trusted`.
+## 3. See the commands
 
-## 3. Salesforce CLI
+```
+Get-Command -Module psfdx
+```
+
+## 4. Update psfdx
+
+```
+Update-Module psfdx
+```
+
+## 5. Salesforce CLI
 
    You can install the Salesforce CLI by running:
 
