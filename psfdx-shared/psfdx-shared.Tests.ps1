@@ -256,7 +256,11 @@ ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath $OutFil
             param($shell)
             $outFile = Join-Path $script:shimDir "out-$shell.json"
             & $shell -NoProfile -ExecutionPolicy Bypass -File $script:runner -ShimDir $script:shimDir -QueryFile $script:queryFile -Manifest $script:manifest -OutFile $outFile | Out-Null
-            $results = @(Get-Content -LiteralPath $outFile -Raw | ConvertFrom-Json)
+            # Windows PowerShell 5.1 returns the JSON array as one object, so iterate it with foreach (same on 5.1 and 7)
+            # and keep each inner argv array whole.
+            $parsed = Get-Content -LiteralPath $outFile -Raw | ConvertFrom-Json
+            $results = @()
+            foreach ($item in $parsed) { $results += , @($item) }
             $results.Count | Should -Be $script:queries.Count
             for ($n = 0; $n -lt $script:queries.Count; $n++) {
                 $argv = @($results[$n])
