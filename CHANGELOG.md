@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.10 - 2026-11-17
+
 - psfdx-shared: On Windows, `%` is no longer rejected in arguments passed to the `sf` `.cmd` shim, so SOQL wildcard queries such as `Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name LIKE 'Acme%'"` work again, and a literal `%NAME%` is passed to `sf` unchanged instead of being expanded. Double quotes and line breaks are still rejected, and `-Verbose` still masks secrets.
 
 ## 0.8.9 - 2026-11-17
