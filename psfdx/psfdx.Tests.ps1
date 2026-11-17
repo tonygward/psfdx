@@ -77,6 +77,78 @@ Describe 'psfdx module' {
             }
         }
 
+        Context 'Auth response shapes' {
+            BeforeAll {
+                Mock Test-Path { $true }
+            }
+
+            It 'handles a CLI response with no token or auth URL fields (new shape)' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"username":"u@example.com","orgId":"00D000000000001","instanceUrl":"https://x.my.salesforce.com"}}' } -ModuleName $module.Name
+                $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt'
+                $result.username | Should -Be 'u@example.com'
+                $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
+            }
+
+            It 'strips tokens and auth URLs from the real result handling by default (old shape)' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"username":"u@example.com","accessToken":"00Dtok","refreshToken":"5Aref","sfdxAuthUrl":"force://PlatformCLI::x@y.com"}}' } -ModuleName $module.Name
+                $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt'
+                $result.username | Should -Be 'u@example.com'
+                $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
+                $result.PSObject.Properties.Match('refreshToken').Count | Should -Be 0
+                $result.PSObject.Properties.Match('sfdxAuthUrl').Count | Should -Be 0
+            }
+
+            It 'IncludeToken passes through only what the CLI returned' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"username":"u@example.com"}}' } -ModuleName $module.Name
+                $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -IncludeToken
+                $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
+            }
+
+            It 'does not leak secrets in the exception text on failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Invalid auth URL","result":{"accessToken":"00Dleak"}}' } -ModuleName $module.Name
+                $caught = $null
+                try { Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' } catch { $caught = $_.Exception.Message }
+                $caught | Should -Be 'Invalid auth URL'
+                $caught | Should -Not -Match '00Dleak'
+            }
+
+            It 'strips tokens from Connect-SalesforceJwt output' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"username":"u","accessToken":"00Dtok"}}' } -ModuleName $module.Name
+                $result = Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem'
+                $result.username | Should -Be 'u'
+                $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    $Command -eq 'sf org login jwt --client-id ck --username u --jwt-key-file "key.pem" --instance-url https://login.salesforce.com --json'
+                }
+            }
+
+            It 'Get-SalesforceConnections returns only safe fields from nonScratchOrgs' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"nonScratchOrgs":[{"orgId":"00D1","instanceUrl":"https://a","username":"a@x.com","alias":"a","accessToken":"00Dtok","connectedStatus":"Connected"}],"scratchOrgs":[]}}' } -ModuleName $module.Name
+                $rows = @(Get-SalesforceConnections)
+                $rows.Count | Should -Be 1
+                $rows[0].username | Should -Be 'a@x.com'
+                $rows[0].PSObject.Properties.Match('accessToken').Count | Should -Be 0
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf org list --json' }
+            }
+
+            It 'Get-SalesforceConnections falls back to grouped orgs when nonScratchOrgs is absent' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"devHubs":[{"orgId":"00D1","username":"hub@x.com"}],"sandboxes":[{"orgId":"00D2","username":"sb@x.com"}],"other":[],"scratchOrgs":[{"orgId":"00D3","username":"s@x.com"}]}}' } -ModuleName $module.Name
+                $rows = @(Get-SalesforceConnections)
+                $rows.Count | Should -Be 2
+                $rows[1].username | Should -Be 'sb@x.com'
+            }
+
+            It 'Get-SalesforceConnections returns nothing when no org groups are present' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
+                @(Get-SalesforceConnections).Count | Should -Be 0
+            }
+
+            It 'Get-SalesforceConnections throws the CLI message on failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"boom"}' } -ModuleName $module.Name
+                { Get-SalesforceConnections } | Should -Throw -ExpectedMessage 'boom'
+            }
+        }
+
         Context 'Install-SalesforceCli' {
             It 'uses npm on macOS' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name

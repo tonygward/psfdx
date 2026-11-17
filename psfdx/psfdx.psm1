@@ -115,30 +115,39 @@ function Connect-SalesforceAuthUrl {
     $result = Invoke-Salesforce -Command $command @commonParams
     $details = Show-SalesforceResult -Result $result
 
+    # -IncludeToken only passes through what the CLI returned. Current CLI versions do not
+    # return tokens or auth URLs from 'sf org login sfdx-url --json', so these may be absent.
     if ($IncludeToken) {
         return $details
     }
 
-    if ($null -eq $details) {
-        return $details
-    }
+    return Remove-SalesforceSensitiveProperty -InputObject $details
+}
 
-    $sensitiveKeys = @('accessToken', 'refreshToken')
-    if ($details -is [System.Collections.IEnumerable] -and -not ($details -is [string])) {
-        return $details | ForEach-Object {
-            if ($_ -is [psobject]) {
+function Remove-SalesforceSensitiveProperty {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][AllowNull()] $InputObject
+    )
+
+    if ($null -eq $InputObject) { return $InputObject }
+
+    $sensitiveKeys = @('accessToken', 'refreshToken', 'sfdxAuthUrl', 'password', 'clientSecret', 'privateKey')
+    if ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
+        return @($InputObject | ForEach-Object {
+            if ($_ -is [psobject] -and -not ($_ -is [string])) {
                 $_ | Select-Object -Property * -ExcludeProperty $sensitiveKeys
             } else {
                 $_
             }
-        }
+        })
     }
 
-    if ($details -is [psobject]) {
-        return $details | Select-Object -Property * -ExcludeProperty $sensitiveKeys
+    if ($InputObject -is [psobject] -and -not ($InputObject -is [string])) {
+        return $InputObject | Select-Object -Property * -ExcludeProperty $sensitiveKeys
     }
 
-    return $details
+    return $InputObject
 }
 
 function Disconnect-Salesforce {
@@ -187,7 +196,8 @@ function Connect-SalesforceJwt {
     $command += " --json"
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -Command $command @commonParams
-    return Show-SalesforceResult -Result $result
+    $details = Show-SalesforceResult -Result $result
+    return Remove-SalesforceSensitiveProperty -InputObject $details
 }
 
 function Open-Salesforce {
@@ -218,10 +228,22 @@ function Get-SalesforceConnections {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -Command $command @commonParams
 
-    $result = $result | ConvertFrom-Json
-    $result = $result.result.nonScratchOrgs # Exclude Scratch Orgs
-    $result = $result | Select-Object orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias
-    return $result
+    $details = Show-SalesforceResult -Result $result
+
+    # Exclude scratch orgs. Older CLI versions return 'nonScratchOrgs'; newer ones may only
+    # return the 'devHubs', 'sandboxes' and 'other' groups. Absent groups are tolerated.
+    $orgs = @()
+    if ($null -ne $details) {
+        if ($null -ne $details.nonScratchOrgs) {
+            $orgs = @($details.nonScratchOrgs)
+        } else {
+            foreach ($group in @('devHubs', 'sandboxes', 'other')) {
+                if ($null -ne $details.$group) { $orgs += @($details.$group) }
+            }
+        }
+    }
+    # Only these fields are returned, so tokens and auth URLs are never passed on.
+    return $orgs | Select-Object orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias
 }
 
 function Repair-SalesforceConnections {
