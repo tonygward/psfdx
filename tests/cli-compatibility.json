@@ -1,5 +1,4 @@
 {
-  "pinnedCliVersion": "2.100.0",
   "knownCommands": [
     "agent activate", "agent deactivate",
     "agent test list", "agent test results", "agent test run",
@@ -13,7 +12,7 @@
     "data create record", "data query", "data update record",
     "lightning dev",
     "limits api display",
-    "org clone sandbox", "org create sandbox", "org create scratch",
+    "org create sandbox", "org create scratch",
     "org delete sandbox", "org delete scratch",
     "org list", "org list metadata-types",
     "org login jwt", "org login sfdx-url", "org login web",
@@ -31,6 +30,7 @@
   ],
   "removedCommands": [
     { "command": "force", "replacement": "the sf (v2) command with the same purpose, for example 'sf project deploy start' instead of 'sfdx force:source:deploy'" },
+    { "command": "org clone sandbox", "replacement": "sf org create sandbox --source-sandbox-name <existing sandbox> --name <new sandbox>" },
     { "command": "deploy metadata", "replacement": "sf project deploy start" },
     { "command": "retrieve metadata", "replacement": "sf project retrieve start" },
     { "command": "project deploy metadata", "replacement": "sf project deploy start" },

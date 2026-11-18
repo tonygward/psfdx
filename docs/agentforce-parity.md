@@ -2,7 +2,7 @@
 
 Scope of the `psfdx-agentforce` module against the Salesforce CLI agent plugin (`@salesforce/plugin-agent`).
 
-- **CLI version pinned for command checks:** `2.100.0` (`tests/cli-compatibility.json`).
+- **CLI version:** not pinned. `CI - Salesforce CLI compatibility` checks every wrapped command against the latest stable CLI and records the exact version in its report (see [cli-compatibility.md](cli-compatibility.md)).
 - **Plugin:** `@salesforce/plugin-agent`, bundled with the CLI. If missing, install it with `sf plugins install @salesforce/plugin-agent`. Every cmdlet checks `sf plugins --core --json` first and stops with that guidance.
 - **Status caveat:** the CLI marks some agent commands beta or developer preview and changes them between releases. This matrix was written without a live CLI, so confirm each row with `sf agent <command> --help` before relying on it. The opt-in help lane (`PSFDX_SF_CLI_HELP=1`) runs `--help` for every wrapped command.
 
@@ -26,7 +26,7 @@ Scope of the `psfdx-agentforce` module against the Salesforce CLI agent plugin (
 | `sf agent preview` (and `start`/`send`/`end`) | Interactive session, beta or developer preview. |
 | `sf agent test create`, `sf agent test resume`, `sf agent generate test-spec` | Interactive or file-generating; candidates for a later change. |
 
-Promote a row to "Wrapped" only once the command is stable in the pinned CLI.
+Promote a row to "Wrapped" only once the command is stable in the latest stable CLI.
 
 ## Tests
 

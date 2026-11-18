@@ -7,7 +7,7 @@ name: Gate - Matrix auto-merge
 # (it must be 'true' for the gate to run at all).
 on:
   workflow_run:
-    workflows: ["CI - Pester tests", "CI - Matrix orchestration tests"]
+    workflows: ["CI - Pester tests", "CI - Matrix orchestration tests", "CI - Matrix gate tests", "CI - Release scripts", "CI - Salesforce CLI compatibility"]
     types: [completed]
 
 permissions:
@@ -27,7 +27,9 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_repository.full_name == github.repository &&
       (startsWith(github.event.workflow_run.head_branch, 'matrix/') ||
-       startsWith(github.event.workflow_run.head_branch, 'housekeeping/archive-'))
+       startsWith(github.event.workflow_run.head_branch, 'housekeeping/archive-') ||
+       startsWith(github.event.workflow_run.head_branch, 'infra/') ||
+       startsWith(github.event.workflow_run.head_branch, 'docs/'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -53,6 +55,18 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] || { echo "No pull request is linked to this run"; exit 1; }
+          # The gate also wakes when another CI run finishes last. The decision is always about the Pester run
+          # (or the orchestration run) for this exact commit, so look that run up.
+          case "$RUN_NAME" in
+            "CI - Pester tests"|"CI - Matrix orchestration tests") ;;
+            *)
+              pester=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$RUN_SHA&event=pull_request" \
+                --jq '.workflow_runs[] | select(.name == "CI - Pester tests") | {id, conclusion, event, name}' | jq -s 'sort_by(.id) | last')
+              [[ "$pester" != "null" && -n "$pester" ]] || { echo "CI - Pester tests has not run for $RUN_SHA; nothing to decide"; exit 0; }
+              RUN_ID=$(jq -r .id <<<"$pester"); RUN_CONCLUSION=$(jq -r '.conclusion // "pending"' <<<"$pester")
+              RUN_EVENT=$(jq -r .event <<<"$pester"); RUN_NAME=$(jq -r .name <<<"$pester")
+              ;;
+          esac
           gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" > pr.json
           gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files" --jq '.[].filename' > files.txt
           gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/jobs" --jq '.jobs[] | {name, conclusion}' | jq -s '.' > jobs.json
@@ -72,6 +86,7 @@ jobs:
         id: gate
         run: |
           set +e
+          if [[ ! -f facts.json ]]; then echo "code=3" >> "$GITHUB_OUTPUT"; echo "Nothing to decide yet"; exit 0; fi
           node scripts/matrix/gate-cli.mjs facts.json | tee decision.json
           code=${PIPESTATUS[0]}
           { echo '### Matrix auto-merge decision'; echo '```json'; cat decision.json; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
@@ -117,8 +132,8 @@ jobs:
             echo
             echo "- CI - Pester tests succeeded for exactly $RUN_SHA: $RUN_URL"
             echo "- every changed file is inside the permitted scope for the lane"
-            echo "- no workflow, script, installer, version file or gate was changed"
-            echo "- branch from this repository, opened by the agent identity"
+            echo "- no gate, policy, release or publish file was changed"
+            echo "- branch from this repository, opened by the identity the lane requires"
           } > comment.md
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file comment.md
           if [[ "$(jq -r .draft pr.json)" == "true" ]]; then gh pr ready "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"; fi

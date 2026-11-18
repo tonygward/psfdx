@@ -41,7 +41,7 @@ Update-Module psfdx
    ```
    On Windows, Linux and macOS it uses npm (`npm install --global @salesforce/cli`), the install method Salesforce supports. `Update-SalesforceCli` runs `npm update --global @salesforce/cli`.<br>
    If you installed the CLI with the old Homebrew tap (`sfdx-cli/tap/sf`), uninstall it with `brew uninstall sfdx-cli/tap/sf` before running `Install-SalesforceCli`.<br>
-   The tests include an offline check of every `sf` command psfdx runs against a pinned CLI version; see [docs/cli-compatibility.md](docs/cli-compatibility.md).
+   psfdx is tested against the latest stable Salesforce CLI: CI installs it and checks every `sf` command and flag psfdx uses against its help, and logs the exact version. No CLI version is pinned. See [docs/cli-compatibility.md](docs/cli-compatibility.md).
 
 # Examples
 **1. Connect to a Salesforce Sandbox Org**

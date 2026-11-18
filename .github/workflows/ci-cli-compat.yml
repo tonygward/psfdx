@@ -1,0 +1,85 @@
+name: CI - Salesforce CLI compatibility
+
+# Installs the LATEST STABLE Salesforce CLI (the npm `latest` tag; never a pinned version, never a release candidate) and checks
+# that every `sf` command psfdx runs still responds to `--help` and still lists every flag psfdx passes it. The exact CLI
+# version is logged in the job, written to the job summary and saved in the JSON report. No org or credentials are used.
+#
+# It runs on pull requests that touch a module or this check, every Monday, and by hand. If the CLI is missing or an
+# upstream command or flag has gone, the run FAILS; it never skips. See docs/cli-compatibility.md.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'psfdx*/**'
+      - 'tests/CliCompatibility*'
+      - 'tests/cli-compatibility.json'
+      - '.github/workflows/ci-cli-compat.yml'
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-help:
+    name: Live CLI help (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ubuntu
+            os: ubuntu-latest
+          - name: windows
+            os: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install the latest stable Salesforce CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global @salesforce/cli@latest
+          echo "Salesforce CLI: $(sf --version)"
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          # The tests use Pester 5 syntax (Assert-MockCalled); Pester 6 can't load it
+          Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser
+
+      - name: Check every command and flag against the CLI help
+        shell: pwsh
+        env:
+          PSFDX_SF_CLI_HELP: '1'
+          PSFDX_CLI_COMPAT_REPORT: ${{ runner.temp }}/cli-compatibility-${{ matrix.name }}.json
+        run: |
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
+          Invoke-Pester -Path ./tests/CliCompatibility.Tests.ps1 -CI -Output Detailed
+
+      - name: Write the job summary
+        if: always()
+        shell: pwsh
+        env:
+          REPORT: ${{ runner.temp }}/cli-compatibility-${{ matrix.name }}.json
+        run: |
+          if (-not (Test-Path -LiteralPath $env:REPORT)) {
+            "### Salesforce CLI compatibility (${{ matrix.name }})`n`nNo report was written. The CLI may be missing or the checks did not start." | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+            return
+          }
+          $r = Get-Content -LiteralPath $env:REPORT -Raw | ConvertFrom-Json
+          $lines = @("### Salesforce CLI compatibility (${{ matrix.name }})", '', "- CLI version: **$($r.cliVersion)**", "- Commands checked: $($r.commandsChecked)", "- Findings: $(@($r.findings).Count)")
+          foreach ($f in @($r.findings)) { $lines += "  - $($f.File) $($f.Function): $($f.Problem) ($($f.Command))" }
+          $lines -join "`n" | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload the JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-compatibility-${{ matrix.name }}
+          path: ${{ runner.temp }}/cli-compatibility-${{ matrix.name }}.json
+          if-no-files-found: warn
