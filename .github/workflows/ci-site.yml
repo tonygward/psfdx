@@ -1,0 +1,34 @@
+name: CI - Website build
+
+# Builds the psfdx website (site/) and runs its tests. The site is plain static files, so this only proves that it
+# builds, that every link and file the page refers to exists, and that the copy and accessibility basics hold.
+# The built site is attached to the run so a reviewer can download and look at it. Deployment is done by Cloudflare
+# Pages from the repository, not by this workflow (see site/README.md).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'images/psfdx-logo.png'
+      - '.github/workflows/ci-site.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    name: Website build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test "site/*.test.mjs"
+      - run: node site/build.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: psfdx-website
+          path: site/dist
+          if-no-files-found: error

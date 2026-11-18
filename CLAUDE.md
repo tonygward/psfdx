@@ -22,6 +22,7 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `.github/workflows/` | CI, gate, release and housekeeping pipelines ([docs/pipelines.md](docs/pipelines.md)) |
 | `scripts/release/` | Version bump, release zip, Gallery bundle, and the shared "does this change ship / need tests" rule (`changes.mjs`) |
 | `scripts/matrix/` | The merge gate and prompt archiving |
+| `site/` | The public website (psfdx.com): static HTML and CSS, built by `site/build.mjs`, deployed by Cloudflare Pages ([site/README.md](site/README.md)). Not part of the product; it never releases |
 | `tools/matrix/` | Matrix, the Node orchestrator that runs board work |
 | `tools/matrix-linux/` | The container, proxy and launcher Matrix runs in |
 | `tests/` | Repository-wide rules only (`Repository.Tests.ps1`). Other infrastructure tests sit beside the code they test |

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>psfdx – Salesforce. Meet PowerShell.</title>
+  <meta name="description" content="psfdx brings the Salesforce CLI into PowerShell: familiar commands and structured objects for Salesforce development, administration and automation. Open source, MIT licensed.">
+  <link rel="canonical" href="%SITE_URL%/">
+  <meta name="theme-color" content="#13406c">
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="psfdx">
+  <meta property="og:title" content="psfdx – Salesforce. Meet PowerShell.">
+  <meta property="og:description" content="Powerful Salesforce tools. Familiar PowerShell commands.">
+  <meta property="og:url" content="%SITE_URL%/">
+  <meta property="og:image" content="%SITE_URL%/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The psfdx logo and the line Salesforce. Meet PowerShell.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="psfdx – Salesforce. Meet PowerShell.">
+  <meta name="twitter:description" content="Powerful Salesforce tools. Familiar PowerShell commands.">
+  <meta name="twitter:image" content="%SITE_URL%/og-image.png">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap header-row">
+      <a class="brand" href="/" aria-label="psfdx home"><img src="/psfdx-logo.png" width="803" height="209" alt="psfdx"></a>
+      <nav aria-label="Main">
+        <ul class="nav-list">
+          <li><a href="#why">Why psfdx</a></li>
+          <li><a href="#capabilities">What it does</a></li>
+          <li><a href="#quick-start">Quick start</a></li>
+          <li><a class="nav-cta" href="%GITHUB_URL%">GitHub</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <h1 id="hero-title">Salesforce. Meet&nbsp;PowerShell.</h1>
+          <p class="tagline">Powerful Salesforce tools. Familiar PowerShell commands.</p>
+          <p class="lead">A simpler, more intuitive way to work with Salesforce.</p>
+          <p>psfdx brings the power of the Salesforce CLI into PowerShell, making everyday Salesforce development, administration and automation easier.</p>
+          <p>From connecting to organisations and querying records to deploying metadata, managing sandboxes and troubleshooting applications, psfdx provides a consistent collection of PowerShell commands designed around how people actually work.</p>
+          <p class="strong">Less time remembering CLI syntax. More time getting things done.</p>
+          <div class="cta-row">
+            <a class="button primary" href="%GITHUB_URL%">View on GitHub</a>
+            <a class="button secondary" href="%GALLERY_URL%">Get it from the PowerShell Gallery</a>
+          </div>
+        </div>
+
+        <div class="hero-code" role="group" aria-label="Install psfdx">
+          <p class="code-label">Install in one line</p>
+          <div class="code-box">
+            <pre><code><span class="c">Install-Module</span> <span class="v">psfdx</span></code></pre>
+            <button class="copy" type="button" data-copy="Install-Module psfdx" aria-label="Copy the install command">Copy</button>
+          </div>
+          <p class="fine">PowerShell 7 on Windows, macOS and Linux, or Windows PowerShell 5.1. You also need the <a href="https://developer.salesforce.com/tools/salesforcecli">Salesforce CLI</a>, which psfdx can install for you.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="why" class="section" aria-labelledby="why-title">
+      <div class="wrap">
+        <h2 id="why-title">Why psfdx</h2>
+        <p class="section-intro">The Salesforce CLI is excellent. psfdx makes it feel native in PowerShell.</p>
+        <ul class="cards">
+          <li class="card">
+            <h3>Built around PowerShell</h3>
+            <p>Familiar commands and structured objects, so you can filter, sort, export and pipe results like any other PowerShell data.</p>
+          </li>
+          <li class="card">
+            <h3>Powered by the official Salesforce CLI</h3>
+            <p>psfdx is a convenient wrapper around the Salesforce CLI, not a replacement for it. Every command runs the real <code>sf</code> CLI underneath.</p>
+          </li>
+          <li class="card">
+            <h3>Designed for real-world Salesforce work</h3>
+            <p>Metadata, Apex, data, diagnostics and environment management, grouped the way you reach for them day to day.</p>
+          </li>
+          <li class="card">
+            <h3>Cross-platform</h3>
+            <p>PowerShell 7 on Windows, macOS and Linux. Windows PowerShell 5.1 is supported too.</p>
+          </li>
+          <li class="card">
+            <h3>Built for automation</h3>
+            <p>Repeatable scripts and workflows for pipelines, scheduled jobs and the things you are tired of doing by hand.</p>
+          </li>
+          <li class="card">
+            <h3>Open source and evolving</h3>
+            <p>MIT licensed, with automated tests and checks against the latest stable Salesforce CLI on every change.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="capabilities" class="section alt" aria-labelledby="cap-title">
+      <div class="wrap">
+        <h2 id="cap-title">What it does</h2>
+        <p class="section-intro">Over a hundred commands across seven modules, installed together by <code>Install-Module psfdx</code>.</p>
+        <ul class="cards cap">
+          <li class="card">
+            <h3>Organisations &amp; Data</h3>
+            <p>Connect to orgs, manage aliases, run SOQL, create and update records, check limits and call the REST API.</p>
+            <p class="examples"><code>Connect-Salesforce</code> <code>Select-SalesforceRecords</code> <code>Get-SalesforceLimits</code></p>
+          </li>
+          <li class="card">
+            <h3>Metadata &amp; Deployments</h3>
+            <p>Retrieve and deploy metadata, validate and quick-deploy, follow a deployment, and describe objects and fields.</p>
+            <p class="examples"><code>Retrieve-SalesforceMetadata</code> <code>Deploy-SalesforceMetadata</code> <code>Describe-SalesforceObject</code></p>
+          </li>
+          <li class="card">
+            <h3>Development &amp; Testing</h3>
+            <p>Projects, scratch orgs, Apex tests and code coverage, plus Lightning Web Component Jest tests and the local dev server.</p>
+            <p class="examples"><code>New-SalesforceScratchOrg</code> <code>Test-SalesforceApex</code> <code>Watch-SalesforceApex</code></p>
+          </li>
+          <li class="card">
+            <h3>Monitoring &amp; Diagnostics</h3>
+            <p>Watch, export and convert debug logs, look at flow interviews, login history and failures, and pull Event Monitoring files.</p>
+            <p class="examples"><code>Watch-SalesforceDebugLogs</code> <code>Get-SalesforceLoginFailures</code> <code>Export-SalesforceEventFiles</code></p>
+          </li>
+          <li class="card">
+            <h3>Sandboxes &amp; Packages</h3>
+            <p>Create, refresh-check and clone sandboxes. Create, version, promote and install packages.</p>
+            <p class="examples"><code>New-SalesforceSandbox</code> <code>Get-SalesforceSandboxRefreshStatus</code> <code>Promote-SalesforcePackageVersion</code></p>
+          </li>
+          <li class="card">
+            <h3>Agentforce</h3>
+            <p>Run and review Agentforce agent tests, and activate or deactivate agents, through the Salesforce CLI agent plugin.</p>
+            <p class="examples"><code>Start-SalesforceAgentTest</code> <code>Get-SalesforceAgentTestResult</code> <code>Enable-SalesforceAgent</code></p>
+          </li>
+        </ul>
+        <p class="fine center">See every command in the <a href="%GITHUB_URL%#modules">README</a>, or run <code>Get-Command -Module psfdx</code> after installing.</p>
+      </div>
+    </section>
+
+    <section id="quick-start" class="section" aria-labelledby="qs-title">
+      <div class="wrap narrow">
+        <h2 id="qs-title">Quick start</h2>
+        <p class="section-intro">Four lines from nothing to your first query.</p>
+        <div class="code-box large">
+<pre><code><span class="c">Install-Module</span> <span class="v">psfdx</span>
+<span class="c">Import-Module</span> <span class="v">psfdx</span>
+<span class="c">Connect-Salesforce</span> <span class="p">-Sandbox</span>
+<span class="c">Select-SalesforceRecords</span> <span class="p">-Query</span> <span class="s">"SELECT Id, Name FROM Account LIMIT 10"</span></code></pre>
+          <button class="copy" type="button" data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Connect-Salesforce -Sandbox&#10;Select-SalesforceRecords -Query &quot;SELECT Id, Name FROM Account LIMIT 10&quot;" aria-label="Copy the quick start commands">Copy</button>
+        </div>
+        <p class="fine">A browser window opens for you to log in to Salesforce as you normally would. No Salesforce CLI yet? <code>Install-SalesforceCli</code> installs it. The <a href="%GITHUB_URL%#installation">README</a> has the full steps.</p>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-title">
+      <div class="wrap center">
+        <h2 id="closing-title">PowerShell simplicity. Salesforce capability.</h2>
+        <div class="cta-row center-row">
+          <a class="button primary" href="%GITHUB_URL%">View on GitHub</a>
+          <a class="button secondary" href="%GALLERY_URL%">PowerShell Gallery</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p><a href="%GITHUB_URL%">GitHub</a> · <a href="%LICENSE_URL%">MIT licence</a> · <a href="%GALLERY_URL%">PowerShell Gallery</a></p>
+      <p class="disclaimer">psfdx is an independent open-source project and is not affiliated with or endorsed by Salesforce.</p>
+    </div>
+  </footer>
+
+  <script src="/script.js" defer></script>
+</body>
+</html>
