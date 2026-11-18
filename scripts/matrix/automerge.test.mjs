@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  evaluate, inScope, inCoreScope, promptIdFromBranch, archivePath, markDone, rebaseLinks, relinkMoved,
+  evaluate, inScope, inCoreScope, inOwnerScope, OWNER_STATEMENT, promptIdFromBranch, archivePath, markDone, rebaseLinks, relinkMoved,
   BUILD_RUN, CORE_RUN, REQUIRED_JOBS, CORE_STATEMENT, ARCHIVE_STATEMENT,
 } from './automerge.mjs';
 
@@ -193,6 +193,53 @@ test('relinkMoved updates links to the moved file only', () => {
   assert.equal(out, '| [one](done/AUTO-01-x.md) | [two](AUTO-02-x.md#top) | [ext](https://x/AUTO-01-x.md) |');
   const blob = relinkMoved('https://github.com/o/r/blob/main/prompts/AUTO-01-x.md', 'README.md', 'prompts/AUTO-01-x.md', 'prompts/done/AUTO-01-x.md');
   assert.equal(blob, 'https://github.com/o/r/blob/main/prompts/done/AUTO-01-x.md');
+});
+
+function owner(overrides = {}) {
+  return task({
+    releaseLogin: 'owner',
+    pr: {
+      state: 'OPEN', baseRefName: 'main', headRefName: 'infra/cli-compat', headRefOid: SHA, headRepository: 'tonygward/psfdx',
+      author: 'owner', body: `Checks the CLI.\n\n${OWNER_STATEMENT}\n`,
+    },
+    files: ['.github/workflows/ci-cli-compat.yml', 'tests/CliCompatibility.Tests.ps1', 'docs/cli-compatibility.md', 'README.md'],
+    otherRuns: [{ name: 'CI - Pester tests', conclusion: 'success' }, { name: 'CI - Salesforce CLI compatibility', conclusion: 'success' }],
+    ...overrides,
+  });
+}
+
+test('owner lane merges infrastructure opened by the owner once everything has finished and passed', () => {
+  assert.deepEqual(evaluate(owner()), { merge: true, reasons: [], lane: 'owner' });
+  assert.equal(evaluate(owner({ pr: { ...owner().pr, headRefName: 'docs/readme' } })).merge, true);
+});
+
+test('owner lane needs the owner, the statement, a clean run and no unfinished or failed run', () => {
+  const base = owner();
+  assert.match(evaluate(owner({ pr: { ...base.pr, author: 'agent' } })).reasons.join(), /owner identity/);
+  assert.match(evaluate(owner({ releaseLogin: undefined })).reasons.join(), /owner identity/);
+  assert.match(evaluate(owner({ pr: { ...base.pr, body: 'no statement' } })).reasons.join(), /statement/);
+  assert.match(evaluate(owner({ otherRuns: [{ name: 'CI - Salesforce CLI compatibility', conclusion: null }] })).reasons.join(), /not finished/);
+  assert.match(evaluate(owner({ otherRuns: [{ name: 'CI - Salesforce CLI compatibility', conclusion: 'failure' }] })).reasons.join(), /failed/);
+  assert.equal(evaluate(owner({ otherRuns: [{ name: 'Housekeeping - Claude code review', conclusion: null }] })).merge, true);
+  assert.equal(evaluate(owner({ jobs: [] })).merge, false);
+});
+
+test('owner lane never covers the product, the gate, the policy or the release and publish machinery', () => {
+  for (const file of ['psfdx/psfdx.psm1', 'psfdx-logs/psfdx-logs.Tests.ps1', 'VERSION', 'modules.ps1', 'install.ps1', 'LICENSE',
+    '.github/workflows/gate-auto-merge.yml', '.github/workflows/cd-publish-gallery.yml', '.github/workflows/cd-bump-version.yml',
+    '.github/workflows/ci-matrix-gate.yml', '.github/workflows/claude.yml', '.github/CODEOWNERS', '.github/workflows/sub/ci-x.yml',
+    'scripts/matrix/automerge.mjs', 'scripts/matrix/gate.config.json', 'scripts/release/changes.mjs', 'docs/execution-policy.md',
+    'tools/matrix-linux/squid/squid.conf', 'tools/matrix-linux/Dockerfile', 'docs/../VERSION', '.git/config']) {
+    assert.equal(inOwnerScope(file), false, file);
+    assert.equal(evaluate(owner({ files: [file] })).merge, false, file);
+  }
+  for (const file of ['.github/workflows/ci-cli-compat.yml', 'docs/pipelines.md', 'tests/Repository.Tests.ps1', 'scripts/other/x.ps1',
+    'tools/matrix-linux/README.md', 'README.md', 'CHANGELOG.md']) assert.equal(inOwnerScope(file), true, file);
+});
+
+test('a matrix task cannot use the owner lane, and the owner cannot use the task lane', () => {
+  assert.equal(evaluate(withPr(owner(), { author: 'agent' })).merge, false);
+  assert.equal(evaluate(withPr(task(), { author: 'owner' })).merge, false);
 });
 
 test('a task cannot change infrastructure, the policy docs or the repository-rule tests', () => {

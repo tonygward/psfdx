@@ -12,10 +12,12 @@ export const REQUIRED_JOBS = [
 ];
 export const CORE_STATEMENT = 'Matrix core change: owner-approved lane';
 export const ARCHIVE_STATEMENT = 'Housekeeping: archive merged prompt';
+export const OWNER_STATEMENT = 'Owner change: infrastructure auto-merge lane';
 
 export const TASK_BRANCH = /^matrix\/(?:PSF|AUTO)-\d+(?:-[a-z0-9]+)*$/;
 export const CORE_BRANCH = /^matrix\/core\/[a-z0-9]+(?:-[a-z0-9]+)*$/;
 export const ARCHIVE_BRANCH = /^housekeeping\/archive-(?:PSF|AUTO)-\d+$/;
+export const OWNER_BRANCH = /^(?:infra|docs)\/[a-z0-9][a-z0-9._-]*$/;
 
 function safePath(file) {
   if (typeof file !== 'string' || !file || /[\\\x00-\x1f]/.test(file)) return false;
@@ -39,6 +41,25 @@ export function inCoreScope(file) {
   if (/\.(exe|dll|cmd|bat|ps1|sh|cmake)$/i.test(file)) return false;
   return /^tools\/matrix\/(?:tests\/)?[A-Za-z0-9._-]+\.(?:mjs|json|md)$/.test(file)
     || /^tools\/matrix-linux\/(?:worker\.config\.json|README\.md)$/.test(file);
+}
+
+// Owner lane: infrastructure and documentation opened by the repository owner's own account.
+// It never covers the product (what users install and what releases), the gate and its identities, the execution
+// policy, the release and publish machinery, or the workflows that hold the publishing or merge credentials.
+// Those stay with a person.
+const OWNER_PROTECTED = [
+  /^\.github\/workflows\/(?:cd-|gate-|claude)/,
+  /^\.github\/workflows\/ci-matrix-gate\.yml$/,
+  /^scripts\/(?:matrix|release)\//,
+  /^tools\/matrix-linux\/(?!README\.md$|worker\.config\.json$)/,
+  /^docs\/execution-policy\.md$/,
+];
+export function inOwnerScope(file) {
+  if (typeof file !== 'string' || !safePath(file.replace(/^\.github\//, 'github/'))) return false;
+  if (OWNER_PROTECTED.some(rule => rule.test(file))) return false;
+  return /^\.github\/workflows\/ci-[a-z0-9-]+\.yml$/.test(file)
+    || /^(?:docs|tests|scripts|tools|images|prompts)\//.test(file)
+    || ['README.md', 'CHANGELOG.md'].includes(file);
 }
 
 // The archive lane may only touch prompts.
@@ -81,6 +102,7 @@ export function evaluate(facts) {
   const branch = pr?.headRefName ?? '';
   if (CORE_BRANCH.test(branch)) return evaluateCore(facts);
   if (ARCHIVE_BRANCH.test(branch)) return evaluateArchive(facts);
+  if (OWNER_BRANCH.test(branch)) return evaluateOwner(facts);
 
   const reasons = [];
   const no = reason => reasons.push(reason);
@@ -103,6 +125,23 @@ function evaluateCore(facts) {
   const docsOnly = Array.isArray(files) && files.length > 0 && files.every(f => typeof f === 'string' && /\.md$/.test(f));
   runChecks(facts, docsOnly ? BUILD_RUN : CORE_RUN, docsOnly ? REQUIRED_JOBS : [], no);
   return { merge: reasons.length === 0, reasons, lane: 'core' };
+}
+
+// Owner pull requests are opened by the repository owner. Every other run for the commit must have finished and
+// succeeded, so a slow workflow (for example the live CLI check) is not merged past.
+function evaluateOwner(facts) {
+  const { pr, releaseLogin } = facts;
+  const reasons = [];
+  const no = reason => reasons.push(reason);
+  commonChecks(facts, inOwnerScope, 'owner', no);
+  if (!releaseLogin || pr?.author !== releaseLogin) no('Pull request was not opened by the owner identity');
+  if (!String(pr?.body ?? '').includes(OWNER_STATEMENT)) no('Description does not carry the owner change statement');
+  runChecks(facts, BUILD_RUN, REQUIRED_JOBS, no);
+  for (const other of Array.isArray(facts.otherRuns) ? facts.otherRuns : []) {
+    if (/^(?:Housekeeping|Gate) - /.test(other.name ?? '')) continue;
+    if (other.conclusion === null || other.conclusion === undefined) no(`Another workflow run has not finished: ${String(other.name).slice(0, 80)}`);
+  }
+  return { merge: reasons.length === 0, reasons, lane: 'owner' };
 }
 
 // Archive pull requests are opened by the archive workflow with RELEASE_TOKEN, so their author is the release identity, not the worker.
