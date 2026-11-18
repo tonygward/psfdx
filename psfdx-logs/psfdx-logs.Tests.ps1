@@ -145,6 +145,15 @@ Describe 'Export-SalesforceEventFiles' {
             Select-SalesforceEventFiles -EventType "Lo'gin\" -Limit 3 | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 2 -ParameterFilter { $Command -eq $expected }
         }
+        It 'sends -After and -Before as the UTC instant, never local time labelled as UTC' {
+            $after = [datetime]::SpecifyKind([datetime]'2026-10-21T08:00:00', [System.DateTimeKind]::Local)
+            $before = [datetime]::SpecifyKind([datetime]'2026-10-22T08:00:00', [System.DateTimeKind]::Utc)
+            $afterUtc = $after.ToUniversalTime().ToString('s', [System.Globalization.CultureInfo]::InvariantCulture) + 'Z'
+            Select-SalesforceEventFiles -EventType 'Login' -After $after -Before $before -Limit 1 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                $Command -eq "sf data query --query `"SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = 'Login' AND LogDate >= $afterUtc AND LogDate <= 2026-10-22T08:00:00Z ORDER BY LogDate DESC LIMIT 1`" --result-format json"
+            }
+        }
         It 'writes CSV to disk and uses filters' {
             Export-SalesforceEventFiles -EventType 'Login' -Limit 2 -TargetOrg 'me' -Verbose | Out-Null
             Assert-MockCalled Export-SalesforceEventFile -Times 1
@@ -167,6 +176,9 @@ Describe 'Get-SalesforceLoginHistory' {
             $before = [datetime]'2024-01-02T00:00:00Z'
             $out = Get-SalesforceLoginHistory -Username 'user' -After $after -Before $before -Limit 5 -TargetOrg 'me'
             $out | Should -Not -BeNullOrEmpty
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Command -like '*LoginTime >= 2024-01-01T00:00:00Z AND LoginTime <= 2024-01-02T00:00:00Z*')
+            }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Command -like 'sf data query --query *FROM LoginHistory*') -and
                 ($Command -like "*Username = 'user'*") -and

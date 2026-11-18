@@ -23,6 +23,23 @@ Describe 'psfdx module' {
             $out = Get-SalesforceDateTime -Datetime $dt
             $out | Should -Be '2020-01-02T03:04:05Z'
         }
+        It 'does not shift a value that is already UTC' {
+            $utc = [datetime]::SpecifyKind([datetime]'2026-10-21T07:47:12', [System.DateTimeKind]::Utc)
+            Get-SalesforceDateTime -Datetime $utc | Should -Be '2026-10-21T07:47:12Z'
+        }
+        It 'converts local time to UTC before writing the Z' {
+            $local = [datetime]::SpecifyKind([datetime]'2026-10-21T08:47:12', [System.DateTimeKind]::Local)
+            $expected = $local.ToUniversalTime().ToString('s', [System.Globalization.CultureInfo]::InvariantCulture) + 'Z'
+            Get-SalesforceDateTime -Datetime $local | Should -Be $expected
+        }
+        It 'defaults to the current instant in UTC' {
+            $before = [datetime]::UtcNow.AddSeconds(-2)
+            $out = Get-SalesforceDateTime
+            $after = [datetime]::UtcNow.AddSeconds(2)
+            $parsed = [datetime]::ParseExact($out, "yyyy-MM-dd'T'HH:mm:ss'Z'", [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::AssumeUniversal -bor [System.Globalization.DateTimeStyles]::AdjustToUniversal)
+            $parsed | Should -BeGreaterOrEqual $before
+            $parsed | Should -BeLessOrEqual $after
+        }
     }
 
     InModuleScope $module {

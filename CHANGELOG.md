@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- psfdx, psfdx-logs: dates sent to Salesforce are now converted to UTC before the `Z` is added. Before, local time was labelled as UTC, so in British Summer Time `Get-SalesforceDateTime` and the `-After` and `-Before` filters of `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles` were an hour out. A date with no time zone, such as one parsed from `'2026-11-18 12:00'`, is read as your local time.
+- psfdx-shared: new `ConvertTo-SalesforceSoqlDateTime` helper.
+
 ## 0.8.16 - 2026-11-18
 
 - psfdx, psfdx-development, psfdx-logs, psfdx-sandbox: values that cmdlets put into generated SOQL are now escaped the way SOQL requires. This covers `Get-SalesforceUsers -Username`, `Get-SalesforceRecordType -ObjectType`, `Get-SalesforceApexClass -Name`, `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles -EventType`, `Get-SalesforceLoginHistory -Username`, `Get-SalesforceSandboxRefreshStatus -Name`, and the user, class and trigger lookups in `Enable-SalesforceDebugLogging`. A value with an apostrophe or a backslash no longer breaks the query or changes its meaning. Names such as `O'Brien` used to be rejected by Salesforce and now work. A value with a control character is refused with a clear message. Your own queries passed to `Select-SalesforceRecords -Query` are unchanged.

@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | [#169](https://github.com/tonygward/psfdx/issues/169) | The compatibility test is **pinned to CLI 2.100.0**. User requirement is **always test latest stable Salesforce CLI**; no hardcoded version. The static allow-list cannot demonstrate latest CLI flag or JSON response compatibility. CI needs latest stable CLI installation, actual version reporting, help/flag validation and scheduled checks. | `tests/cli-compatibility.json`, `tests/CliCompatibility.Tests.ps1`, `docs/cli-compatibility.md` |
 | [#170](https://github.com/tonygward/psfdx/issues/170) (**fixed 2026-11-18** with `ConvertTo-SalesforceSoqlLiteral`; the file and line references are from before the fix) | Unescaped dynamic string literal interpolation into built-in SOQL. Fix via Salesforce-aware shared escaping and regression tests, **not** generic SQL assumptions. | `psfdx/psfdx.psm1:401,459`; `psfdx-development/psfdx-development.psm1:772`; `psfdx-logs/psfdx-logs.psm1:421,497` |
-| [#171](https://github.com/tonygward/psfdx/issues/171) | Local datetime formatted as if UTC with `.ToString('s') + 'Z'`. Convert to UTC before `Z` and explicitly define unspecified DateTime semantics. | `psfdx-logs/psfdx-logs.psm1:307,338-339,422-423,498-499`; recheck core `Get-SalesforceDateTime` |
+| [#171](https://github.com/tonygward/psfdx/issues/171) (**fixed 2026-11-18**; references are from before the fix) | Local datetime formatted as if UTC with `.ToString('s') + 'Z'`. Convert to UTC before `Z` and explicitly define unspecified DateTime semantics. | `psfdx-logs/psfdx-logs.psm1:307,338-339,422-423,498-499`; recheck core `Get-SalesforceDateTime` |
 | [#172](https://github.com/tonygward/psfdx/issues/172) | Generated SOQL and CLI JSON contracts need comprehensive, representative test fixtures; cover success/failure and unusual literals across platforms. | All generated SOQL wrappers and shared CLI executor |
 
 ### Detailed SOQL input handling
@@ -138,7 +138,7 @@ Use `ConfirmImpact = 'High'` on the bulk and delete cmdlets.
 
 ## Correctness
 
-### 7. Local time sent as UTC (*reproduced*)
+### 7. Local time sent as UTC (*reproduced*; **fixed 2026-11-18**, #171: every case below now uses `ConvertTo-SalesforceSoqlDateTime`)
 
 At 08:47 BST, `Get-SalesforceDateTime` returned `2026-10-21T08:47:12Z`, an hour out. The `$dt.ToString('s') + 'Z'` pattern appears in:
 

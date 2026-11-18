@@ -380,3 +380,117 @@ Describe 'ConvertTo-SalesforceSoqlIdentifier' {
         { ConvertTo-SalesforceSoqlIdentifier -Value $null } | Should -Throw
     }
 }
+
+Describe 'ConvertTo-SalesforceSoqlDateTime' {
+    BeforeAll {
+        function Get-TestTimeZone {
+            param([string[]] $Ids)
+            foreach ($id in $Ids) {
+                try { return [System.TimeZoneInfo]::FindSystemTimeZoneById($id) } catch { }
+            }
+            return $null
+        }
+        # Windows and IANA ids differ, and Windows PowerShell 5.1 knows only the Windows ones.
+        $script:London = Get-TestTimeZone -Ids 'GMT Standard Time', 'Europe/London'
+        $script:NewYork = Get-TestTimeZone -Ids 'Eastern Standard Time', 'America/New_York'
+        $script:Tokyo = Get-TestTimeZone -Ids 'Tokyo Standard Time', 'Asia/Tokyo'
+    }
+
+    It 'uses a UTC value as it is' {
+        $value = [datetime]::SpecifyKind([datetime]'2026-11-18T11:00:00', [System.DateTimeKind]::Utc)
+        ConvertTo-SalesforceSoqlDateTime -Value $value | Should -Be '2026-11-18T11:00:00Z'
+    }
+
+    It 'converts a Local value to UTC before writing the Z' {
+        $local = [datetime]::SpecifyKind([datetime]'2026-07-01T12:00:00', [System.DateTimeKind]::Local)
+        $expected = $local.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture) + 'Z'
+        ConvertTo-SalesforceSoqlDateTime -Value $local | Should -Be $expected
+    }
+
+    It 'treats an Unspecified value as local time, like ToUniversalTime does' {
+        $unspecified = [datetime]::SpecifyKind([datetime]'2026-07-01T12:00:00', [System.DateTimeKind]::Unspecified)
+        $expected = $unspecified.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss', [System.Globalization.CultureInfo]::InvariantCulture) + 'Z'
+        ConvertTo-SalesforceSoqlDateTime -Value $unspecified | Should -Be $expected
+    }
+
+    It 'sends the same instant for the same moment written in UTC and in local time' {
+        $utc = [datetime]::SpecifyKind([datetime]'2026-03-29T00:30:00', [System.DateTimeKind]::Utc)
+        ConvertTo-SalesforceSoqlDateTime -Value $utc | Should -Be (ConvertTo-SalesforceSoqlDateTime -Value $utc.ToLocalTime())
+    }
+
+    It 'drops fractions of a second and ignores the current culture' {
+        $original = [System.Threading.Thread]::CurrentThread.CurrentCulture
+        try {
+            [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('ar-SA')
+            $value = [datetime]::SpecifyKind([datetime]::new(2026, 11, 18, 11, 0, 5, 987), [System.DateTimeKind]::Utc)
+            ConvertTo-SalesforceSoqlDateTime -Value $value | Should -Be '2026-11-18T11:00:05Z'
+        } finally {
+            [System.Threading.Thread]::CurrentThread.CurrentCulture = $original
+        }
+    }
+
+    It 'accepts a value from the pipeline' {
+        $value = [datetime]::SpecifyKind([datetime]'2026-01-02T03:04:05', [System.DateTimeKind]::Utc)
+        ($value | ConvertTo-SalesforceSoqlDateTime) | Should -Be '2026-01-02T03:04:05Z'
+    }
+
+    Context 'in a named time zone' {
+        It 'subtracts an hour for London in summer (BST), the case from the October review' {
+            if (-not $script:London) { Set-ItResult -Skipped -Because 'the London time zone is not installed'; return }
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-10-21T08:47:12') -TimeZone $script:London | Should -Be '2026-10-21T07:47:12Z'
+        }
+
+        It 'does not shift London in winter (GMT)' {
+            if (-not $script:London) { Set-ItResult -Skipped -Because 'the London time zone is not installed'; return }
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-12-21T08:47:12') -TimeZone $script:London | Should -Be '2026-12-21T08:47:12Z'
+        }
+
+        It 'follows the offset change at the clock change in March and October' {
+            if (-not $script:London) { Set-ItResult -Skipped -Because 'the London time zone is not installed'; return }
+            # 2026: clocks go forward Sunday 29 March at 01:00 UTC and back Sunday 25 October at 01:00 UTC.
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-03-29T00:59:59') -TimeZone $script:London | Should -Be '2026-03-29T00:59:59Z'
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-03-29T02:00:00') -TimeZone $script:London | Should -Be '2026-03-29T01:00:00Z'
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-10-25T00:59:59') -TimeZone $script:London | Should -Be '2026-10-24T23:59:59Z'
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-10-25T02:00:00') -TimeZone $script:London | Should -Be '2026-10-25T02:00:00Z'
+        }
+
+        It 'refuses the hour that does not exist when the clocks go forward' {
+            if (-not $script:London) { Set-ItResult -Skipped -Because 'the London time zone is not installed'; return }
+            { ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-03-29T01:30:00') -TimeZone $script:London } |
+                Should -Throw -ExpectedMessage '*does not exist in time zone*'
+        }
+
+        It 'reads the hour that happens twice when the clocks go back as standard time' {
+            if (-not $script:London) { Set-ItResult -Skipped -Because 'the London time zone is not installed'; return }
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-10-25T01:30:00') -TimeZone $script:London | Should -Be '2026-10-25T01:30:00Z'
+        }
+
+        It 'handles zones behind UTC and ahead of it, and a day boundary' {
+            if (-not $script:NewYork -or -not $script:Tokyo) { Set-ItResult -Skipped -Because 'the time zones are not installed'; return }
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-07-01T22:00:00') -TimeZone $script:NewYork | Should -Be '2026-07-02T02:00:00Z'
+            ConvertTo-SalesforceSoqlDateTime -Value ([datetime]'2026-07-01T01:00:00') -TimeZone $script:Tokyo | Should -Be '2026-06-30T16:00:00Z'
+        }
+
+        It 'still uses a UTC value as it is, whatever the zone' {
+            if (-not $script:Tokyo) { Set-ItResult -Skipped -Because 'the Tokyo time zone is not installed'; return }
+            $utc = [datetime]::SpecifyKind([datetime]'2026-07-01T01:00:00', [System.DateTimeKind]::Utc)
+            ConvertTo-SalesforceSoqlDateTime -Value $utc -TimeZone $script:Tokyo | Should -Be '2026-07-01T01:00:00Z'
+        }
+
+        It 'reads a Local value in the named zone, not the machine zone' {
+            if (-not $script:Tokyo) { Set-ItResult -Skipped -Because 'the Tokyo time zone is not installed'; return }
+            $local = [datetime]::SpecifyKind([datetime]'2026-07-01T09:00:00', [System.DateTimeKind]::Local)
+            ConvertTo-SalesforceSoqlDateTime -Value $local -TimeZone $script:Tokyo | Should -Be '2026-07-01T00:00:00Z'
+        }
+    }
+}
+
+Describe 'generated SOQL never labels local time as UTC' {
+    It 'no module formats a datetime with ToString(''s'') plus Z' {
+        $root = Split-Path -Parent $PSScriptRoot
+        $offenders = foreach ($file in Get-ChildItem -Path $root -Recurse -Filter '*.psm1' | Where-Object { $_.FullName -notmatch '[\\/](tools|scripts|node_modules)[\\/]' }) {
+            Select-String -LiteralPath $file.FullName -Pattern "ToString\('s'\)\s*\+\s*'Z'" | ForEach-Object { "$($file.Name):$($_.LineNumber)" }
+        }
+        @($offenders) | Should -BeNullOrEmpty -Because 'use ConvertTo-SalesforceSoqlDateTime, which converts to UTC first'
+    }
+}
