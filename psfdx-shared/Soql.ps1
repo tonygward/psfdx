@@ -63,3 +63,37 @@ function ConvertTo-SalesforceSoqlIdentifier {
         return $Value
     }
 }
+
+function ConvertTo-SalesforceSoqlDateTime {
+    <# Formats a DateTime as a SOQL datetime literal in UTC, for example 2026-11-18T11:00:00Z. It is not quoted.
+
+       The value is converted to UTC before the Z is written, so the literal is the same instant whatever the
+       machine's time zone:
+         Kind Utc          used as it is
+         Kind Local        converted from the machine's local time zone, including daylight saving time
+         Kind Unspecified  treated as local time, the same as .NET's ToUniversalTime() does. A date parsed from
+                           text such as '2026-11-18 12:00' is Unspecified, so it means 12:00 where you are.
+       -TimeZone names the zone to read a Local or Unspecified value in instead of the machine's. A time that does
+       not exist in that zone (the hour skipped when the clocks go forward) is refused. A time that happens twice
+       (the hour repeated when the clocks go back) is read as standard time, as .NET does.
+       Fractions of a second are dropped, as the old 's' format did. 's' is culture-invariant. #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][datetime] $Value,
+        [Parameter(Mandatory = $false)][System.TimeZoneInfo] $TimeZone
+    )
+    process {
+        if ($Value.Kind -eq [System.DateTimeKind]::Utc) {
+            $utc = $Value
+        } elseif ($null -ne $TimeZone) {
+            $unspecified = [System.DateTime]::SpecifyKind($Value, [System.DateTimeKind]::Unspecified)
+            if ($TimeZone.IsInvalidTime($unspecified)) {
+                throw "The time $($unspecified.ToString('s', [System.Globalization.CultureInfo]::InvariantCulture)) does not exist in time zone '$($TimeZone.Id)' because the clocks go forward then."
+            }
+            $utc = [System.TimeZoneInfo]::ConvertTimeToUtc($unspecified, $TimeZone)
+        } else {
+            $utc = $Value.ToUniversalTime()
+        }
+        return $utc.ToString('s', [System.Globalization.CultureInfo]::InvariantCulture) + 'Z'
+    }
+}

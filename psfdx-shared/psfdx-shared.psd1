@@ -18,6 +18,7 @@
         'ConvertTo-SalesforceCliApexTestParams',
         'Get-PsfdxCommonParameterSplat',
         'ConvertTo-SalesforceSoqlLiteral',
+        'ConvertTo-SalesforceSoqlDateTime',
         'ConvertTo-SalesforceSoqlIdentifier'
     )
     CmdletsToExport = @()

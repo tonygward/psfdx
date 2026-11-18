@@ -304,7 +304,7 @@ function Get-SalesforceFlowInterviews {
     }
     $query += "WHERE InterviewStatus IN ($InterviewStatus) "
     if ($After) {
-        $afterIso = $After.ToString('s') + 'Z'
+        $afterIso = ConvertTo-SalesforceSoqlDateTime -Value $After
         $query += "AND CreatedDate >= $afterIso "
     }
     $query += "ORDER BY CreatedDate DESC "
@@ -335,8 +335,8 @@ function Get-SalesforceLoginHistory {
     # Build SOQL for LoginHistory
     $query = "SELECT Id, LoginTime, UserId, SourceIp, Application, Status FROM LoginHistory"
     $conditions = @()
-    if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
+    if ($After)    { $conditions += ("LoginTime >= " + (ConvertTo-SalesforceSoqlDateTime -Value $After)) }
+    if ($Before)   { $conditions += ("LoginTime <= " + (ConvertTo-SalesforceSoqlDateTime -Value $Before)) }
     # LoginHistory has no Username column, so filter through a User subquery on UserId
     if ($Username) { $conditions += ("UserId IN (SELECT Id FROM User WHERE Username = " + (ConvertTo-SalesforceSoqlLiteral -Value $Username) + ")") }
     if ($conditions.Count -gt 0) { $query += (" WHERE " + ($conditions -join " AND ")) }
@@ -417,8 +417,8 @@ function New-SalesforceEventFileQuery {
     $query += " FROM EventLogFile"
     $where = @()
     if ($EventType) { $where += ("EventType = " + (ConvertTo-SalesforceSoqlLiteral -Value $EventType)) }
-    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
+    if ($After)     { $where += ("LogDate >= " + (ConvertTo-SalesforceSoqlDateTime -Value $After)) }
+    if ($Before)    { $where += ("LogDate <= " + (ConvertTo-SalesforceSoqlDateTime -Value $Before)) }
     if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
     $query += " ORDER BY LogDate DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }

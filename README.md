@@ -164,7 +164,7 @@ Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Get-SalesforceDateTime` | Format current/custom datetime in Salesforce sortable UTC. |
+| `Get-SalesforceDateTime` | Format the current or a given datetime as a Salesforce UTC literal. Local time is converted to UTC first. |
 
 
 ### psfdx-metadata

@@ -591,7 +591,7 @@ function Get-SalesforceDateTime {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][datetime] $Datetime)
     if ($null -eq $Datetime) { $Datetime = Get-Date }
-    return $Datetime.ToString('s') + 'Z'
+    return ConvertTo-SalesforceSoqlDateTime -Value $Datetime
 }
 
 #endregion

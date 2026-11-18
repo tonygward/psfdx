@@ -67,7 +67,7 @@ Run non-`sf` commands through `Invoke-Salesforce` too, so tests can mock them an
 Some older code predates these rules. Don't treat it as precedent:
 - Unquoted paths and free text: `--output-dir $OutputDirectory` (psfdx-development), `--file $ApexFile`, `--definition-file`, `--output-file`, and `--description $Description` (psfdx-packages, which breaks on spaces).
 - The plain `if ($TargetOrg)` in `Get-SalesforcePackagesInstalled`.
-- `$Date.ToString('s') + 'Z'` (`Get-SalesforceDateTime` and the psfdx-logs `-After`/`-Before` filters). It labels local time as UTC, so in BST 12:00 local is sent as `12:00:00Z` instead of `11:00:00Z`. Use `$Date.ToUniversalTime().ToString('s') + 'Z'`.
+- `$Date.ToString('s') + 'Z'`. It labels local time as UTC, so in BST 12:00 local is sent as `12:00:00Z` instead of `11:00:00Z`. Use `ConvertTo-SalesforceSoqlDateTime -Value $Date` (psfdx-shared). A test fails if a module uses the old pattern.
 
 ## Modules and helpers
 
