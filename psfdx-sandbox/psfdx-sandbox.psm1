@@ -175,9 +175,9 @@ function Get-SalesforceSandboxRefreshStatus {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $escapedName = $Name -replace "'", "''"
+    $nameLiteral = ConvertTo-SalesforceSoqlLiteral -Value $Name
 
-    $infoQuery = "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = '$escapedName'"
+    $infoQuery = "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = $nameLiteral"
     $infoCommand = "sf data query --use-tooling-api --result-format json --query `"$infoQuery`""
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $infoCommand += " --target-org $TargetOrg" }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -194,7 +194,7 @@ function Get-SalesforceSandboxRefreshStatus {
 
     $licenseType = $infoRecords[0].LicenseType
 
-    $processQuery = "SELECT SandboxName, StartDate, EndDate FROM SandboxProcess WHERE SandboxName = '$escapedName' ORDER BY StartDate DESC LIMIT 1"
+    $processQuery = "SELECT SandboxName, StartDate, EndDate FROM SandboxProcess WHERE SandboxName = $nameLiteral ORDER BY StartDate DESC LIMIT 1"
     $processCommand = "sf data query --use-tooling-api --result-format json --query `"$processQuery`""
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $processCommand += " --target-org $TargetOrg" }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters

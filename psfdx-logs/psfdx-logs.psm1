@@ -226,7 +226,7 @@ function Enable-SalesforceDebugLogging {
             'ApexClass'   { $object = 'ApexClass';   $field = 'Name';     $name = $ApexClass }
             'ApexTrigger' { $object = 'ApexTrigger'; $field = 'Name';     $name = $ApexTrigger }
         }
-        $query = "SELECT Id FROM $object WHERE $field = '" + ($name -replace "'", "''") + "' LIMIT 2"
+        $query = "SELECT Id FROM $object WHERE $field = " + (ConvertTo-SalesforceSoqlLiteral -Value $name) + " LIMIT 2"
         $records = @(Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg @commonParams)
         if ($records.Count -eq 0) {
             throw "No $object found with $field '$name'."
@@ -300,7 +300,7 @@ function Get-SalesforceFlowInterviews {
     if ($Type -eq 'All') {
         $InterviewStatus = "'Error','Paused','Running','Completed','VersionPaused','Autosaved','Expired'"
     } else {
-        $InterviewStatus = "'$Type'"
+        $InterviewStatus = ConvertTo-SalesforceSoqlLiteral -Value $Type
     }
     $query += "WHERE InterviewStatus IN ($InterviewStatus) "
     if ($After) {
@@ -338,7 +338,7 @@ function Get-SalesforceLoginHistory {
     if ($After)    { $conditions += ("LoginTime >= " + ($After.ToString('s') + 'Z')) }
     if ($Before)   { $conditions += ("LoginTime <= " + ($Before.ToString('s') + 'Z')) }
     # LoginHistory has no Username column, so filter through a User subquery on UserId
-    if ($Username) { $conditions += ("UserId IN (SELECT Id FROM User WHERE Username = '" + ($Username -replace "'", "''") + "')") }
+    if ($Username) { $conditions += ("UserId IN (SELECT Id FROM User WHERE Username = " + (ConvertTo-SalesforceSoqlLiteral -Value $Username) + ")") }
     if ($conditions.Count -gt 0) { $query += (" WHERE " + ($conditions -join " AND ")) }
     $query += " ORDER BY LoginTime DESC"
     if ($Limit -gt 0) { $query += " LIMIT $Limit" }
@@ -404,6 +404,27 @@ function Get-SalesforceLoginFailures {
 
 #region Event Monitoring
 
+function New-SalesforceEventFileQuery {
+    # One place that builds the EventLogFile query for Select-SalesforceEventFiles and Export-SalesforceEventFiles.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $EventType,
+        [Parameter(Mandatory = $false)][Nullable[datetime]] $After,
+        [Parameter(Mandatory = $false)][Nullable[datetime]] $Before,
+        [Parameter(Mandatory = $false)][int] $Limit
+    )
+    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate"
+    $query += " FROM EventLogFile"
+    $where = @()
+    if ($EventType) { $where += ("EventType = " + (ConvertTo-SalesforceSoqlLiteral -Value $EventType)) }
+    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
+    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
+    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
+    $query += " ORDER BY LogDate DESC"
+    if ($Limit -gt 0) { $query += " LIMIT $Limit" }
+    return $query
+}
+
 function Select-SalesforceEventFiles {
     [CmdletBinding()]
     Param(
@@ -415,15 +436,7 @@ function Select-SalesforceEventFiles {
     )
 
     # Build SOQL for Event Monitoring (EventLogFile)
-    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate"
-    $query += " FROM EventLogFile"
-    $where = @()
-    if ($EventType) { $where += "EventType = '$EventType'" }
-    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
-    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
-    $query += " ORDER BY LogDate DESC"
-    if ($Limit -gt 0) { $query += " LIMIT $Limit" }
+    $query = New-SalesforceEventFileQuery -EventType $EventType -After $After -Before $Before -Limit $Limit
 
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
@@ -491,15 +504,7 @@ function Export-SalesforceEventFiles {
     }
 
     # Build SOQL for Event Monitoring (EventLogFile)
-    $query = "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate"
-    $query += " FROM EventLogFile"
-    $where = @()
-    if ($EventType) { $where += "EventType = '$EventType'" }
-    if ($After)     { $where += ("LogDate >= " + ($After.ToString('s') + 'Z')) }
-    if ($Before)    { $where += ("LogDate <= " + ($Before.ToString('s') + 'Z')) }
-    if ($where.Count -gt 0) { $query += (" WHERE " + ($where -join " AND ")) }
-    $query += " ORDER BY LogDate DESC"
-    $query += " LIMIT $Limit"
+    $query = New-SalesforceEventFileQuery -EventType $EventType -After $After -Before $Before -Limit $Limit
 
     $command = "sf data query --query `"$query`" --result-format json"
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }

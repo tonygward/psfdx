@@ -138,6 +138,13 @@ Describe 'Export-SalesforceEventFiles' {
             Mock Show-SalesforceResult { @([pscustomobject]@{ Id = '1'; EventType = 'Login'; LogDate = '2024-01-01T00:00:00.000Z' }) }
             Mock Export-SalesforceEventFile {}
         }
+        It 'escapes the event type and builds the same query for select and export' {
+            $expected = 'sf data query --query "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = ''Lo\''gin\\'' ORDER BY LogDate DESC LIMIT 3" --result-format json'
+            Export-SalesforceEventFiles -EventType "Lo'gin\" -Limit 3 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
+            Select-SalesforceEventFiles -EventType "Lo'gin\" -Limit 3 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 2 -ParameterFilter { $Command -eq $expected }
+        }
         It 'writes CSV to disk and uses filters' {
             Export-SalesforceEventFiles -EventType 'Login' -Limit 2 -TargetOrg 'me' -Verbose | Out-Null
             Assert-MockCalled Export-SalesforceEventFile -Times 1
@@ -184,7 +191,7 @@ Describe 'Get-SalesforceLoginHistory -Username filter' {
         It 'filters through a User subquery because LoginHistory has no Username column' {
             Get-SalesforceLoginHistory -Username "o'brien@example.com" | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like "*UserId IN (SELECT Id FROM User WHERE Username = 'o''brien@example.com')*") -and
+                ($Command -like "*UserId IN (SELECT Id FROM User WHERE Username = 'o\'brien@example.com')*") -and
                 ($Command -notlike '*LoginHistory WHERE Username*')
             }
         }
@@ -291,7 +298,7 @@ Describe 'Enable-SalesforceDebugLogging by name' {
         }
         It 'escapes single quotes in the name' {
             Enable-SalesforceDebugLogging -Username "o'brien@example.com" -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''o''''brien@example.com'' LIMIT 2" --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''o\''brien@example.com'' LIMIT 2" --result-format json' }
         }
         It 'throws and does not create a trace flag when the name is not found' {
             $script:LookupJson = '{"status":0,"result":{"records":[]}}'

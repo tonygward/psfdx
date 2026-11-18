@@ -202,6 +202,19 @@ Describe 'psfdx module' {
             }
         }
 
+        Context 'Get-SalesforceUsers and Get-SalesforceRecordType escaping' {
+            It 'escapes the username and the object type' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"records":[]}}' } -ModuleName $module.Name
+                Get-SalesforceUsers -Username "o'brien@example.com" -Limit 1 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    $Command -like "*WHERE Username = 'o\'brien@example.com' ORDER BY*"
+                }
+                Get-SalesforceRecordType -ObjectType "Acc'ount" | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
+                    $Command -like "*FROM RecordType WHERE SobjectType = 'Acc\'ount'*"
+                }
+            }
+        }
         Context 'Get-SalesforceUsers' {
             It 'builds SOQL with filters and returns users' {
                 $json = @'

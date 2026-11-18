@@ -771,7 +771,7 @@ function Get-SalesforceApexClass {
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $query = "SELECT Id, Name, Body FROM ApexClass WHERE Name = '$Name' LIMIT 1"
+    $query = "SELECT Id, Name, Body FROM ApexClass WHERE Name = " + (ConvertTo-SalesforceSoqlLiteral -Value $Name) + " LIMIT 1"
     return Select-SalesforceRecords -Query $query -UseToolingApi -TargetOrg $TargetOrg
 }
 

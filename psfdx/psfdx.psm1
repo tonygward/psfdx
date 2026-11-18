@@ -398,7 +398,7 @@ function Get-SalesforceUsers {
     $query = "SELECT $fields FROM User"
     $filters = @()
     if ($ActiveOnly) { $filters += 'IsActive = true' }
-    if ($Username)   { $filters += "Username = '$Username'" }
+    if ($Username)   { $filters += ('Username = ' + (ConvertTo-SalesforceSoqlLiteral -Value $Username)) }
     if ($filters.Count -gt 0) { $query += ' WHERE ' + ($filters -join ' AND ') }
     $query += ' ORDER BY LastLoginDate DESC'
     $query += " LIMIT $Limit"
@@ -456,7 +456,7 @@ function Get-SalesforceRecordType {
     )
     $query = "SELECT Id, SobjectType, Name, DeveloperName, IsActive"
     $query += " FROM RecordType"
-    if ($ObjectType) { $query += " WHERE SobjectType = '$ObjectType'" }
+    if ($ObjectType) { $query += (' WHERE SobjectType = ' + (ConvertTo-SalesforceSoqlLiteral -Value $ObjectType)) }
     return Select-SalesforceRecords -Query $query -TargetOrg $TargetOrg
 }
 
