@@ -117,5 +117,6 @@ Start every commit and PR title with its area so the history separates product f
 
 ## Git
 
+- **Merging is the AI's job (standing rule from the owner, 2026-11-18).** Every pull request is merged by the AI, not by the owner, and the AI does not ask first. Open the PR, wait for every check to pass on the exact head commit, address review findings, then squash-merge it (`gh pr merge <n> --squash --delete-branch`), whatever it changes: product, infrastructure, workflows, docs or policy. Where the merge gate's lanes allow it (`docs/pipelines.md`), the gate merges it automatically. Otherwise the AI merges it after CI. Never merge with a failing, cancelled or still-running check, never bypass branch protection or use admin overrides, and never merge a PR the AI did not open or review. After a product merge, confirm the release and Gallery publish; Gallery versions are permanent, so a product change needs the same care it always did.
 - PRs target `main`. `master` is stale (many commits behind); don't use it. CI (`.github/workflows/ci.yml`) runs Pester on `ubuntu-latest` for pull requests only.
 - `docs/CODE-REVIEW.md` is a review from 2026-09-09. Many of its findings have since been fixed (see `CHANGELOG.md`), so check the current code before acting on it. The `Invoke-Expression` finding (#3) is fixed.
