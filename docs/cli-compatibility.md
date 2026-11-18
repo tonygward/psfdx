@@ -7,6 +7,12 @@ psfdx is tested against the **latest stable Salesforce CLI** (`sf`). No CLI vers
 | Offline | No | Every `Invoke-Pester -Path . -CI`, on every leg | psfdx builds no removed command, no legacy flag and no command outside the known list. It compares against a list, **not** against the CLI, so it is **not proof** that psfdx works with the current CLI. |
 | Live | Yes, the latest stable | `CI - Salesforce CLI compatibility`: pull requests that touch a module, every Monday, and by hand; Ubuntu and Windows | Every command psfdx runs answers `sf <command> --help` on the current CLI, and every flag psfdx passes is listed in that help. |
 
+## Upstream Salesforce CLI references
+
+- [Official Salesforce CLI source](https://github.com/salesforcecli/cli) for the `sf` executable.
+- [Salesforce CLI releases](https://github.com/salesforcecli/cli/releases) for release history and version changes.
+- [Salesforce CLI GitHub organisation](https://github.com/salesforcecli) for command plugin source, including [org commands](https://github.com/salesforcecli/plugin-org) and [Apex commands](https://github.com/salesforcecli/plugin-apex).
+
 ## Offline lane
 
 It parses every module `.psm1` and `psfdx-shared` script and takes each string that starts with `sf `. It checks them against `tests/cli-compatibility.json`:
