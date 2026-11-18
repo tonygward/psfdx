@@ -21,6 +21,7 @@ Every workflow name starts with one of four prefixes, so its kind is clear at a 
 | `Gate - Matrix auto-merge` | `gate-auto-merge.yml` | Gate | After `CI - Pester tests` completes; see below |
 | `Housekeeping - Archive merged prompt` | `housekeeping-archive-prompt.yml` | Housekeeping | A merged `matrix/` pull request, or by hand |
 | `CI - Release scripts` | `ci-release-scripts.yml` | CI | Pull requests changing `scripts/release/**` or the CD workflows |
+| `CI - Website build` | `ci-site.yml` | CI | Pull requests changing `site/**` or `images/psfdx-logo.png`; runs the site tests, builds it and attaches the built site to the run |
 | `CD - Bump version` | `cd-bump-version.yml` | CD | Push to `main`; see [releases](release.md) |
 | `CD - Publish to PowerShell Gallery` | `cd-publish-gallery.yml` | CD | A GitHub release being published (or by hand); dry run until `scripts/release/gallery.json` says `"publish": true`; see [releases](release.md#powershell-gallery) |
 | `CI - Salesforce CLI compatibility` | `ci-cli-compat.yml` | CI | Pull requests that touch a module or the check, every Monday, and by hand; installs the latest stable Salesforce CLI on Ubuntu and Windows and checks every `sf` command and flag psfdx uses against its `--help`; see [cli-compatibility](cli-compatibility.md) |

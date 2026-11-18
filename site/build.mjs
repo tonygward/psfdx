@@ -1,0 +1,72 @@
+// Builds the psfdx website into site/dist. No dependencies; needs Node 18 or later.
+//
+//   node site/build.mjs                          build with site/site.config.json
+//   SITE_URL=https://example.com node site/build.mjs   build for another domain (no trailing slash)
+//
+// The logo is NOT duplicated in site/. The build copies the repository's own images/psfdx-logo.png, byte for byte,
+// so the site always shows the one original logo.
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(here, '..');
+
+export const PLACEHOLDERS = {
+  '%SITE_URL%': 'siteUrl',
+  '%GITHUB_URL%': 'githubUrl',
+  '%LICENSE_URL%': 'licenseUrl',
+  '%GALLERY_URL%': 'galleryUrl',
+};
+
+export function readConfig(env = process.env) {
+  const config = JSON.parse(fs.readFileSync(path.join(here, 'site.config.json'), 'utf8'));
+  if (env.SITE_URL) config.siteUrl = env.SITE_URL;
+  config.siteUrl = String(config.siteUrl).replace(/\/+$/, '');
+  for (const key of Object.values(PLACEHOLDERS)) {
+    if (!/^https:\/\/[^\s"'<>]+$/.test(String(config[key] ?? ''))) {
+      throw new Error(`site.config.json: "${key}" must be an https URL (got ${JSON.stringify(config[key])})`);
+    }
+  }
+  return config;
+}
+
+export function applyConfig(text, config) {
+  let out = text;
+  for (const [token, key] of Object.entries(PLACEHOLDERS)) out = out.split(token).join(config[key]);
+  return out;
+}
+
+export function build({ outDir = path.join(here, 'dist'), env = process.env } = {}) {
+  const config = readConfig(env);
+  fs.rmSync(outDir, { recursive: true, force: true });
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const srcDir = path.join(here, 'src');
+  for (const name of fs.readdirSync(srcDir)) {
+    const from = path.join(srcDir, name);
+    if (!fs.statSync(from).isFile()) continue;
+    const to = path.join(outDir, name);
+    if (/\.(html|txt|xml|css|js)$/.test(name) || name === '_headers') {
+      fs.writeFileSync(to, applyConfig(fs.readFileSync(from, 'utf8'), config));
+    } else {
+      fs.copyFileSync(from, to);
+    }
+  }
+
+  fs.copyFileSync(path.join(repoRoot, 'images', 'psfdx-logo.png'), path.join(outDir, 'psfdx-logo.png'));
+  fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
+  fs.writeFileSync(path.join(outDir, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${config.siteUrl}/</loc></url>\n</urlset>\n`);
+  return { outDir, config };
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    const { outDir, config } = build();
+    console.log(`Built the psfdx website for ${config.siteUrl} in ${path.relative(process.cwd(), outDir) || outDir}`);
+  } catch (error) {
+    console.error(`Build failed: ${error.message}`);
+    process.exit(1);
+  }
+}
