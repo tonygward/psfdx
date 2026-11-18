@@ -149,11 +149,11 @@
         <div class="code-box large">
 <pre><code><span class="c">Install-Module</span> <span class="v">psfdx</span>
 <span class="c">Import-Module</span> <span class="v">psfdx</span>
-<span class="c">Connect-Salesforce</span> <span class="p">-Sandbox</span>
+<span class="c">Connect-Salesforce</span> <span class="p">-Sandbox</span> <span class="p">-SetDefault</span>
 <span class="c">Select-SalesforceRecords</span> <span class="p">-Query</span> <span class="s">"SELECT Id, Name FROM Account LIMIT 10"</span></code></pre>
-          <button class="copy" type="button" data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Connect-Salesforce -Sandbox&#10;Select-SalesforceRecords -Query &quot;SELECT Id, Name FROM Account LIMIT 10&quot;" aria-label="Copy the quick start commands">Copy</button>
+          <button class="copy" type="button" data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Connect-Salesforce -Sandbox -SetDefault&#10;Select-SalesforceRecords -Query &quot;SELECT Id, Name FROM Account LIMIT 10&quot;" aria-label="Copy the quick start commands">Copy</button>
         </div>
-        <p class="fine">A browser window opens for you to log in to Salesforce as you normally would. No Salesforce CLI yet? <code>Install-SalesforceCli</code> installs it. The <a href="%GITHUB_URL%#installation">README</a> has the full steps.</p>
+        <p class="fine">A browser window opens for you to log in to Salesforce as you normally would, and <code>-SetDefault</code> makes that org the one the next command uses. No Salesforce CLI yet? <code>Install-SalesforceCli</code> installs it. The <a href="%GITHUB_URL%#installation">README</a> has the full steps.</p>
       </div>
     </section>
 

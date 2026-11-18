@@ -56,7 +56,7 @@ test('the page has the approved copy, title, description and disclaimer', () => 
     'psfdx is an independent open-source project and is not affiliated with or endorsed by Salesforce.',
     '<title>psfdx',
     '<meta name="description"',
-    'Connect-Salesforce</span> <span class="p">-Sandbox</span>',
+    'Connect-Salesforce</span> <span class="p">-Sandbox</span> <span class="p">-SetDefault</span>',
   ]) assert.ok(html.includes(text), text);
   for (const area of ['Organisations &amp; Data', 'Metadata &amp; Deployments', 'Development &amp; Testing', 'Monitoring &amp; Diagnostics', 'Sandboxes &amp; Packages', 'Agentforce']) {
     assert.ok(html.includes(area), area);
