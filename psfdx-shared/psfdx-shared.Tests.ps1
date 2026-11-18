@@ -301,3 +301,82 @@ ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath $OutFil
         }
     }
 }
+
+Describe 'ConvertTo-SalesforceSoqlLiteral' {
+    It 'quotes a plain value' {
+        ConvertTo-SalesforceSoqlLiteral -Value 'Acme' | Should -Be "'Acme'"
+        ConvertTo-SalesforceSoqlLiteral -Value '' | Should -Be "''"
+        ConvertTo-SalesforceSoqlLiteral -Value $null | Should -Be "''"
+    }
+
+    It 'escapes an apostrophe with a backslash, not by doubling it' {
+        ConvertTo-SalesforceSoqlLiteral -Value "O'Brien" | Should -Be "'O\'Brien'"
+    }
+
+    It 'escapes backslashes, including one at the end and one before an apostrophe' {
+        ConvertTo-SalesforceSoqlLiteral -Value 'a\b' | Should -Be "'a\\b'"
+        ConvertTo-SalesforceSoqlLiteral -Value 'end\' | Should -Be "'end\\'"
+        ConvertTo-SalesforceSoqlLiteral -Value "\'" | Should -Be "'\\\''"
+    }
+
+    It 'keeps a malicious-looking value inside the literal' {
+        ConvertTo-SalesforceSoqlLiteral -Value "x' OR Name != '" | Should -Be "'x\' OR Name != \''"
+        ConvertTo-SalesforceSoqlLiteral -Value "x\' OR 1=1 --" | Should -Be "'x\\\' OR 1=1 --'"
+        ConvertTo-SalesforceSoqlLiteral -Value "'); DELETE FROM Account; --" | Should -Be "'\'); DELETE FROM Account; --'"
+    }
+
+    It 'keeps unicode text as it is' {
+        ConvertTo-SalesforceSoqlLiteral -Value 'Zoë 日本語' | Should -Be "'Zoë 日本語'"
+    }
+
+    It 'writes line breaks, tabs, backspace and form feed as escapes, never as real characters' {
+        ConvertTo-SalesforceSoqlLiteral -Value "a`nb`r`n`tc`bd`fe" | Should -Be "'a\nb\r\n\tc\bd\fe'"
+    }
+
+    It 'refuses other control characters' {
+        { ConvertTo-SalesforceSoqlLiteral -Value "a$([char]1)b" } | Should -Throw -ExpectedMessage '*control character (U+0001)*'
+        { ConvertTo-SalesforceSoqlLiteral -Value "a$([char]0)b" } | Should -Throw -ExpectedMessage '*U+0000*'
+        { ConvertTo-SalesforceSoqlLiteral -Value "a$([char]0x7F)b" } | Should -Throw -ExpectedMessage '*U+007F*'
+    }
+
+    It 'leaves % and _ alone for an = comparison' {
+        ConvertTo-SalesforceSoqlLiteral -Value '50%_off' | Should -Be "'50%_off'"
+    }
+
+    It 'escapes % and _ with -Like so they match themselves' {
+        ConvertTo-SalesforceSoqlLiteral -Value '50%_off' -Like | Should -Be "'50\%\_off'"
+    }
+
+    It 'accepts a value from the pipeline' {
+        ('a', "b'c" | ConvertTo-SalesforceSoqlLiteral) -join '|' | Should -Be "'a'|'b\'c'"
+    }
+
+    It 'survives the command-line splitter as exactly the intended query' {
+        InModuleScope 'psfdx-shared' {
+            foreach ($value in @("O'Brien", 'a"b', 'tick`tock', 'x$(whoami)y', 'end\', "x' OR Name != '", 'a;b|c&d', '<>', 'two  spaces')) {
+                $literal = ConvertTo-SalesforceSoqlLiteral -Value $value
+                $parsed = ConvertTo-PsfdxArgumentList -Command ('sf data query --query "SELECT Id FROM Account WHERE Name = ' + $literal + '" --json')
+                @($parsed.Arguments).Count | Should -Be 5 -Because "the value '$value' must not add or remove arguments"
+                # What reaches sf is the SOQL literal with only the command-line escapes removed.
+                $expected = 'SELECT Id FROM Account WHERE Name = ' + (($literal -replace '\\`"', '\"') -replace '``', '`')
+                @($parsed.Arguments)[3] | Should -Be $expected
+                @($parsed.Arguments)[4] | Should -Be '--json'
+            }
+        }
+    }
+}
+
+Describe 'ConvertTo-SalesforceSoqlIdentifier' {
+    It 'accepts object and field API names, custom names and relationships' {
+        foreach ($name in 'Account', 'My_Object__c', 'Owner.Name', 'Account.Owner.Profile.Name', 'Field_1__r') {
+            ConvertTo-SalesforceSoqlIdentifier -Value $name | Should -Be $name
+        }
+    }
+
+    It 'refuses anything that could change the query' {
+        foreach ($name in '', ' ', 'Account WHERE 1=1', 'Account;', "Account'", 'Acc ount', '1Account', 'Account.', '.Name', 'Name--', 'A,B', 'Account)') {
+            { ConvertTo-SalesforceSoqlIdentifier -Value $name } | Should -Throw -ExpectedMessage '*not a valid Salesforce object or field API name*'
+        }
+        { ConvertTo-SalesforceSoqlIdentifier -Value $null } | Should -Throw
+    }
+}

@@ -912,7 +912,7 @@ function Build-SalesforceQuery {
         return ""
     }
 
-    return "SELECT " + ($fieldNames -join ",") + " FROM $ObjectName"
+    return "SELECT " + (@($fieldNames | ForEach-Object { ConvertTo-SalesforceSoqlIdentifier -Value $_ }) -join ",") + " FROM " + (ConvertTo-SalesforceSoqlIdentifier -Value $ObjectName)
 }
 
 #endregion

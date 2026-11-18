@@ -142,6 +142,13 @@ Describe 'psfdx-sandbox module' {
         }
 
         Context 'Get-SalesforceSandboxRefreshStatus' {
+            It 'escapes the sandbox name in the query' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"records":[]}}' }
+                Get-SalesforceSandboxRefreshStatus -Name "o'brien\" | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    $Command -eq 'sf data query --use-tooling-api --result-format json --query "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = ''o\''brien\\''"'
+                }
+            }
             It 'returns refresh status details with calculated next refresh date' {
                 Mock Invoke-Salesforce {
                     param($Command)

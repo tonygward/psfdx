@@ -523,6 +523,9 @@ Describe 'Build-SalesforceQuery' {
                 )
             }
         }
+        It 'refuses an object name that is not an API name' {
+            { Build-SalesforceQuery -ObjectName 'Account WHERE 1=1' } | Should -Throw -ExpectedMessage '*not a valid Salesforce object or field API name*'
+        }
         It 'builds a SELECT for all fields' {
             $query = Build-SalesforceQuery -ObjectName 'Account'
             $query | Should -Be 'SELECT Id,Name,CreatedDate,OwnerId FROM Account'

@@ -16,7 +16,9 @@
         'Get-SalesforceApexTestClassNamesFromPath',
         'Test-SalesforceApexTestReference',
         'ConvertTo-SalesforceCliApexTestParams',
-        'Get-PsfdxCommonParameterSplat'
+        'Get-PsfdxCommonParameterSplat',
+        'ConvertTo-SalesforceSoqlLiteral',
+        'ConvertTo-SalesforceSoqlIdentifier'
     )
     CmdletsToExport = @()
     AliasesToExport = @()
