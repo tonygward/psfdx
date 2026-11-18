@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.16 - 2026-11-18
+
 - psfdx, psfdx-development, psfdx-logs, psfdx-sandbox: values that cmdlets put into generated SOQL are now escaped the way SOQL requires. This covers `Get-SalesforceUsers -Username`, `Get-SalesforceRecordType -ObjectType`, `Get-SalesforceApexClass -Name`, `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles -EventType`, `Get-SalesforceLoginHistory -Username`, `Get-SalesforceSandboxRefreshStatus -Name`, and the user, class and trigger lookups in `Enable-SalesforceDebugLogging`. A value with an apostrophe or a backslash no longer breaks the query or changes its meaning. Names such as `O'Brien` used to be rejected by Salesforce and now work. A value with a control character is refused with a clear message. Your own queries passed to `Select-SalesforceRecords -Query` are unchanged.
 - psfdx-metadata: `Build-SalesforceQuery` refuses an object name that is not a plain API name.
 - psfdx-shared: new `ConvertTo-SalesforceSoqlLiteral` and `ConvertTo-SalesforceSoqlIdentifier` helpers.
