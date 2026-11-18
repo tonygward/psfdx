@@ -139,7 +139,8 @@ function Copy-SalesforceSandbox {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $command = "sf org clone sandbox --name $SourceSandboxName --clone-name $CloneSandboxName"
+    # 'sf org clone sandbox' no longer exists; cloning is 'sf org create sandbox --source-sandbox-name'.
+    $command = "sf org create sandbox --source-sandbox-name $SourceSandboxName --name $CloneSandboxName"
     if ($LicenseType) { $command += " --license-type $LicenseType" }
     if ($Alias) { $command += " --alias $Alias" }
     if ($WaitMinutes) { $command += " --wait $WaitMinutes" }

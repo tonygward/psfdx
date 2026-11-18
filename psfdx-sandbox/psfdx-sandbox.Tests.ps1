@@ -99,7 +99,7 @@ Describe 'psfdx-sandbox module' {
 
                 $out.ok | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf org clone sandbox --name Dev1 --clone-name Dev1Clone*') -and
+                    ($Command -like 'sf org create sandbox --source-sandbox-name Dev1 --name Dev1Clone*') -and
                     ($Command -like '* --license-type Partial*') -and
                     ($Command -like '* --alias clone*') -and
                     ($Command -like '* --wait 20*') -and
@@ -107,6 +107,17 @@ Describe 'psfdx-sandbox module' {
                     ($Command -like '* --target-org prod*') -and
                     ($Command -like '* --json*')
                 }
+            }
+
+            It 'does not use the removed sf org clone sandbox command or --clone-name flag' {
+                Mock Invoke-Salesforce { '{"status":0}' }
+
+                Copy-SalesforceSandbox -SourceSandboxName 'Dev1' -CloneSandboxName 'Dev1Clone' | Out-Null
+
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    $Command -eq 'sf org create sandbox --source-sandbox-name Dev1 --name Dev1Clone --json'
+                }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Command -like '*clone sandbox*') -or ($Command -like '*--clone-name*') }
             }
         }
 
