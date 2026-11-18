@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.15 - 2026-11-18
+
 - psfdx-sandbox: `Copy-SalesforceSandbox` works again. It ran `sf org clone sandbox`, which the Salesforce CLI no longer has, and now runs `sf org create sandbox --source-sandbox-name ... --name ...`. Parameters are unchanged.
 - psfdx-development: `Get-SalesforceTargetOrg -Global` and `Get-SalesforceTargetDevHub -Global` work again. They passed `--global` to `sf config get`, which the Salesforce CLI rejects. They now return the setting only when it is set globally, using the location the CLI reports.
 
