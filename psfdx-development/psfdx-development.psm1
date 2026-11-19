@@ -71,20 +71,20 @@ function New-SalesforceProject {
         [Parameter(Mandatory = $false)][string] $Namespace,
         [Parameter(Mandatory = $false)][switch] $GenerateManifest
     )
-    $command = "sf project generate --name $Name"
+    $arguments = @('project', 'generate', '--name', $Name)
     if ($OutputDirectory) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
         }
-        $command += " --output-dir $OutputDirectory"
+        $arguments += @('--output-dir', $OutputDirectory)
     }
-    if ($DefaultPackageDirectory) { $command += " --default-package-dir $DefaultPackageDirectory" }
-    if ($Namespace) { $command += " --namespace $Namespace" }
-    if ($GenerateManifest) { $command += " --manifest" }
-    $command += " --template $Template"
-    $command += " --json"
+    if ($DefaultPackageDirectory) { $arguments += @('--default-package-dir', $DefaultPackageDirectory) }
+    if ($Namespace) { $arguments += @('--namespace', $Namespace) }
+    if ($GenerateManifest) { $arguments += '--manifest' }
+    $arguments += @('--template', $Template)
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $result = Show-SalesforceResult -Result $result
 
     if (($null -ne $DefaultUserName) -and ($DefaultUserName -ne '')) {
@@ -111,11 +111,11 @@ function Set-SalesforceTargetOrg {
         [Parameter(Mandatory = $true)][string] $Value,
         [Parameter(Mandatory = $false)][switch] $Global
     )
-    $command = "sf config set target-org=$Value"
-    if ($Global) { $command += " --global" }
-    $command += " --json"
+    $arguments = @('config', 'set', "target-org=$Value")
+    if ($Global) { $arguments += '--global' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -125,9 +125,9 @@ function Get-SalesforceTargetOrg {
         [Parameter(Mandatory = $false)][switch] $Global
     )
     # 'sf config get' has no --global flag. Every entry it returns says whether it is Local or Global, so -Global filters on that.
-    $command = "sf config get target-org --json"
+    $arguments = @('config', 'get', 'target-org', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $records = Show-SalesforceResult -Result $result
     if ($Global) { return @($records | Where-Object { $_.location -eq 'Global' }) }
     return $records
@@ -138,20 +138,20 @@ function Remove-SalesforceTargetOrg {
     Param(
         [Parameter(Mandatory = $false)][switch] $Global
     )
-    $command = "sf config unset target-org"
-    if ($Global) { $command += " --global" }
-    $command += " --json"
+    $arguments = @('config', 'unset', 'target-org')
+    if ($Global) { $arguments += '--global' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
 function Get-SalesforceConfig {
     [CmdletBinding()]
     Param()
-    $command = "sf config list --json"
+    $arguments = @('config', 'list', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -162,11 +162,11 @@ function Set-SalesforceTargetDevHub {
         [Parameter(Mandatory = $false)][switch] $Global
     )
 
-    $command = "sf config set target-dev-hub=$Value"
-    if ($Global) { $command += " --global" }
-    $command += " --json"
+    $arguments = @('config', 'set', "target-dev-hub=$Value")
+    if ($Global) { $arguments += '--global' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -177,9 +177,9 @@ function Get-SalesforceTargetDevHub {
     )
 
     # 'sf config get' has no --global flag. Every entry it returns says whether it is Local or Global, so -Global filters on that.
-    $command = "sf config get target-dev-hub --json"
+    $arguments = @('config', 'get', 'target-dev-hub', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $records = Show-SalesforceResult -Result $result
     if ($Global) { return @($records | Where-Object { $_.location -eq 'Global' }) }
     return $records
@@ -190,11 +190,11 @@ function Remove-SalesforceTargetDevHub {
     Param(
         [Parameter(Mandatory = $false)][switch] $Global
     )
-    $command = "sf config unset target-dev-hub"
-    if ($Global) { $command += " --global" }
-    $command += " --json"
+    $arguments = @('config', 'unset', 'target-dev-hub')
+    if ($Global) { $arguments += '--global' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return (Show-SalesforceResult -Result $result).successes
 }
 
@@ -209,13 +209,13 @@ function Get-SalesforceScratchOrgs {
         [Parameter(Mandatory = $false)][switch] $Last
     )
 
-    $command = "sf org list --all"
+    $arguments = @('org', 'list', '--all')
     if ($SkipConnectionStatus) {
-        $command += " --skip-connection-status"
+        $arguments += '--skip-connection-status'
     }
-    $command += " --json"
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 
     $result = $result | ConvertFrom-Json
     $result = $result.result.scratchOrgs
@@ -243,23 +243,23 @@ function New-SalesforceScratchOrg {
         [Parameter(Mandatory = $false)][string] $SourceOrgId,
         [Parameter(Mandatory = $false)][string] $AdminUsername
     )
-    $command = "sf org create scratch"
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    if ($SetDefault) { $command += " --set-default" }
-    if ($DurationDays) { $command += " --duration-days $DurationDays" }
-    $command += " --definition-file $DefinitionFile"
-    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
-    if ($Edition) { $command += " --edition $Edition" }
-    if ($Snapshot) { $command += " --snapshot $Snapshot" }
-    if ($AdminEmail) { $command += " --admin-email $AdminEmail" }
-    if ($Description) { $command += " --description `"$Description`"" }
-    if ($Name) { $command += " --name `"$Name`"" }
-    if ($Release) { $command += " --release $Release" }
-    if ($SourceOrgId) { $command += " --source-org $SourceOrgId" }
-    if ($AdminUsername) { $command += " --username $AdminUsername" }
-    $command += " --json"
+    $arguments = @('org', 'create', 'scratch')
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($DurationDays) { $arguments += @('--duration-days', $DurationDays) }
+    $arguments += @('--definition-file', $DefinitionFile)
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($Edition) { $arguments += @('--edition', $Edition) }
+    if ($Snapshot) { $arguments += @('--snapshot', $Snapshot) }
+    if ($AdminEmail) { $arguments += @('--admin-email', $AdminEmail) }
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($Name) { $arguments += @('--name', $Name) }
+    if ($Release) { $arguments += @('--release', $Release) }
+    if ($SourceOrgId) { $arguments += @('--source-org', $SourceOrgId) }
+    if ($AdminUsername) { $arguments += @('--username', $AdminUsername) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -269,12 +269,12 @@ function Remove-SalesforceScratchOrg {
         [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter()][switch] $NoPrompt
     )
-    $command = "sf org delete scratch --target-org $TargetOrg"
+    $arguments = @('org', 'delete', 'scratch', '--target-org', $TargetOrg)
     if ($NoPrompt) {
-        $command += " --no-prompt"
+        $arguments += '--no-prompt'
     }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Remove-SalesforceScratchOrgs {
@@ -309,31 +309,31 @@ function Test-SalesforceApex {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $command = "sf apex run test"
+    $arguments = @('apex', 'run', 'test')
 
-    $command += Get-SalesforceCliApexTestParams -TestsInProject:$TestsInProject -ClassName $ClassName -TestName $TestName
+    $arguments += Get-SalesforceCliApexTestArguments -TestsInProject:$TestsInProject -ClassName $ClassName -TestName $TestName
 
     if ($OutputDirectory) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
         }
-        $command += " --output-dir $OutputDirectory"
+        $arguments += @('--output-dir', $OutputDirectory)
     }
-    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
 
-    if ($Concise) { $command += " --concise" }
-    if ($CodeCoverage) { $command += " --code-coverage" }
-    if ($CodeCoverageDetailed) { $command += " --detailed-coverage" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --result-format $ResultFormat"
+    if ($Concise) { $arguments += '--concise' }
+    if ($CodeCoverage) { $arguments += '--code-coverage' }
+    if ($CodeCoverageDetailed) { $arguments += '--detailed-coverage' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += @('--result-format', $ResultFormat)
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
     if ($ResultFormat -ne 'json') {
-        Invoke-Salesforce -Command $command @commonParams
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return
     }
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $result = $result | ConvertFrom-Json
 
     $summary = $result.result.summary
@@ -358,7 +358,7 @@ function Test-SalesforceApex {
     }
 }
 
-function Get-SalesforceCliApexTestParams {
+function Get-SalesforceCliApexTestArguments {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $ClassName,
@@ -366,17 +366,18 @@ function Get-SalesforceCliApexTestParams {
         [Parameter(Mandatory = $false)][switch] $TestsInProject
     )
 
-    $value = ""
+    $value = @()
     if ($TestsInProject.IsPresent) {
         $testClassNames = Get-SalesforceApexTestClassNames
-        if (-not (Get-Command -Name ConvertTo-SalesforceCliApexTestParams -ErrorAction SilentlyContinue)) {
-            Import-PsfdxSharedModule -ForceImport
+        $testClassNames = @($testClassNames | Where-Object { $_ -and $_.Trim() })
+        if ($testClassNames.Count -eq 0) {
+            throw "No Apex test classes found in the project."
         }
-        $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $testClassNames
+        foreach ($testClassName in $testClassNames) { $value += @('--tests', $testClassName.Trim()) }
     } elseif ($ClassName -and $TestName) {
-        $value += " --tests $ClassName.$TestName" # Run specific Test in a Class
+        $value += @('--tests', "$ClassName.$TestName") # Run specific Test in a Class
     } elseif ((-not $TestName) -and ($ClassName)) {
-        $value += " --tests $ClassName"     # Run Test Class
+        $value += @('--tests', $ClassName)     # Run Test Class
     }
     return $value
 }
@@ -470,11 +471,11 @@ function Invoke-SalesforceApex {
         [Parameter(Mandatory = $true)][string] $ApexFile,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $command = "sf apex run --file $ApexFile"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('apex', 'run', '--file', $ApexFile)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -649,16 +650,16 @@ function Watch-SalesforceApexAction {
         $name = Get-SalesforceName -FileName $FilePath
         Write-Host "Deploying $type ${name}..." -ForegroundColor Cyan
 
-        $command = "sf project deploy start"
-        $command += " --metadata ${type}:${name}"
+        $arguments = @('project', 'deploy', 'start')
+        $arguments += @('--metadata', "${type}:${name}")
         $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
         $testClassNames = Get-SalesforceApexTestClassNames -FilePath $FilePath -ProjectFolder $ProjectFolder
         $testLevel = if ($testClassNames -and $testClassNames.Count -gt 0) { 'SpecificTests' } else { 'NoTests' }
-        $command += Get-SalesforceApexCliTestParams @commonParams -TestLevel $testLevel -Tests $testClassNames
-        $command += " --ignore-warnings"
-        if ($IgnoreErrors) { $command += " --ignore-errors" }
-        $command += " --json"
-        $deployJson = Invoke-Salesforce -Command $command @commonParams
+        $arguments += Get-SalesforceApexCliTestArguments @commonParams -TestLevel $testLevel -Tests $testClassNames
+        $arguments += '--ignore-warnings'
+        if ($IgnoreErrors) { $arguments += '--ignore-errors' }
+        $arguments += '--json'
+        $deployJson = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         Show-SalesforceResult -Result $deployJson
 
         $successMessage = "Deployed $type ${name}"
@@ -790,17 +791,17 @@ function New-SalesforceApexClass {
         # project's own default package directory.
         [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
-    $command = "sf apex generate class"
-    $command += " --name $Name"
-    $command += " --template $Template"
+    $arguments = @('apex', 'generate', 'class')
+    $arguments += @('--name', $Name)
+    $arguments += @('--template', $Template)
     if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
         }
-        $command += " --output-dir $OutputDirectory"
+        $arguments += @('--output-dir', $OutputDirectory)
     }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function New-SalesforceApexTrigger {
@@ -815,18 +816,18 @@ function New-SalesforceApexTrigger {
         # project's own default package directory.
         [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
-    $command = "sf apex generate trigger"
-    $command += " --name $Name"
-    $command += " --event $Event"
-    if ($SObject) { $command += " --sobject $SObject" }
+    $arguments = @('apex', 'generate', 'trigger')
+    $arguments += @('--name', $Name)
+    $arguments += @('--event', $Event)
+    if ($SObject) { $arguments += @('--sobject', $SObject) }
     if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
         }
-        $command += " --output-dir $OutputDirectory"
+        $arguments += @('--output-dir', $OutputDirectory)
     }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
@@ -837,14 +838,14 @@ function Install-SalesforceLwcDevServer {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command "sf plugins install @salesforce/plugin-lightning-dev" @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments @('plugins', 'install', '@salesforce/plugin-lightning-dev') @commonParams
 }
 
 function Test-SalesforceLightningDevPluginInstalled {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $raw = Invoke-Salesforce -Command "sf plugins --core --json" @commonParams
+    $raw = Invoke-Salesforce -FilePath 'sf' -Arguments @('plugins', '--core', '--json') @commonParams
     $text = ($raw | Out-String)
     return ($text -match '@salesforce/plugin-lightning-dev')
 }
@@ -864,14 +865,13 @@ function Start-SalesforceLwcDevServer {
     if (-not (Test-SalesforceLightningDevPluginInstalled @commonParams)) {
         throw "The Salesforce CLI plugin '@salesforce/plugin-lightning-dev' is not installed. Run Install-SalesforceLwcDevServer, then try again."
     }
-    $command = "sf lightning dev $($Mode.ToLowerInvariant())"
+    $arguments = @('lightning', 'dev', $($Mode.ToLowerInvariant()))
     if (-not [string]::IsNullOrWhiteSpace($Name)) {
-        $escapedName = $Name -replace '"', '`"'
-        $command += " --name `"$escapedName`""
+        $arguments += @('--name', $Name)
     }
-    if ($DeviceType) { $command += " --device-type $DeviceType" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    Invoke-Salesforce -Command $command @commonParams
+    if ($DeviceType) { $arguments += @('--device-type', $DeviceType) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
@@ -883,9 +883,9 @@ function Install-SalesforceJest {
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     if (Get-Command yarn -ErrorAction SilentlyContinue) {
-        Invoke-Salesforce -Command "yarn add -D @salesforce/sfdx-lwc-jest" @commonParams
+        Invoke-Salesforce -FilePath 'yarn' -Arguments @('add', '-D', '@salesforce/sfdx-lwc-jest') @commonParams
     } else {
-        Invoke-Salesforce -Command "npm install -D @salesforce/sfdx-lwc-jest" @commonParams
+        Invoke-Salesforce -FilePath 'npm' -Arguments @('install', '-D', '@salesforce/sfdx-lwc-jest') @commonParams
     }
 }
 
@@ -947,21 +947,21 @@ function Test-SalesforceJest {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command "npm run test:unit" @commonParams
+    Invoke-Salesforce -FilePath 'npm' -Arguments @('run', 'test:unit') @commonParams
 }
 
 function Debug-SalesforceJest {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command "npm run test:unit:debug" @commonParams
+    Invoke-Salesforce -FilePath 'npm' -Arguments @('run', 'test:unit:debug') @commonParams
 }
 
 function Watch-SalesforceJest {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command "npm run test:unit:watch" @commonParams
+    Invoke-Salesforce -FilePath 'npm' -Arguments @('run', 'test:unit:watch') @commonParams
 }
 
 #endregion

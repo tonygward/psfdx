@@ -155,9 +155,6 @@ InModuleScope 'psfdx-shared' {
         It 'returns one --tests pair per class, sorted and de-duplicated' {
             (Get-SalesforceApexCliTestArguments -TestLevel SpecificTests -Tests 'BTest','ATest','ATest',' ') -join '|' | Should -Be '--test-level|RunSpecifiedTests|--tests|ATest|--tests|BTest'
         }
-        It 'matches the string form used by cmdlets that still build a command string' {
-            Get-SalesforceApexCliTestParams -TestLevel SpecificTests -Tests 'ATest' | Should -Be ' --test-level RunSpecifiedTests --tests ATest'
-        }
     }
 
     Describe 'ConvertFrom-SalesforceJsonOutput and Show-SalesforceResult failures' {

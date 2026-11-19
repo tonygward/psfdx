@@ -89,5 +89,5 @@ Some older code predates these rules. Don't treat it as precedent:
 
 - Each module `.psm1` starts with a copy of `Import-PsfdxSharedModule`. The psfdx, logs, metadata, sandbox and packages copies are identical. The psfdx-development copy also has a `-ForceImport` switch. If you change the function, change all six and keep that difference.
 - Helpers that every module needs go in `psfdx-shared/` and are exported from `psfdx-shared.psd1`. A module's private helpers stay out of its own `FunctionsToExport`.
-- Watch for near-identical names. `Get-SalesforceApexCliTestParams` (shared) maps `-TestLevel`/`-Tests` to deploy flags. `Get-SalesforceCliApexTestParams` (psfdx-development, private) builds `--tests` for `sf apex run test`.
+- Watch for near-identical names. `Get-SalesforceApexCliTestArguments` (shared) maps `-TestLevel`/`-Tests` to deploy flags. `Get-SalesforceCliApexTestArguments` (psfdx-development, private) builds `--tests` for `sf apex run test`.
 - To call a cmdlet from another module (e.g. `Select-SalesforceRecords` or `Get-SalesforceUsers` from psfdx), add that module to `RequiredModules` in your manifest, as `psfdx-logs.psd1` does. `psfdx-development.psd1` currently calls psfdx without declaring it.

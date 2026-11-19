@@ -19,8 +19,8 @@ Describe 'psfdx-development basics' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
             Mock Invoke-Salesforce {
-                param($Command)
-                switch -Regex ($Command) {
+                $text = $FilePath + ' ' + ($Arguments -join ' ')
+                switch -Regex ($text) {
                     'sf plugins --core --json' {
                         return '[{"name":"@salesforce/plugin-lightning-dev","version":"1.0.0"}]'
                     }
@@ -35,32 +35,32 @@ Describe 'psfdx-development basics' {
         }
         It 'starts LWC dev server with sf command' {
             Start-SalesforceLwcDevServer | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev app' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|app' }
         }
         It 'starts LWC dev server in component mode with name and target org' {
             Start-SalesforceLwcDevServer -Mode Component -Name 'my comp' -TargetOrg me | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev component --name "my comp" --target-org me' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|component|--name|my comp|--target-org|me' }
         }
         It 'starts LWC dev server in site mode' {
             Start-SalesforceLwcDevServer -Mode Site -Name 'My Site' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev site --name "My Site"' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|site|--name|My Site' }
         }
         It 'starts LWC dev server app with device type' {
             Start-SalesforceLwcDevServer -Mode App -Name MyApp -DeviceType ios | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf lightning dev app --name "MyApp" --device-type ios' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|app|--name|MyApp|--device-type|ios' }
         }
         It 'rejects device type outside app mode' {
             { Start-SalesforceLwcDevServer -Mode Site -DeviceType ios } | Should -Throw -ExpectedMessage '-DeviceType is only supported with -Mode App.'
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf lightning dev*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'lightning|dev*' }
         }
         It 'throws an actionable error when the lightning dev plugin is missing' {
             Mock Invoke-Salesforce { return '[{"name":"@salesforce/plugin-apex"}]' }
             { Start-SalesforceLwcDevServer } | Should -Throw -ExpectedMessage "*Install-SalesforceLwcDevServer*"
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf lightning dev*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'lightning|dev*' }
         }
         It 'installs the lightning dev plugin' {
             Install-SalesforceLwcDevServer | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf plugins install @salesforce/plugin-lightning-dev' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|install|@salesforce/plugin-lightning-dev' }
         }
         It 'scaffolds a Jest test without calling sf' {
             $project = Join-Path $TestDrive 'my project'
@@ -91,32 +91,32 @@ Describe 'psfdx-development basics' {
         }
         It 'sets project target org with equals syntax' {
             Set-SalesforceTargetOrg -Value 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-org=user@example --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|set|target-org=user@example|--json' }
         }
         It 'removes project target org' {
             Remove-SalesforceTargetOrg | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-org --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|unset|target-org|--json' }
         }
         It 'removes project target org globally' {
             Remove-SalesforceTargetOrg -Global | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-org --global --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|unset|target-org|--global|--json' }
         }
         It 'sets default dev hub with equals syntax' {
             Set-SalesforceTargetDevHub -Value 'DevHubAlias' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-dev-hub=DevHubAlias --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|set|target-dev-hub=DevHubAlias|--json' }
         }
         It 'sets default dev hub globally' {
             Set-SalesforceTargetDevHub -Value 'DevHubAlias' -Global | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config set target-dev-hub=DevHubAlias --global --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|set|target-dev-hub=DevHubAlias|--global|--json' }
         }
         It 'gets default dev hub' {
             Get-SalesforceTargetDevHub | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|get|target-dev-hub|--json' }
         }
         It 'gets default dev hub globally without passing --global, which sf config get does not accept' {
             Get-SalesforceTargetDevHub -Global | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-dev-hub --json' }
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like '*--global*' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|get|target-dev-hub|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like '*--global*' }
         }
         Context 'Get-SalesforceTargetOrg and Get-SalesforceTargetDevHub with -Global' {
             It 'returns the entry only when it is set globally' {
@@ -124,7 +124,7 @@ Describe 'psfdx-development basics' {
                 $r = @(Get-SalesforceTargetOrg -Global)
                 $r.Count | Should -Be 1
                 $r[0].value | Should -Be 'me@example.com'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config get target-org --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|get|target-org|--json' }
             }
             It 'returns nothing when the value is only set locally' {
                 Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"target-dev-hub","value":"hub","location":"Local","success":true}]}' }
@@ -139,11 +139,11 @@ Describe 'psfdx-development basics' {
         }
         It 'removes default dev hub' {
             Remove-SalesforceTargetDevHub | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-dev-hub --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|unset|target-dev-hub|--json' }
         }
         It 'removes default dev hub globally' {
             Remove-SalesforceTargetDevHub -Global | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf config unset target-dev-hub --global --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'config|unset|target-dev-hub|--global|--json' }
         }
     }
 }
@@ -152,13 +152,12 @@ Describe 'Test-SalesforceApex command building' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
             Mock Invoke-Salesforce {
-                param($Command)
                 '{"status":0,"result":{"tests":[],"summary":{"outcome":"Passed","testRunCoverage":"100%"}}}'
             }
         }
         It 'runs specified class synchronously with target org and json' {
             Test-SalesforceApex -ClassName 'MyClass' -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf apex run test *') -and ($Command -like '* --tests MyClass*') -and ($Command -like '* --target-org me*') -and ($Command -like '* --result-format json*') }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { (($Arguments -join '|') -like 'apex|run|test|*') -and (($Arguments -join '|') -like '*|--tests|MyClass*') -and (($Arguments -join '|') -like '*|--target-org|me*') -and (($Arguments -join '|') -like '*|--result-format|json*') }
         }
         It 'throws if output directory does not exist' {
             $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
@@ -177,7 +176,7 @@ Describe 'Test-SalesforceApex command building' {
             $existing = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
                 Test-SalesforceApex -OutputDirectory $existing.FullName | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like "sf apex run test* --output-dir $($existing.FullName)*" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -like "apex|run|test*|--output-dir|$($existing.FullName)*" }
             }
             finally {
                 Remove-Item -LiteralPath $existing.FullName -Force -Recurse
@@ -195,7 +194,7 @@ Describe 'Test-SalesforceApex command building' {
                 }
                 catch {
                     $threw = $true
-                    $_.Exception.Message | Should -BeLike "Cannot validate argument on parameter 'TestClassNames'.*"
+                    $_.Exception.Message | Should -Be "No Apex test classes found in the project."
                 }
                 $threw | Should -BeTrue "Expected Test-SalesforceApex to throw when no Apex tests found."
                 Assert-MockCalled Invoke-Salesforce -Times 0
@@ -218,9 +217,9 @@ Describe 'Test-SalesforceApex command building' {
 
                 Test-SalesforceApex -TestsInProject | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf apex run test *') -and
-                    ($Command -like '* --tests first*') -and
-                    ($Command -like '* --tests second*')
+                    (($Arguments -join '|') -like 'apex|run|test|*') -and
+                    (($Arguments -join '|') -like '*|--tests|first*') -and
+                    (($Arguments -join '|') -like '*|--tests|second*')
                 }
             }
             finally {
@@ -253,19 +252,26 @@ Describe 'New-SalesforceApexClass' {
             try {
                 Mock Invoke-Salesforce {}
                 New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $existing.FullName
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf apex generate class --name MyClass --template DefaultApexClass --output-dir $($existing.FullName)" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "apex|generate|class|--name|MyClass|--template|DefaultApexClass|--output-dir|$($existing.FullName)" }
             }
             finally {
                 Remove-Item -LiteralPath $existing.FullName -Force -Recurse
             }
         }
 
+        It 'passes an output directory with spaces as one argument' {
+            Mock Invoke-Salesforce {}
+            $dir = New-Item -Path (Join-Path $TestDrive 'my classes dir') -ItemType Directory
+            New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $dir.FullName
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 9 -and $Arguments[8] -eq $dir.FullName }
+        }
+
         It 'omits output directory validation when not provided' {
             Mock Invoke-Salesforce {}
             Mock Test-Path { throw "Test-Path should not be called" }
             New-SalesforceApexClass -Name 'DefaultClass'
-            $expected = 'sf apex generate class --name DefaultClass --template DefaultApexClass'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
+            $expected = 'apex|generate|class|--name|DefaultClass|--template|DefaultApexClass'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
         }
     }
 }
@@ -292,20 +298,27 @@ Describe 'New-SalesforceApexTrigger' {
             try {
                 Mock Invoke-Salesforce {}
                 New-SalesforceApexTrigger -Name 'MyTrigger' -SObject 'Account' -OutputDirectory $existing.FullName
-                $expected = "sf apex generate trigger --name MyTrigger --event before insert --sobject Account --output-dir $($existing.FullName)"
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
+                $expected = "apex|generate|trigger|--name|MyTrigger|--event|before insert|--sobject|Account|--output-dir|$($existing.FullName)"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
             }
             finally {
                 Remove-Item -LiteralPath $existing.FullName -Force -Recurse
             }
         }
 
+        It 'passes an output directory with spaces as one argument' {
+            Mock Invoke-Salesforce {}
+            $dir = New-Item -Path (Join-Path $TestDrive 'my classes dir') -ItemType Directory
+            New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $dir.FullName
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 9 -and $Arguments[8] -eq $dir.FullName }
+        }
+
         It 'omits output directory validation when not provided' {
             Mock Invoke-Salesforce {}
             Mock Test-Path { throw "Test-Path should not be called" }
             New-SalesforceApexTrigger -Name 'DefaultTrigger'
-            $expected = 'sf apex generate trigger --name DefaultTrigger --event before insert'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
+            $expected = 'apex|generate|trigger|--name|DefaultTrigger|--event|before insert'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
         }
     }
 }
@@ -323,14 +336,13 @@ Describe 'Watch-SalesforceApexAction' {
                 Set-Content -Path $file -Value 'public class Sample {}' -Encoding UTF8
 
                 Mock Invoke-Salesforce {
-                    param($Command)
                     return '{"status":0,"result":{"command":"deploy","details":{"tests":{"successes":[{"name":"SampleTest"}]}}}}'
                 }
                 Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @('SampleTest') }
 
                 $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName -IgnoreErrors
 
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexClass:Sample*') -and ($Command -like '*--tests SampleTest*') -and ($Command -like '*--test-level RunSpecifiedTests*') -and ($Command -like '*--ignore-errors*') }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { (($Arguments -join '|') -like 'project|deploy|start|--metadata|ApexClass:Sample*') -and (($Arguments -join '|') -like '*--tests|SampleTest*') -and (($Arguments -join '|') -like '*--test-level|RunSpecifiedTests*') -and (($Arguments -join '|') -like '*--ignore-errors*') }
                 $result.command | Should -Be 'deploy'
             }
             finally {
@@ -362,13 +374,12 @@ Describe 'Watch-SalesforceApexAction' {
                 Set-Content -Path $file -Value 'trigger Sample on Account (before insert) {}' -Encoding UTF8
 
                 Mock Invoke-Salesforce {
-                    param($Command)
                     return '{"status":0,"result":{"command":"deploy"}}'
                 }
                 Mock Get-SalesforceApexTestClassNames { param($FilePath,$ProjectFolder) return @() }
 
                 $result = Watch-SalesforceApexAction -FilePath $file -ProjectFolder $tempRoot.FullName
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -like 'sf project deploy start --metadata ApexTrigger:Sample*') -and ($Command -notlike '*--tests*') -and ($Command -notlike '*--ignore-errors*') }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { (($Arguments -join '|') -like 'project|deploy|start|--metadata|ApexTrigger:Sample*') -and (($Arguments -join '|') -notlike '*--tests*') -and (($Arguments -join '|') -notlike '*--ignore-errors*') }
                 $result.command | Should -Be 'deploy'
             }
             finally {

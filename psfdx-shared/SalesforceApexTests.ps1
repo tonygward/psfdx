@@ -117,18 +117,6 @@ function Get-SalesforceApexCliTestArguments {
     return [string[]]$value
 }
 
-function Get-SalesforceApexCliTestParams {
-    # String form of Get-SalesforceApexCliTestArguments, for the cmdlets that still build a command string.
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][string] $SourceDir,
-        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'ReferencedTests', 'TestsInFolder', 'TestsInOrg', 'TestsInOrgAndPackages', 'RelevantTests')][string] $TestLevel = 'NoTests',
-        [Parameter(Mandatory = $false)][string[]] $Tests
-    )
-    $arguments = Get-SalesforceApexCliTestArguments @PSBoundParameters
-    return ' ' + ($arguments -join ' ')
-}
-
 function Get-SalesforceApexTestClassNamesFromPath {
     [CmdletBinding()]
     Param(
@@ -157,27 +145,4 @@ function Get-SalesforceApexTestClassNamesFromPath {
     }
 
     return @($testFiles | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
-}
-
-function ConvertTo-SalesforceCliApexTestParams {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]] $TestClassNames
-    )
-
-    begin { $all = @() }
-
-    process {
-        if ($null -ne $TestClassNames) {
-            $all += $TestClassNames | ForEach-Object { $_ } | Where-Object { $_ -and $_.Trim() }
-        }
-    }
-
-    end {
-        if ($all.Count -eq 0) { return "" }
-        $parts = $all | ForEach-Object { "--tests $($_.Trim())" }
-        ' ' + ($parts -join ' ')
-    }
 }
