@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-agentforce: the agent cmdlets now pass each value to the Salesforce CLI as its own argument, so values with spaces or quotes reach `sf` exactly as typed.
+
 ## 0.8.19 - 2026-11-19
 
 - psfdx-shared: Salesforce CLI failures now stop with a clear error. Every cmdlet that reads `sf --json` output throws for empty output, text that is not JSON, malformed JSON, or JSON with no `status`, and shows a short redacted preview instead of a parser error. If the CLI process exits with an error and prints no JSON, the error gives the exit code. Tokens and auth URLs are never shown. Commands without `--json` return their output as before.

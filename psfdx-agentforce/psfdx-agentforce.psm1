@@ -61,7 +61,7 @@ function Test-SalesforceAgentPlugin {
     Param()
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $raw = Invoke-Salesforce -Command "sf plugins --core --json" @commonParams
+    $raw = Invoke-Salesforce -FilePath 'sf' -Arguments @('plugins', '--core', '--json') @commonParams
     $text = ($raw | Out-String)
     return ($text -match '@salesforce/plugin-agent')
 }
@@ -104,10 +104,10 @@ function Get-SalesforceAgentTests {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
 
-    $command = "sf agent test list"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $arguments = @('agent', 'test', 'list')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $parsed = Show-SalesforceResult -Result $result
     if ($null -eq $parsed) { return @() }
     return @($parsed)
@@ -125,11 +125,11 @@ function Start-SalesforceAgentTest {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
 
-    $command = "sf agent test run --api-name $ApiName"
-    if ($PSBoundParameters.ContainsKey('WaitMinutes')) { $command += " --wait $WaitMinutes" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $arguments = @('agent', 'test', 'run', '--api-name', $ApiName)
+    if ($PSBoundParameters.ContainsKey('WaitMinutes')) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -146,10 +146,10 @@ function Get-SalesforceAgentTestResult {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
 
-    $command = "sf agent test results --job-id $JobId"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $arguments = @('agent', 'test', 'results', '--job-id', $JobId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -170,13 +170,13 @@ function Enable-SalesforceAgent {
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
 
-    $command = "sf agent activate --api-name $ApiName"
-    if ($PSBoundParameters.ContainsKey('Version')) { $command += " --version $Version" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('agent', 'activate', '--api-name', $ApiName)
+    if ($PSBoundParameters.ContainsKey('Version')) { $arguments += @('--version', $Version) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
 
     if ($PSCmdlet.ShouldProcess($ApiName, 'Activate agent')) {
-        $result = Invoke-Salesforce -Command $command @commonParams
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
     }
 }
@@ -193,12 +193,12 @@ function Disable-SalesforceAgent {
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
 
-    $command = "sf agent deactivate --api-name $ApiName"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('agent', 'deactivate', '--api-name', $ApiName)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
 
     if ($PSCmdlet.ShouldProcess($ApiName, 'Deactivate agent')) {
-        $result = Invoke-Salesforce -Command $command @commonParams
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
     }
 }
