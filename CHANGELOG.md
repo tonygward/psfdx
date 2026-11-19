@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.19 - 2026-11-19
+
 - psfdx-shared: Salesforce CLI failures now stop with a clear error. Every cmdlet that reads `sf --json` output throws for empty output, text that is not JSON, malformed JSON, or JSON with no `status`, and shows a short redacted preview instead of a parser error. If the CLI process exits with an error and prints no JSON, the error gives the exit code. Tokens and auth URLs are never shown. Commands without `--json` return their output as before.
 - psfdx-packages: package cmdlets now pass each value to the Salesforce CLI as its own argument. Names, descriptions, tags, installation keys, paths and branches with spaces, apostrophes, quotes or `%` reach `sf` exactly as typed. Before, `New-SalesforcePackage -Description "My description"` split the description into several arguments. On Windows PowerShell 5.1, double quotes inside an argument are now kept when running a real program such as `sf.exe`.
 - psfdx-shared: `Invoke-Salesforce` accepts `-FilePath` and `-Arguments` (an exact argument array) as well as the existing `-Command` string.
