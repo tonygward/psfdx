@@ -47,6 +47,12 @@ Describe 'psfdx-sandbox module' {
                 Mock Show-SalesforceResult { param($Result) @{ raw = $Result } }
             }
 
+            It 'passes a definition file path with spaces as one argument' {
+                Mock Invoke-Salesforce { '{"status":0}' }
+                New-SalesforceSandbox -SandboxName 'MySandbox' -DefinitionFile 'my dir/sandbox def.json' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|create|sandbox|--name|MySandbox|--definition-file|my dir/sandbox def.json|--license-type|Developer|--json' }
+            }
+
             It 'builds sandbox creation command with options' {
                 Mock Invoke-Salesforce { '{"status":0}' }
 
