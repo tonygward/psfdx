@@ -58,21 +58,21 @@ function Verb-SalesforceNoun {
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $command = "sf some command --name $Name"
-    if ($NoPrompt) { $command += " --no-prompt" }
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('some', 'command', '--name', $Name)
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($TargetOrg) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result        # add -ReturnRecords for SOQL queries
 }
 ```
 
-- **New cmdlets pass an argument array, not a command string:** `$arguments = @('some', 'command', '--name', $Name)`, then `Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams`. Each element is one argv entry exactly as given, so spaces, quotes, apostrophes, backslashes and `%` in a value need no quoting. Tests assert `($Arguments -join '|')`. `psfdx-packages` uses this form; the other modules still pass `-Command` strings and are being moved over, so the two forms below both work. Don't mix the forms in one function.
+- **Every cmdlet passes an argument array to `Invoke-Salesforce -FilePath ... -Arguments ...`, never a command string.** Each element is one argv entry exactly as given, so spaces, quotes, apostrophes, backslashes and `%` in a value need no quoting. Tests assert `($Arguments -join '|')`. The older `-Command` string form still works for backwards compatibility but no product code uses it; don't add new callers.
 - Always forward common parameters with `Get-PsfdxCommonParameterSplat`, so `-Verbose` shows the `sf` command.
 - `Show-SalesforceResult` throws on a non-zero `status`. Don't pipe non-JSON output (`csv`/`human` result formats) into it.
 - `Invoke-Salesforce` deliberately has **no** `SupportsShouldProcess` (see the comment in `psfdx-shared/Invoke-Salesforce.ps1`). Put `ShouldProcess` on the public cmdlet instead.
-- **`Invoke-Salesforce` splits the string into an executable and an argument list and runs it directly** (`ConvertTo-PsfdxArgumentList`). It never goes through `Invoke-Expression` or a shell, so `;`, `|`, `&` and `$(...)` in a value are plain text. Quoting still decides where one argument ends: wrap paths and free text in quotes (`` " --file `"$Path`"" ``), and escape a double quote inside a value with a backtick, or it can end the argument early and add extra `sf` options. Put every value that goes into generated SOQL through `ConvertTo-SalesforceSoqlLiteral` (it returns the quoted literal; SOQL escapes with a backslash, so doubling the quote is wrong) and every object or field name through `ConvertTo-SalesforceSoqlIdentifier`. Never add an `Invoke-Expression` call. On Windows, arguments containing `%`, a double quote or a line break are rejected for the `.cmd` shims (`sf`, `npm`, `yarn`).
+- **`Invoke-Salesforce` runs the executable directly with your argument array** (`-Arguments`; the legacy `-Command` string is split by `ConvertTo-PsfdxArgumentList`). It never goes through `Invoke-Expression` or a shell, so `;`, `|`, `&` and `$(...)` in a value are plain text, and no value needs quoting or escaping. Put every value that goes into generated SOQL through `ConvertTo-SalesforceSoqlLiteral` (it returns the quoted literal; SOQL escapes with a backslash, so doubling the quote is wrong) and every object or field name through `ConvertTo-SalesforceSoqlIdentifier`. Never add an `Invoke-Expression` call. On Windows, an argument containing a double quote or a line break is rejected for the `.cmd` shims (`sf`, `npm`, `yarn`); `%` is passed literally.
 - The `Retrieve-`, `Describe-` and `Promote-` verbs are intentional, even though PowerShell doesn't approve them. Keep using them for consistency.
 - Each `.psm1` starts with an identical copy of `Import-PsfdxSharedModule`. If you change it, change all six.
 - Use `#region` / `#endregion` blocks to group cmdlets, as the existing files do.

@@ -26,7 +26,7 @@
 
 **Deliberate exception:** `Select-SalesforceRecords -Query` accepts a complete caller-authored SOQL query and must not blindly escape the entire query. The wrapper must still pass CLI arguments safely. Likewise, `Get-SalesforceCodeCoverage -ApexClassOrTrigger` filters results in PowerShell rather than interpolating its parameter into SOQL.
 
-**Structured argv (2026-11-19):** `Invoke-Salesforce` now also takes `-FilePath` and `-Arguments`, passed to the process as the exact argv ([#181](https://github.com/tonygward/psfdx/issues/181)). `psfdx-packages` is migrated; the other modules still use the quoted `-Command` string and are to follow. JSON and process failures now throw clear, redacted errors ([#183](https://github.com/tonygward/psfdx/issues/183)).
+**Structured argv (2026-11-19):** `Invoke-Salesforce` now also takes `-FilePath` and `-Arguments`, passed to the process as the exact argv ([#181](https://github.com/tonygward/psfdx/issues/181)). Every module is migrated; the quoted `-Command` string remains only as a backwards-compatible form. JSON and process failures now throw clear, redacted errors ([#183](https://github.com/tonygward/psfdx/issues/183)).
 
 **Different layers of safety:** The `Invoke-Expression` execution path from the October review was replaced in **v0.8.7** with a non-evaluating argument parser and direct invocation. This mitigates PowerShell code execution but does **not** make the generated SOQL literals safe. Separately, the parser and Windows `.cmd` shim require cross-platform tests, especially for quotes, backslashes, spaces, control characters and percent signs.
 
