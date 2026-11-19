@@ -37,6 +37,22 @@ function Verb-SalesforceNoun {
 - For SOQL, run `sf data query ... --result-format json` and call `Show-SalesforceResult -Result $raw -ReturnRecords`, which strips `attributes`. Or call `Select-SalesforceRecords` (psfdx).
 - `Show-SalesforceResult` throws on a non-zero `status`, with deploy and test failures folded into the message.
 
+### Preferred form: structured argv
+
+New cmdlets (and any cmdlet you touch) build an array and call `Invoke-Salesforce -FilePath 'sf' -Arguments $arguments`. Nothing is quoted; each element is one argument exactly as given. Windows `.cmd` shims still reject double quotes, line breaks and bare shell metacharacters, and `%` is passed literally. `psfdx-packages` is the reference.
+
+```powershell
+$arguments = @('package', 'create', '--name', $Name, '--path', $Path)
+if ($Description) { $arguments += @('--description', $Description) }
+if ($PSBoundParameters.ContainsKey('TargetDevHub') -and $TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+$arguments += '--json'
+$commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+$result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+return Show-SalesforceResult -Result $result
+```
+
+Assert it with `Assert-MockCalled Invoke-Salesforce -ParameterFilter { ($Arguments -join '|') -eq 'package|create|--name|MyPkg|...|--json' }`. The CLI compatibility scan reads the leading words of `$arguments = @(...)` as the command. The `-Command` string form below still works for the cmdlets not yet migrated.
+
 ## Pattern 2: pass-through (no `--json`)
 
 Return the `Invoke-Salesforce` output unchanged for commands that stream, are interactive, or aren't `sf` commands. Examples: `sf apex log tail`, `sf org open`, `sf plugins`, `sf lightning dev app`, `npm`/`yarn`/`brew`. Never pipe non-JSON output (including `csv`/`human` result formats) into `Show-SalesforceResult`; `Select-SalesforceRecords` shows how to branch on `-ResultFormat`.
@@ -65,7 +81,7 @@ Run non-`sf` commands through `Invoke-Salesforce` too, so tests can mock them an
 ## Existing code not to copy
 
 Some older code predates these rules. Don't treat it as precedent:
-- Unquoted paths and free text: `--output-dir $OutputDirectory` (psfdx-development), `--file $ApexFile`, `--definition-file`, `--output-file`, and `--description $Description` (psfdx-packages, which breaks on spaces).
+- Unquoted paths and free text: `--output-dir $OutputDirectory` (psfdx-development), `--file $ApexFile`, `--definition-file`, `--output-file` (the psfdx-packages cmdlets were migrated to structured argv).
 - The plain `if ($TargetOrg)` in `Get-SalesforcePackagesInstalled`.
 - `$Date.ToString('s') + 'Z'`. It labels local time as UTC, so in BST 12:00 local is sent as `12:00:00Z` instead of `11:00:00Z`. Use `ConvertTo-SalesforceSoqlDateTime -Value $Date` (psfdx-shared). A test fails if a module uses the old pattern.
 

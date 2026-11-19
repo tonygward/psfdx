@@ -170,6 +170,12 @@ function Resolve-PsfdxNativeArguments {
                 $argument = $argument.Replace('%', '%' + $script:PsfdxPercentVariable + '%')
             }
         }
+        if ($legacy -and -not $isShim -and $argument.Contains('"')) {
+            # Windows PowerShell 5.1 does not escape embedded double quotes when it builds the
+            # command line, so they would be lost. Use the CommandLineToArgvW rules: double the
+            # backslashes before a quote and escape the quote itself.
+            $argument = [regex]::Replace($argument, '(\\*)"', '$1$1\"')
+        }
         if ($legacy -and $argument -match '\s' -and $argument -match '\\+$') {
             $argument = $argument + $Matches[0]
         }
@@ -178,26 +184,61 @@ function Resolve-PsfdxNativeArguments {
     return [string[]]$prepared.ToArray()
 }
 
+function ConvertTo-PsfdxDisplayCommand {
+    # Renders an executable and argv as one line for -Verbose only. Never executed.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $FilePath,
+        [Parameter(Mandatory = $false)][AllowEmptyCollection()][string[]] $Arguments = @()
+    )
+    $parts = @($FilePath)
+    foreach ($argument in $Arguments) {
+        if ($argument -eq '' -or $argument -match '[\s"'']') {
+            $parts += '"' + ($argument -replace '([`"$])', '`$1') + '"'
+        } else {
+            $parts += $argument
+        }
+    }
+    return ($parts -join ' ')
+}
 function Invoke-Salesforce {
     # Deliberately does not declare SupportsShouldProcess: callers pipe the return value
     # straight into Show-SalesforceResult, whose -Result parameter is Mandatory, so
     # suppressing the call would make every cmdlet fail on a null argument instead of
     # performing a dry run. Declare ShouldProcess on the public cmdlets instead.
     #
-    # The command string is split into an executable and an argument array and run with the
-    # call operator. It is never passed to Invoke-Expression or a shell, so ; | & $( ) and
-    # similar characters in values are literal. Quote values with "`"$Value`"" as before.
-    [CmdletBinding()]
+    # Preferred form for new code: -FilePath sf -Arguments @('package','create','--name',$Name,...).
+    # The argument array is passed as the process argv exactly as given, so spaces, quotes,
+    # apostrophes and backslashes in a value need no quoting at all. Build it with
+    # Add-PsfdxArgument or a plain list.
+    #
+    # Legacy form: -Command. The command string is split into an executable and an argument
+    # array and run with the call operator. It is never passed to Invoke-Expression or a shell,
+    # so ; | & $( ) and similar characters in values are literal. Quote values with
+    # "`"$Value`"" as before.
+    [CmdletBinding(DefaultParameterSetName = 'Command')]
     Param(
-        [Parameter(Mandatory = $true)][string] $Command
+        [Parameter(Mandatory = $true, ParameterSetName = 'Command')][string] $Command,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Arguments')][ValidateNotNullOrEmpty()][string] $FilePath,
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][AllowEmptyCollection()][AllowEmptyString()][string[]] $Arguments = @()
     )
 
-    Write-Verbose (Get-PsfdxRedactedCommand -Command $Command)
-    $parsed = ConvertTo-PsfdxArgumentList -Command $Command
-    # Wrap in @() so an empty result is an empty array, not $null (Windows PowerShell 5.1 runs a foreach once over $null).
-    $nativeArguments = @(Resolve-PsfdxNativeArguments -FilePath $parsed.FilePath -Arguments $parsed.Arguments)
-    $filePath = $parsed.FilePath
+    if ($PSCmdlet.ParameterSetName -eq 'Arguments') {
+        $filePath = $FilePath
+        $rawArguments = [string[]]@($Arguments | ForEach-Object { [string]$_ })
+        $displayCommand = ConvertTo-PsfdxDisplayCommand -FilePath $filePath -Arguments $rawArguments
+        $isJsonMode = $rawArguments -contains '--json'
+    } else {
+        $parsed = ConvertTo-PsfdxArgumentList -Command $Command
+        $filePath = $parsed.FilePath
+        $rawArguments = $parsed.Arguments
+        $displayCommand = $Command
+        $isJsonMode = $Command -match '(^|\s)--json(\s|$)'
+    }
 
+    Write-Verbose (Get-PsfdxRedactedCommand -Command $displayCommand)
+    # Wrap in @() so an empty result is an empty array, not $null (Windows PowerShell 5.1 runs a foreach once over $null).
+    $nativeArguments = @(Resolve-PsfdxNativeArguments -FilePath $filePath -Arguments $rawArguments)
     $percentToken = '%' + $script:PsfdxPercentVariable + '%'
     $needsPercent = $false
     foreach ($nativeArgument in $nativeArguments) {
@@ -222,7 +263,7 @@ function Invoke-Salesforce {
     # In JSON mode the CLI prints a JSON error body on failure, which Show-SalesforceResult
     # reports. A failed process with no JSON body would otherwise look like success or like
     # a parsing problem, so say what happened here. Plain-text commands are returned as is.
-    if ($exitCode -ne 0 -and $Command -match '(^|\s)--json(\s|$)') {
+    if ($exitCode -ne 0 -and $isJsonMode) {
         $text = [string]::Join([Environment]::NewLine, @($output | ForEach-Object { [string]$_ })).Trim()
         $isJson = $false
         if ($text) {

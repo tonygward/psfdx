@@ -68,6 +68,7 @@ function Verb-SalesforceNoun {
 }
 ```
 
+- **New cmdlets pass an argument array, not a command string:** `$arguments = @('some', 'command', '--name', $Name)`, then `Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams`. Each element is one argv entry exactly as given, so spaces, quotes, apostrophes, backslashes and `%` in a value need no quoting. Tests assert `($Arguments -join '|')`. `psfdx-packages` uses this form; the other modules still pass `-Command` strings and are being moved over, so the two forms below both work. Don't mix the forms in one function.
 - Always forward common parameters with `Get-PsfdxCommonParameterSplat`, so `-Verbose` shows the `sf` command.
 - `Show-SalesforceResult` throws on a non-zero `status`. Don't pipe non-JSON output (`csv`/`human` result formats) into it.
 - `Invoke-Salesforce` deliberately has **no** `SupportsShouldProcess` (see the comment in `psfdx-shared/Invoke-Salesforce.ps1`). Put `ShouldProcess` on the public cmdlet instead.

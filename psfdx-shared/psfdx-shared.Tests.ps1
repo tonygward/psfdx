@@ -296,6 +296,36 @@ public static class FakeSf {
             $out[1] | Should -Be "<$path>"
         }
 
+        It 'passes a structured argument array exactly, with no quoting needed' {
+            $values = @('two words', "O'Brien", 'say "hi"', 'C:\path with space\dir', 'Zoë 日本', '-leading-hyphen', '--json-not-a-flag x', '; Remove-Item x', '$(Get-Date)')
+            # Windows .cmd shims reject double quotes by design; the fake is a real executable, so it accepts them.
+            $out = @(Invoke-Salesforce -FilePath $script:fake -Arguments $values)
+            $out | Should -Be @($values | ForEach-Object { "<$_>" })
+        }
+
+        It 'passes % through untouched to a real executable' {
+            $out = @(Invoke-Salesforce -FilePath $script:fake -Arguments @('100%', '%PATH%'))
+            $out | Should -Be @('<100%>', '<%PATH%>')
+        }
+
+        It 'accepts an empty argument list' {
+            { Invoke-Salesforce -FilePath $script:fake -Arguments @() } | Should -Not -Throw
+        }
+
+        It 'does not execute injected commands from structured arguments' {
+            $marker = Join-Path $TestDrive 'pwned2.txt'
+            $payload = "x; New-Item -ItemType File -Path '$marker'"
+            Invoke-Salesforce -FilePath $script:fake -Arguments @('--name', $payload) | Out-Null
+            Test-Path -LiteralPath $marker | Should -BeFalse
+        }
+
+        It 'shows the structured command in -Verbose with secrets masked' {
+            $verbose = Invoke-Salesforce -FilePath $script:fake -Arguments @('--password', 'hunter2', '--name', 'two words') -Verbose 4>&1 |
+                Where-Object { $_ -is [System.Management.Automation.VerboseRecord] } | Out-String
+            $verbose | Should -Not -Match 'hunter2'
+            $verbose | Should -Match '"two words"'
+        }
+
         It 'returns raw non-JSON output untouched (csv and human)' {
             $out = @(Invoke-Salesforce -Command "`"$($script:fake)`" data query --result-format csv")
             $out | Should -Be @('<data>', '<query>', '<--result-format>', '<csv>')

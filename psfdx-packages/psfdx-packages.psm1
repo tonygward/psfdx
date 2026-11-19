@@ -62,12 +62,12 @@ function Get-SalesforcePackages {
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $ExtendedPackageDetails
     )
-    $command = "sf package list"
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    if ($ExtendedPackageDetails) { $command += " --verbose" }
-    $command += " --json"
+    $arguments = @('package', 'list')
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    if ($ExtendedPackageDetails) { $arguments += '--verbose' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -98,17 +98,17 @@ function New-SalesforcePackage {
         [Parameter(Mandatory = $false)][switch] $NoNamespace,
         [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
-    $command = "sf package create --name $Name"
-    $command += " --package-type $PackageType"
-    $command += " --path $Path"
-    if ($IsOrgDependent) { $command += " --org-dependent" }
-    if ($Description) { $command += " --description $Description" }
-    if ($ErrorNotificationUsername) { $command += " --error-notification-username $ErrorNotificationUsername" }
-    if ($NoNamespace) { $command += " --no-namespace" }
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    $command += " --json"
+    $arguments = @('package', 'create', '--name', $Name)
+    $arguments += @('--package-type', $PackageType)
+    $arguments += @('--path', $Path)
+    if ($IsOrgDependent) { $arguments += '--org-dependent' }
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($ErrorNotificationUsername) { $arguments += @('--error-notification-username', $ErrorNotificationUsername) }
+    if ($NoNamespace) { $arguments += '--no-namespace' }
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $resultSfdx = Show-SalesforceResult -Result $result
     return $resultSfdx.Id
 }
@@ -120,11 +120,11 @@ function Remove-SalesforcePackage {
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
-    $command = "sf package delete --package $Name"
-    if ($NoPrompt) { $command += " --no-prompt" }
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
+    $arguments = @('package', 'delete', '--package', $Name)
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Get-SalesforcePackagesInstalled {
@@ -134,12 +134,12 @@ function Get-SalesforcePackagesInstalled {
         [Parameter(Mandatory = $false)][string] $ApiVersion
     )
 
-    $command = "sf package installed list"
-    if ($TargetOrg) { $command += " --target-org $TargetOrg" }
-    if ($ApiVersion) { $command += " --api-version $ApiVersion" }
-    $command += " --json"
+    $arguments = @('package', 'installed', 'list')
+    if ($TargetOrg) { $arguments += @('--target-org', $TargetOrg) }
+    if ($ApiVersion) { $arguments += @('--api-version', $ApiVersion) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result -ReturnRecords
 }
 
@@ -168,17 +168,17 @@ function Get-SalesforcePackageVersions {
         $PackageId = $package.Id
     }
 
-    $command = "sf package version list"
-    if ($PackageId) { $command += " --packages $PackageId" }
-    if ($Released) { $command += " --released" }
-    if ($Concise) { $command += " --concise" }
-    if ($ExtendedDetails) { $command += " --verbose" }
-    if ($ConversionsOnly) { $command += " --show-conversions-only" }
-    if ($Branch) { $command += " --branch $Branch" }
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    $command += " --json"
+    $arguments = @('package', 'version', 'list')
+    if ($PackageId) { $arguments += @('--packages', $PackageId) }
+    if ($Released) { $arguments += '--released' }
+    if ($Concise) { $arguments += '--concise' }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    if ($ConversionsOnly) { $arguments += '--show-conversions-only' }
+    if ($Branch) { $arguments += @('--branch', $Branch) }
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -213,26 +213,26 @@ function New-SalesforcePackageVersion {
         $PackageId = $package.Id
     }
 
-    $command = "sf package version create --package $PackageId"
-    if ($Name) { $command += " --version-name $Name" }
-    if ($Description) { $command += " --version-description $Description" }
-    if ($Tag) { $command += " --tag $Tag" }
-    if ($CodeCoverage) { $command += " --code-coverage" }
-    $command += " --definition-file $ScratchOrgDefinitionFile"
+    $arguments = @('package', 'version', 'create', '--package', $PackageId)
+    if ($Name) { $arguments += @('--version-name', $Name) }
+    if ($Description) { $arguments += @('--version-description', $Description) }
+    if ($Tag) { $arguments += @('--tag', $Tag) }
+    if ($CodeCoverage) { $arguments += '--code-coverage' }
+    $arguments += @('--definition-file', $ScratchOrgDefinitionFile)
 
     if (($InstallationKeyBypass) -or (! $InstallationKey)) {
-        $command += " --installation-key-bypass"
+        $arguments += '--installation-key-bypass'
     } else {
-        $command += " --installation-key $InstallationKey"
+        $arguments += @('--installation-key', $InstallationKey)
     }
 
-    if ($SkipValidation) { $command += " --skip-validation" }
-    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
+    if ($SkipValidation) { $arguments += '--skip-validation' }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
 
-    $command += " --json"
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -244,13 +244,13 @@ function Promote-SalesforcePackageVersion {
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
 
-    $command = "sf package version promote"
-    $command += " --package $PackageVersionId"
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    if ($NoPrompt) { $command += " --no-prompt" }
-    $command += " --json"
+    $arguments = @('package', 'version', 'promote')
+    $arguments += @('--package', $PackageVersionId)
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -262,13 +262,13 @@ function Remove-SalesforcePackageVersion {
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
 
-    $command = "sf package version delete"
-    $command += " --package $PackageVersionId"
-    if ($TargetDevHub) { $command += " --target-dev-hub $TargetDevHub" }
-    if ($NoPrompt) { $command += " --no-prompt" }
-    $command += " --json"
+    $arguments = @('package', 'version', 'delete')
+    $arguments += @('--package', $PackageVersionId)
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -282,17 +282,17 @@ function Install-SalesforcePackageVersion {
         [Parameter(Mandatory = $false)][ValidateSet('AllUsers','AdminsOnly')][string] $SecurityType = 'AdminsOnly'
     )
 
-    $command = "sf package install"
-    $command += " --package $PackageVersionId"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($NoPrompt) { $command += " --no-prompt" }
-    if ($SecurityType) { $command += " --security-type $SecurityType" }
+    $arguments = @('package', 'install')
+    $arguments += @('--package', $PackageVersionId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($SecurityType) { $arguments += @('--security-type', $SecurityType) }
     if ($WaitMinutes) {
-        $command += " --wait $WaitMinutes"
-        $command += " --publish-wait $WaitMinutes"
+        $arguments += @('--wait', $WaitMinutes)
+        $arguments += @('--publish-wait', $WaitMinutes)
     }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
