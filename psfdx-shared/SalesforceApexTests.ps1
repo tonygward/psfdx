@@ -19,7 +19,8 @@ function Test-SalesforceApexTestReference {
     return [bool](Select-String -Path $Path -Pattern "\b$escaped\b" -Quiet)
 }
 
-function Get-SalesforceApexCliTestParams {
+function Get-SalesforceApexCliTestArguments {
+    # Returns the deploy test flags as an argument array: '--test-level', <level>, then '--tests', <class> for each test.
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $SourceDir,
@@ -34,7 +35,7 @@ function Get-SalesforceApexCliTestParams {
         [Parameter(Mandatory = $false)][string[]] $Tests
     )
 
-    $value = ""
+    $value = @()
     $testLevelMap = @{
         'NoTests'               = 'NoTestRun'
         'SpecificTests'         = 'RunSpecifiedTests'
@@ -44,7 +45,7 @@ function Get-SalesforceApexCliTestParams {
         'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
         'RelevantTests'         = 'RunRelevantTests'
     }
-    $value += " --test-level " + $testLevelMap[$TestLevel]
+    $value += @('--test-level', $testLevelMap[$TestLevel])
 
     if ($TestLevel -eq 'ReferencedTests') {
         if (-not $SourceDir) {
@@ -110,10 +111,22 @@ function Get-SalesforceApexCliTestParams {
 
     Write-Verbose "Test Level: $TestLevel found Tests: $Tests"
 
-    if ($Tests) {
-        $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests
+    foreach ($test in @($Tests | Where-Object { $_ -and $_.Trim() })) {
+        $value += @('--tests', $test.Trim())
     }
-    return $value
+    return [string[]]$value
+}
+
+function Get-SalesforceApexCliTestParams {
+    # String form of Get-SalesforceApexCliTestArguments, for the cmdlets that still build a command string.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $SourceDir,
+        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'ReferencedTests', 'TestsInFolder', 'TestsInOrg', 'TestsInOrgAndPackages', 'RelevantTests')][string] $TestLevel = 'NoTests',
+        [Parameter(Mandatory = $false)][string[]] $Tests
+    )
+    $arguments = Get-SalesforceApexCliTestArguments @PSBoundParameters
+    return ' ' + ($arguments -join ' ')
 }
 
 function Get-SalesforceApexTestClassNamesFromPath {

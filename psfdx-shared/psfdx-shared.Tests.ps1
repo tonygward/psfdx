@@ -148,6 +148,18 @@ InModuleScope 'psfdx-shared' {
     # Linux/macOS: a shell script. Windows: a tiny console exe compiled with the .NET Framework csc that ships
     # with Windows, so this also covers native argument passing on Windows PowerShell 5.1 and PowerShell 7.
     # (Do not guard with $IsWindows: it does not exist on Windows PowerShell 5.1, which would run the shell script there.)
+    Describe 'Get-SalesforceApexCliTestArguments' {
+        It 'returns the test level only when there are no tests' {
+            (Get-SalesforceApexCliTestArguments -TestLevel TestsInOrg) -join '|' | Should -Be '--test-level|RunLocalTests'
+        }
+        It 'returns one --tests pair per class, sorted and de-duplicated' {
+            (Get-SalesforceApexCliTestArguments -TestLevel SpecificTests -Tests 'BTest','ATest','ATest',' ') -join '|' | Should -Be '--test-level|RunSpecifiedTests|--tests|ATest|--tests|BTest'
+        }
+        It 'matches the string form used by cmdlets that still build a command string' {
+            Get-SalesforceApexCliTestParams -TestLevel SpecificTests -Tests 'ATest' | Should -Be ' --test-level RunSpecifiedTests --tests ATest'
+        }
+    }
+
     Describe 'ConvertFrom-SalesforceJsonOutput and Show-SalesforceResult failures' {
         It 'throws for empty, null and whitespace output' {
             { Show-SalesforceResult -Result '' } | Should -Throw -ExpectedMessage '*no output*'

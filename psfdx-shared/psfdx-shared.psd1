@@ -13,6 +13,7 @@
         'Get-SalesforceDeployFailures',
         'Get-SalesforceTestFailure',
         'Get-SalesforceApexCliTestParams',
+        'Get-SalesforceApexCliTestArguments',
         'Get-SalesforceApexTestClassNamesFromPath',
         'Test-SalesforceApexTestReference',
         'ConvertTo-SalesforceCliApexTestParams',
