@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.8.18 - 2026-11-19
+
+- Maintenance release.
+
 ## 0.8.17 - 2026-11-18
 
 - psfdx, psfdx-logs: dates sent to Salesforce are now converted to UTC before the `Z` is added. Before, local time was labelled as UTC, so in British Summer Time `Get-SalesforceDateTime` and the `-After` and `-Before` filters of `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles` were an hour out. A date with no time zone, such as one parsed from `'2026-11-18 12:00'`, is read as your local time.
