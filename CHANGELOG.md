@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.20 - 2026-11-19
+
 - psfdx-agentforce: the agent cmdlets now pass each value to the Salesforce CLI as its own argument, so values with spaces or quotes reach `sf` exactly as typed.
 
 ## 0.8.19 - 2026-11-19
