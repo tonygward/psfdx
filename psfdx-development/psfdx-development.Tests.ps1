@@ -566,7 +566,7 @@ Describe 'Get-SalesforceApexClass' {
         It 'escapes the name in the query' {
             Get-SalesforceApexClass -Name "My'Class\" -TargetOrg 'me' | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName 'psfdx' -ParameterFilter {
-                $Command -eq 'sf data query --query "SELECT Id, Name, Body FROM ApexClass WHERE Name = ''My\''Class\\'' LIMIT 1" --target-org me --use-tooling-api --result-format json'
+                ($Arguments -join '|') -eq 'data|query|--query|SELECT Id, Name, Body FROM ApexClass WHERE Name = ''My\''Class\\'' LIMIT 1|--target-org|me|--use-tooling-api|--result-format|json'
             }
         }
         It 'refuses a control character in the name and runs nothing' {

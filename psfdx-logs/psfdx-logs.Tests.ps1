@@ -295,22 +295,22 @@ Describe 'Enable-SalesforceDebugLogging by name' {
         }
         It 'resolves -Username to a user Id' {
             Enable-SalesforceDebugLogging -Username 'me@example.com' -DebugLevel 'SFDC_DevConsole' -TargetOrg 'myorg' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''me@example.com'' LIMIT 2" --target-org myorg --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM User WHERE Username = ''me@example.com'' LIMIT 2|--target-org|myorg|--result-format|json' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|SFDC_DevConsole|--target-org|myorg|--json' }
         }
         It 'resolves -ApexClass to a class Id' {
             Enable-SalesforceDebugLogging -ApexClass 'AccountService' -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM ApexClass WHERE Name = ''AccountService'' LIMIT 2" --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexClass WHERE Name = ''AccountService'' LIMIT 2|--result-format|json' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|X|--json' }
         }
         It 'resolves -ApexTrigger to a trigger Id' {
             Enable-SalesforceDebugLogging -ApexTrigger 'AccountTrigger' -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM ApexTrigger WHERE Name = ''AccountTrigger'' LIMIT 2" --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexTrigger WHERE Name = ''AccountTrigger'' LIMIT 2|--result-format|json' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|X|--json' }
         }
         It 'escapes single quotes in the name' {
             Enable-SalesforceDebugLogging -Username "o'brien@example.com" -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''o\''brien@example.com'' LIMIT 2" --result-format json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM User WHERE Username = ''o\''brien@example.com'' LIMIT 2|--result-format|json' }
         }
         It 'throws and does not create a trace flag when the name is not found' {
             $script:LookupJson = '{"status":0,"result":{"records":[]}}'

@@ -70,20 +70,20 @@ function Connect-Salesforce {
         [Parameter(Mandatory = $false)][string] $OAuthClientId
     )
 
-    $command = "sf org login web"
-    if ($Sandbox) { $command += " --instance-url https://test.salesforce.com" }
-    if ($CustomUrl) { $command += " --instance-url $CustomUrl" }
+    $arguments = @('org', 'login', 'web')
+    if ($Sandbox) { $arguments += @('--instance-url', 'https://test.salesforce.com') }
+    if ($CustomUrl) { $arguments += @('--instance-url', $CustomUrl) }
 
-    if ($Alias) { $command += " --alias $Alias" }
-    if ($SetDefault) { $command += " --set-default" }
-    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($SetDefaultDevHub) { $arguments += '--set-default-dev-hub' }
 
-    if ($Browser) { $command += " --browser $Browser" }
-    if ($OAuthClientId) { $command += " --client-id $OAuthClientId" }
+    if ($Browser) { $arguments += @('--browser', $Browser) }
+    if ($OAuthClientId) { $arguments += @('--client-id', $OAuthClientId) }
 
-    $command += " --json"
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -102,17 +102,13 @@ function Connect-SalesforceAuthUrl {
         throw "File does not exist: $SfdxUrlFile"
     }
 
-    $segments = [System.Collections.Generic.List[string]]::new()
-    $segments.Add('sf org login sfdx-url') | Out-Null
-    $segments.Add("--sfdx-url-file `"$SfdxUrlFile`"") | Out-Null
-    if ($Alias) { $segments.Add("--alias $Alias") | Out-Null }
-    if ($SetDefault) { $segments.Add('--set-default') | Out-Null }
-    if ($SetDefaultDevHub) { $segments.Add('--set-default-dev-hub') | Out-Null }
-    $segments.Add('--json') | Out-Null
-
-    $command = $segments -join ' '
+    $arguments = @('org', 'login', 'sfdx-url', '--sfdx-url-file', $SfdxUrlFile)
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($SetDefaultDevHub) { $arguments += '--set-default-dev-hub' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $details = Show-SalesforceResult -Result $result
 
     # -IncludeToken only passes through what the CLI returned. Current CLI versions do not
@@ -157,16 +153,16 @@ function Disconnect-Salesforce {
         [Parameter(Mandatory = $true, ParameterSetName = 'TargetOrg')][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
-    $command = "sf org logout"
+    $arguments = @('org', 'logout')
     if ($PSCmdlet.ParameterSetName -eq 'All') {
-        $command += " --all"
+        $arguments += '--all'
     } else {
-        $command += " --target-org $TargetOrg"
+        $arguments += @('--target-org', $TargetOrg)
     }
-    if ($NoPrompt) { $command += " --no-prompt" }
-    $command += " --json"
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     Show-SalesforceResult -Result $result
 }
 
@@ -189,13 +185,13 @@ function Connect-SalesforceJwt {
     $url = "https://login.salesforce.com"
     if ($Sandbox) { $url = "https://test.salesforce.com" }
 
-    $command = "sf org login jwt --client-id $ConsumerKey --username $TargetOrg --jwt-key-file `"$JwtKeyfile`" --instance-url $url"
-    if ($Alias) { $command += " --alias $Alias" }
-    if ($SetDefault) { $command += " --set-default" }
-    if ($SetDefaultDevHub) { $command += " --set-default-dev-hub" }
-    $command += " --json"
+    $arguments = @('org', 'login', 'jwt', '--client-id', $ConsumerKey, '--username', $TargetOrg, '--jwt-key-file', $JwtKeyfile, '--instance-url', $url)
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($SetDefaultDevHub) { $arguments += '--set-default-dev-hub' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $details = Show-SalesforceResult -Result $result
     return Remove-SalesforceSensitiveProperty -InputObject $details
 }
@@ -208,13 +204,13 @@ function Open-Salesforce {
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser,
         [Parameter(Mandatory = $false)][string] $BrowserPrivateMode
     )
-    $command = "sf org open"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($Browser) { $command += " --browser $Browser" }
-    if ($BrowserPrivateMode) { $command += " --private $BrowserPrivateMode" }
-    if ($UrlOnly) { $command += " --url-only" }
+    $arguments = @('org', 'open')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($Browser) { $arguments += @('--browser', $Browser) }
+    if ($BrowserPrivateMode) { $arguments += @('--private', $BrowserPrivateMode) }
+    if ($UrlOnly) { $arguments += '--url-only' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Get-SalesforceConnections {
@@ -222,11 +218,11 @@ function Get-SalesforceConnections {
     Param(
         [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails
     )
-    $command = "sf org list"
-    if ($ShowVerboseDetails) { $command += " --verbose" }
-    $command += " --json"
+    $arguments = @('org', 'list')
+    if ($ShowVerboseDetails) { $arguments += '--verbose' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 
     $details = Show-SalesforceResult -Result $result
 
@@ -249,10 +245,10 @@ function Get-SalesforceConnections {
 function Repair-SalesforceConnections {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
-    $command = "sf org list --clean"
-    if ($NoPrompt) { $command += " --no-prompt" }
+    $arguments = @('org', 'list', '--clean')
+    if ($NoPrompt) { $arguments += '--no-prompt' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
@@ -262,9 +258,9 @@ function Repair-SalesforceConnections {
 function Get-SalesforceAlias {
     [CmdletBinding()]
     Param()
-    $command = "sf alias list --json"
+    $arguments = @('alias', 'list', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -274,17 +270,17 @@ function Add-SalesforceAlias {
         [Parameter(Mandatory = $true)][string] $Alias,
         [Parameter(Mandatory = $true)][string] $TargetOrg
     )
-    $command = "sf alias set $Alias=$TargetOrg"
+    $arguments = @('alias', 'set', "$Alias=$TargetOrg")
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Remove-SalesforceAlias {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)
-    $command = "sf alias unset $Alias"
+    $arguments = @('alias', 'unset', $Alias)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
@@ -294,11 +290,11 @@ function Remove-SalesforceAlias {
 function Get-SalesforceLimits {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = "sf limits api display"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('limits', 'api', 'display')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -354,22 +350,22 @@ function Select-SalesforceRecords {
         [Parameter(Mandatory = $false)][string][ValidateSet('human', 'json', 'csv')] $ResultFormat = 'json',
         [Parameter(Mandatory = $false)][string] $OutputFile
     )
-    $command = "sf data query"
-    if ($Query) { $command += " --query `"$Query`"" }
-    if ($File) { $command += " --file `"$File`"" }
+    $arguments = @('data', 'query')
+    if ($Query) { $arguments += @('--query', $Query) }
+    if ($File) { $arguments += @('--file', $File) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
         $trimmedTargetOrg = $TargetOrg.Trim()
         if (-not [string]::IsNullOrWhiteSpace($trimmedTargetOrg)) {
-            $command += " --target-org $trimmedTargetOrg"
+            $arguments += @('--target-org', $trimmedTargetOrg)
         }
     }
-    if ($UseToolingApi) { $command += " --use-tooling-api" }
-    if ($IncludeDeletedRows) { $command += " --all-rows" }
+    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    if ($IncludeDeletedRows) { $arguments += '--all-rows' }
 
-    $command += " --result-format $ResultFormat"
-    if ($OutputFile) { $command += " --output-file $OutputFile" }
+    $arguments += @('--result-format', $ResultFormat)
+    if ($OutputFile) { $arguments += @('--output-file', $OutputFile) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 
     # csv and human output are not JSON, so hand them back untouched
     if ($ResultFormat -ne 'json') {
@@ -415,14 +411,14 @@ function New-SalesforceRecord {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
-    $command = "sf data create record"
-    $command += " --sobject $Type"
-    $command += " --values `"$FieldUpdates`""
-    if ($UseToolingApi) { $command += " --use-tooling-api" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('data', 'create', 'record')
+    $arguments += @('--sobject', $Type)
+    $arguments += @('--values', $FieldUpdates)
+    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -436,15 +432,15 @@ function Set-SalesforceRecord {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     Write-Verbose $FieldUpdates
-    $command = "sf data update record"
-    $command += " --sobject $Type"
-    $command += " --record-id $Id"
-    $command += " --values `"$FieldUpdates`""
-    if ($UseToolingApi) { $command += " --use-tooling-api" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('data', 'update', 'record')
+    $arguments += @('--sobject', $Type)
+    $arguments += @('--record-id', $Id)
+    $arguments += @('--values', $FieldUpdates)
+    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -506,10 +502,10 @@ function Get-SalesforceApiVersions {
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $command = "sf api request rest /services/data"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    $arguments = @('api', 'request', 'rest', '/services/data')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return $result | ConvertFrom-Json
 }
 
@@ -544,14 +540,14 @@ function Install-SalesforceCli {
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     # npm is the Salesforce-supported install on Windows, Linux and macOS
-    Invoke-Salesforce -Command "npm install --global @salesforce/cli" @commonParams
+    Invoke-Salesforce -FilePath 'npm' -Arguments @('install', '--global', '@salesforce/cli') @commonParams
 }
 
 function Update-SalesforceCli {
     [CmdletBinding()]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command "npm update --global @salesforce/cli" @commonParams
+    Invoke-Salesforce -FilePath 'npm' -Arguments @('update', '--global', '@salesforce/cli') @commonParams
 }
 
 function Install-SalesforcePlugin {
@@ -559,9 +555,9 @@ function Install-SalesforcePlugin {
     Param(
         [Parameter(Mandatory = $true)][string] $Name
     )
-    $command = "sf plugins install $Name"
+    $arguments = @('plugins', 'install', $Name)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Get-SalesforcePlugins {
@@ -569,18 +565,18 @@ function Get-SalesforcePlugins {
     Param(
         [Parameter(Mandatory = $false)][switch] $IncludeCore
     )
-    $command = "sf plugins"
-    if ($IncludeCore) { $command += " --core" }
+    $arguments = @('plugins')
+    if ($IncludeCore) { $arguments += '--core' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Update-SalesforcePlugins {
     [CmdletBinding()]
     Param()
-    $command = "sf plugins update"
+    $arguments = @('plugins', 'update')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
