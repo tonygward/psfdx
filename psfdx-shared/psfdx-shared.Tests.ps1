@@ -148,6 +148,91 @@ InModuleScope 'psfdx-shared' {
     # Linux/macOS: a shell script. Windows: a tiny console exe compiled with the .NET Framework csc that ships
     # with Windows, so this also covers native argument passing on Windows PowerShell 5.1 and PowerShell 7.
     # (Do not guard with $IsWindows: it does not exist on Windows PowerShell 5.1, which would run the shell script there.)
+    Describe 'ConvertFrom-SalesforceJsonOutput and Show-SalesforceResult failures' {
+        It 'throws for empty, null and whitespace output' {
+            { Show-SalesforceResult -Result '' } | Should -Throw -ExpectedMessage '*no output*'
+            { Show-SalesforceResult -Result @('', '  ') } | Should -Throw -ExpectedMessage '*no output*'
+            { ConvertFrom-SalesforceJsonOutput -Output $null } | Should -Throw -ExpectedMessage '*no output*'
+        }
+
+        It 'throws for non-JSON text and shows a redacted preview' {
+            { Show-SalesforceResult -Result 'Warning: sf update available' } | Should -Throw -ExpectedMessage '*not valid JSON*sf update available*'
+            $message = try { Show-SalesforceResult -Result 'bad force://PlatformCLI::abc@x.salesforce.com' } catch { $_.Exception.Message }
+            $message | Should -Not -Match 'PlatformCLI'
+        }
+
+        It 'throws for malformed or partial JSON' {
+            { Show-SalesforceResult -Result '{"status":0,"result":{"records":[' } | Should -Throw -ExpectedMessage '*not valid JSON*'
+        }
+
+        It 'throws for JSON without a status or that is an array' {
+            { Show-SalesforceResult -Result '{"result":{}}' } | Should -Throw -ExpectedMessage '*unexpected shape*'
+            { Show-SalesforceResult -Result '[1,2]' } | Should -Throw -ExpectedMessage '*unexpected shape*'
+            { Show-SalesforceResult -Result '"text"' } | Should -Throw -ExpectedMessage '*unexpected shape*'
+        }
+
+        It 'truncates long previews' {
+            $long = 'x' * 1000
+            $message = try { Show-SalesforceResult -Result $long } catch { $_.Exception.Message }
+            $message.Length | Should -BeLessThan 300
+        }
+
+        It 'reads multi-line JSON passed as an array of lines' {
+            $lines = @('{', '"status": 0,', '"result": {"a": 1}', '}')
+            (Show-SalesforceResult -Result $lines).a | Should -Be 1
+        }
+
+        It 'reports an authentication error message and never leaks tokens' {
+            $json = '{"status":1,"name":"NoAuthFound","message":"No authorization information found for me@x.com.","result":{"accessToken":"00Dleak"}}'
+            $message = try { Show-SalesforceResult -Result $json } catch { $_.Exception.Message }
+            $message | Should -Be 'No authorization information found for me@x.com.'
+            $message | Should -Not -Match '00Dleak'
+        }
+
+        It 'ignores warnings arrays when status is 0' {
+            $r = Show-SalesforceResult -Result '{"status":0,"result":{"ok":true},"warnings":["update available"]}'
+            $r.ok | Should -BeTrue
+        }
+    }
+
+    Describe 'Invoke-Salesforce process failures' {
+        BeforeAll {
+            $script:host = (Get-Process -Id $PID).Path
+            $script:script = Join-Path $TestDrive 'exit.ps1'
+            Set-Content -LiteralPath $script:script -Encoding ascii -Value @'
+param([string]$Out, [string]$OutFile, [int]$Code)
+if ($OutFile) { $Out = Get-Content -Raw -LiteralPath $OutFile }
+if ($Out) { [Console]::Out.Write($Out) }
+exit $Code
+'@
+        }
+
+        It 'throws when the process fails with no output in JSON mode' {
+            { Invoke-Salesforce -Command "`"$($script:host)`" -NoProfile -File `"$($script:script)`" -Code 3 --json" } |
+                Should -Throw -ExpectedMessage '*exited with code 3*'
+        }
+
+        It 'throws with a redacted detail when the process fails with non-JSON output' {
+            { Invoke-Salesforce -Command "`"$($script:host)`" -NoProfile -File `"$($script:script)`" -Out force://PlatformCLI::abc@x.com -Code 2 --json" } |
+                Should -Throw -ExpectedMessage '*exited with code 2*force://*********'
+        }
+
+        It 'returns the JSON error body of a failed process so the message is reported' {
+            $body = Join-Path $TestDrive 'body.json'
+            Set-Content -LiteralPath $body -Value '{"status":1,"message":"boom"}'
+            $out = Invoke-Salesforce -Command "`"$($script:host)`" -NoProfile -File `"$($script:script)`" -OutFile `"$body`" -Code 1 --json"
+            { Show-SalesforceResult -Result $out } | Should -Throw -ExpectedMessage 'boom'
+        }
+
+        It 'does not throw for a failed process without --json' {
+            { Invoke-Salesforce -Command "`"$($script:host)`" -NoProfile -File `"$($script:script)`" -Code 4" } | Should -Not -Throw
+        }
+
+        It 'does not throw when the process succeeds' {
+            { Invoke-Salesforce -Command "`"$($script:host)`" -NoProfile -File `"$($script:script)`" -Out ok -Code 0 --json" } | Should -Not -Throw
+        }
+    }
+
     Describe 'Invoke-Salesforce with a fake executable' {
         BeforeAll {
             $script:onWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)

@@ -6,7 +6,7 @@ function Show-SalesforceResult {
         [Parameter(Mandatory = $false)][switch] $IncludeAttributes
     )
 
-    $converted = $Result | ConvertFrom-Json
+    $converted = ConvertFrom-SalesforceJsonOutput -Output $Result
     if ($converted.status -ne 0) {
         Write-Debug (Get-SalesforceRedactedJson -Json ([string]::Join([Environment]::NewLine, @($Result))))
         $message = Get-SalesforceErrorMessage -Result $converted
@@ -21,6 +21,35 @@ function Show-SalesforceResult {
         return ($records | Select-Object -ExcludeProperty attributes)
     }
     return $out
+}
+
+function ConvertFrom-SalesforceJsonOutput {
+    # Turns the output of an `sf ... --json` call into an object, or throws a clear error.
+    # Empty output, non-JSON text, malformed JSON and JSON without a status are all
+    # failures, never successes. Error text is redacted and truncated.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][AllowEmptyCollection()] $Output
+    )
+
+    $text = [string]::Join([Environment]::NewLine, @($Output | ForEach-Object { [string]$_ })).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) {
+        throw 'Salesforce CLI returned no output where JSON was expected.'
+    }
+
+    $preview = Get-SalesforceRedactedJson -Json $text
+    if ($preview.Length -gt 200) { $preview = $preview.Substring(0, 200) + '...' }
+
+    try {
+        $converted = $text | ConvertFrom-Json -ErrorAction Stop
+    } catch {
+        throw "Salesforce CLI returned output that is not valid JSON: $preview"
+    }
+
+    if ($null -eq $converted -or $converted -is [array] -or $null -eq $converted.PSObject.Properties['status']) {
+        throw "Salesforce CLI returned JSON in an unexpected shape (no status): $preview"
+    }
+    return $converted
 }
 
 function Get-SalesforceRedactedJson {
