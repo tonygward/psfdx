@@ -22,8 +22,31 @@ function Test-CliSource {
     $commands = New-Object System.Collections.Generic.List[object]
     $findings = New-Object System.Collections.Generic.List[object]
     $flags = New-Object System.Collections.Generic.List[object]
-    foreach ($node in $strings) {
-        $value = [string] $node.Value
+    # Structured argv: `$arguments = @('package', 'list')` builds the command words as an array, so rebuild them
+    # as an "sf package list" string and check that like any other command.
+    $items = New-Object System.Collections.Generic.List[object]
+    foreach ($node in $strings) { $items.Add([pscustomobject]@{ Value = [string] $node.Value; Node = $node }) }
+    $assignments = $ast.FindAll({
+            param($node)
+            ($node -is [System.Management.Automation.Language.AssignmentStatementAst]) -and
+            ($node.Operator -eq 'Equals') -and
+            ($node.Left -is [System.Management.Automation.Language.VariableExpressionAst]) -and
+            ($node.Left.VariablePath.UserPath -eq 'arguments')
+        }, $true)
+    foreach ($assignment in $assignments) {
+        $array = $assignment.Right.Find({ param($n) $n -is [System.Management.Automation.Language.ArrayLiteralAst] }, $true)
+        if (-not $array) { continue }
+        $words = New-Object System.Collections.Generic.List[string]
+        foreach ($element in $array.Elements) {
+            if (-not ($element -is [System.Management.Automation.Language.StringConstantExpressionAst])) { break }
+            if ($element.Value -like '-*') { break }
+            $words.Add($element.Value)
+        }
+        if ($words.Count -gt 0) { $items.Add([pscustomobject]@{ Value = 'sf ' + ($words -join ' '); Node = $assignment }) }
+    }
+    foreach ($item in $items) {
+        $node = $item.Node
+        $value = $item.Value
         $owner = $node.Parent
         while ($owner -and -not ($owner -is [System.Management.Automation.Language.FunctionDefinitionAst])) { $owner = $owner.Parent }
         $function = if ($owner) { $owner.Name } else { '(script)' }

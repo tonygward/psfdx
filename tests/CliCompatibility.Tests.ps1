@@ -77,6 +77,12 @@ Describe 'Salesforce CLI compatibility (offline)' {
             $scan.Findings[0].Suggestion | Should -Match 'sf org creat sandbox --help'
         }
 
+        It 'checks commands built as an argument array' {
+            $scan = Test-CliSource -File 'psfdx/fake.psm1' -Compat $script:Compat -Text 'function Get-Thing { $arguments = @(''org'', ''creat'', ''sandbox'', ''--name'', $Name); Invoke-Salesforce -FilePath ''sf'' -Arguments $arguments }'
+            @($scan.Findings).Count | Should -Be 1
+            $scan.Findings[0].Command | Should -Be 'sf org creat sandbox'
+        }
+
         It 'reports a removed command with its replacement' {
             $scan = Test-CliSource -File 'psfdx/fake.psm1' -Compat $script:Compat -Text 'function Deploy-Thing { $c = "sf deploy metadata --json" }'
             @($scan.Findings).Count | Should -Be 1
