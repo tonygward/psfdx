@@ -15,19 +15,19 @@ Describe 'Watch-SalesforceDebugLogs' {
         BeforeEach { Mock Invoke-Salesforce {} }
         It 'builds base command with color' {
             Watch-SalesforceDebugLogs | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--color' }
         }
         It 'adds username when provided' {
             Watch-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --target-org user@example --color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--target-org|user@example|--color' }
         }
         It 'adds skip trace flag' {
             Watch-SalesforceDebugLogs -SkipTraceFlag | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --skip-trace-flag --color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--skip-trace-flag|--color' }
         }
         It 'adds debug level when provided' {
             Watch-SalesforceDebugLogs -DebugLevel 'SFDC_DevConsole' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log tail --debug-level SFDC_DevConsole --color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--debug-level|SFDC_DevConsole|--color' }
         }
     }
 }
@@ -41,12 +41,12 @@ Describe 'Select-SalesforceDebugLogs' {
         It 'lists logs with json' {
             $out = Select-SalesforceDebugLogs
             $out | Should -Not -BeNullOrEmpty
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|list|--json' }
             Assert-MockCalled Show-SalesforceResult -Times 1
         }
         It 'adds username when provided' {
             Select-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log list --target-org user@example --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|list|--target-org|user@example|--json' }
         }
     }
 }
@@ -67,11 +67,11 @@ Describe 'Get-SalesforceDebugLogs' {
         It 'builds command with log id and returns raw response' {
             $raw = Get-SalesforceDebugLogs -LogId '07Lxx0000000001' -TargetOrg 'user'
             $raw | Should -Be $script:JsonOk
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log get --log-id 07Lxx0000000001 --target-org user' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|get|--log-id|07Lxx0000000001|--target-org|user' }
         }
         It 'builds command using last number when requested' {
             $null = Get-SalesforceDebugLogs -Last 1 -TargetOrg 'user'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Command -join ' ') -eq 'sf apex log get --number 1 --target-org user' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|get|--number|1|--target-org|user' }
         }
         It 'surfaces sf error payload for callers to handle' {
             Mock Invoke-Salesforce { '{"status":1,"message":"failure"}' }
@@ -120,12 +120,12 @@ Describe 'Select-SalesforceEventFiles' {
             $out | Should -Not -BeNullOrEmpty
             $out[0].EventType | Should -Be 'Login'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like 'sf data query --query *FROM EventLogFile*') -and
-                ($Command -like "*EventType = 'Login'*") -and
-                ($Command -like '* ORDER BY LogDate DESC*') -and
-                ($Command -like '* LIMIT 10*') -and
-                ($Command -like '* --target-org me*') -and
-                ($Command -like '* --result-format json*')
+                (($Arguments -join '|') -like 'data|query|--query|*FROM EventLogFile*') -and
+                (($Arguments -join '|') -like "*EventType = 'Login'*") -and
+                (($Arguments -join '|') -like '* ORDER BY LogDate DESC*') -and
+                (($Arguments -join '|') -like '* LIMIT 10*') -and
+                (($Arguments -join '|') -like '*|--target-org|me*') -and
+                (($Arguments -join '|') -like '*|--result-format|json*')
             }
         }
     }
@@ -139,11 +139,11 @@ Describe 'Export-SalesforceEventFiles' {
             Mock Export-SalesforceEventFile {}
         }
         It 'escapes the event type and builds the same query for select and export' {
-            $expected = 'sf data query --query "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = ''Lo\''gin\\'' ORDER BY LogDate DESC LIMIT 3" --result-format json'
+            $expected = 'SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = ''Lo\''gin\\'' ORDER BY LogDate DESC LIMIT 3'
             Export-SalesforceEventFiles -EventType "Lo'gin\" -Limit 3 | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq $expected }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments[0..1] -join '|') -eq 'data|query' -and $Arguments[3] -ceq $expected }
             Select-SalesforceEventFiles -EventType "Lo'gin\" -Limit 3 | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 2 -ParameterFilter { $Command -eq $expected }
+            Assert-MockCalled Invoke-Salesforce -Times 2 -ParameterFilter { ($Arguments[0..1] -join '|') -eq 'data|query' -and $Arguments[3] -ceq $expected }
         }
         It 'sends -After and -Before as the UTC instant, never local time labelled as UTC' {
             $after = [datetime]::SpecifyKind([datetime]'2026-10-21T08:00:00', [System.DateTimeKind]::Local)
@@ -151,14 +151,14 @@ Describe 'Export-SalesforceEventFiles' {
             $afterUtc = $after.ToUniversalTime().ToString('s', [System.Globalization.CultureInfo]::InvariantCulture) + 'Z'
             Select-SalesforceEventFiles -EventType 'Login' -After $after -Before $before -Limit 1 | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                $Command -eq "sf data query --query `"SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = 'Login' AND LogDate >= $afterUtc AND LogDate <= 2026-10-22T08:00:00Z ORDER BY LogDate DESC LIMIT 1`" --result-format json"
+                $Arguments[3] -ceq "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = 'Login' AND LogDate >= $afterUtc AND LogDate <= 2026-10-22T08:00:00Z ORDER BY LogDate DESC LIMIT 1"
             }
         }
         It 'writes CSV to disk and uses filters' {
             Export-SalesforceEventFiles -EventType 'Login' -Limit 2 -TargetOrg 'me' -Verbose | Out-Null
             Assert-MockCalled Export-SalesforceEventFile -Times 1
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                $Command -eq 'sf data query --query "SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = ''Login'' ORDER BY LogDate DESC LIMIT 2" --result-format json --target-org me'
+                ($Arguments -join '|') -eq 'data|query|--query|SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile WHERE EventType = ''Login'' ORDER BY LogDate DESC LIMIT 2|--result-format|json|--target-org|me'
             }
         }
     }
@@ -177,15 +177,15 @@ Describe 'Get-SalesforceLoginHistory' {
             $out = Get-SalesforceLoginHistory -Username 'user' -After $after -Before $before -Limit 5 -TargetOrg 'me'
             $out | Should -Not -BeNullOrEmpty
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like '*LoginTime >= 2024-01-01T00:00:00Z AND LoginTime <= 2024-01-02T00:00:00Z*')
+                (($Arguments -join '|') -like '*LoginTime >= 2024-01-01T00:00:00Z AND LoginTime <= 2024-01-02T00:00:00Z*')
             }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like 'sf data query --query *FROM LoginHistory*') -and
-                ($Command -like "*Username = 'user'*") -and
-                ($Command -like '* ORDER BY LoginTime DESC*') -and
-                ($Command -like '* LIMIT 5*') -and
-                ($Command -like '* --target-org me*') -and
-                ($Command -like '* --result-format json*')
+                (($Arguments -join '|') -like 'data|query|--query|*FROM LoginHistory*') -and
+                (($Arguments -join '|') -like "*Username = 'user'*") -and
+                (($Arguments -join '|') -like '* ORDER BY LoginTime DESC*') -and
+                (($Arguments -join '|') -like '* LIMIT 5*') -and
+                (($Arguments -join '|') -like '*|--target-org|me*') -and
+                (($Arguments -join '|') -like '*|--result-format|json*')
             }
             Assert-MockCalled Get-SalesforceUsers -Times 1 -ParameterFilter { $Username -eq 'user' -and $Limit -eq 1 -and $TargetOrg -eq 'me' }
             $out[0].Email | Should -Be 'user@example.com'
@@ -203,8 +203,8 @@ Describe 'Get-SalesforceLoginHistory -Username filter' {
         It 'filters through a User subquery because LoginHistory has no Username column' {
             Get-SalesforceLoginHistory -Username "o'brien@example.com" | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                ($Command -like "*UserId IN (SELECT Id FROM User WHERE Username = 'o\'brien@example.com')*") -and
-                ($Command -notlike '*LoginHistory WHERE Username*')
+                (($Arguments -join '|') -like "*UserId IN (SELECT Id FROM User WHERE Username = 'o\'brien@example.com')*") -and
+                (($Arguments -join '|') -notlike '*LoginHistory WHERE Username*')
             }
         }
     }
@@ -266,12 +266,12 @@ Describe 'Enable-SalesforceDebugLogging' {
         It 'builds create command with required flags' {
             $out = Enable-SalesforceDebugLogging -TracedEntityId '005000000000001' -DebugLevel 'SFDC_DevConsole'
             $out.id | Should -Be '7tf000000000001AAA'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 005000000000001 --debug-level "SFDC_DevConsole" --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|005000000000001|--debug-level|SFDC_DevConsole|--json' }
             Assert-MockCalled Show-SalesforceResult -Times 1
         }
         It 'adds log type, duration and target org' {
             Enable-SalesforceDebugLogging -TracedEntityId '01p000000000001' -DebugLevel 'MyLevel' -LogType USER_DEBUG -Duration 120 -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 01p000000000001 --debug-level "MyLevel" --log-type USER_DEBUG --duration 120 --target-org user@example --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|01p000000000001|--debug-level|MyLevel|--log-type|USER_DEBUG|--duration|120|--target-org|user@example|--json' }
         }
         It 'rejects an invalid log type' {
             { Enable-SalesforceDebugLogging -TracedEntityId '005' -DebugLevel 'X' -LogType 'PROFILING' } | Should -Throw
@@ -296,17 +296,17 @@ Describe 'Enable-SalesforceDebugLogging by name' {
         It 'resolves -Username to a user Id' {
             Enable-SalesforceDebugLogging -Username 'me@example.com' -DebugLevel 'SFDC_DevConsole' -TargetOrg 'myorg' | Out-Null
             Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM User WHERE Username = ''me@example.com'' LIMIT 2" --target-org myorg --result-format json' }
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 0XX000000000001AAA --debug-level "SFDC_DevConsole" --target-org myorg --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|SFDC_DevConsole|--target-org|myorg|--json' }
         }
         It 'resolves -ApexClass to a class Id' {
             Enable-SalesforceDebugLogging -ApexClass 'AccountService' -DebugLevel 'X' | Out-Null
             Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM ApexClass WHERE Name = ''AccountService'' LIMIT 2" --result-format json' }
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 0XX000000000001AAA --debug-level "X" --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|X|--json' }
         }
         It 'resolves -ApexTrigger to a trigger Id' {
             Enable-SalesforceDebugLogging -ApexTrigger 'AccountTrigger' -DebugLevel 'X' | Out-Null
             Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { $Command -eq 'sf data query --query "SELECT Id FROM ApexTrigger WHERE Name = ''AccountTrigger'' LIMIT 2" --result-format json' }
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace create --traced-entity-id 0XX000000000001AAA --debug-level "X" --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|X|--json' }
         }
         It 'escapes single quotes in the name' {
             Enable-SalesforceDebugLogging -Username "o'brien@example.com" -DebugLevel 'X' | Out-Null
@@ -338,11 +338,11 @@ Describe 'Get-SalesforceDebugLogging' {
         It 'lists trace flags with json' {
             $out = Get-SalesforceDebugLogging
             $out.Id | Should -Be '7tf000000000001AAA'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace list --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|list|--json' }
         }
         It 'adds target org when provided' {
             Get-SalesforceDebugLogging -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace list --target-org user@example --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|list|--target-org|user@example|--json' }
         }
     }
 }
@@ -354,7 +354,7 @@ Describe 'Disable-SalesforceDebugLogging' {
         }
         It 'builds delete command' {
             Disable-SalesforceDebugLogging -TraceId '7tf000000000001AAA' -TargetOrg 'user@example' -Confirm:$false | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace delete --trace-flag-id 7tf000000000001AAA --target-org user@example --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|delete|--trace-flag-id|7tf000000000001AAA|--target-org|user@example|--json' }
         }
         It 'does not call sf with -WhatIf' {
             Disable-SalesforceDebugLogging -TraceId '7tf000000000001AAA' -WhatIf
@@ -366,8 +366,8 @@ Describe 'Disable-SalesforceDebugLogging' {
                 [pscustomobject]@{ Id = '7tf000000000002AAA'; Status = 'Expired' }
             )
             $flags | Disable-SalesforceDebugLogging -Confirm:$false | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace delete --trace-flag-id 7tf000000000001AAA --json' }
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf apex trace delete --trace-flag-id 7tf000000000002AAA --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|delete|--trace-flag-id|7tf000000000001AAA|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|delete|--trace-flag-id|7tf000000000002AAA|--json' }
         }
     }
 }
