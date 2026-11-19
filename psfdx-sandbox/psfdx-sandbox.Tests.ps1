@@ -54,15 +54,15 @@ Describe 'psfdx-sandbox module' {
 
                 $out.raw | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf org create sandbox --name MySandbox*') -and
-                    ($Command -like '* --alias alias*') -and
-                    ($Command -like '* --definition-file "sandbox-def.json"*') -and
-                    ($Command -like '* --license-type Partial*') -and
-                    ($Command -like '* --wait 45*') -and
-                    ($Command -like '* --no-prompt*') -and
-                    ($Command -like '* --no-track-source*') -and
-                    ($Command -like '* --target-org prod*') -and
-                    ($Command -like '* --json*')
+                    (($Arguments -join '|') -like 'org|create|sandbox|--name|MySandbox*') -and
+                    (($Arguments -join '|') -like '*|--alias|alias*') -and
+                    (($Arguments -join '|') -like '*|--definition-file|sandbox-def.json*') -and
+                    (($Arguments -join '|') -like '*|--license-type|Partial*') -and
+                    (($Arguments -join '|') -like '*|--wait|45*') -and
+                    (($Arguments -join '|') -like '*|--no-prompt*') -and
+                    (($Arguments -join '|') -like '*|--no-track-source*') -and
+                    (($Arguments -join '|') -like '*|--target-org|prod*') -and
+                    (($Arguments -join '|') -like '*|--json*')
                 }
             }
         }
@@ -79,10 +79,10 @@ Describe 'psfdx-sandbox module' {
 
                 $out.ok | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf org resume sandbox --name MySandbox*') -and
-                    ($Command -like '* --wait 30*') -and
-                    ($Command -like '* --target-org prod*') -and
-                    ($Command -like '* --json*')
+                    (($Arguments -join '|') -like 'org|resume|sandbox|--name|MySandbox*') -and
+                    (($Arguments -join '|') -like '*|--wait|30*') -and
+                    (($Arguments -join '|') -like '*|--target-org|prod*') -and
+                    (($Arguments -join '|') -like '*|--json*')
                 }
             }
         }
@@ -99,13 +99,13 @@ Describe 'psfdx-sandbox module' {
 
                 $out.ok | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf org create sandbox --source-sandbox-name Dev1 --name Dev1Clone*') -and
-                    ($Command -like '* --license-type Partial*') -and
-                    ($Command -like '* --alias clone*') -and
-                    ($Command -like '* --wait 20*') -and
-                    ($Command -like '* --no-prompt*') -and
-                    ($Command -like '* --target-org prod*') -and
-                    ($Command -like '* --json*')
+                    (($Arguments -join '|') -like 'org|create|sandbox|--source-sandbox-name|Dev1|--name|Dev1Clone*') -and
+                    (($Arguments -join '|') -like '*|--license-type|Partial*') -and
+                    (($Arguments -join '|') -like '*|--alias|clone*') -and
+                    (($Arguments -join '|') -like '*|--wait|20*') -and
+                    (($Arguments -join '|') -like '*|--no-prompt*') -and
+                    (($Arguments -join '|') -like '*|--target-org|prod*') -and
+                    (($Arguments -join '|') -like '*|--json*')
                 }
             }
 
@@ -115,9 +115,9 @@ Describe 'psfdx-sandbox module' {
                 Copy-SalesforceSandbox -SourceSandboxName 'Dev1' -CloneSandboxName 'Dev1Clone' | Out-Null
 
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    $Command -eq 'sf org create sandbox --source-sandbox-name Dev1 --name Dev1Clone --json'
+                    ($Arguments -join '|') -eq 'org|create|sandbox|--source-sandbox-name|Dev1|--name|Dev1Clone|--json'
                 }
-                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Command -like '*clone sandbox*') -or ($Command -like '*--clone-name*') }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { (($Arguments -join '|') -like '*clone|sandbox*') -or (($Arguments -join '|') -like '*--clone-name*') }
             }
         }
 
@@ -133,10 +133,10 @@ Describe 'psfdx-sandbox module' {
 
                 $out.ok | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like 'sf org delete sandbox*') -and
-                    ($Command -like '* --no-prompt*') -and
-                    ($Command -like '* --target-org prod*') -and
-                    ($Command -like '* --json*')
+                    (($Arguments -join '|') -like 'org|delete|sandbox*') -and
+                    (($Arguments -join '|') -like '*|--no-prompt*') -and
+                    (($Arguments -join '|') -like '*|--target-org|prod*') -and
+                    (($Arguments -join '|') -like '*|--json*')
                 }
             }
         }
@@ -146,19 +146,19 @@ Describe 'psfdx-sandbox module' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{"records":[]}}' }
                 Get-SalesforceSandboxRefreshStatus -Name "o'brien\" | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    $Command -eq 'sf data query --use-tooling-api --result-format json --query "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = ''o\''brien\\''"'
+                    ($Arguments[0..5] -join '|') -eq 'data|query|--use-tooling-api|--result-format|json|--query' -and
+                    $Arguments[6] -ceq "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = 'o\'brien\\'"
                 }
             }
             It 'returns refresh status details with calculated next refresh date' {
                 Mock Invoke-Salesforce {
-                    param($Command)
-                    if ($Command -like '*FROM SandboxInfo*') {
+                    if (($Arguments -join '|') -like '*FROM SandboxInfo*') {
                         return '{"status":0,"result":{"records":[{"SandboxName":"MySandbox","LicenseType":"Partial"}]}}'
                     }
-                    if ($Command -like '*FROM SandboxProcess*') {
+                    if (($Arguments -join '|') -like '*FROM SandboxProcess*') {
                         return '{"status":0,"result":{"records":[{"SandboxName":"MySandbox","StartDate":"2024-01-01T00:00:00.000Z","EndDate":"2024-01-01T12:00:00.000Z"}]}}'
                     }
-                    throw "Unexpected command: $Command"
+                    throw "Unexpected command: $($Arguments -join ' ')"
                 }
 
                 $status = Get-SalesforceSandboxRefreshStatus -Name 'MySandbox' -TargetOrg 'prod'
@@ -169,22 +169,21 @@ Describe 'psfdx-sandbox module' {
                 $status[0].NextRefreshDate | Should -Be $status[0].LastRefreshed.AddDays(5)
 
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like '*FROM SandboxInfo*') -and
-                    ($Command -like '* --use-tooling-api*') -and
-                    ($Command -like '* --target-org prod*')
+                    (($Arguments -join '|') -like '*FROM SandboxInfo*') -and
+                    (($Arguments -join '|') -like '*|--use-tooling-api*') -and
+                    (($Arguments -join '|') -like '*|--target-org|prod*')
                 }
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
-                    ($Command -like '*FROM SandboxProcess*') -and
-                    ($Command -like '* --use-tooling-api*') -and
-                    ($Command -like '* --target-org prod*')
+                    (($Arguments -join '|') -like '*FROM SandboxProcess*') -and
+                    (($Arguments -join '|') -like '*|--use-tooling-api*') -and
+                    (($Arguments -join '|') -like '*|--target-org|prod*')
                 }
             }
 
             It 'throws when SandboxInfo query reports an error' {
                 Mock Invoke-Salesforce {
-                    param($Command)
-                    if ($Command -like '*FROM SandboxInfo*') { return '{"status":1,"message":"query failed"}' }
-                    throw "Unexpected command: $Command"
+                    if (($Arguments -join '|') -like '*FROM SandboxInfo*') { return '{"status":1,"message":"query failed"}' }
+                    throw "Unexpected command: $($Arguments -join ' ')"
                 }
 
                 $action = { Get-SalesforceSandboxRefreshStatus -Name 'MySandbox' }
@@ -194,8 +193,7 @@ Describe 'psfdx-sandbox module' {
 
             It 'returns empty array when sandbox does not exist' {
                 Mock Invoke-Salesforce {
-                    param($Command)
-                    if ($Command -like '*FROM SandboxInfo*') { return '{"status":0,"result":{"records":[]}}' }
+                    if (($Arguments -join '|') -like '*FROM SandboxInfo*') { return '{"status":0,"result":{"records":[]}}' }
                     throw "SandboxProcess query should not run"
                 }
 

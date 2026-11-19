@@ -62,9 +62,9 @@ function Get-SalesforceSandboxes {
         [Parameter(Mandatory = $false)][string] $Name
     )
 
-    $command = "sf org list --json"
+    $arguments = @('org', 'list', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $parsed = Show-SalesforceResult -Result $result
     if (-not $parsed) { return @() }
 
@@ -95,18 +95,18 @@ function New-SalesforceSandbox {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $command = "sf org create sandbox --name $SandboxName"
-    if ($Alias) { $command += " --alias $Alias" }
+    $arguments = @('org', 'create', 'sandbox', '--name', $SandboxName)
+    if ($Alias) { $arguments += @('--alias', $Alias) }
 
-    if ($DefinitionFile) { $command += " --definition-file `"$DefinitionFile`"" }
-    if ($LicenseType) { $command += " --license-type $LicenseType" }
-    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
-    if ($NoPrompt) { $command += " --no-prompt" }
-    if ($NoTrackSource) { $command += " --no-track-source" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    if ($DefinitionFile) { $arguments += @('--definition-file', $DefinitionFile) }
+    if ($LicenseType) { $arguments += @('--license-type', $LicenseType) }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($NoTrackSource) { $arguments += '--no-track-source' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -118,12 +118,12 @@ function Resume-SalesforceSandbox {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $command = "sf org resume sandbox --name $SandboxName"
-    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('org', 'resume', 'sandbox', '--name', $SandboxName)
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -140,15 +140,15 @@ function Copy-SalesforceSandbox {
     )
 
     # 'sf org clone sandbox' no longer exists; cloning is 'sf org create sandbox --source-sandbox-name'.
-    $command = "sf org create sandbox --source-sandbox-name $SourceSandboxName --name $CloneSandboxName"
-    if ($LicenseType) { $command += " --license-type $LicenseType" }
-    if ($Alias) { $command += " --alias $Alias" }
-    if ($WaitMinutes) { $command += " --wait $WaitMinutes" }
-    if ($NoPrompt) { $command += " --no-prompt" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('org', 'create', 'sandbox', '--source-sandbox-name', $SourceSandboxName, '--name', $CloneSandboxName)
+    if ($LicenseType) { $arguments += @('--license-type', $LicenseType) }
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -159,12 +159,12 @@ function Remove-SalesforceSandbox {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $command = "sf org delete sandbox"
-    if ($NoPrompt) { $command += " --no-prompt" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('org', 'delete', 'sandbox')
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -178,10 +178,10 @@ function Get-SalesforceSandboxRefreshStatus {
     $nameLiteral = ConvertTo-SalesforceSoqlLiteral -Value $Name
 
     $infoQuery = "SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = $nameLiteral"
-    $infoCommand = "sf data query --use-tooling-api --result-format json --query `"$infoQuery`""
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $infoCommand += " --target-org $TargetOrg" }
+    $infoArguments = @('data', 'query', '--use-tooling-api', '--result-format', 'json', '--query', $infoQuery)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $infoArguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $infoResult = Invoke-Salesforce -Command $infoCommand @commonParams | ConvertFrom-Json
+    $infoResult = Invoke-Salesforce -FilePath 'sf' -Arguments $infoArguments @commonParams | ConvertFrom-Json
     if ($infoResult.status -ne 0) {
         Write-Debug ($infoResult | ConvertTo-Json -Depth 5)
         throw $infoResult.message
@@ -195,10 +195,10 @@ function Get-SalesforceSandboxRefreshStatus {
     $licenseType = $infoRecords[0].LicenseType
 
     $processQuery = "SELECT SandboxName, StartDate, EndDate FROM SandboxProcess WHERE SandboxName = $nameLiteral ORDER BY StartDate DESC LIMIT 1"
-    $processCommand = "sf data query --use-tooling-api --result-format json --query `"$processQuery`""
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $processCommand += " --target-org $TargetOrg" }
+    $processArguments = @('data', 'query', '--use-tooling-api', '--result-format', 'json', '--query', $processQuery)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $processArguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $processResult = Invoke-Salesforce -Command $processCommand @commonParams | ConvertFrom-Json
+    $processResult = Invoke-Salesforce -FilePath 'sf' -Arguments $processArguments @commonParams | ConvertFrom-Json
     if ($processResult.status -ne 0) {
         Write-Debug ($processResult | ConvertTo-Json -Depth 5)
         throw $processResult.message
