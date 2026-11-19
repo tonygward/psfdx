@@ -203,15 +203,37 @@ function Invoke-Salesforce {
     foreach ($nativeArgument in $nativeArguments) {
         if ($null -ne $nativeArgument -and $nativeArgument.Contains($percentToken)) { $needsPercent = $true; break }
     }
-    if (-not $needsPercent) {
-        return & $filePath @nativeArguments
+
+    $previous = $null
+    if ($needsPercent) {
+        $previous = [System.Environment]::GetEnvironmentVariable($script:PsfdxPercentVariable)
+        [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, '%')
+    }
+    try {
+        $global:LASTEXITCODE = 0
+        $output = & $filePath @nativeArguments
+        $exitCode = $global:LASTEXITCODE
+    } finally {
+        if ($needsPercent) {
+            [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, $previous)
+        }
     }
 
-    $previous = [System.Environment]::GetEnvironmentVariable($script:PsfdxPercentVariable)
-    [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, '%')
-    try {
-        return & $filePath @nativeArguments
-    } finally {
-        [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, $previous)
+    # In JSON mode the CLI prints a JSON error body on failure, which Show-SalesforceResult
+    # reports. A failed process with no JSON body would otherwise look like success or like
+    # a parsing problem, so say what happened here. Plain-text commands are returned as is.
+    if ($exitCode -ne 0 -and $Command -match '(^|\s)--json(\s|$)') {
+        $text = [string]::Join([Environment]::NewLine, @($output | ForEach-Object { [string]$_ })).Trim()
+        $isJson = $false
+        if ($text) {
+            try { $null = $text | ConvertFrom-Json -ErrorAction Stop; $isJson = $true } catch { $isJson = $false }
+        }
+        if (-not $isJson) {
+            $detail = Get-SalesforceRedactedJson -Json $text
+            if ($detail.Length -gt 500) { $detail = $detail.Substring(0, 500) + '...' }
+            if ($detail) { $detail = ": $detail" }
+            throw "Salesforce CLI exited with code $exitCode and returned no JSON result$detail"
+        }
     }
+    return $output
 }
