@@ -11,7 +11,7 @@ Describe 'psfdx-agentforce module' {
         BeforeEach {
             # Default: the agent plugin is installed. Individual tests override the plugin listing.
             Mock Invoke-Salesforce {
-                if ($Command -eq 'sf plugins --core --json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
                 return '{"status":0,"result":{"ok":true}}'
             }
         }
@@ -29,7 +29,7 @@ Describe 'psfdx-agentforce module' {
         Context 'Test-SalesforceAgentPlugin' {
             It 'returns true when the plugin is listed' {
                 Test-SalesforceAgentPlugin | Should -BeTrue
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf plugins --core --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|--core|--json' }
             }
 
             It 'returns false when the plugin is absent' {
@@ -41,23 +41,23 @@ Describe 'psfdx-agentforce module' {
         Context 'Get-SalesforceAgentTests' {
             It 'lists agent tests and maps the JSON result' {
                 Mock Invoke-Salesforce {
-                    if ($Command -eq 'sf plugins --core --json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
                     return '{"status":0,"result":[{"name":"Suite_A","type":"AiEvaluationDefinition"},{"name":"Suite_B","type":"AiEvaluationDefinition"}]}'
                 }
                 $tests = @(Get-SalesforceAgentTests -TargetOrg 'me')
                 $tests.Count | Should -Be 2
                 $tests[0].name | Should -Be 'Suite_A'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent test list --target-org me --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|test|list|--target-org|me|--json' }
             }
 
             It 'omits --target-org when not given' {
                 Get-SalesforceAgentTests | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent test list --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|test|list|--json' }
             }
 
             It 'returns an empty array when the CLI returns nothing' {
                 Mock Invoke-Salesforce {
-                    if ($Command -eq 'sf plugins --core --json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
                     return '{"status":0}'
                 }
                 @(Get-SalesforceAgentTests).Count | Should -Be 0
@@ -65,7 +65,7 @@ Describe 'psfdx-agentforce module' {
 
             It 'throws the CLI message on failure' {
                 Mock Invoke-Salesforce {
-                    if ($Command -eq 'sf plugins --core --json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
                     return '{"status":1,"message":"No default org found"}'
                 }
                 { Get-SalesforceAgentTests } | Should -Throw -ExpectedMessage 'No default org found'
@@ -76,12 +76,17 @@ Describe 'psfdx-agentforce module' {
             It 'builds the run command with wait and target org' {
                 $out = Start-SalesforceAgentTest -ApiName 'My_Suite' -WaitMinutes 10 -TargetOrg 'me'
                 $out.ok | Should -BeTrue
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent test run --api-name My_Suite --wait 10 --target-org me --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|test|run|--api-name|My_Suite|--wait|10|--target-org|me|--json' }
+            }
+
+            It 'passes a target org alias with a space as one argument' {
+                Start-SalesforceAgentTest -ApiName 'My_Suite' -TargetOrg 'my org' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 8 -and $Arguments[6] -eq 'my org' }
             }
 
             It 'builds the minimal command' {
                 Start-SalesforceAgentTest -ApiName 'My_Suite' | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent test run --api-name My_Suite --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|test|run|--api-name|My_Suite|--json' }
             }
 
             It 'rejects an API name that could add options' {
@@ -97,12 +102,12 @@ Describe 'psfdx-agentforce module' {
             It 'stops with install guidance when the plugin is absent' {
                 Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
                 { Start-SalesforceAgentTest -ApiName 'My_Suite' } | Should -Throw -ExpectedMessage "*@salesforce/plugin-agent*not installed*"
-                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf agent*' }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'agent*' }
             }
 
             It 'throws the CLI message on failure' {
                 Mock Invoke-Salesforce {
-                    if ($Command -eq 'sf plugins --core --json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
                     return '{"status":1,"message":"Test definition not found"}'
                 }
                 { Start-SalesforceAgentTest -ApiName 'Nope' } | Should -Throw -ExpectedMessage 'Test definition not found'
@@ -113,7 +118,7 @@ Describe 'psfdx-agentforce module' {
             It 'builds the results command' {
                 $out = Get-SalesforceAgentTestResult -JobId '4KBxx0000000001AAA' -TargetOrg 'me'
                 $out.ok | Should -BeTrue
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent test results --job-id 4KBxx0000000001AAA --target-org me --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|test|results|--job-id|4KBxx0000000001AAA|--target-org|me|--json' }
             }
 
             It 'rejects a malformed job id' {
@@ -126,12 +131,12 @@ Describe 'psfdx-agentforce module' {
             It 'builds the activate command with version and target org' {
                 $out = Enable-SalesforceAgent -ApiName 'Service_Agent' -Version 3 -TargetOrg 'me' -Confirm:$false
                 $out.ok | Should -BeTrue
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent activate --api-name Service_Agent --version 3 --target-org me --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|activate|--api-name|Service_Agent|--version|3|--target-org|me|--json' }
             }
 
             It 'does not run the activation with -WhatIf' {
                 Enable-SalesforceAgent -ApiName 'Service_Agent' -WhatIf | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf agent activate*' }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'agent|activate*' }
             }
 
             It 'rejects an invalid API name' {
@@ -142,12 +147,12 @@ Describe 'psfdx-agentforce module' {
             It 'stops when the plugin is absent' {
                 Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
                 { Enable-SalesforceAgent -ApiName 'Service_Agent' -Confirm:$false } | Should -Throw -ExpectedMessage "*not installed*"
-                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf agent*' }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'agent*' }
             }
 
             It 'throws the CLI message on failure' {
                 Mock Invoke-Salesforce {
-                    if ($Command -eq 'sf plugins --core --json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
                     return '{"status":1,"message":"Agent not found"}'
                 }
                 { Enable-SalesforceAgent -ApiName 'Service_Agent' -Confirm:$false } | Should -Throw -ExpectedMessage 'Agent not found'
@@ -158,12 +163,12 @@ Describe 'psfdx-agentforce module' {
             It 'builds the deactivate command' {
                 $out = Disable-SalesforceAgent -ApiName 'Service_Agent' -TargetOrg 'me' -Confirm:$false
                 $out.ok | Should -BeTrue
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf agent deactivate --api-name Service_Agent --target-org me --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'agent|deactivate|--api-name|Service_Agent|--target-org|me|--json' }
             }
 
             It 'does not run the deactivation with -WhatIf' {
                 Disable-SalesforceAgent -ApiName 'Service_Agent' -WhatIf | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf agent deactivate*' }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'agent|deactivate*' }
             }
 
             It 'rejects an invalid API name' {
