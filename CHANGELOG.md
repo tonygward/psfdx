@@ -2,9 +2,12 @@
 
 ## Unreleased
 
+## 0.8.22 - 2026-11-19
+
 - psfdx, psfdx-development, psfdx-logs, psfdx-metadata: every cmdlet now passes each value to the Salesforce CLI as its own argument, so paths, names, queries, descriptions and tags with spaces, quotes or apostrophes reach `sf` exactly as typed. This covers authentication, aliases, queries, projects, scratch orgs, Apex tests and generators, LWC and Jest, debug logs, trace flags, event log files, and retrieve, deploy and describe. Together with the earlier psfdx-packages, psfdx-sandbox and psfdx-agentforce changes, no cmdlet builds a command string any more.
 - psfdx-development: `Test-SalesforceApex -TestsInProject` now says "No Apex test classes found in the project." when there are none, instead of a parameter validation error.
 - psfdx-shared: `Get-SalesforceApexCliTestParams` and `ConvertTo-SalesforceCliApexTestParams` (command-string helpers) are removed; use `Get-SalesforceApexCliTestArguments`.
+
 ## 0.8.21 - 2026-11-19
 
 - psfdx-sandbox: the sandbox cmdlets now pass each value to the Salesforce CLI as its own argument, so values with spaces or quotes reach `sf` exactly as typed.
