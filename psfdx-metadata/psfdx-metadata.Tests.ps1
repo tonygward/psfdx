@@ -24,34 +24,39 @@ Describe 'Retrieve-SalesforceComponent' {
         }
         It 'retrieves a metadata type' {
             Retrieve-SalesforceComponent -Type 'ApexClass' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|ApexClass' }
         }
         It 'retrieves a named component with target org' {
             Retrieve-SalesforceComponent -Type 'ApexClass' -Name 'MyClass' -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass:MyClass --target-org me' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|ApexClass:MyClass|--target-org|me' }
         }
         It 'appends child name to named component' {
             Retrieve-SalesforceComponent -Type 'CustomField' -Name 'Account' -ChildName 'MyField__c' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata CustomField:Account.MyField__c' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|CustomField:Account.MyField__c' }
         }
         It 'throws when ChildName is used without Name' {
             { Retrieve-SalesforceComponent -Type 'CustomField' -ChildName 'MyField__c' } | Should -Throw -ExpectedMessage 'Specify -Name when using -ChildName.'
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf project retrieve start*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'project|retrieve|start*' }
         }
         It 'adds wait and ignore conflicts flags' {
             Retrieve-SalesforceComponent -Type 'ApexClass' -Wait 5 -IgnoreConflicts | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ApexClass --wait 5 --ignore-conflicts' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|ApexClass|--wait|5|--ignore-conflicts' }
         }
         It 'throws when output directory does not exist' {
             $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
             { Retrieve-SalesforceComponent -Type 'ApexClass' -OutputDir $missing } | Should -Throw -ExpectedMessage "Output directory '$missing' does not exist."
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf project retrieve start*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'project|retrieve|start*' }
         }
-        It 'quotes output directory when path exists' {
+        It 'passes an output directory with spaces as one argument' {
+            $dir = New-Item -Path (Join-Path $TestDrive 'out dir with spaces') -ItemType Directory
+            Retrieve-SalesforceComponent -Type 'ApexClass' -OutputDir $dir.FullName | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 7 -and $Arguments[6] -eq $dir.FullName }
+        }
+        It 'passes the output directory when the path exists' {
             $existing = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
                 Retrieve-SalesforceComponent -Type 'ApexClass' -OutputDir $existing.FullName | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project retrieve start --metadata ApexClass --output-dir `"$($existing.FullName)`"" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|retrieve|start|--metadata|ApexClass|--output-dir|$($existing.FullName)" }
             }
             finally {
                 Remove-Item -LiteralPath $existing.FullName -Force -Recurse
@@ -70,11 +75,11 @@ Describe 'Retrieve-SalesforceField and Retrieve-SalesforceValidationRule' {
         }
         It 'retrieves a custom field as CustomField:Object.Field' {
             Retrieve-SalesforceField -ObjectName 'Account' -FieldName 'MyField__c' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata CustomField:Account.MyField__c' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|CustomField:Account.MyField__c' }
         }
         It 'retrieves a validation rule as ValidationRule:Object.Rule' {
             Retrieve-SalesforceValidationRule -ObjectName 'Account' -RuleName 'MyRule' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata ValidationRule:Account.MyRule' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|ValidationRule:Account.MyRule' }
         }
     }
 }
@@ -111,7 +116,7 @@ Describe 'Retrieve-SalesforceMetadata' {
             $outputDir = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
                 Retrieve-SalesforceMetadata -Manifest $manifest.FullName -OutputDir $outputDir.FullName -Unzip -TargetOrg 'me' | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project retrieve start --manifest `"$($manifest.FullName)`" --target-metadata-dir `"$($outputDir.FullName)`" --unzip --target-org me" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|retrieve|start|--manifest|$($manifest.FullName)|--target-metadata-dir|$($outputDir.FullName)|--unzip|--target-org|me" }
             }
             finally {
                 Remove-Item -LiteralPath $manifest.FullName -Force
@@ -135,7 +140,7 @@ Describe 'Retrieve-SalesforcePackage' {
             $outputDir = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
                 Retrieve-SalesforcePackage -Name 'MyPkg' -OutputDir $outputDir.FullName -TargetOrg 'me' | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project retrieve start --package-name `"MyPkg`" --output-dir `"$($outputDir.FullName)`" --target-org me" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|retrieve|start|--package-name|MyPkg|--output-dir|$($outputDir.FullName)|--target-org|me" }
             }
             finally {
                 Remove-Item -LiteralPath $outputDir.FullName -Force -Recurse
@@ -151,12 +156,12 @@ Describe 'Retrieve-SalesforceOrg' {
         }
         It 'creates a manifest then retrieves using it' {
             Retrieve-SalesforceOrg -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project generate manifest --from-org me --name=allMetadata --output-dir .' }
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --target-org me --manifest allMetadata.xml' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|generate|manifest|--from-org|me|--name=allMetadata|--output-dir|.' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--target-org|me|--manifest|allMetadata.xml' }
         }
         It 'includes unlocked packages when requested' {
             Retrieve-SalesforceOrg -IncludePackages | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project generate manifest --name=allMetadata --output-dir . --include-packages=unlocked' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|generate|manifest|--name=allMetadata|--output-dir|.|--include-packages=unlocked' }
         }
     }
 }
@@ -171,35 +176,35 @@ Describe 'Deploy-SalesforceComponent' {
         }
         It 'throws when neither Type nor SourceDir is provided' {
             { Deploy-SalesforceComponent } | Should -Throw -ExpectedMessage 'Specify -Type or -SourceDir when deploying metadata.'
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf project deploy start*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'project|deploy|start*' }
         }
         It 'throws when Name is provided without Type' {
             # The Type/SourceDir guard runs first, so that is the message thrown when only -Name is given
             { Deploy-SalesforceComponent -Name 'MyClass' } | Should -Throw -ExpectedMessage 'Specify -Type or -SourceDir when deploying metadata.'
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf project deploy start*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'project|deploy|start*' }
         }
         It 'throws when both ConciseResults and DetailedResults are provided' {
             { Deploy-SalesforceComponent -Type 'ApexClass' -ConciseResults -DetailedResults } | Should -Throw -ExpectedMessage 'Specify only one of -ConciseResults or -DetailedResults.'
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf project deploy start*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'project|deploy|start*' }
         }
         It 'deploys named component with target org, default test level and json' {
             Deploy-SalesforceComponent -Type 'ApexClass' -Name 'MyClass' -TargetOrg 'me' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy start --metadata ApexClass:MyClass --target-org me --test-level NoTestRun --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|start|--metadata|ApexClass:MyClass|--target-org|me|--test-level|NoTestRun|--json' }
         }
         It 'adds dry run before json' {
             Deploy-SalesforceComponent -Type 'ApexClass' -DryRun | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy start --metadata ApexClass --test-level NoTestRun --dry-run --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|start|--metadata|ApexClass|--test-level|NoTestRun|--dry-run|--json' }
         }
         It 'throws when source path does not exist' {
             $missing = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
             { Deploy-SalesforceComponent -SourceDir $missing } | Should -Throw -ExpectedMessage "Source path '$missing' does not exist."
-            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { $Command -like 'sf project deploy start*' }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -ParameterFilter { ($Arguments -join '|') -like 'project|deploy|start*' }
         }
         It 'deploys from a quoted source directory' {
             $existing = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())) -ItemType Directory
             try {
                 Deploy-SalesforceComponent -SourceDir $existing.FullName | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy start --source-dir `"$($existing.FullName)`" --test-level NoTestRun --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|start|--source-dir|$($existing.FullName)|--test-level|NoTestRun|--json" }
             }
             finally {
                 Remove-Item -LiteralPath $existing.FullName -Force -Recurse
@@ -231,7 +236,7 @@ Describe 'Deploy-SalesforceMetadata' {
             $manifest = New-Item -Path (Join-Path ([System.IO.Path]::GetTempPath()) ("$([guid]::NewGuid()).xml")) -ItemType File
             try {
                 Deploy-SalesforceMetadata -Manifest $manifest.FullName -TargetOrg 'me' | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy start --manifest `"$($manifest.FullName)`" --target-org me --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|start|--manifest|$($manifest.FullName)|--target-org|me|--json" }
             }
             finally {
                 Remove-Item -LiteralPath $manifest.FullName -Force
@@ -239,7 +244,7 @@ Describe 'Deploy-SalesforceMetadata' {
         }
         It 'deploys a single package artifact' {
             Deploy-SalesforceMetadata -ManifestPackage | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy start --single-package --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|start|--single-package|--json' }
         }
     }
 }
@@ -254,29 +259,29 @@ Describe 'Deploy lifecycle cmdlets' {
             It 'validates a source directory with local tests by default' {
                 $dir = New-Item -Path (Join-Path $TestDrive 'force-app') -ItemType Directory
                 $result = Test-SalesforceDeploy -SourceDir $dir.FullName -TargetOrg 'prod' -Wait 30
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --target-org prod --wait 30 --test-level RunLocalTests --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--source-dir|$($dir.FullName)|--target-org|prod|--wait|30|--test-level|RunLocalTests|--json" }
                 @($result)[0].id | Should -Be '0Af000000000001AAA'
             }
             It 'validates a manifest with specific tests, async and concise' {
                 $manifest = New-Item -Path (Join-Path $TestDrive 'package.xml') -ItemType File
                 Test-SalesforceDeploy -Manifest $manifest.FullName -TestLevel SpecificTests -Tests 'MyTest' -IgnoreWarnings -Async -ConciseResults | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like "sf project deploy validate --manifest `"$($manifest.FullName)`" --ignore-warnings --async --test-level RunSpecifiedTests*--concise --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -like "project|deploy|validate|--manifest|$($manifest.FullName)|--ignore-warnings|--async|--test-level|RunSpecifiedTests*--concise|--json" }
             }
             It 'validates a metadata directory as a single package with detailed results' {
                 $dir = New-Item -Path (Join-Path $TestDrive 'mdapi') -ItemType Directory
                 Test-SalesforceDeploy -InputDir $dir.FullName -ManifestPackage -DetailedResults | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($dir.FullName)`" --single-package --test-level RunLocalTests --verbose --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--metadata-dir|$($dir.FullName)|--single-package|--test-level|RunLocalTests|--verbose|--json" }
             }
             It 'validates a Metadata API ZIP whose path contains spaces as one --metadata-dir value' {
                 $folder = New-Item -Path (Join-Path $TestDrive 'my folder') -ItemType Directory
                 $zip = New-Item -Path (Join-Path $folder.FullName 'mdapi package.zip') -ItemType File
                 Test-SalesforceDeploy -InputDir $zip.FullName -TargetOrg 'my-org' | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($zip.FullName)`" --target-org my-org --test-level RunLocalTests --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--metadata-dir|$($zip.FullName)|--target-org|my-org|--test-level|RunLocalTests|--json" }
             }
             It 'validates a Metadata API ZIP as a single package' {
                 $zip = New-Item -Path (Join-Path $TestDrive 'single.ZIP') -ItemType File
                 Test-SalesforceDeploy -InputDir $zip.FullName -ManifestPackage | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --metadata-dir `"$($zip.FullName)`" --single-package --test-level RunLocalTests --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--metadata-dir|$($zip.FullName)|--single-package|--test-level|RunLocalTests|--json" }
             }
             It 'throws for a missing or unsupported -InputDir path' {
                 $txt = New-Item -Path (Join-Path $TestDrive 'mdapi.txt') -ItemType File
@@ -299,13 +304,13 @@ Describe 'Deploy lifecycle cmdlets' {
             It 'maps each supported test level to a CLI value' {
                 $dir = New-Item -Path (Join-Path $TestDrive 'levels') -ItemType Directory
                 Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel TestsInOrgAndPackages | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunAllTestsInOrg --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--source-dir|$($dir.FullName)|--test-level|RunAllTestsInOrg|--json" }
                 Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel TestsInOrg | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunLocalTests --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--source-dir|$($dir.FullName)|--test-level|RunLocalTests|--json" }
                 Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel SpecificTests -Tests 'MyTest' | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunSpecifiedTests --tests MyTest --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--source-dir|$($dir.FullName)|--test-level|RunSpecifiedTests|--tests|MyTest|--json" }
                 Test-SalesforceDeploy -SourceDir $dir.FullName -TestLevel RelevantTests | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq "sf project deploy validate --source-dir `"$($dir.FullName)`" --test-level RunRelevantTests --json" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "project|deploy|validate|--source-dir|$($dir.FullName)|--test-level|RunRelevantTests|--json" }
             }
             It 'requires test names for SpecificTests' {
                 $dir = New-Item -Path (Join-Path $TestDrive 'specific') -ItemType Directory
@@ -335,15 +340,15 @@ Describe 'Deploy lifecycle cmdlets' {
         Context 'Start-SalesforceQuickDeploy' {
             It 'quick deploys by job id' {
                 Start-SalesforceQuickDeploy -JobId '0Af000000000001AAA' -TargetOrg 'prod' -Wait 10 -Confirm:$false | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy quick --job-id 0Af000000000001AAA --target-org prod --wait 10 --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|quick|--job-id|0Af000000000001AAA|--target-org|prod|--wait|10|--json' }
             }
             It 'quick deploys the most recent validation asynchronously with concise output' {
                 Start-SalesforceQuickDeploy -UseMostRecent -Async -ConciseResults -Confirm:$false | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy quick --use-most-recent --async --concise --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|quick|--use-most-recent|--async|--concise|--json' }
             }
             It 'supports detailed results' {
                 Start-SalesforceQuickDeploy -JobId '0Af000000000001' -DetailedResults -Confirm:$false | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy quick --job-id 0Af000000000001 --verbose --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|quick|--job-id|0Af000000000001|--verbose|--json' }
             }
             It 'does not deploy with -WhatIf' {
                 Start-SalesforceQuickDeploy -JobId '0Af000000000001AAA' -WhatIf | Out-Null
@@ -365,12 +370,12 @@ Describe 'Deploy lifecycle cmdlets' {
         Context 'Get-SalesforceDeployStatus' {
             It 'reports by job id' {
                 $result = Get-SalesforceDeployStatus -JobId '0Af000000000001AAA' -TargetOrg 'me' -Wait 5
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy report --job-id 0Af000000000001AAA --target-org me --wait 5 --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|report|--job-id|0Af000000000001AAA|--target-org|me|--wait|5|--json' }
                 @($result)[0].status | Should -Be 'Succeeded'
             }
             It 'reports the most recent deployment' {
                 Get-SalesforceDeployStatus -UseMostRecent | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy report --use-most-recent --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|report|--use-most-recent|--json' }
             }
             It 'throws without a valid job id or with a negative wait' {
                 { Get-SalesforceDeployStatus } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
@@ -387,18 +392,18 @@ Describe 'Deploy lifecycle cmdlets' {
         Context 'Resume-SalesforceDeploy' {
             It 'resumes by job id' {
                 Resume-SalesforceDeploy -JobId '0Af000000000001AAA' -Wait 20 -ConciseResults | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --job-id 0Af000000000001AAA --wait 20 --concise --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|resume|--job-id|0Af000000000001AAA|--wait|20|--concise|--json' }
             }
             It 'has no TargetOrg parameter and never emits --target-org' {
                 (Get-Command Resume-SalesforceDeploy).Parameters.ContainsKey('TargetOrg') | Should -BeFalse
                 { Resume-SalesforceDeploy -UseMostRecent -TargetOrg 'me' } | Should -Throw
                 Assert-MockCalled Invoke-Salesforce -Times 0
                 Resume-SalesforceDeploy -UseMostRecent | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --use-most-recent --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|resume|--use-most-recent|--json' }
             }
             It 'resumes the most recent deployment with detailed results' {
                 Resume-SalesforceDeploy -UseMostRecent -DetailedResults | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy resume --use-most-recent --verbose --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|resume|--use-most-recent|--verbose|--json' }
             }
             It 'throws for missing job id or conflicting result options' {
                 { Resume-SalesforceDeploy } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
@@ -414,11 +419,11 @@ Describe 'Deploy lifecycle cmdlets' {
         Context 'Stop-SalesforceDeploy' {
             It 'cancels by job id' {
                 Stop-SalesforceDeploy -JobId '0Af000000000001AAA' -TargetOrg 'me' -Wait 5 -Confirm:$false | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy cancel --job-id 0Af000000000001AAA --target-org me --wait 5 --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|cancel|--job-id|0Af000000000001AAA|--target-org|me|--wait|5|--json' }
             }
             It 'cancels the most recent deployment asynchronously' {
                 Stop-SalesforceDeploy -UseMostRecent -Async -Confirm:$false | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project deploy cancel --use-most-recent --async --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|cancel|--use-most-recent|--async|--json' }
             }
             It 'does not cancel with -WhatIf' {
                 Stop-SalesforceDeploy -JobId '0Af000000000001AAA' -WhatIf | Out-Null
@@ -455,7 +460,7 @@ Describe 'Describe-SalesforceObjects' {
         It 'lists objects with target org and json' {
             $out = Describe-SalesforceObjects -TargetOrg 'me'
             $out.Count | Should -Be 2
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf sobject list --target-org me --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'sobject|list|--target-org|me|--json' }
         }
     }
 }
@@ -468,7 +473,7 @@ Describe 'Describe-SalesforceObject' {
         It 'describes an object with tooling api' {
             $out = Describe-SalesforceObject -Name 'Account' -TargetOrg 'me' -UseToolingApi
             $out.name | Should -Be 'Account'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf sobject describe --target-org me --sobject Account --use-tooling-api --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'sobject|describe|--target-org|me|--sobject|Account|--use-tooling-api|--json' }
         }
     }
 }
@@ -501,7 +506,7 @@ Describe 'Describe-SalesforceMetadataTypes' {
             Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[{"xmlName":"ApexClass"},{"xmlName":"CustomObject"}]}}' }
             $out = Describe-SalesforceMetadataTypes -TargetOrg 'me'
             $out | Should -Be @('ApexClass', 'CustomObject')
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf org list metadata-types --target-org me --json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|list|metadata-types|--target-org|me|--json' }
         }
         It 'returns empty array when no metadata objects' {
             Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
@@ -620,7 +625,7 @@ Describe 'Metadata -Type validation and completion' {
         }
         It 'accepts a known type case-insensitively, as ValidateSet did' {
             Retrieve-SalesforceComponent -Type 'apexclass' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -eq 'sf project retrieve start --metadata apexclass' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|start|--metadata|apexclass' }
         }
         It 'completes -Type from the valid values' {
             $completions = @(Complete-SalesforceMetadataType 'Retrieve-SalesforceComponent' 'Type' 'Apex' $null @{})

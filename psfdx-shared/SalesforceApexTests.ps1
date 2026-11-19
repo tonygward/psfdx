@@ -19,7 +19,8 @@ function Test-SalesforceApexTestReference {
     return [bool](Select-String -Path $Path -Pattern "\b$escaped\b" -Quiet)
 }
 
-function Get-SalesforceApexCliTestParams {
+function Get-SalesforceApexCliTestArguments {
+    # Returns the deploy test flags as an argument array: '--test-level', <level>, then '--tests', <class> for each test.
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $SourceDir,
@@ -34,7 +35,7 @@ function Get-SalesforceApexCliTestParams {
         [Parameter(Mandatory = $false)][string[]] $Tests
     )
 
-    $value = ""
+    $value = @()
     $testLevelMap = @{
         'NoTests'               = 'NoTestRun'
         'SpecificTests'         = 'RunSpecifiedTests'
@@ -44,7 +45,7 @@ function Get-SalesforceApexCliTestParams {
         'TestsInOrgAndPackages' = 'RunAllTestsInOrg'
         'RelevantTests'         = 'RunRelevantTests'
     }
-    $value += " --test-level " + $testLevelMap[$TestLevel]
+    $value += @('--test-level', $testLevelMap[$TestLevel])
 
     if ($TestLevel -eq 'ReferencedTests') {
         if (-not $SourceDir) {
@@ -110,10 +111,10 @@ function Get-SalesforceApexCliTestParams {
 
     Write-Verbose "Test Level: $TestLevel found Tests: $Tests"
 
-    if ($Tests) {
-        $value += ConvertTo-SalesforceCliApexTestParams -TestClassNames $Tests
+    foreach ($test in @($Tests | Where-Object { $_ -and $_.Trim() })) {
+        $value += @('--tests', $test.Trim())
     }
-    return $value
+    return [string[]]$value
 }
 
 function Get-SalesforceApexTestClassNamesFromPath {
@@ -144,27 +145,4 @@ function Get-SalesforceApexTestClassNamesFromPath {
     }
 
     return @($testFiles | ForEach-Object { $_.BaseName } | Sort-Object -Unique)
-}
-
-function ConvertTo-SalesforceCliApexTestParams {
-    [CmdletBinding()]
-    Param(
-        [Parameter(Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [ValidateNotNullOrEmpty()]
-        [string[]] $TestClassNames
-    )
-
-    begin { $all = @() }
-
-    process {
-        if ($null -ne $TestClassNames) {
-            $all += $TestClassNames | ForEach-Object { $_ } | Where-Object { $_ -and $_.Trim() }
-        }
-    }
-
-    end {
-        if ($all.Count -eq 0) { return "" }
-        $parts = $all | ForEach-Object { "--tests $($_.Trim())" }
-        ' ' + ($parts -join ' ')
-    }
 }

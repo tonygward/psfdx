@@ -47,13 +47,13 @@ Describe 'psfdx module' {
             It 'sets alias using equals syntax' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Add-SalesforceAlias -Alias 'my' -TargetOrg 'user@example.com'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf alias set my=user@example.com' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($Arguments -join '|') -eq 'alias|set|my=user@example.com' }
             }
 
             It 'unsets alias without stray leading space' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Remove-SalesforceAlias -Alias 'my'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf alias unset my' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($Arguments -join '|') -eq 'alias|unset|my' }
             }
         }
 
@@ -61,7 +61,7 @@ Describe 'psfdx module' {
             It 'includes --set-default-dev-hub when requested' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' } -ModuleName $module.Name
                 Connect-Salesforce -SetDefaultDevHub
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -like 'sf * --set-default-dev-hub*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($Arguments -join '|') -like '*|--set-default-dev-hub*' }
             }
         }
 
@@ -77,7 +77,7 @@ Describe 'psfdx module' {
                 Mock Show-SalesforceResult { [pscustomobject]@{ alias = 'my'; username = 'user'; accessToken = 'tok'; refreshToken = 'ref' } } -ModuleName $module.Name
                 $result = Connect-SalesforceAuthUrl -SfdxUrlFile './auth.txt' -Alias 'my' -SetDefault -SetDefaultDevHub
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
-                    $Command -eq 'sf org login sfdx-url --sfdx-url-file "./auth.txt" --alias my --set-default --set-default-dev-hub --json'
+                    ($Arguments -join '|') -eq 'org|login|sfdx-url|--sfdx-url-file|./auth.txt|--alias|my|--set-default|--set-default-dev-hub|--json'
                 }
                 $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
                 $result.PSObject.Properties.Match('refreshToken').Count | Should -Be 0
@@ -135,7 +135,7 @@ Describe 'psfdx module' {
                 $result.username | Should -Be 'u'
                 $result.PSObject.Properties.Match('accessToken').Count | Should -Be 0
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
-                    $Command -eq 'sf org login jwt --client-id ck --username u --jwt-key-file "key.pem" --instance-url https://login.salesforce.com --json'
+                    ($Arguments -join '|') -eq 'org|login|jwt|--client-id|ck|--username|u|--jwt-key-file|key.pem|--instance-url|https://login.salesforce.com|--json'
                 }
             }
 
@@ -145,7 +145,7 @@ Describe 'psfdx module' {
                 $rows.Count | Should -Be 1
                 $rows[0].username | Should -Be 'a@x.com'
                 $rows[0].PSObject.Properties.Match('accessToken').Count | Should -Be 0
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'sf org list --json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($Arguments -join '|') -eq 'org|list|--json' }
             }
 
             It 'Get-SalesforceConnections falls back to grouped orgs when nonScratchOrgs is absent' {
@@ -171,21 +171,21 @@ Describe 'psfdx module' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Mock Test-SalesforceIsMacOS { $true } -ModuleName $module.Name
                 Install-SalesforceCli
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm install --global @salesforce/cli' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($FilePath -eq 'npm') -and (($Arguments -join '|') -eq 'install|--global|@salesforce/cli') }
             }
 
             It 'updates with npm on macOS' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Mock Test-SalesforceIsMacOS { $true } -ModuleName $module.Name
                 Update-SalesforceCli
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm update --global @salesforce/cli' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($FilePath -eq 'npm') -and (($Arguments -join '|') -eq 'update|--global|@salesforce/cli') }
             }
 
             It 'uses npm elsewhere' {
                 Mock Invoke-Salesforce {} -ModuleName $module.Name
                 Mock Test-SalesforceIsMacOS { $false } -ModuleName $module.Name
                 Install-SalesforceCli
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { $Command -eq 'npm install --global @salesforce/cli' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter { ($FilePath -eq 'npm') -and (($Arguments -join '|') -eq 'install|--global|@salesforce/cli') }
             }
         }
 
@@ -197,13 +197,13 @@ Describe 'psfdx module' {
             It 'uses login URL for production' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
                 Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem'
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf * --instance-url https://login.salesforce.com*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -like '*|--instance-url|https://login.salesforce.com*' }
             }
 
             It 'uses test URL for sandbox' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
                 Connect-SalesforceJwt -ConsumerKey 'ck' -TargetOrg 'u' -JwtKeyfile 'key.pem' -Sandbox
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Command -like 'sf * --instance-url https://test.salesforce.com*' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -like '*|--instance-url|https://test.salesforce.com*' }
             }
         }
 
@@ -224,11 +224,11 @@ Describe 'psfdx module' {
                 Mock Invoke-Salesforce { '{"status":0,"result":{"records":[]}}' } -ModuleName $module.Name
                 Get-SalesforceUsers -Username "o'brien@example.com" -Limit 1 | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
-                    $Command -like "*WHERE Username = 'o\'brien@example.com' ORDER BY*"
+                    ($Arguments -join '|') -like "*WHERE Username = 'o\'brien@example.com' ORDER BY*"
                 }
                 Get-SalesforceRecordType -ObjectType "Acc'ount" | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
-                    $Command -like "*FROM RecordType WHERE SobjectType = 'Acc\'ount'*"
+                    ($Arguments -join '|') -like "*FROM RecordType WHERE SobjectType = 'Acc\'ount'*"
                 }
             }
         }
@@ -242,13 +242,13 @@ Describe 'psfdx module' {
                 @($rows).Count | Should -Be 1
                 $rows[0].Id | Should -Be '005xx0000000001'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName $module.Name -ParameterFilter {
-                    ($Command -like 'sf data query --query *FROM User*') -and
-                    ($Command -like "*Username = 'user@example.com'*") -and
-                    ($Command -like '*IsActive = true*') -and
-                    ($Command -like '* ORDER BY LastLoginDate DESC*') -and
-                    ($Command -like '* LIMIT 5*') -and
-                    ($Command -like '* --target-org me*') -and
-                    ($Command -like '* --result-format json*')
+                    (($Arguments -join '|') -like 'data|query|--query|*FROM User*') -and
+                    (($Arguments -join '|') -like "*Username = 'user@example.com'*") -and
+                    (($Arguments -join '|') -like '*IsActive = true*') -and
+                    (($Arguments -join '|') -like '* ORDER BY LastLoginDate DESC*') -and
+                    (($Arguments -join '|') -like '* LIMIT 5*') -and
+                    (($Arguments -join '|') -like '*|--target-org|me*') -and
+                    (($Arguments -join '|') -like '*|--result-format|json*')
                 }
             }
         }

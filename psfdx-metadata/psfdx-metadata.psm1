@@ -325,22 +325,23 @@ function Retrieve-SalesforceComponent {
     }
     Assert-SalesforceMetadataType -Type $Type
 
-    $command = "sf project retrieve start --metadata $Type"
+    $metadata = $Type
     if ($Name) {
-        $command += ":$Name"
-        if ($ChildName) { $command += ".$ChildName" }
+        $metadata += ":$Name"
+        if ($ChildName) { $metadata += ".$ChildName" }
     }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    $arguments = @('project', 'retrieve', 'start', '--metadata', $metadata)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
     if ($OutputDir) {
         if (-not (Test-Path -Path $OutputDir -PathType Container)) {
             throw "Output directory '$OutputDir' does not exist."
         }
-        $command += " --output-dir `"$OutputDir`""
+        $arguments += @('--output-dir', $OutputDir)
     }
-    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
+    if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Retrieve-SalesforceMetadata {
@@ -360,13 +361,13 @@ function Retrieve-SalesforceMetadata {
         throw "Output directory '$OutputDir' does not exist."
     }
 
-    $command = "sf project retrieve start --manifest `"$Manifest`""
-    $command += " --target-metadata-dir `"$OutputDir`""
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($Unzip) { $command += " --unzip" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    $arguments = @('project', 'retrieve', 'start', '--manifest', $Manifest)
+    $arguments += @('--target-metadata-dir', $OutputDir)
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($Unzip) { $arguments += '--unzip' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Retrieve-SalesforcePackage {
@@ -382,12 +383,12 @@ function Retrieve-SalesforcePackage {
         throw "Output directory '$OutputDir' does not exist."
     }
 
-    $command = "sf project retrieve start --package-name `"$Name`""
-    $command += " --output-dir `"$OutputDir`""
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
+    $arguments = @('project', 'retrieve', 'start', '--package-name', $Name)
+    $arguments += @('--output-dir', $OutputDir)
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Retrieve-SalesforceField {
@@ -415,22 +416,22 @@ function Retrieve-SalesforceOrg {
         [Parameter(Mandatory = $false)][switch] $IncludePackages
     )
 
-    $command = "sf project generate manifest"
+    $arguments = @('project', 'generate', 'manifest')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
-        $command += " --from-org $TargetOrg"
+        $arguments += @('--from-org', $TargetOrg)
     }
-    $command += " --name=allMetadata"
-    $command += " --output-dir ."
-    if ($IncludePackages) { $command += " --include-packages=unlocked" }
+    $arguments += '--name=allMetadata'
+    $arguments += @('--output-dir', '.')
+    if ($IncludePackages) { $arguments += '--include-packages=unlocked' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -Command $command @commonParams
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 
-    $command = "sf project retrieve start"
+    $arguments = @('project', 'retrieve', 'start')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
-        $command += " --target-org $TargetOrg"
+        $arguments += @('--target-org', $TargetOrg)
     }
-    $command += " --manifest allMetadata.xml"
-    Invoke-Salesforce -Command $command @commonParams
+    $arguments += @('--manifest', 'allMetadata.xml')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 #endregion
@@ -477,30 +478,31 @@ function Deploy-SalesforceComponent {
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
-    $command = "sf project deploy start"
+    $arguments = @('project', 'deploy', 'start')
     if ($Type) {
-        $command += " --metadata $Type"
-        if ($Name) { $command += ":$Name" }
+        $metadata = $Type
+        if ($Name) { $metadata += ":$Name" }
+        $arguments += @('--metadata', $metadata)
     }
     if ($SourceDir) {
         if (-not (Test-Path -LiteralPath $SourceDir)) {
             throw "Source path '$SourceDir' does not exist."
         }
-        $command += " --source-dir `"$SourceDir`""
+        $arguments += @('--source-dir', $SourceDir)
     }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
-    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
-    if ($IgnoreErrors) { $command += " --ignore-errors" }
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
+    if ($IgnoreWarnings) { $arguments += '--ignore-warnings' }
+    if ($IgnoreErrors) { $arguments += '--ignore-errors' }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
 
-    $command += Get-SalesforceApexCliTestParams @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
+    $arguments += Get-SalesforceApexCliTestArguments @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
 
-    if ($DryRun) { $command += " --dry-run" }
-    if ($ConciseResults) { $command += " --concise" }
-    if ($DetailedResults) { $command += " --verbose" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command @commonParams
+    if ($DryRun) { $arguments += '--dry-run' }
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -531,17 +533,17 @@ function Deploy-SalesforceMetadata {
         throw "Input directory '$InputDir' does not exist."
     }
 
-    $command = "sf project deploy start"
-    if ($Manifest) { $command += " --manifest `"$Manifest`"" }
-    if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
-    if ($ManifestPackage) { $command += " --single-package" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($IgnoreConflicts) { $command += " --ignore-conflicts" }
-    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
-    if ($IgnoreErrors) { $command += " --ignore-errors" }
-    $command += " --json"
+    $arguments = @('project', 'deploy', 'start')
+    if ($Manifest) { $arguments += @('--manifest', $Manifest) }
+    if ($InputDir) { $arguments += @('--metadata-dir', $InputDir) }
+    if ($ManifestPackage) { $arguments += '--single-package' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
+    if ($IgnoreWarnings) { $arguments += '--ignore-warnings' }
+    if ($IgnoreErrors) { $arguments += '--ignore-errors' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -566,9 +568,9 @@ function Get-SalesforceDeployJobParams {
         if ($JobId -notmatch '^0Af[a-zA-Z0-9]{12}([a-zA-Z0-9]{3})?$') {
             throw "Job ID '$JobId' is not a valid deploy job ID. Expected a 15 or 18 character ID starting with 0Af."
         }
-        return " --job-id $JobId"
+        return @('--job-id', $JobId)
     }
-    return " --use-most-recent"
+    return @('--use-most-recent')
 }
 
 function Test-SalesforceDeployWaitParams {
@@ -660,20 +662,20 @@ function Test-SalesforceDeploy {
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
-    $command = "sf project deploy validate"
-    if ($Manifest) { $command += " --manifest `"$Manifest`"" }
-    if ($SourceDir) { $command += " --source-dir `"$SourceDir`"" }
-    if ($InputDir) { $command += " --metadata-dir `"$InputDir`"" }
-    if ($ManifestPackage) { $command += " --single-package" }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($IgnoreWarnings) { $command += " --ignore-warnings" }
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($Async) { $command += " --async" }
-    $command += Get-SalesforceApexCliTestParams @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
-    if ($ConciseResults) { $command += " --concise" }
-    if ($DetailedResults) { $command += " --verbose" }
-    $command += " --json"
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $arguments = @('project', 'deploy', 'validate')
+    if ($Manifest) { $arguments += @('--manifest', $Manifest) }
+    if ($SourceDir) { $arguments += @('--source-dir', $SourceDir) }
+    if ($InputDir) { $arguments += @('--metadata-dir', $InputDir) }
+    if ($ManifestPackage) { $arguments += '--single-package' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($IgnoreWarnings) { $arguments += '--ignore-warnings' }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($Async) { $arguments += '--async' }
+    $arguments += Get-SalesforceApexCliTestArguments @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -694,19 +696,19 @@ function Start-SalesforceQuickDeploy {
     Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
     if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
 
-    $command = "sf project deploy quick" + $jobParams
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($Async) { $command += " --async" }
-    if ($ConciseResults) { $command += " --concise" }
-    if ($DetailedResults) { $command += " --verbose" }
-    $command += " --json"
+    $arguments = @('project', 'deploy', 'quick') + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($Async) { $arguments += '--async' }
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += '--json'
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     $target = if ($JobId) { $JobId } else { 'most recent validated deployment' }
     if ($PSCmdlet.ShouldProcess($target, 'Quick deploy validated deployment')) {
-        $result = Invoke-Salesforce -Command $command @commonParams
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
     }
 }
@@ -723,12 +725,12 @@ function Get-SalesforceDeployStatus {
     $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
     if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
 
-    $command = "sf project deploy report" + $jobParams
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    $command += " --json"
+    $arguments = @('project', 'deploy', 'report') + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -747,13 +749,13 @@ function Resume-SalesforceDeploy {
     if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
 
     # sf project deploy resume has no --target-org; the org comes from the cached deployment.
-    $command = "sf project deploy resume" + $jobParams
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($ConciseResults) { $command += " --concise" }
-    if ($DetailedResults) { $command += " --verbose" }
-    $command += " --json"
+    $arguments = @('project', 'deploy', 'resume') + $jobParams
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -771,17 +773,17 @@ function Stop-SalesforceDeploy {
     Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
     if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
 
-    $command = "sf project deploy cancel" + $jobParams
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    if ($PSBoundParameters.ContainsKey('Wait')) { $command += " --wait $Wait" }
-    if ($Async) { $command += " --async" }
-    $command += " --json"
+    $arguments = @('project', 'deploy', 'cancel') + $jobParams
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($Async) { $arguments += '--async' }
+    $arguments += '--json'
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     $target = if ($JobId) { $JobId } else { 'most recent deployment' }
     if ($PSCmdlet.ShouldProcess($target, 'Cancel deployment')) {
-        $result = Invoke-Salesforce -Command $command @commonParams
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
     }
 }
@@ -795,11 +797,11 @@ function Describe-SalesforceObjects {
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $command = "sf sobject list"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --json"
+    $arguments = @('sobject', 'list')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -810,13 +812,13 @@ function Describe-SalesforceObject {
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    $command = "sf sobject describe"
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $command += " --target-org $TargetOrg" }
-    $command += " --sobject $Name"
-    if ($UseToolingApi) { $command += " --use-tooling-api" }
-    $command += " --json"
+    $arguments = @('sobject', 'describe')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += @('--sobject', $Name)
+    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
@@ -840,13 +842,13 @@ function Describe-SalesforceFields {
 function Describe-SalesforceMetadataTypes {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
-    $command = "sf org list metadata-types"
+    $arguments = @('org', 'list', 'metadata-types')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
-        $command += " --target-org $TargetOrg"
+        $arguments += @('--target-org', $TargetOrg)
     }
-    $command += " --json"
+    $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -Command $command @commonParams
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $result = $result | ConvertFrom-Json
     $metadataObjects = $result.result.metadataObjects
     if (-not $metadataObjects) {
