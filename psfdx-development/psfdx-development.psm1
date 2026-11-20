@@ -264,7 +264,7 @@ function New-SalesforceScratchOrg {
 }
 
 function Remove-SalesforceScratchOrg {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true)][string] $TargetOrg,
         [Parameter()][switch] $NoPrompt
@@ -274,16 +274,24 @@ function Remove-SalesforceScratchOrg {
         $arguments += '--no-prompt'
     }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess($TargetOrg, 'Delete scratch org')) {
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
 }
 
 function Remove-SalesforceScratchOrgs {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param()
 
-    $scratchOrgs = Get-SalesforceScratchOrgs
-    foreach ($scratchOrg in $scratchOrgs) {
-        Remove-SalesforceScratchOrg -TargetOrg ($scratchOrg.username) -NoPrompt
+    $usernames = @(Get-SalesforceScratchOrgs | ForEach-Object { $_.username } | Where-Object { $_ })
+    if ($usernames.Count -eq 0) { return }
+    # One confirmation names every org; the per-org confirmation is then skipped.
+    $target = "$($usernames.Count) scratch org(s): $($usernames -join ', ')"
+    if ($PSCmdlet.ShouldProcess($target, 'Delete all scratch orgs')) {
+        foreach ($username in $usernames) {
+            Remove-SalesforceScratchOrg -TargetOrg $username -NoPrompt -Confirm:$false
+        }
     }
 }
 

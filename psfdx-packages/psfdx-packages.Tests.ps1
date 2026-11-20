@@ -102,7 +102,7 @@ Describe 'Remove-SalesforcePackage' {
     InModuleScope 'psfdx-packages' {
         It 'passes a name with spaces as one argument' {
             Mock Invoke-Salesforce {}
-            Remove-SalesforcePackage -Name 'My Pkg' -NoPrompt -TargetDevHub 'devhub'
+            Remove-SalesforcePackage -Name 'My Pkg' -Confirm:$false -NoPrompt -TargetDevHub 'devhub'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Arguments -join '|') -eq 'package|delete|--package|My Pkg|--no-prompt|--target-dev-hub|devhub'
             }
@@ -209,7 +209,7 @@ Describe 'Promote and Remove package versions' {
         }
 
         It 'builds the delete command' {
-            Remove-SalesforcePackageVersion -PackageVersionId '04t000000000001' -NoPrompt | Out-Null
+            Remove-SalesforcePackageVersion -PackageVersionId '04t000000000001' -Confirm:$false -NoPrompt | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Arguments -join '|') -eq 'package|version|delete|--package|04t000000000001|--no-prompt|--json'
             }
@@ -263,6 +263,23 @@ Describe 'Install-SalesforcePackageVersion' {
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
                 ($Arguments -join '|') -like '*|--security-type|AllUsers|*'
             }
+        }
+    }
+}
+
+Describe 'Package deletion safety' {
+    InModuleScope 'psfdx-packages' {
+        BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{}}' } }
+
+        It 'Remove-SalesforcePackage runs nothing under -WhatIf' {
+            Remove-SalesforcePackage -Name 'P' -WhatIf
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'Remove-SalesforcePackageVersion runs nothing under -WhatIf and returns nothing' {
+            $out = Remove-SalesforcePackageVersion -PackageVersionId '04t000000000001' -WhatIf
+            $out | Should -BeNullOrEmpty
+            Assert-MockCalled Invoke-Salesforce -Times 0
         }
     }
 }

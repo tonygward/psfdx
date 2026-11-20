@@ -147,7 +147,7 @@ function Remove-SalesforceSensitiveProperty {
 }
 
 function Disconnect-Salesforce {
-    [CmdletBinding(DefaultParameterSetName = 'TargetOrg')]
+    [CmdletBinding(DefaultParameterSetName = 'TargetOrg', SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'All')][switch] $All,
         [Parameter(Mandatory = $true, ParameterSetName = 'TargetOrg')][string] $TargetOrg,
@@ -162,8 +162,12 @@ function Disconnect-Salesforce {
     if ($NoPrompt) { $arguments += '--no-prompt' }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    Show-SalesforceResult -Result $result
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($PSCmdlet.ParameterSetName -eq 'All') { 'all authenticated orgs' } else { $TargetOrg }
+    if ($PSCmdlet.ShouldProcess($target, 'Log out of org')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        Show-SalesforceResult -Result $result
+    }
 }
 
 function Connect-SalesforceJwt {

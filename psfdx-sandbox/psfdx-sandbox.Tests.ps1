@@ -135,7 +135,7 @@ Describe 'psfdx-sandbox module' {
             It 'constructs delete command respecting flags' {
                 Mock Invoke-Salesforce { '{"status":0}' }
 
-                $out = Remove-SalesforceSandbox -NoPrompt -TargetOrg 'prod'
+                $out = Remove-SalesforceSandbox -Confirm:$false -NoPrompt -TargetOrg 'prod'
 
                 $out.ok | Should -Be '{"status":0}'
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
@@ -206,6 +206,16 @@ Describe 'psfdx-sandbox module' {
                 $status = Get-SalesforceSandboxRefreshStatus -Name 'MissingSandbox'
                 $status.Count | Should -Be 0
             }
+        }
+    }
+}
+
+Describe 'Remove-SalesforceSandbox safety' {
+    InModuleScope 'psfdx-sandbox' {
+        It 'runs nothing under -WhatIf' {
+            Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
+            Remove-SalesforceSandbox -TargetOrg 'prod' -WhatIf
+            Assert-MockCalled Invoke-Salesforce -Times 0
         }
     }
 }

@@ -114,7 +114,7 @@ function New-SalesforcePackage {
 }
 
 function Remove-SalesforcePackage {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
@@ -124,7 +124,10 @@ function Remove-SalesforcePackage {
     if ($NoPrompt) { $arguments += '--no-prompt' }
     if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess($Name, 'Delete package')) {
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
 }
 
 function Get-SalesforcePackagesInstalled {
@@ -260,7 +263,7 @@ function Promote-SalesforcePackageVersion {
 }
 
 function Remove-SalesforcePackageVersion {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
@@ -273,8 +276,11 @@ function Remove-SalesforcePackageVersion {
     if ($NoPrompt) { $arguments += '--no-prompt' }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    return Show-SalesforceResult -Result $result
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess($PackageVersionId, 'Delete package version')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
 }
 
 function Install-SalesforcePackageVersion {

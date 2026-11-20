@@ -364,3 +364,28 @@ Describe 'Invoke-Salesforce' {
         }
     }
 }
+
+Describe 'Disconnect-Salesforce safety' {
+    InModuleScope 'psfdx' {
+        BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' } }
+
+        It 'runs nothing under -WhatIf' {
+            Disconnect-Salesforce -All -WhatIf
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'logs out one org with -Confirm:$false and keeps --no-prompt' {
+            Disconnect-Salesforce -TargetOrg 'me@example.com' -NoPrompt -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Arguments -join '|') -eq 'org|logout|--target-org|me@example.com|--no-prompt|--json'
+            }
+        }
+
+        It 'logs out all orgs with -Confirm:$false' {
+            Disconnect-Salesforce -All -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Arguments -join '|') -eq 'org|logout|--all|--json'
+            }
+        }
+    }
+}

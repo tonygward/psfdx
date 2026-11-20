@@ -575,3 +575,47 @@ Describe 'Get-SalesforceApexClass' {
         }
     }
 }
+
+Describe 'Scratch org deletion safety' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
+        }
+
+        It 'Remove-SalesforceScratchOrg runs nothing under -WhatIf' {
+            Remove-SalesforceScratchOrg -TargetOrg 'so1' -WhatIf
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'Remove-SalesforceScratchOrg deletes with -Confirm:$false and keeps --no-prompt' {
+            Remove-SalesforceScratchOrg -TargetOrg 'so1' -NoPrompt -Confirm:$false
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Arguments -join '|') -eq 'org|delete|scratch|--target-org|so1|--no-prompt'
+            }
+        }
+
+        Context 'Remove-SalesforceScratchOrgs' {
+            BeforeEach {
+                Mock Get-SalesforceScratchOrgs { @([pscustomobject]@{ username = 'a@x.com' }, [pscustomobject]@{ username = 'b@x.com' }) }
+            }
+
+            It 'runs nothing under -WhatIf' {
+                Remove-SalesforceScratchOrgs -WhatIf
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+
+            It 'deletes each org once with -Confirm:$false' {
+                Remove-SalesforceScratchOrgs -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 2
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|delete|scratch|--target-org|a@x.com|--no-prompt' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|delete|scratch|--target-org|b@x.com|--no-prompt' }
+            }
+
+            It 'does nothing when there are no scratch orgs' {
+                Mock Get-SalesforceScratchOrgs { @() }
+                Remove-SalesforceScratchOrgs -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+        }
+    }
+}

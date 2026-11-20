@@ -109,7 +109,7 @@ Included in the `psfdx` package.
 | :--- | :--- |
 | `Connect-Salesforce` | Web-based org authentication. |
 | `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias/default flags and hides tokens and auth URLs unless `-IncludeToken`; `-IncludeToken` only returns what the CLI itself provides). |
-| `Disconnect-Salesforce` | Logout from Salesforce org. |
+| `Disconnect-Salesforce` | Logout from Salesforce org (asks for confirmation, supports `-WhatIf`). |
 | `Connect-SalesforceJwt` | JWT-based authentication. |
 | `Open-Salesforce` | Open org in a browser or get URL. |
 | `Get-SalesforceConnections` | List connected orgs (excluding scratch orgs). |
@@ -242,8 +242,8 @@ Included in the `psfdx` package.
 | :--- | :--- |
 | `Get-SalesforceScratchOrgs` | List scratch orgs. |
 | `New-SalesforceScratchOrg` | Create scratch org. |
-| `Remove-SalesforceScratchOrg` | Delete a scratch org. |
-| `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found. |
+| `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
+| `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
 
 ### Apex Testing & Automation
 
@@ -290,7 +290,7 @@ Included in the `psfdx` package.
 | `Get-SalesforceSandboxRefreshStatus` | Show the most recent refresh details and next eligible refresh date for a sandbox. |
 | `Copy-SalesforceSandbox` | Clone an existing sandbox into a new sandbox. |
 | `Resume-SalesforceSandbox` | Resume a pending or paused sandbox copy. |
-| `Remove-SalesforceSandbox` | Delete a sandbox from the production org, optionally specifying the target org. |
+| `Remove-SalesforceSandbox` | Delete a sandbox from the production org, optionally specifying the target org (asks for confirmation, supports `-WhatIf`). |
 
 ### psfdx-agentforce
 
@@ -368,7 +368,7 @@ Included in the `psfdx` package.
 | `Get-SalesforcePackages` | List packages in a Dev Hub. |
 | `Get-SalesforcePackage` | Get a specific package by name. |
 | `New-SalesforcePackage` | Create a package (managed/unlocked, org-dependent, path, description, no-namespace). |
-| `Remove-SalesforcePackage` | Delete a package by name. |
+| `Remove-SalesforcePackage` | Delete a package by name (asks for confirmation, supports `-WhatIf`). |
 | `Get-SalesforcePackagesInstalled` | List installed packages in a target org (supports API version override). |
 
 ### Package Versions
@@ -378,7 +378,7 @@ Included in the `psfdx` package.
 | `Get-SalesforcePackageVersions` | List versions (filters: released/concise/verbose). |
 | `New-SalesforcePackageVersion` | Create a new package version (coverage, tag, def file, waits, key). |
 | `Promote-SalesforcePackageVersion` | Promote a version (optional no-prompt). |
-| `Remove-SalesforcePackageVersion` | Delete a version (optional no-prompt). |
+| `Remove-SalesforcePackageVersion` | Delete a version (optional no-prompt; asks for confirmation, supports `-WhatIf`). |
 | `Install-SalesforcePackageVersion` | Install a version to a target org (waits/publish-wait, no-prompt). |
 
 ### psfdx-shared
