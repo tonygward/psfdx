@@ -74,7 +74,7 @@ function Verb-SalesforceNoun {
 - `Invoke-Salesforce` deliberately has **no** `SupportsShouldProcess` (see the comment in `psfdx-shared/Invoke-Salesforce.ps1`). Put `ShouldProcess` on the public cmdlet instead.
 - **`Invoke-Salesforce` runs the executable directly with your argument array** (`-Arguments`; the legacy `-Command` string is split by `ConvertTo-PsfdxArgumentList`). It never goes through `Invoke-Expression` or a shell, so `;`, `|`, `&` and `$(...)` in a value are plain text, and no value needs quoting or escaping. Put every value that goes into generated SOQL through `ConvertTo-SalesforceSoqlLiteral` (it returns the quoted literal; SOQL escapes with a backslash, so doubling the quote is wrong) and every object or field name through `ConvertTo-SalesforceSoqlIdentifier`. Never add an `Invoke-Expression` call. On Windows, an argument containing a double quote or a line break is rejected for the `.cmd` shims (`sf`, `npm`, `yarn`); `%` is passed literally.
 - The `Retrieve-`, `Describe-` and `Promote-` verbs are intentional, even though PowerShell doesn't approve them. Keep using them for consistency.
-- Each `.psm1` starts with an identical copy of `Import-PsfdxSharedModule`. If you change it, change all six.
+- Each `.psm1` starts with an identical copy of `Import-PsfdxSharedModule` (seven modules). If you change it, change every copy; `tests/Repository.Tests.ps1` fails if they differ. The resolution rules and the version contract are in the comment at the top of the function.
 - Use `#region` / `#endregion` blocks to group cmdlets, as the existing files do.
 
 ## Compatibility

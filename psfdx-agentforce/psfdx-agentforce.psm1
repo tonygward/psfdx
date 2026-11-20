@@ -1,55 +1,111 @@
 function Import-PsfdxSharedModule {
+    # Loads psfdx-shared for the module this copy sits in. Keep every copy identical.
+    #
+    # Contract: the modules release in lockstep, so psfdx-shared must have the same Major.Minor as the importing module and
+    # a version no lower than it. A newer patch is fine; an older one, or a different minor, is not.
+    #
+    # Resolution is deterministic. Versions are compared as [version], never as text.
+    #   1. A loaded copy that is compatible (the highest one) is used as it is.
+    #   2. Otherwise the first tier that has a compatible copy wins, and the highest version within the tier:
+    #      the sibling folder (source checkout, zip install, flat install, Gallery bundle), then sibling version
+    #      folders (<Modules>/psfdx-shared/<version>), then PSModulePath.
+    #   3. A loaded copy that is not compatible is removed and replaced. If nothing compatible exists the
+    #      function throws and says what it found; it never carries on with the wrong version.
     [CmdletBinding()]
     param(
-        [string] $ModuleName = 'psfdx-shared'
+        [string] $ModuleName = 'psfdx-shared',
+        [string] $ModuleRoot = $PSScriptRoot,
+        [version] $OwnVersion
     )
 
-    if (Get-Module -Name $ModuleName -ErrorAction SilentlyContinue) {
+    $readVersion = {
+        param([string] $Manifest)
+        try { return [version](Import-PowerShellDataFile -LiteralPath $Manifest).ModuleVersion } catch { return $null }
+    }
+
+    # The module's own version comes from its manifest next to this file: the module's version is not set yet while its .psm1 loads.
+    if ((-not $PSBoundParameters.ContainsKey('OwnVersion')) -and $PSCommandPath) {
+        $ownManifest = [System.IO.Path]::ChangeExtension($PSCommandPath, '.psd1')
+        if (Test-Path -LiteralPath $ownManifest) { $OwnVersion = & $readVersion $ownManifest }
+    }
+    $versionKnown = ($null -ne $OwnVersion) -and ($OwnVersion -gt [version]'0.0')
+    $isCompatible = {
+        param([version] $Version)
+        if (-not $versionKnown) { return $true }
+        return (($Version.Major -eq $OwnVersion.Major) -and ($Version.Minor -eq $OwnVersion.Minor) -and ($Version -ge $OwnVersion))
+    }
+
+    $loaded = @(Get-Module -Name $ModuleName -ErrorAction SilentlyContinue | Sort-Object -Property Version -Descending)
+    $loadedCompatible = @($loaded | Where-Object { & $isCompatible $_.Version }) | Select-Object -First 1
+    if ($loadedCompatible) {
+        Import-Module -ModuleInfo $loadedCompatible -ErrorAction Stop
         return
     }
 
-    $candidates = @()
+    $found = @()
 
-    $repoManifest = Join-Path -Path $PSScriptRoot -ChildPath (Join-Path '..' (Join-Path $ModuleName "$ModuleName.psd1"))
-    $candidates += $repoManifest
+    # Tier 1: the sibling folder.
+    $tier = @()
+    $parent = Split-Path -Path $ModuleRoot -Parent
+    if ($parent) {
+        $manifest = Join-Path -Path $parent -ChildPath (Join-Path $ModuleName "$ModuleName.psd1")
+        if (Test-Path -LiteralPath $manifest) {
+            $version = & $readVersion $manifest
+            if ($version) { $tier += [pscustomobject]@{ Path = $manifest; Version = $version } }
+        }
+    }
+    $found += , $tier
 
-    $moduleParent = Split-Path -Path $PSScriptRoot -Parent
-    if ($moduleParent) {
-        $siblingManifest = Join-Path -Path $moduleParent -ChildPath (Join-Path $ModuleName "$ModuleName.psd1")
-        $candidates += $siblingManifest
-
-        $moduleRoot = Split-Path -Path $moduleParent -Parent
-        if ($moduleRoot) {
-            $sharedBase = Join-Path -Path $moduleRoot -ChildPath $ModuleName
+    # Tier 2: sibling version folders. Only when this module itself sits in a version folder (<Modules>/<name>/<version>).
+    $tier = @()
+    $ownLeaf = [version] '0.0'
+    if ($parent -and [version]::TryParse((Split-Path -Path $ModuleRoot -Leaf), [ref] $ownLeaf)) {
+        $modulesRoot = Split-Path -Path $parent -Parent
+        if ($modulesRoot) {
+            $sharedBase = Join-Path -Path $modulesRoot -ChildPath $ModuleName
             if (Test-Path -LiteralPath $sharedBase) {
-                try {
-                    $versionDirectories = Get-ChildItem -Path $sharedBase -Directory -ErrorAction Stop | Sort-Object -Property Name -Descending
-                    foreach ($dir in $versionDirectories) {
-                        $candidates += Join-Path -Path $dir.FullName -ChildPath "$ModuleName.psd1"
+                foreach ($dir in @(Get-ChildItem -LiteralPath $sharedBase -Directory -ErrorAction SilentlyContinue)) {
+                    $dirVersion = [version] '0.0'
+                    if (-not [version]::TryParse($dir.Name, [ref] $dirVersion)) { continue }
+                    $manifest = Join-Path -Path $dir.FullName -ChildPath "$ModuleName.psd1"
+                    if (Test-Path -LiteralPath $manifest) {
+                        $version = & $readVersion $manifest
+                        if ($version) { $tier += [pscustomobject]@{ Path = $manifest; Version = $version } }
                     }
-                } catch {
-                    # ignore directory inspection failures
                 }
-                $candidates += Join-Path -Path $sharedBase -ChildPath "$ModuleName.psd1"
             }
         }
     }
+    $found += , $tier
 
-    $available = Get-Module -ListAvailable -Name $ModuleName -ErrorAction SilentlyContinue | Sort-Object -Property Version -Descending
-    foreach ($item in $available) {
-        if ($item.Path) {
-            $candidates += $item.Path
-        }
+    # Tier 3: PSModulePath.
+    $tier = @()
+    foreach ($item in @(Get-Module -ListAvailable -Name $ModuleName -ErrorAction SilentlyContinue)) {
+        if ($item.Path) { $tier += [pscustomobject]@{ Path = $item.Path; Version = $item.Version } }
     }
+    $found += , $tier
 
-    foreach ($candidate in $candidates | Where-Object { $_ } | Select-Object -Unique) {
-        if (Test-Path -LiteralPath $candidate) {
-            Import-Module -Name $candidate -ErrorAction Stop
+    foreach ($tier in $found) {
+        $match = @($tier | Where-Object { & $isCompatible $_.Version } | Sort-Object -Property Version -Descending) | Select-Object -First 1
+        if ($match) {
+            # Remove the stale copies first: -Force alone would leave two modules of the same name loaded.
+            foreach ($stale in $loaded) { Remove-Module -ModuleInfo $stale -Force -ErrorAction SilentlyContinue }
+            Import-Module -Name $match.Path -ErrorAction Stop
             return
         }
     }
 
-    Import-Module -Name $ModuleName -ErrorAction Stop
+    $needs = "$ModuleName $($OwnVersion.Major).$($OwnVersion.Minor).x, version $OwnVersion or newer"
+    $message = "Cannot load $ModuleName for module version ${OwnVersion}: it needs $needs."
+    $seen = @($loaded | ForEach-Object { "$($_.Version) (loaded)" }) + @($found | ForEach-Object { $_ } | ForEach-Object { "$($_.Version) ($($_.Path))" })
+    if ($seen.Count -gt 0) {
+        $message += " Found only: $($seen -join '; ')."
+    } else {
+        $message += " It was not found."
+    }
+    $message += " Install matching versions of every psfdx module (Install-Module psfdx, or reinstall from the same release)"
+    if ($loaded.Count -gt 0) { $message += ", then start a new session or run Remove-Module $ModuleName -Force" }
+    throw ($message + '.')
 }
 
 Import-PsfdxSharedModule

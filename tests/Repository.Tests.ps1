@@ -4,6 +4,19 @@ Describe 'Repository rules' {
         $script:Version = (Get-Content -Path (Join-Path $script:Root 'VERSION') -Raw).Trim()
     }
 
+    It 'every module carries an identical copy of Import-PsfdxSharedModule' {
+        $copies = @{}
+        foreach ($file in Get-ChildItem -Path $script:Root -Directory -Filter 'psfdx*' | ForEach-Object { Get-ChildItem -Path $_.FullName -Filter '*.psm1' }) {
+            $text = [System.IO.File]::ReadAllText($file.FullName)
+            $match = [regex]::Match($text, '(?s)function Import-PsfdxSharedModule \{.*?\r?\n\}\r?\n\r?\nImport-PsfdxSharedModule')
+            if ($match.Success) { $copies[$file.Name] = $match.Value.Replace("`r`n", "`n") }
+        }
+        $copies.Count | Should -BeGreaterThan 6
+        $reference = $copies['psfdx.psm1']
+        $different = @($copies.Keys | Where-Object { $copies[$_] -cne $reference })
+        $different | Should -BeNullOrEmpty
+    }
+
     It 'VERSION is three numeric parts' {
         $script:Version | Should -Match '^\d+\.\d+\.\d+$'
     }

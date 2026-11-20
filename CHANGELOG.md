@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- All modules: loading the shared helpers (`psfdx-shared`) is now predictable. Versions are compared as version numbers (0.8.10 is newer than 0.8.9), only a copy with the same release series and no older than the module is accepted, a stale copy already loaded in the session is replaced instead of silently used, and a missing or mismatched copy now fails with a message that says what was found and how to fix it.
 ## 0.8.25 - 2026-11-20
 
 - psfdx, psfdx-sandbox, psfdx-shared: on Windows PowerShell 5.1, query results (`Select-SalesforceRecords`, and every cmdlet that returns query records) no longer include Salesforce's internal `attributes` property.
