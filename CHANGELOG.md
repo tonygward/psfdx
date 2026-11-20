@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.25 - 2026-11-20
+
 - psfdx, psfdx-sandbox, psfdx-shared: on Windows PowerShell 5.1, query results (`Select-SalesforceRecords`, and every cmdlet that returns query records) no longer include Salesforce's internal `attributes` property.
 
 ## 0.8.24 - 2026-11-20
