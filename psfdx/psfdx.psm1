@@ -382,7 +382,7 @@ function Select-SalesforceRecords {
         throw $result.message
     }
     # Exclude Salesforce's built-in 'attributes' metadata from each row
-    return ($result.result.records | Select-Object -ExcludeProperty attributes)
+    return ($result.result.records | Select-Object -Property * -ExcludeProperty attributes)
 }
 
 function Get-SalesforceUsers {

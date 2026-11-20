@@ -219,3 +219,63 @@ Describe 'Remove-SalesforceSandbox safety' {
         }
     }
 }
+
+# SOQL builder and `sf data query --json` regression coverage (#172).
+# Fixtures are sanitised copies of real `sf data query --json` output shapes: no tokens, no real org data.
+Describe 'Get-SalesforceSandboxRefreshStatus SOQL regression' {
+    InModuleScope 'psfdx-sandbox' {
+        BeforeAll {
+            $script:Empty = '{"status":0,"result":{"records":[],"totalSize":0,"done":true},"warnings":[]}'
+            $script:Info = '{"status":0,"result":{"records":[{"attributes":{"type":"SandboxInfo"},"SandboxName":"dev1","LicenseType":"Developer"}],"totalSize":1,"done":true},"warnings":[]}'
+            $script:Process = '{"status":0,"result":{"records":[{"attributes":{"type":"SandboxProcess"},"SandboxName":"dev1","StartDate":"2026-11-01T09:00:00.000+0000","EndDate":"2026-11-01T09:30:00.000+0000"}],"totalSize":1,"done":true},"warnings":[]}'
+            $script:NoAuth = '{"name":"NoAuthFoundError","message":"No authorization information found for nobody@example.com.","exitCode":1,"status":1,"warnings":[]}'
+        }
+
+        It 'escapes the sandbox name <Name> in both queries' -ForEach @(
+            @{ Name = 'apostrophe'; Value = "dev'1";        Literal = "'dev\'1'" }
+            @{ Name = 'backslash';  Value = 'dev\1';        Literal = "'dev\\1'" }
+            @{ Name = 'injection';  Value = "x' OR Id != '"; Literal = "'x\' OR Id != \''" }
+            @{ Name = 'unicode';    Value = 'dév日本';        Literal = "'dév日本'" }
+        ) {
+            Mock Invoke-Salesforce { $script:Info } -ParameterFilter { ($Arguments -join '|') -like '*FROM SandboxInfo*' }
+            Mock Invoke-Salesforce { $script:Process } -ParameterFilter { ($Arguments -join '|') -like '*FROM SandboxProcess*' }
+            Get-SalesforceSandboxRefreshStatus -Name $Value -TargetOrg 'prod' | Out-Null
+            $info = "data|query|--use-tooling-api|--result-format|json|--query|SELECT SandboxName, LicenseType FROM SandboxInfo WHERE SandboxName = $Literal|--target-org|prod"
+            $proc = "data|query|--use-tooling-api|--result-format|json|--query|SELECT SandboxName, StartDate, EndDate FROM SandboxProcess WHERE SandboxName = $Literal ORDER BY StartDate DESC LIMIT 1|--target-org|prod"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $info }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $proc }
+        }
+
+        It 'refuses a control character and runs nothing' {
+            Mock Invoke-Salesforce { $script:Info }
+            { Get-SalesforceSandboxRefreshStatus -Name "a$([char]1)b" } | Should -Throw -ExpectedMessage '*control character*'
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'returns nothing and skips the process query when the sandbox is unknown' {
+            Mock Invoke-Salesforce { $script:Empty }
+            @(Get-SalesforceSandboxRefreshStatus -Name 'ghost').Count | Should -Be 0
+            Assert-MockCalled Invoke-Salesforce -Times 1
+        }
+
+        It 'throws the CLI message on an authentication error' {
+            Mock Invoke-Salesforce { $script:NoAuth }
+            { Get-SalesforceSandboxRefreshStatus -Name 'dev1' -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found for nobody@example.com*'
+        }
+
+        It 'parses the ISO 8601 refresh date with the invariant culture' {
+            Mock Invoke-Salesforce { $script:Info } -ParameterFilter { ($Arguments -join '|') -like '*FROM SandboxInfo*' }
+            Mock Invoke-Salesforce { $script:Process } -ParameterFilter { ($Arguments -join '|') -like '*FROM SandboxProcess*' }
+            $old = [System.Threading.Thread]::CurrentThread.CurrentCulture
+            try {
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('de-DE')
+                $r = @(Get-SalesforceSandboxRefreshStatus -Name 'dev1')
+            } finally {
+                [System.Threading.Thread]::CurrentThread.CurrentCulture = $old
+            }
+            $r[0].LastRefreshed.Year | Should -Be 2026
+            $r[0].LastRefreshed.Month | Should -Be 11
+            $r[0].NextRefreshDate.Day | Should -Be ($r[0].LastRefreshed.AddDays(1).Day)
+        }
+    }
+}

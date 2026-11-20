@@ -389,3 +389,117 @@ Describe 'Disconnect-Salesforce safety' {
         }
     }
 }
+
+# SOQL builder and `sf data query --json` regression coverage (#172).
+# Fixtures are sanitised copies of real `sf data query --json` output shapes: no tokens, no real org data.
+Describe 'SOQL query regression' {
+    InModuleScope 'psfdx' {
+        BeforeAll {
+            $script:Success = '{"status":0,"result":{"records":[{"attributes":{"type":"User","url":"/services/data/v62.0/sobjects/User/005000000000001AAA"},"Id":"005000000000001AAA","Username":"a@example.com"}],"totalSize":1,"done":true},"warnings":[]}'
+            $script:Empty = '{"status":0,"result":{"records":[],"totalSize":0,"done":true},"warnings":[]}'
+            $script:Malformed = '{"name":"INVALID_FIELD","message":"\nSELECT Id, Nope FROM User\n            ^\nERROR at Row:1:Column:12\nNo such column ''Nope'' on entity ''User''.","exitCode":1,"status":1,"warnings":[]}'
+            $script:NoAuth = '{"name":"NoAuthFoundError","message":"No authorization information found for nobody@example.com.","exitCode":1,"status":1,"warnings":[]}'
+            $script:Head = 'SELECT Id, Name, Username, Email, IsActive, LastLoginDate FROM User'
+        }
+
+        Context 'Get-SalesforceUsers escaping' {
+            BeforeEach { Mock Invoke-Salesforce { $script:Empty } }
+
+            It 'sends <Name> as <Literal>' -ForEach @(
+                @{ Name = 'plain';        Value = 'a@example.com';          Literal = "'a@example.com'" }
+                @{ Name = 'apostrophe';   Value = "o'brien@example.com";    Literal = "'o\'brien@example.com'" }
+                @{ Name = 'backslash';    Value = 'a\b@example.com';        Literal = "'a\\b@example.com'" }
+                @{ Name = 'trailing \';   Value = 'end\';                   Literal = "'end\\'" }
+                @{ Name = 'injection';    Value = "x' OR Name != '";        Literal = "'x\' OR Name != \''" }
+                @{ Name = 'unicode';      Value = 'Zoë 日本語@example.com';   Literal = "'Zoë 日本語@example.com'" }
+                @{ Name = 'percent';      Value = '50%_off';                Literal = "'50%_off'" }
+                @{ Name = 'spaces';       Value = 'a b  c';                 Literal = "'a b  c'" }
+                @{ Name = 'shell chars';  Value = 'a&b|c;$(x)';             Literal = "'a&b|c;`$(x)'" }
+            ) {
+                Get-SalesforceUsers -Username $Value | Out-Null
+                $expected = "data|query|--query|$script:Head WHERE Username = $Literal ORDER BY LastLoginDate DESC LIMIT 200|--result-format|json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            }
+
+            It 'refuses <Name> and never calls sf' -ForEach @(
+                @{ Name = 'NUL'; Value = "a$([char]0)b" }
+                @{ Name = 'SOH'; Value = "a$([char]1)b" }
+                @{ Name = 'DEL'; Value = "a$([char]0x7F)b" }
+            ) {
+                { Get-SalesforceUsers -Username $Value } | Should -Throw -ExpectedMessage '*control character*'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+
+            It 'combines ActiveOnly, Username and Limit in a fixed order' {
+                Get-SalesforceUsers -ActiveOnly -Username 'a@x.com' -Limit 5 -TargetOrg 'me' | Out-Null
+                $expected = "data|query|--query|$script:Head WHERE IsActive = true AND Username = 'a@x.com' ORDER BY LastLoginDate DESC LIMIT 5|--target-org|me|--result-format|json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            }
+        }
+
+        Context 'Get-SalesforceRecordType escaping' {
+            BeforeEach { Mock Invoke-Salesforce { $script:Empty } }
+
+            It 'escapes the object type' {
+                Get-SalesforceRecordType -ObjectType "Acc'ount\" | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    ($Arguments -join '|') -eq "data|query|--query|SELECT Id, SobjectType, Name, DeveloperName, IsActive FROM RecordType WHERE SobjectType = 'Acc\'ount\\'|--result-format|json"
+                }
+            }
+
+            It 'refuses control characters and never calls sf' {
+                { Get-SalesforceRecordType -ObjectType "A$([char]1)B" } | Should -Throw -ExpectedMessage '*control character*'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+        }
+
+        Context 'Select-SalesforceRecords result handling' {
+            It 'returns records without attributes' {
+                Mock Invoke-Salesforce { $script:Success }
+                $r = @(Select-SalesforceRecords -Query 'SELECT Id FROM User')
+                $r.Count | Should -Be 1
+                $r[0].Id | Should -Be '005000000000001AAA'
+                $r[0].PSObject.Properties.Name | Should -Not -Contain 'attributes'
+            }
+
+            It 'returns nothing for zero records' {
+                Mock Invoke-Salesforce { $script:Empty }
+                @(Select-SalesforceRecords -Query 'SELECT Id FROM User').Count | Should -Be 0
+            }
+
+            It 'throws the CLI message for a malformed query' {
+                Mock Invoke-Salesforce { $script:Malformed }
+                { Select-SalesforceRecords -Query 'SELECT Id, Nope FROM User' } | Should -Throw -ExpectedMessage "*No such column 'Nope'*"
+            }
+
+            It 'throws the CLI message for an authentication error' {
+                Mock Invoke-Salesforce { $script:NoAuth }
+                { Select-SalesforceRecords -Query 'SELECT Id FROM User' -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found for nobody@example.com*'
+            }
+        }
+
+        Context 'Select-SalesforceRecords argv' {
+            BeforeEach { Mock Invoke-Salesforce { $script:Empty } }
+
+            It 'passes caller-authored queries through unchanged, including % and quotes' {
+                $q = "SELECT Id FROM Account WHERE Name LIKE 'Acme%' AND Site = 'O\'Brien' AND X = '%PATH%'"
+                Select-SalesforceRecords -Query $q | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments[3] -ceq $q }
+            }
+
+            It 'passes file and output paths containing spaces and percent signs as single arguments' {
+                Select-SalesforceRecords -File 'C:\my queries\50%\q.soql' -OutputFile 'C:\out dir\r 100%.csv' -ResultFormat csv | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    ($Arguments -join '|') -eq 'data|query|--file|C:\my queries\50%\q.soql|--result-format|csv|--output-file|C:\out dir\r 100%.csv'
+                }
+            }
+
+            It 'adds tooling, all-rows and a trimmed target org' {
+                Select-SalesforceRecords -Query 'SELECT Id FROM ApexClass' -UseToolingApi -IncludeDeletedRows -TargetOrg ' me ' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexClass|--target-org|me|--use-tooling-api|--all-rows|--result-format|json'
+                }
+            }
+        }
+    }
+}

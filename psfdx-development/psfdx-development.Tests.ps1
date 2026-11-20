@@ -619,3 +619,65 @@ Describe 'Scratch org deletion safety' {
         }
     }
 }
+
+# SOQL builder and `sf data query --json` regression coverage (#172).
+# Fixtures are sanitised copies of real `sf data query --json` output shapes: no tokens, no real org data.
+Describe 'psfdx-development SOQL regression' {
+    InModuleScope 'psfdx-development' {
+        BeforeAll {
+            $script:Empty = '{"status":0,"result":{"records":[],"totalSize":0,"done":true},"warnings":[]}'
+            $script:NoAuth = '{"name":"NoAuthFoundError","message":"No authorization information found for nobody@example.com.","exitCode":1,"status":1,"warnings":[]}'
+            $script:Malformed = '{"name":"MALFORMED_QUERY","message":"\nSELECT Id FROM\n          ^\nERROR at Row:1:Column:11\nunexpected token: FROM","exitCode":1,"status":1,"warnings":[]}'
+        }
+
+        Context 'Get-SalesforceApexClass' {
+            It 'escapes the name <Name>' -ForEach @(
+                @{ Name = 'apostrophe'; Value = "My'Class";         Literal = "'My\'Class'" }
+                @{ Name = 'backslash';  Value = 'My\Class';         Literal = "'My\\Class'" }
+                @{ Name = 'injection';  Value = "x' OR Name != '";  Literal = "'x\' OR Name != \''" }
+                @{ Name = 'unicode';    Value = 'Klasse日本';         Literal = "'Klasse日本'" }
+                @{ Name = 'percent';    Value = '100%_Class';       Literal = "'100%_Class'" }
+            ) {
+                Mock Invoke-Salesforce { $script:Empty } -ModuleName 'psfdx'
+                Get-SalesforceApexClass -Name $Value | Out-Null
+                $expected = "data|query|--query|SELECT Id, Name, Body FROM ApexClass WHERE Name = $Literal LIMIT 1|--use-tooling-api|--result-format|json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName 'psfdx' -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            }
+
+            It 'returns nothing for zero records' {
+                Mock Invoke-Salesforce { $script:Empty } -ModuleName 'psfdx'
+                @(Get-SalesforceApexClass -Name 'Nope').Count | Should -Be 0
+            }
+
+            It 'throws the CLI message on an authentication error' {
+                Mock Invoke-Salesforce { $script:NoAuth } -ModuleName 'psfdx'
+                { Get-SalesforceApexClass -Name 'A' -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+
+        Context 'Get-SalesforceCodeCoverage' {
+            It 'queries ApexCodeCoverage through the tooling API' {
+                Mock Invoke-Salesforce { $script:Empty } -ModuleName 'psfdx'
+                Get-SalesforceCodeCoverage -TargetOrg 'me' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ModuleName 'psfdx' -ParameterFilter {
+                    ($Arguments -join '|') -eq 'data|query|--query|SELECT ApexTestClass.Name, TestMethodName, ApexClassOrTrigger.Name, NumLinesUncovered, NumLinesCovered, Coverage FROM ApexCodeCoverage |--target-org|me|--use-tooling-api|--result-format|json'
+                }
+            }
+
+            It 'returns nothing for zero records' {
+                Mock Invoke-Salesforce { $script:Empty } -ModuleName 'psfdx'
+                @(Get-SalesforceCodeCoverage).Count | Should -Be 0
+            }
+
+            It 'throws the CLI message for a malformed query' {
+                Mock Invoke-Salesforce { $script:Malformed } -ModuleName 'psfdx'
+                { Get-SalesforceCodeCoverage } | Should -Throw -ExpectedMessage '*unexpected token: FROM*'
+            }
+
+            It 'throws the CLI message on an authentication error' {
+                Mock Invoke-Salesforce { $script:NoAuth } -ModuleName 'psfdx'
+                { Get-SalesforceCodeCoverage -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+    }
+}

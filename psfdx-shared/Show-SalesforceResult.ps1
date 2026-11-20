@@ -18,7 +18,7 @@ function Show-SalesforceResult {
         $records = $out.records
         if ($null -eq $records) { return @() }
         if ($IncludeAttributes) { return $records }
-        return ($records | Select-Object -ExcludeProperty attributes)
+        return ($records | Select-Object -Property * -ExcludeProperty attributes)
     }
     return $out
 }
