@@ -191,7 +191,7 @@ function Get-SalesforceSandboxRefreshStatus {
         throw $infoResult.message
     }
 
-    $infoRecords = @($infoResult.result.records | Select-Object -ExcludeProperty attributes)
+    $infoRecords = @($infoResult.result.records | Select-Object -Property * -ExcludeProperty attributes)
     if ($infoRecords.Count -eq 0) {
         return @()
     }
@@ -208,7 +208,7 @@ function Get-SalesforceSandboxRefreshStatus {
         throw $processResult.message
     }
 
-    $processRecords = @($processResult.result.records | Select-Object -ExcludeProperty attributes)
+    $processRecords = @($processResult.result.records | Select-Object -Property * -ExcludeProperty attributes)
 
     $lastRefreshed = $null
     if ($processRecords.Count -gt 0 -and $processRecords[0].EndDate) {
