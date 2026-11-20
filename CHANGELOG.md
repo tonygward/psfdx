@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-packages: `Get-SalesforcePackagesInstalled` now returns the installed packages; it previously returned nothing because it looked for a `records` list the CLI does not send.
+
 ## 0.8.22 - 2026-11-19
 
 - psfdx, psfdx-development, psfdx-logs, psfdx-metadata: every cmdlet now passes each value to the Salesforce CLI as its own argument, so paths, names, queries, descriptions and tags with spaces, quotes or apostrophes reach `sf` exactly as typed. This covers authentication, aliases, queries, projects, scratch orgs, Apex tests and generators, LWC and Jest, debug logs, trace flags, event log files, and retrieve, deploy and describe. Together with the earlier psfdx-packages, psfdx-sandbox and psfdx-agentforce changes, no cmdlet builds a command string any more.
