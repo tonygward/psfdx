@@ -618,3 +618,142 @@ Describe 'generated SOQL never labels local time as UTC' {
         @($offenders) | Should -BeNullOrEmpty -Because 'use ConvertTo-SalesforceSoqlDateTime, which converts to UTC first'
     }
 }
+
+# Import-PsfdxSharedModule is copied into every module .psm1 (it has to run before psfdx-shared exists), so these tests
+# take the copy out of psfdx/psfdx.psm1 and run it against fake modules named psfdx-fake-shared in $TestDrive.
+Describe 'Import-PsfdxSharedModule resolution' {
+    BeforeAll {
+        $repoRoot = Split-Path -Path $PSScriptRoot -Parent
+        $text = [System.IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot 'psfdx') 'psfdx.psm1'))
+        $match = [regex]::Match($text, '(?s)function Import-PsfdxSharedModule \{.*?\r?\n\}\r?\n\r?\nImport-PsfdxSharedModule')
+        if (-not $match.Success) { throw 'Import-PsfdxSharedModule not found in psfdx.psm1' }
+        $functionText = $match.Value.Substring(0, $match.Value.LastIndexOf('Import-PsfdxSharedModule')).TrimEnd()
+        . ([scriptblock]::Create($functionText))
+
+        $script:Fake = 'psfdx-fake-shared'
+        $script:OriginalPsModulePath = $env:PSModulePath
+
+        function New-FakeShared {
+            param([string] $Folder, [string] $Version)
+            New-Item -ItemType Directory -Path $Folder -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $Folder "$script:Fake.psm1") -Value "function Get-FakeSharedVersion { '$Version' }"
+            $manifest = "@{ RootModule = '$script:Fake.psm1'; ModuleVersion = '$Version'; GUID = '8a1c5d34-0b6e-4a53-9a5e-2f7f4f3c9d10'; FunctionsToExport = @('Get-FakeSharedVersion') }"
+            Set-Content -LiteralPath (Join-Path $Folder "$script:Fake.psd1") -Value $manifest
+        }
+        function Get-LoadedFake { @(Get-Module -Name $script:Fake) }
+    }
+
+    BeforeEach {
+        Get-Module -Name $script:Fake -All | Remove-Module -Force -ErrorAction SilentlyContinue
+        # An empty PSModulePath keeps a real installed psfdx-shared out of the picture.
+        $env:PSModulePath = Join-Path $TestDrive 'empty-psmodulepath'
+        $script:Layout = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+    }
+
+    AfterEach {
+        Get-Module -Name $script:Fake -All | Remove-Module -Force -ErrorAction SilentlyContinue
+        $env:PSModulePath = $script:OriginalPsModulePath
+    }
+
+    It 'uses the sibling folder of a source checkout or flat install' {
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.5'
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5'
+        (Get-LoadedFake).Version.ToString() | Should -Be '0.8.5'
+    }
+
+    It 'accepts a newer patch of the same minor' {
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.9'
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5'
+        (Get-LoadedFake).Version.ToString() | Should -Be '0.8.9'
+    }
+
+    It 'orders version folders as versions, not as text (0.8.10 beats 0.8.9)' {
+        $modules = Join-Path $script:Layout 'Modules'
+        foreach ($v in '0.8.2', '0.8.9', '0.8.10', '0.7.99', '0.9.0') { New-FakeShared -Folder (Join-Path (Join-Path $modules $script:Fake) $v) -Version $v }
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path (Join-Path $modules 'psfdx-logs') '0.8.2') -OwnVersion '0.8.2'
+        (Get-LoadedFake).Version.ToString() | Should -Be '0.8.10'
+    }
+
+    It 'ignores version folders of another minor, newer or older' {
+        $modules = Join-Path $script:Layout 'Modules'
+        foreach ($v in '0.7.99', '0.9.0', '1.0.0') { New-FakeShared -Folder (Join-Path (Join-Path $modules $script:Fake) $v) -Version $v }
+        { Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path (Join-Path $modules 'psfdx-logs') '0.8.2') -OwnVersion '0.8.2' } |
+            Should -Throw -ExpectedMessage '*needs*0.8.x*Found only*'
+        Get-LoadedFake | Should -BeNullOrEmpty
+    }
+
+    It 'prefers the sibling folder over a higher version on PSModulePath (a checkout is not shadowed)' {
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.5'
+        $gallery = Join-Path $TestDrive ('gallery-' + [guid]::NewGuid().ToString('N'))
+        New-FakeShared -Folder (Join-Path (Join-Path $gallery $script:Fake) '0.8.20') -Version '0.8.20'
+        $env:PSModulePath = $gallery
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5'
+        (Get-LoadedFake).Version.ToString() | Should -Be '0.8.5'
+    }
+
+    It 'falls back to PSModulePath and picks the highest compatible version' {
+        $gallery = Join-Path $TestDrive ('gallery-' + [guid]::NewGuid().ToString('N'))
+        foreach ($v in '0.8.9', '0.8.10', '0.9.1') { New-FakeShared -Folder (Join-Path (Join-Path $gallery $script:Fake) $v) -Version $v }
+        $env:PSModulePath = $gallery
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5'
+        (Get-LoadedFake).Version.ToString() | Should -Be '0.8.10'
+    }
+
+    It 'does not look in unrelated folders when the module is not in a version folder' {
+        # <layout>/psfdx-shared exists two levels above the module, which only a version-folder layout may use.
+        New-FakeShared -Folder (Join-Path (Join-Path $script:Layout $script:Fake) '0.8.5') -Version '0.8.5'
+        $moduleRoot = Join-Path (Join-Path $script:Layout 'checkout') 'psfdx-logs'
+        { Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot $moduleRoot -OwnVersion '0.8.5' } | Should -Throw -ExpectedMessage '*It was not found*'
+    }
+
+    It 'keeps a loaded copy that is compatible, without reloading it' {
+        New-FakeShared -Folder (Join-Path $script:Layout 'loaded') -Version '0.8.7'
+        Import-Module (Join-Path (Join-Path $script:Layout 'loaded') "$script:Fake.psd1") -Force
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.5'
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5'
+        $loaded = Get-LoadedFake
+        $loaded.Count | Should -Be 1
+        $loaded[0].Version.ToString() | Should -Be '0.8.7'
+    }
+
+    It 'replaces a stale loaded copy instead of silently using it' {
+        New-FakeShared -Folder (Join-Path $script:Layout 'stale') -Version '0.7.0'
+        Import-Module (Join-Path (Join-Path $script:Layout 'stale') "$script:Fake.psd1") -Force
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.5'
+        Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5'
+        $loaded = Get-LoadedFake
+        $loaded.Count | Should -Be 1
+        $loaded[0].Version.ToString() | Should -Be '0.8.5'
+        $loaded[0].ExportedFunctions.Keys | Should -Contain 'Get-FakeSharedVersion'
+    }
+
+    It 'throws, naming the stale copy and the fix, when the loaded copy is stale and nothing better exists' {
+        New-FakeShared -Folder (Join-Path $script:Layout 'stale') -Version '0.7.0'
+        Import-Module (Join-Path (Join-Path $script:Layout 'stale') "$script:Fake.psd1") -Force
+        { Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5' } |
+            Should -Throw -ExpectedMessage "*0.7.0 (loaded)*Remove-Module $script:Fake -Force*"
+        (Get-LoadedFake)[0].Version.ToString() | Should -Be '0.7.0'
+    }
+
+    It 'throws a clear, actionable error when the dependency is missing' {
+        { Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5' } |
+            Should -Throw -ExpectedMessage "*Cannot load $script:Fake for module version 0.8.5*needs $script:Fake 0.8.x, version 0.8.5 or newer*It was not found*Install-Module psfdx*"
+    }
+
+    It 'rejects an older patch of the same minor' {
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.4'
+        { Import-PsfdxSharedModule -ModuleName $script:Fake -ModuleRoot (Join-Path $script:Layout 'psfdx-logs') -OwnVersion '0.8.5' } |
+            Should -Throw -ExpectedMessage '*Found only: 0.8.4*'
+    }
+
+    It 'reads its own version from the importing module when -OwnVersion is not given' {
+        # Loaded through a real module so $MyInvocation.MyCommand.Module is the importing module.
+        New-FakeShared -Folder (Join-Path $script:Layout $script:Fake) -Version '0.8.5'
+        $host1 = Join-Path $script:Layout 'host'
+        New-Item -ItemType Directory -Path $host1 -Force | Out-Null
+        [System.IO.File]::WriteAllText((Join-Path $host1 'host.psm1'), $functionText + "`nImport-PsfdxSharedModule -ModuleName '$script:Fake' -ModuleRoot '$(Join-Path $script:Layout 'psfdx-logs')'`n")
+        Set-Content -LiteralPath (Join-Path $host1 'host.psd1') -Value "@{ RootModule = 'host.psm1'; ModuleVersion = '0.8.20'; GUID = '1f3a8c52-6d0e-4f8e-b2a4-5c9d7e1a3b60'; FunctionsToExport = @() }"
+        { Import-Module (Join-Path $host1 'host.psd1') -Force -ErrorAction Stop } | Should -Throw -ExpectedMessage '*version 0.8.20*needs*0.8.x*Found only: 0.8.5*'
+        Remove-Module host -Force -ErrorAction SilentlyContinue
+    }
+}
