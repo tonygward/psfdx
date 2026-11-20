@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.23 - 2026-11-20
+
 - psfdx-packages: `Get-SalesforcePackagesInstalled` now returns the installed packages; it previously returned nothing because it looked for a `records` list the CLI does not send.
 
 ## 0.8.22 - 2026-11-19
