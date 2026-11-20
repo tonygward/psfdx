@@ -139,6 +139,7 @@ Included in the `psfdx` package.
 | `Get-SalesforceUsers` | List users with optional filters (username, active only, limit). |
 | `New-SalesforceRecord` | Create a record. |
 | `Set-SalesforceRecord` | Update a record. |
+| `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
 | `Get-SalesforceRecordType` | List record types (optionally by object). |
 
 ### REST API

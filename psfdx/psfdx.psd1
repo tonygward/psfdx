@@ -25,6 +25,7 @@
         'Get-SalesforceUsers',
         'New-SalesforceRecord',
         'Set-SalesforceRecord',
+        'Upsert-SalesforceRecord',
         'Get-SalesforceRecordType',
         'Get-SalesforceApiVersions',
         'Get-SalesforceLatestApiVersion',
