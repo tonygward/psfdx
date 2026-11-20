@@ -252,6 +252,10 @@ Included in the `psfdx` package.
 | :--- | :--- |
 | `Test-SalesforceApex` | Run Apex tests. |
 | `Get-SalesforceCodeCoverage` | Compute coverage per class/test method. |
+| `Test-SalesforceFlow` | Run Flow tests (`sf flow run test`). Asynchronous by default, returning a `TestRunId`; `-Synchronous` waits for results. Failed tests and a command that could not run are different errors. |
+| `Get-SalesforceFlowTestResult` | Get the results of a Flow test run by `-TestRunId` (`sf flow get test`). |
+| `Test-SalesforceLogic` | Run Flow and Apex tests together (`sf logic run test`, beta in the CLI), by class, test, suite or `-TestCategory`. |
+| `Get-SalesforceLogicTestResult` | Get the results of a combined Flow and Apex test run by `-TestRunId` (`sf logic get test`). |
 | `Invoke-SalesforceApex` | Execute Apex from a file. |
 | `Watch-SalesforceApex` | On-save deploy and test Apex. |
 | `Get-SalesforceApexClass` | Get Apex Class details from Org. |

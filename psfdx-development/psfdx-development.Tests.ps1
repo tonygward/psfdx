@@ -681,3 +681,200 @@ Describe 'psfdx-development SOQL regression' {
         }
     }
 }
+
+Describe 'Flow and logic test commands' {
+    InModuleScope 'psfdx-development' {
+        BeforeAll {
+            $script:Passed = '{"status":0,"result":{"summary":{"outcome":"Passed","testsRan":2,"passing":2,"failing":0,"skipped":0},"tests":[{"FullName":"Flow1.Test1","Outcome":"Pass"},{"FullName":"Flow1.Test2","Outcome":"Pass"}]}}'
+            $script:Failed = '{"status":100,"result":{"summary":{"outcome":"Failed","testsRan":2,"passing":1,"failing":1,"skipped":0},"tests":[{"FullName":"Flow1.Test1","Outcome":"Pass"},{"FullName":"Flow1.Test2","Outcome":"Fail"}]}}'
+            $script:Queued = '{"status":0,"result":{"testRunId":"707xx0000000001AAA"}}'
+            $script:RunId = '707xx0000000001'
+        }
+        BeforeEach {
+            $script:Reply = $script:Passed
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+
+        Context 'Test-SalesforceFlow arguments' {
+            It 'builds the exact command for named flows, level and org' {
+                Test-SalesforceFlow -FlowName 'Flow1', 'Flow2' -TestLevel RunSpecifiedTests -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--class-names|Flow1|--class-names|Flow2|--test-level|RunSpecifiedTests|--target-org|me|--result-format|json|--json' }
+            }
+            It 'builds the exact command for specific tests, synchronously with coverage and concise output' {
+                Test-SalesforceFlow -TestName 'Flow1.Test1' -Synchronous -CodeCoverage -Concise | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--tests|Flow1.Test1|--synchronous|--concise|--code-coverage|--result-format|json|--json' }
+            }
+            It 'runs the local tests with no selection and does not add --target-org' {
+                Test-SalesforceFlow | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--result-format|json|--json' }
+            }
+            It 'passes names with spaces and quotes as single arguments' {
+                Test-SalesforceFlow -SuiteName "My Suite's `"x`"" | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Arguments -contains "My Suite's `"x`"" }
+            }
+            It 'writes text formats through unchanged and does not ask for --json' {
+                $script:Reply = '<testsuites/>'
+                $out = Test-SalesforceFlow -ResultFormat junit
+                $out | Should -Be '<testsuites/>'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--result-format|junit' }
+            }
+            It 'checks the output directory exists' {
+                $missing = Join-Path $TestDrive 'nope'
+                { Test-SalesforceFlow -OutputDirectory $missing } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'passes an existing output directory' {
+                $dir = New-Item -ItemType Directory -Path (Join-Path $TestDrive 'out') -Force
+                Test-SalesforceFlow -OutputDirectory $dir.FullName | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Arguments -contains '--output-dir' -and $Arguments -contains $dir.FullName }
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'flows with suites';          Splat = @{ FlowName = 'F'; SuiteName = 'S' };                       Message = '*only one of*' }
+                @{ Case = 'tests with flows';           Splat = @{ FlowName = 'F'; TestName = 'F.T' };                      Message = '*only one of*' }
+                @{ Case = 'a named flow at another level'; Splat = @{ FlowName = 'F'; TestLevel = 'RunLocalTests' };        Message = '*needs -TestLevel RunSpecifiedTests*' }
+                @{ Case = 'a synchronous suite';        Splat = @{ SuiteName = 'S'; Synchronous = $true };                  Message = '*only one flow*' }
+                @{ Case = 'a synchronous run of two flows'; Splat = @{ FlowName = 'A', 'B'; Synchronous = $true };          Message = '*only one flow*' }
+                @{ Case = 'an unknown test level';      Splat = @{ TestLevel = 'RunEverything' };                           Message = '*RunEverything*' }
+            ) {
+                $params = $Splat
+                { Test-SalesforceFlow @params } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'results: finished, asynchronous, failed and not run' {
+            It 'returns the tests of a passing run' {
+                $res = @(Test-SalesforceFlow -FlowName Flow1 -Synchronous)
+                $res.Count | Should -Be 2
+                $res[0].FullName | Should -Be 'Flow1.Test1'
+            }
+            It 'returns the test run ID of an asynchronous run' {
+                $script:Reply = $script:Queued
+                $res = Test-SalesforceFlow
+                $res.TestRunId | Should -Be '707xx0000000001AAA'
+            }
+            It 'writes the tests, then throws PsfdxTestsFailed with the summary, for failing tests' {
+                $script:Reply = $script:Failed
+                $emitted = @()
+                $err = $null
+                try { $emitted = @(Test-SalesforceFlow -FlowName Flow1 -Synchronous) } catch { $err = $_ }
+                $err | Should -Not -BeNullOrEmpty
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestsFailed'
+                $err.Exception.Message | Should -BeLike '*1 failing of 2 run*'
+                $err.TargetObject.failing | Should -Be 1
+            }
+            It 'throws PsfdxTestRunInvocationFailed, not a test failure, when the command could not run' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
+                $err = $null
+                try { Test-SalesforceFlow -TargetOrg nobody | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestRunInvocationFailed'
+                $err.Exception.Message | Should -BeLike '*No authorization information found*'
+            }
+            It 'explains how to install a missing plugin' {
+                $script:Reply = '{"status":1,"name":"CommandNotFound","message":"flow run test is not a sf command."}'
+                { Test-SalesforceFlow } | Should -Throw -ExpectedMessage "*sf plugins install @salesforce/plugin-flow*"
+            }
+            It 'rejects empty output' {
+                $script:Reply = ''
+                { Test-SalesforceFlow } | Should -Throw -ExpectedMessage '*returned no output*'
+            }
+            It 'rejects output that is not JSON' {
+                $script:Reply = 'Warning: something odd'
+                { Test-SalesforceFlow } | Should -Throw -ExpectedMessage '*not valid JSON*'
+            }
+        }
+
+        Context 'Get-SalesforceFlowTestResult' {
+            It 'builds the exact command' {
+                Get-SalesforceFlowTestResult -TestRunId $script:RunId -CodeCoverage -CodeCoverageDetailed -Concise -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|get|test|--test-run-id|707xx0000000001|--concise|--code-coverage|--detailed-coverage|--target-org|me|--result-format|json|--json' }
+            }
+            It 'returns the tests, and throws PsfdxTestsFailed when they failed' {
+                @(Get-SalesforceFlowTestResult -TestRunId $script:RunId).Count | Should -Be 2
+                $script:Reply = $script:Failed
+                $err = $null
+                try { Get-SalesforceFlowTestResult -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestsFailed'
+            }
+            It 'rejects a malformed run ID and a detailed coverage request without coverage' {
+                { Get-SalesforceFlowTestResult -TestRunId '001xx0000000001' } | Should -Throw
+                { Get-SalesforceFlowTestResult -TestRunId "707xx0000000001; calc" } | Should -Throw
+                { Get-SalesforceFlowTestResult -TestRunId $script:RunId -CodeCoverageDetailed } | Should -Throw -ExpectedMessage '*needs -CodeCoverage*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Test-SalesforceLogic' {
+            It 'builds the exact command for both categories, waiting' {
+                Test-SalesforceLogic -TestCategory Apex, Flow -WaitMinutes 10 -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--test-category|Apex|--test-category|Flow|--wait|10|--target-org|me|--result-format|json|--json' }
+            }
+            It 'builds the exact command for a mixed list of Apex and Flow tests, synchronously' {
+                Test-SalesforceLogic -TestName 'OrderFlow.Test1', 'OrderTest.testSave' -Synchronous -CodeCoverage -CodeCoverageDetailed | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--tests|OrderFlow.Test1|--tests|OrderTest.testSave|--synchronous|--code-coverage|--detailed-coverage|--result-format|json|--json' }
+            }
+            It 'sends --wait 0 when asked' {
+                Test-SalesforceLogic -WaitMinutes 0 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--wait|0|--result-format|json|--json' }
+            }
+            It 'returns an asynchronous run ID, mixed results, and a failed-test error' {
+                $script:Reply = $script:Queued
+                (Test-SalesforceLogic).TestRunId | Should -Be '707xx0000000001AAA'
+                $script:Reply = $script:Passed
+                @(Test-SalesforceLogic -Synchronous).Count | Should -Be 2
+                $script:Reply = $script:Failed
+                $err = $null
+                try { Test-SalesforceLogic -Synchronous | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestsFailed'
+            }
+            It 'reports a missing plugin with the apex plugin name' {
+                $script:Reply = '{"status":1,"message":"logic run test is not a sf command."}'
+                { Test-SalesforceLogic } | Should -Throw -ExpectedMessage '*sf plugins install @salesforce/plugin-apex*'
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'two selectors';                 Splat = @{ ClassName = 'C'; TestCategory = 'Flow' };         Message = '*only one of*' }
+                @{ Case = 'a class at another level';      Splat = @{ ClassName = 'C'; TestLevel = 'RunAllTestsInOrg' }; Message = '*needs -TestLevel RunSpecifiedTests*' }
+                @{ Case = 'detailed coverage alone';       Splat = @{ CodeCoverageDetailed = $true };                   Message = '*needs -CodeCoverage*' }
+                @{ Case = 'an unknown category';           Splat = @{ TestCategory = 'Lightning' };                     Message = '*Lightning*' }
+                @{ Case = 'a negative wait';               Splat = @{ WaitMinutes = -1 };                               Message = '*-1*' }
+            ) {
+                $params = $Splat
+                { Test-SalesforceLogic @params } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Get-SalesforceLogicTestResult' {
+            It 'builds the exact command' {
+                Get-SalesforceLogicTestResult -TestRunId $script:RunId -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|get|test|--test-run-id|707xx0000000001|--target-org|me|--result-format|json|--json' }
+            }
+            It 'throws PsfdxTestRunInvocationFailed for an invalid run' {
+                $script:Reply = '{"status":1,"message":"The requested resource does not exist"}'
+                $err = $null
+                try { Get-SalesforceLogicTestResult -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestRunInvocationFailed'
+            }
+        }
+
+        Context 'module surface' {
+            It 'exports the four commands from the manifest, and keeps the helper private' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-development).ModuleBase 'psfdx-development.psd1')).FunctionsToExport
+                $exports | Should -Contain 'Test-SalesforceFlow'
+                $exports | Should -Contain 'Get-SalesforceFlowTestResult'
+                $exports | Should -Contain 'Test-SalesforceLogic'
+                $exports | Should -Contain 'Get-SalesforceLogicTestResult'
+                $exports | Should -Not -Contain 'ConvertFrom-SalesforceTestRunOutput'
+            }
+            It 'has help examples' {
+                foreach ($name in 'Test-SalesforceFlow', 'Get-SalesforceFlowTestResult', 'Test-SalesforceLogic', 'Get-SalesforceLogicTestResult') {
+                    @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0
+                }
+            }
+            It 'does not change Test-SalesforceApex' {
+                Test-SalesforceApex -ClassName C -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'apex|run|test|*' }
+            }
+        }
+    }
+}
