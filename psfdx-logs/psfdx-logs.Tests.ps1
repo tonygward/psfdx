@@ -371,3 +371,133 @@ Describe 'Disable-SalesforceDebugLogging' {
         }
     }
 }
+
+# SOQL builder and `sf data query --json` regression coverage (#172).
+# Fixtures are sanitised copies of real `sf data query --json` output shapes: no tokens, no real org data.
+Describe 'psfdx-logs SOQL regression' {
+    InModuleScope 'psfdx-logs' {
+        BeforeAll {
+            $script:Empty = '{"status":0,"result":{"records":[],"totalSize":0,"done":true},"warnings":[]}'
+            $script:Malformed = '{"name":"MALFORMED_QUERY","message":"\nSELECT Id FROM\n          ^\nERROR at Row:1:Column:11\nunexpected token: FROM","exitCode":1,"status":1,"warnings":[]}'
+            $script:NoAuth = '{"name":"NoAuthFoundError","message":"No authorization information found for nobody@example.com.","exitCode":1,"status":1,"warnings":[]}'
+            $script:Flows = '{"status":0,"result":{"records":[{"attributes":{"type":"FlowInterview","url":"/services/data/v62.0/sobjects/FlowInterview/300000000000001AAA"},"Id":"300000000000001AAA","InterviewLabel":"My Flow","InterviewStatus":"Error"}],"totalSize":1,"done":true},"warnings":[]}'
+            $script:EventHead = 'SELECT Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate FROM EventLogFile'
+        }
+
+        Context 'New-SalesforceEventFileQuery' {
+            It 'escapes EventType <Name>' -ForEach @(
+                @{ Name = 'plain';      Value = 'Login';         Literal = "'Login'" }
+                @{ Name = 'apostrophe'; Value = "Lo'gin";        Literal = "'Lo\'gin'" }
+                @{ Name = 'backslash';  Value = 'Lo\gin';        Literal = "'Lo\\gin'" }
+                @{ Name = 'injection';  Value = "x' OR Id != '"; Literal = "'x\' OR Id != \''" }
+                @{ Name = 'unicode';    Value = 'Anmeldung日本';   Literal = "'Anmeldung日本'" }
+                @{ Name = 'percent';    Value = '50%_off';       Literal = "'50%_off'" }
+            ) {
+                New-SalesforceEventFileQuery -EventType $Value | Should -Be "$script:EventHead WHERE EventType = $Literal ORDER BY LogDate DESC"
+            }
+
+            It 'has no WHERE clause and no LIMIT when nothing is given' {
+                New-SalesforceEventFileQuery | Should -Be "$script:EventHead ORDER BY LogDate DESC"
+            }
+
+            It 'writes the boundaries as UTC instants' {
+                $q = New-SalesforceEventFileQuery -After ([datetime]::SpecifyKind([datetime]'2026-01-02T03:04:05', 'Utc')) -Before ([datetime]::SpecifyKind([datetime]'2026-01-03T00:00:00', 'Utc')) -Limit 3
+                $q | Should -Be "$script:EventHead WHERE LogDate >= 2026-01-02T03:04:05Z AND LogDate <= 2026-01-03T00:00:00Z ORDER BY LogDate DESC LIMIT 3"
+            }
+
+            It 'refuses a control character' {
+                { New-SalesforceEventFileQuery -EventType "a$([char]1)b" } | Should -Throw -ExpectedMessage '*control character*'
+            }
+        }
+
+        Context 'Select-SalesforceEventFiles results' {
+            It 'returns nothing for zero records' {
+                Mock Invoke-Salesforce { $script:Empty }
+                @(Select-SalesforceEventFiles -EventType 'Login').Count | Should -Be 0
+            }
+
+            It 'throws the CLI message for a malformed query' {
+                Mock Invoke-Salesforce { $script:Malformed }
+                { Select-SalesforceEventFiles } | Should -Throw -ExpectedMessage '*unexpected token: FROM*'
+            }
+
+            It 'throws the CLI message for an authentication error' {
+                Mock Invoke-Salesforce { $script:NoAuth }
+                { Select-SalesforceEventFiles -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+
+        Context 'Get-SalesforceFlowInterviews' {
+            It 'asks for every status by default, newest first' {
+                Mock Invoke-Salesforce { $script:Empty }
+                Get-SalesforceFlowInterviews | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    ($Arguments -join '|') -eq "data|query|--query|SELECT Id, CreatedDate, InterviewLabel, InterviewStatus, Error FROM FlowInterview WHERE InterviewStatus IN ('Error','Paused','Running','Completed','VersionPaused','Autosaved','Expired') ORDER BY CreatedDate DESC LIMIT 200|--result-format|json"
+                }
+            }
+
+            It 'filters on one status, a UTC start instant and the target org' {
+                Mock Invoke-Salesforce { $script:Empty }
+                Get-SalesforceFlowInterviews -Type Error -After ([datetime]::SpecifyKind([datetime]'2026-05-06T07:08:09', 'Utc')) -Limit 7 -TargetOrg 'me' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                    ($Arguments -join '|') -eq "data|query|--query|SELECT Id, CreatedDate, InterviewLabel, InterviewStatus, Error FROM FlowInterview WHERE InterviewStatus IN ('Error') AND CreatedDate >= 2026-05-06T07:08:09Z ORDER BY CreatedDate DESC LIMIT 7|--result-format|json|--target-org|me"
+                }
+            }
+
+            It 'returns records without attributes' {
+                Mock Invoke-Salesforce { $script:Flows }
+                $r = @(Get-SalesforceFlowInterviews)
+                $r.Count | Should -Be 1
+                $r[0].InterviewLabel | Should -Be 'My Flow'
+                $r[0].PSObject.Properties.Name | Should -Not -Contain 'attributes'
+            }
+
+            It 'returns nothing for zero records' {
+                Mock Invoke-Salesforce { $script:Empty }
+                @(Get-SalesforceFlowInterviews).Count | Should -Be 0
+            }
+
+            It 'throws the CLI message on failure' {
+                Mock Invoke-Salesforce { $script:Malformed }
+                { Get-SalesforceFlowInterviews } | Should -Throw -ExpectedMessage '*unexpected token: FROM*'
+            }
+
+            It 'throws the CLI message on an authentication error' {
+                Mock Invoke-Salesforce { $script:NoAuth }
+                { Get-SalesforceFlowInterviews -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+
+        Context 'Get-SalesforceLoginHistory' {
+            BeforeEach { Mock Get-SalesforceUsers { @() } }
+
+            It 'escapes Username <Name>' -ForEach @(
+                @{ Name = 'apostrophe'; Value = "o'brien@example.com";  Literal = "'o\'brien@example.com'" }
+                @{ Name = 'backslash';  Value = 'a\b@example.com';      Literal = "'a\\b@example.com'" }
+                @{ Name = 'injection';  Value = "x') OR Status != ('";  Literal = "'x\') OR Status != (\''" }
+                @{ Name = 'unicode';    Value = 'Zoë@example.com';      Literal = "'Zoë@example.com'" }
+            ) {
+                Mock Invoke-Salesforce { $script:Empty }
+                Get-SalesforceLoginHistory -Username $Value | Out-Null
+                $expected = "data|query|--query|SELECT Id, LoginTime, UserId, SourceIp, Application, Status FROM LoginHistory WHERE UserId IN (SELECT Id FROM User WHERE Username = $Literal) ORDER BY LoginTime DESC|--result-format|json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            }
+
+            It 'refuses a control character in Username and runs nothing' {
+                Mock Invoke-Salesforce { $script:Empty }
+                { Get-SalesforceLoginHistory -Username "a$([char]1)b" } | Should -Throw -ExpectedMessage '*control character*'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+
+            It 'returns nothing for zero records' {
+                Mock Invoke-Salesforce { $script:Empty }
+                @(Get-SalesforceLoginHistory).Count | Should -Be 0
+            }
+
+            It 'throws the CLI message on an authentication error' {
+                Mock Invoke-Salesforce { $script:NoAuth }
+                { Get-SalesforceLoginHistory -TargetOrg 'nobody@example.com' } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+    }
+}

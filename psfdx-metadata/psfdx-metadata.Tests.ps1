@@ -648,3 +648,38 @@ Describe 'Metadata -Type argument completer' {
         $completions.CompletionText | Should -Be @('ApexTrigger')
     }
 }
+
+# SOQL builder regression coverage (#172): identifiers cannot be quoted, so anything that is not an API name must be refused.
+Describe 'Build-SalesforceQuery identifier regression' {
+    InModuleScope 'psfdx-metadata' {
+        It 'refuses object name <Name> and returns no query' -ForEach @(
+            @{ Name = 'injection';  Value = 'Account WHERE 1=1' }
+            @{ Name = 'semicolon';  Value = 'Account;DELETE' }
+            @{ Name = 'comma';      Value = 'Account,Contact' }
+            @{ Name = 'quote';      Value = "Account'" }
+            @{ Name = 'backslash';  Value = 'Account\' }
+            @{ Name = 'percent';    Value = 'Acc%' }
+            @{ Name = 'space';      Value = 'My Object__c' }
+            @{ Name = 'unicode';    Value = 'Konto日本' }
+            @{ Name = 'dot only';   Value = '.' }
+        ) {
+            Mock Describe-SalesforceFields { @([pscustomobject]@{ name = 'Id' }) }
+            { Build-SalesforceQuery -ObjectName $Value } | Should -Throw -ExpectedMessage '*not a valid Salesforce object or field API name*'
+        }
+
+        It 'refuses a field name that is not an API name' {
+            Mock Describe-SalesforceFields { @([pscustomobject]@{ name = 'Id' }, [pscustomobject]@{ name = 'Name FROM Secret' }) }
+            { Build-SalesforceQuery -ObjectName 'Account' } | Should -Throw -ExpectedMessage '*not a valid Salesforce object or field API name*'
+        }
+
+        It 'accepts custom, namespaced and relationship-style API names' {
+            Mock Describe-SalesforceFields { @([pscustomobject]@{ name = 'Id' }, [pscustomobject]@{ name = 'My_Field__c' }, [pscustomobject]@{ name = 'ns__Thing__c' }) }
+            Build-SalesforceQuery -ObjectName 'ns__Obj__c' | Should -Be 'SELECT Id,My_Field__c,ns__Thing__c FROM ns__Obj__c'
+        }
+
+        It 'returns an empty string when the object has no fields' {
+            Mock Describe-SalesforceFields { $null }
+            Build-SalesforceQuery -ObjectName 'Account' | Should -Be ''
+        }
+    }
+}
