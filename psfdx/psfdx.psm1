@@ -504,6 +504,91 @@ function Set-SalesforceRecord {
     return Show-SalesforceResult -Result $result
 }
 
+function Upsert-SalesforceRecord {
+    # The Salesforce CLI has no `sf data upsert record` (only `sf data upsert bulk`, a CSV job). A single-record upsert is the REST
+    # call PATCH /services/data/vXX.X/sobjects/<Type>/<ExternalIdField>/<value>, which `sf api request rest` sends with the org's login.
+    # Salesforce answers 201 when it created the record (body has the new Id). When it updated one, API v46.0 and later answer 200 with
+    # the Id and created=false, and older versions answer 204 with no body. Id is $null when the response does not carry one.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Type,
+        [Parameter(Mandatory = $true)][string] $ExternalIdField,
+        [Parameter(Mandatory = $true)][string] $ExternalId,
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary] $Fields,
+        [Parameter(Mandatory = $false)][string] $ApiVersion,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
+    $externalIdFieldName = ConvertTo-SalesforceSoqlIdentifier -Value $ExternalIdField
+    if ([string]::IsNullOrWhiteSpace($ExternalId)) { throw 'ExternalId is required: an upsert without an external ID value cannot tell a create from an update.' }
+    if ($ExternalId -match '[\x00-\x1F\x7F]') { throw 'ExternalId must not contain control characters.' }
+    if ($Fields.Count -eq 0) { throw 'Fields is empty: give at least one field to set.' }
+
+    $body = [ordered]@{}
+    foreach ($key in $Fields.Keys) {
+        $name = ConvertTo-SalesforceSoqlIdentifier -Value ([string] $key)
+        if ($name -ieq 'Id') { throw "Fields must not contain Id: an upsert identifies the record by $externalIdFieldName." }
+        $value = $Fields[$key]
+        if ($value -is [datetime]) { $value = $value.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", [System.Globalization.CultureInfo]::InvariantCulture) }
+        elseif ($value -is [datetimeoffset]) { $value = $value.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", [System.Globalization.CultureInfo]::InvariantCulture) }
+        $body[$name] = $value
+    }
+
+    if ([string]::IsNullOrWhiteSpace($ApiVersion)) {
+        $latestParams = @{}
+        if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $latestParams['TargetOrg'] = $TargetOrg }
+        $ApiVersion = Get-SalesforceLatestApiVersion @latestParams
+        if ([string]::IsNullOrWhiteSpace($ApiVersion)) { throw 'Could not work out the org API version. Pass -ApiVersion, for example v62.0.' }
+    }
+    if ($ApiVersion -notmatch '^v?(\d{2,3}\.\d)$') { throw "ApiVersion '$ApiVersion' is not valid. Use a form like v62.0 or 62.0." }
+    $version = 'v' + $Matches[1]
+
+    $url = "/services/data/$version/sobjects/$objectName/$externalIdFieldName/" + [uri]::EscapeDataString($ExternalId)
+
+    # The body goes through a file: a JSON body on the command line would carry double quotes, which the Windows .cmd shim rejects.
+    $bodyFile = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), ('psfdx-upsert-' + [guid]::NewGuid().ToString('N') + '.json'))
+    try {
+        [System.IO.File]::WriteAllText($bodyFile, ($body | ConvertTo-Json -Compress -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
+        $arguments = @('api', 'request', 'rest', $url, '--method', 'PATCH', '--body', "@$bodyFile")
+        if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+        $arguments += '--json'
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    } finally {
+        Remove-Item -LiteralPath $bodyFile -Force -ErrorAction SilentlyContinue
+    }
+
+    $response = Show-SalesforceResult -Result $result
+    $statusCode = 0
+    if ($null -ne $response -and $null -ne $response.PSObject.Properties['statusCode']) { $statusCode = [int] $response.statusCode }
+    $responseBody = $null
+    if ($null -ne $response) { $responseBody = $response.body }
+
+    if ($statusCode -eq 200 -or $statusCode -eq 201 -or $statusCode -eq 204) {
+        $created = ($statusCode -eq 201)
+        $id = $null
+        if ($null -ne $responseBody -and $responseBody -isnot [string]) {
+            if ($null -ne $responseBody.PSObject.Properties['id']) { $id = $responseBody.id }
+            if ($statusCode -eq 200 -and $null -ne $responseBody.PSObject.Properties['created']) { $created = [bool] $responseBody.created }
+        }
+        return [pscustomobject]@{
+            Operation       = $(if ($created) { 'Created' } else { 'Updated' })
+            Created         = $created
+            Id              = $id
+            Type            = $objectName
+            ExternalIdField = $externalIdFieldName
+            ExternalId      = $ExternalId
+            StatusCode      = $statusCode
+        }
+    }
+
+    $detail = ''
+    if ($responseBody -is [string]) { $detail = $responseBody }
+    elseif ($null -ne $responseBody) { $detail = (@($responseBody) | ForEach-Object { if ($_.PSObject.Properties['message']) { "$($_.errorCode): $($_.message)" } else { [string] $_ } }) -join '; ' }
+    if ($detail.Length -gt 300) { $detail = $detail.Substring(0, 300) + '...' }
+    throw "Upsert of $objectName by $externalIdFieldName failed with HTTP status $statusCode. $detail".TrimEnd()
+}
+
 function Get-SalesforceRecordType {
     [CmdletBinding()]
     Param(

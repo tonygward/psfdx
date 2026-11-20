@@ -273,6 +273,131 @@ Describe 'psfdx module' {
             }
         }
 
+        Context 'Upsert-SalesforceRecord' {
+            BeforeEach {
+                $script:Sent = $null
+                $script:SentPath = $null
+                Mock Invoke-Salesforce {
+                    $i = [array]::IndexOf($Arguments, '--body')
+                    if ($i -ge 0) { $script:Sent = [System.IO.File]::ReadAllText($Arguments[$i + 1].Substring(1)); $script:SentPath = $Arguments[$i + 1].Substring(1) }
+                    $script:Reply
+                } -ModuleName $module.Name
+            }
+
+            It 'creates: HTTP 201 returns Created and the new Id' {
+                $script:Reply = '{"status":0,"result":{"statusCode":201,"headers":{},"body":{"id":"001xx0000000001","success":true,"errors":[]}}}'
+                $res = Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -ApiVersion 'v62.0' -TargetOrg me
+                $res.Operation | Should -Be 'Created'
+                $res.Created | Should -BeTrue
+                $res.Id | Should -Be '001xx0000000001'
+                $res.StatusCode | Should -Be 201
+                $expected = "api|request|rest|/services/data/v62.0/sobjects/Account/Ext_Id__c/A-100|--method|PATCH|--body|@$script:SentPath|--target-org|me|--json"
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+                ($script:Sent | ConvertFrom-Json).Name | Should -Be 'Acme'
+            }
+
+            It 'updates: HTTP 204 returns Updated with no Id' {
+                $script:Reply = '{"status":0,"result":{"statusCode":204,"headers":{},"body":""}}'
+                $res = Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -ApiVersion '62.0'
+                $res.Operation | Should -Be 'Updated'
+                $res.Created | Should -BeFalse
+                $res.Id | Should -BeNullOrEmpty
+                $res.StatusCode | Should -Be 204
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -ParameterFilter { (($Arguments -join '|') -like 'api|request|rest|/services/data/v62.0/*') -and ($Arguments -notcontains '--target-org') }
+            }
+
+            It 'updates: HTTP 200 (API v46.0 and later) returns Updated with the Id' {
+                $script:Reply = '{"status":0,"result":{"statusCode":200,"headers":{},"body":{"id":"001xx0000000001","success":true,"created":false,"errors":[]}}}'
+                $res = Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -ApiVersion 'v62.0'
+                $res.Operation | Should -Be 'Updated'
+                $res.Created | Should -BeFalse
+                $res.Id | Should -Be '001xx0000000001'
+                $res.StatusCode | Should -Be 200
+            }
+
+            It 'reports Created for an HTTP 200 that says created is true' {
+                $script:Reply = '{"status":0,"result":{"statusCode":200,"headers":{},"body":{"id":"001xx0000000002","success":true,"created":true,"errors":[]}}}'
+                $res = Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-101' -Fields @{ Name = 'Acme' } -ApiVersion 'v62.0'
+                $res.Operation | Should -Be 'Created'
+                $res.Id | Should -Be '001xx0000000002'
+            }
+            It 'uses the latest org API version when none is given' {
+                $script:Reply = '{"status":0,"result":{"statusCode":204,"headers":{},"body":""}}'
+                Mock Get-SalesforceLatestApiVersion { 'v66.0' } -ModuleName $module.Name
+                Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-1' -Fields @{ Name = 'x' } -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -ParameterFilter { $Arguments[3] -eq '/services/data/v66.0/sobjects/Account/Ext_Id__c/A-1' }
+            }
+
+            It 'fails clearly when the API version cannot be found' {
+                Mock Get-SalesforceLatestApiVersion { $null } -ModuleName $module.Name
+                { Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-1' -Fields @{ Name = 'x' } } | Should -Throw '*Pass -ApiVersion*'
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -Times 0 -Exactly
+            }
+
+            It 'rejects a missing external ID value without calling the CLI' {
+                { Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId '  ' -Fields @{ Name = 'x' } -ApiVersion 'v62.0' } | Should -Throw '*ExternalId is required*'
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -Times 0 -Exactly
+            }
+
+            It 'rejects malformed input (<Case>) without calling the CLI' -ForEach @(
+                @{ Case = 'empty fields';          Splat = @{ Type = 'Account'; ExternalIdField = 'E__c'; ExternalId = '1'; Fields = @{} };                    Message = '*Fields is empty*' }
+                @{ Case = 'Id in fields';          Splat = @{ Type = 'Account'; ExternalIdField = 'E__c'; ExternalId = '1'; Fields = @{ id = 'x' } };          Message = '*must not contain Id*' }
+                @{ Case = 'bad field name';        Splat = @{ Type = 'Account'; ExternalIdField = 'E__c'; ExternalId = '1'; Fields = @{ 'Na me' = 'x' } };     Message = '*not a valid Salesforce*' }
+                @{ Case = 'bad object name';       Splat = @{ Type = 'Account/../x'; ExternalIdField = 'E__c'; ExternalId = '1'; Fields = @{ Name = 'x' } };   Message = '*not a valid Salesforce*' }
+                @{ Case = 'bad external ID field'; Splat = @{ Type = 'Account'; ExternalIdField = 'E__c?x=1'; ExternalId = '1'; Fields = @{ Name = 'x' } };  Message = '*not a valid Salesforce*' }
+                @{ Case = 'control character';     Splat = @{ Type = 'Account'; ExternalIdField = 'E__c'; ExternalId = "a`nb"; Fields = @{ Name = 'x' } };     Message = '*control characters*' }
+                @{ Case = 'bad API version';       Splat = @{ Type = 'Account'; ExternalIdField = 'E__c'; ExternalId = '1'; Fields = @{ Name = 'x' }; ApiVersion = 'latest' }; Message = '*ApiVersion*not valid*' }
+            ) {
+                $params = $Splat
+                if (-not $params.ContainsKey('ApiVersion')) { $params['ApiVersion'] = 'v62.0' }
+                { Upsert-SalesforceRecord @params } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -Times 0 -Exactly
+            }
+
+            It 'keeps quotes, apostrophes, backslashes and metacharacters as data, never in argv' {
+                $script:Reply = '{"status":0,"result":{"statusCode":204,"headers":{},"body":""}}'
+                $nasty = "O'Brien \ `"x`" ; & | `$(calc) 100%"
+                Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'a/b c;d' -Fields @{ Name = $nasty; Rating = $null; Amount = 12.5; Active = $true } -ApiVersion 'v62.0' | Out-Null
+                $sent = $script:Sent | ConvertFrom-Json
+                $sent.Name | Should -Be $nasty
+                $sent.Rating | Should -BeNullOrEmpty
+                $sent.Amount | Should -Be 12.5
+                $sent.Active | Should -BeTrue
+                Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -ParameterFilter {
+                    ($Arguments[3] -eq '/services/data/v62.0/sobjects/Account/Ext_Id__c/a%2Fb%20c%3Bd') -and (($Arguments -join '|') -notmatch 'Brien|calc')
+                }
+            }
+
+            It 'sends dates as UTC and removes the temporary body file' {
+                $script:Reply = '{"status":0,"result":{"statusCode":204,"headers":{},"body":""}}'
+                $when = [datetime]::SpecifyKind([datetime]'2026-11-18T12:00:00', [DateTimeKind]::Utc)
+                Upsert-SalesforceRecord -Type Event -ExternalIdField E__c -ExternalId '1' -Fields @{ StartDateTime = $when } -ApiVersion 'v62.0' | Out-Null
+                $script:Sent | Should -BeLike '*"StartDateTime":"2026-11-18T12:00:00.000Z"*'
+                Test-Path -LiteralPath $script:SentPath | Should -BeFalse
+            }
+
+            It 'removes the temporary body file when the CLI fails' {
+                $script:Reply = '{"status":1,"name":"Error","message":"No authorization information found for nobody."}'
+                { Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId '1' -Fields @{ Name = 'x' } -ApiVersion 'v62.0' -TargetOrg nobody } | Should -Throw '*No authorization*'
+                Test-Path -LiteralPath $script:SentPath | Should -BeFalse
+            }
+
+            It 'reports a Salesforce error returned as an HTTP failure' {
+                $script:Reply = '{"status":0,"result":{"statusCode":404,"headers":{},"body":[{"message":"The requested resource does not exist","errorCode":"NOT_FOUND"}]}}'
+                { Upsert-SalesforceRecord -Type Nope__c -ExternalIdField Ext_Id__c -ExternalId '1' -Fields @{ Name = 'x' } -ApiVersion 'v62.0' } | Should -Throw '*HTTP status 404*NOT_FOUND*does not exist*'
+            }
+
+            It 'reports a multiple-match response (300) instead of treating it as success' {
+                $script:Reply = '{"status":0,"result":{"statusCode":300,"headers":{},"body":["/services/data/v62.0/sobjects/Account/001xx0000000001","/services/data/v62.0/sobjects/Account/001xx0000000002"]}}'
+                { Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId '1' -Fields @{ Name = 'x' } -ApiVersion 'v62.0' } | Should -Throw '*HTTP status 300*'
+            }
+
+            It 'is exported by the module manifest' {
+                (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport | Should -Contain 'Upsert-SalesforceRecord'
+                Get-Command -Module $module.Name -Name Upsert-SalesforceRecord | Should -Not -BeNullOrEmpty
+            }
+        }
+
         Context 'Invoke-SalesforceApi' {
             It 'uses Bearer token auth header' {
                 Mock Invoke-RestMethod { @{ ok = $true } } -ParameterFilter { $Headers.Authorization -like 'Bearer *' }

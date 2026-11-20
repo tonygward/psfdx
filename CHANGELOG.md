@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: new `Upsert-SalesforceRecord` creates or updates a single record by external ID, for example `Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -TargetOrg myalias`. It returns `Operation` (`Created` or `Updated`), `Created` and `StatusCode`, plus the new `Id` when a record was created (older API versions do not return the Id for an update, so it is empty then). The Salesforce CLI has no single-record upsert command, so this uses the REST API through `sf api request rest`; it uses the org's latest API version unless you pass `-ApiVersion`. For bulk loads use `sf data upsert bulk`.
+
 ## 0.8.26 - 2026-11-20
 
 - All modules: loading the shared helpers (`psfdx-shared`) is now predictable. Versions are compared as version numbers (0.8.10 is newer than 0.8.9), only a copy with the same release series and no older than the module is accepted, a stale copy already loaded in the session is replaced instead of silently used, and a missing or mismatched copy now fails with a message that says what was found and how to fix it.
