@@ -702,7 +702,7 @@ Describe 'Flow and logic test commands' {
             }
             It 'builds the exact command for specific tests, synchronously with coverage and concise output' {
                 Test-SalesforceFlow -TestName 'Flow1.Test1' -Synchronous -CodeCoverage -Concise | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--tests|Flow1.Test1|--synchronous|--concise|--code-coverage|--result-format|json|--json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--tests|Flow1.Test1|--synchronous|--concise|--code-coverage|--result-format|json' }
             }
             It 'runs the local tests with no selection and does not add --target-org' {
                 Test-SalesforceFlow | Out-Null
@@ -744,9 +744,25 @@ Describe 'Flow and logic test commands' {
 
         Context 'results: finished, asynchronous, failed and not run' {
             It 'returns the tests of a passing run' {
-                $res = @(Test-SalesforceFlow -FlowName Flow1 -Synchronous)
-                $res.Count | Should -Be 2
-                $res[0].FullName | Should -Be 'Flow1.Test1'
+                $res = Test-SalesforceFlow -FlowName Flow1 -Synchronous
+                $res.Summary.outcome | Should -Be 'Passed'
+                $res.Tests.Count | Should -Be 2
+                $res.Tests[0].FullName | Should -Be 'Flow1.Test1'
+            }
+            It 'returns the coverage when the CLI reports it' {
+                $script:Reply = '{"status":0,"result":{"summary":{"outcome":"Passed","testsRan":1,"failing":0,"testRunId":"707xx0000000009","testRunCoverage":"82%"},"tests":[],"coverage":{"coverage":[{"name":"Flow1","coveredPercent":82}]}}}'
+                $res = Test-SalesforceFlow -FlowName Flow1 -Synchronous -CodeCoverage
+                $res.Coverage.coverage[0].name | Should -Be 'Flow1'
+                $res.Summary.testRunCoverage | Should -Be '82%'
+                $res.TestRunId | Should -Be '707xx0000000009'
+                $script:Reply = $script:Passed
+                (Test-SalesforceFlow -FlowName Flow1 -Synchronous).Coverage | Should -BeNullOrEmpty
+            }
+            It 'does not ask for --json on a synchronous run, because the CLI then returns a run ID at once' {
+                Test-SalesforceFlow -Synchronous -TestLevel RunLocalTests | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--test-level|RunLocalTests|--synchronous|--result-format|json' }
+                Test-SalesforceFlow -TestLevel RunLocalTests | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|run|test|--test-level|RunLocalTests|--result-format|json|--json' }
             }
             It 'returns the test run ID of an asynchronous run' {
                 $script:Reply = $script:Queued
@@ -790,7 +806,7 @@ Describe 'Flow and logic test commands' {
                 Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'flow|get|test|--test-run-id|707xx0000000001|--concise|--code-coverage|--detailed-coverage|--target-org|me|--result-format|json|--json' }
             }
             It 'returns the tests, and throws PsfdxTestsFailed when they failed' {
-                @(Get-SalesforceFlowTestResult -TestRunId $script:RunId).Count | Should -Be 2
+                (Get-SalesforceFlowTestResult -TestRunId $script:RunId).Tests.Count | Should -Be 2
                 $script:Reply = $script:Failed
                 $err = $null
                 try { Get-SalesforceFlowTestResult -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
@@ -806,12 +822,12 @@ Describe 'Flow and logic test commands' {
 
         Context 'Test-SalesforceLogic' {
             It 'builds the exact command for both categories, waiting' {
-                Test-SalesforceLogic -TestCategory Apex, Flow -WaitMinutes 10 -TargetOrg me | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--test-category|Apex|--test-category|Flow|--wait|10|--target-org|me|--result-format|json|--json' }
+                Test-SalesforceLogic -TestCategory Apex, Flow -TestLevel RunLocalTests -WaitMinutes 10 -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--test-category|Apex|--test-category|Flow|--test-level|RunLocalTests|--wait|10|--target-org|me|--result-format|json|--json' }
             }
             It 'builds the exact command for a mixed list of Apex and Flow tests, synchronously' {
                 Test-SalesforceLogic -TestName 'OrderFlow.Test1', 'OrderTest.testSave' -Synchronous -CodeCoverage -CodeCoverageDetailed | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--tests|OrderFlow.Test1|--tests|OrderTest.testSave|--synchronous|--code-coverage|--detailed-coverage|--result-format|json|--json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'logic|run|test|--tests|OrderFlow.Test1|--tests|OrderTest.testSave|--synchronous|--code-coverage|--detailed-coverage|--result-format|json' }
             }
             It 'sends --wait 0 when asked' {
                 Test-SalesforceLogic -WaitMinutes 0 | Out-Null
@@ -821,7 +837,7 @@ Describe 'Flow and logic test commands' {
                 $script:Reply = $script:Queued
                 (Test-SalesforceLogic).TestRunId | Should -Be '707xx0000000001AAA'
                 $script:Reply = $script:Passed
-                @(Test-SalesforceLogic -Synchronous).Count | Should -Be 2
+                (Test-SalesforceLogic -Synchronous).Tests.Count | Should -Be 2
                 $script:Reply = $script:Failed
                 $err = $null
                 try { Test-SalesforceLogic -Synchronous | Out-Null } catch { $err = $_ }
@@ -832,7 +848,9 @@ Describe 'Flow and logic test commands' {
                 { Test-SalesforceLogic } | Should -Throw -ExpectedMessage '*sf plugins install @salesforce/plugin-apex*'
             }
             It 'rejects <Case> without calling the CLI' -ForEach @(
-                @{ Case = 'two selectors';                 Splat = @{ ClassName = 'C'; TestCategory = 'Flow' };         Message = '*only one of*' }
+                @{ Case = 'a category without a test level'; Splat = @{ TestCategory = 'Flow' };                    Message = '*-TestCategory needs -TestLevel*' }
+                @{ Case = 'a synchronous run of two classes'; Splat = @{ ClassName = 'A', 'B'; Synchronous = $true }; Message = '*only one class or flow*' }
+                @{ Case = 'two selectors';                 Splat = @{ ClassName = 'C'; TestCategory = 'Flow'; TestLevel = 'RunSpecifiedTests' };         Message = '*only one of*' }
                 @{ Case = 'a class at another level';      Splat = @{ ClassName = 'C'; TestLevel = 'RunAllTestsInOrg' }; Message = '*needs -TestLevel RunSpecifiedTests*' }
                 @{ Case = 'detailed coverage alone';       Splat = @{ CodeCoverageDetailed = $true };                   Message = '*needs -CodeCoverage*' }
                 @{ Case = 'an unknown category';           Splat = @{ TestCategory = 'Lightning' };                     Message = '*Lightning*' }

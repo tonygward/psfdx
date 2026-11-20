@@ -851,10 +851,13 @@ function Test-SalesforceFlow {
     Runs Flow tests in an org (sf flow run test).
     .DESCRIPTION
     By default the run is asynchronous: the cmdlet returns an object with a TestRunId, and Get-SalesforceFlowTestResult fetches the
-    results later. With -Synchronous (one flow only) it waits and returns the test results. Needs the "View All Data" permission.
+    results later. With -Synchronous (one flow only) it waits and returns the results. Needs the "View All Data" permission.
 
-    Failed tests and a command that could not run are different errors. A failed test run throws an error whose FullyQualifiedErrorId
-    is PsfdxTestsFailed (the test results are written to the pipeline first, and the CLI summary is the error's TargetObject).
+    A finished run returns one object with Summary, Tests and Coverage (Coverage is empty unless -CodeCoverage was given), and TestRunId.
+    Without -Synchronous the CLI starts the run and returns at once.
+
+    Failed tests and a command that could not run are different errors. A failed test run writes the result object to the pipeline, then
+    throws an error whose FullyQualifiedErrorId is PsfdxTestsFailed (the CLI summary is the error's TargetObject).
     Everything else, such as no authorisation or a missing plugin, throws PsfdxTestRunInvocationFailed.
 
     Code coverage is returned but never judged; there is no coverage threshold.
@@ -915,7 +918,8 @@ function Test-SalesforceFlow {
     }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += @('--result-format', $ResultFormat)
-    if ($ResultFormat -eq 'json') { $arguments += '--json' }
+    # --json makes the CLI return a run ID straight away for any run except RunSpecifiedTests, so a synchronous run asks for the JSON format only.
+    if ($ResultFormat -eq 'json' -and -not $Synchronous) { $arguments += '--json' }
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -970,9 +974,9 @@ function Test-SalesforceLogic {
     Like Test-SalesforceFlow, but -TestName and -ClassName also accept Apex tests, and -TestCategory picks Apex, Flow or both.
     The run is asynchronous unless -Synchronous or -WaitMinutes is given; an asynchronous run, or a wait that times out, returns
     an object with a TestRunId for Get-SalesforceLogicTestResult. Failed tests throw PsfdxTestsFailed; a command that could not
-    run throws PsfdxTestRunInvocationFailed. The command is in beta in the CLI. Test-SalesforceApex still runs Apex alone.
+    run throws PsfdxTestRunInvocationFailed. -TestCategory needs -TestLevel. The command is in beta in the CLI. Test-SalesforceApex still runs Apex alone.
     .EXAMPLE
-    Test-SalesforceLogic -TestCategory Apex, Flow -Synchronous -TargetOrg myorg
+    Test-SalesforceLogic -TestCategory Apex, Flow -TestLevel RunLocalTests -Synchronous -TargetOrg myorg
     .EXAMPLE
     Test-SalesforceLogic -TestName 'OrderFlow.Test1', 'OrderTest.testSave' -WaitMinutes 10 -TargetOrg myorg
     #>
@@ -1004,6 +1008,8 @@ function Test-SalesforceLogic {
     if ($selected -and $TestLevel -and $TestLevel -ne 'RunSpecifiedTests') {
         throw "Naming classes, tests or suites needs -TestLevel RunSpecifiedTests, not $TestLevel."
     }
+    if ($categories.Count -gt 0 -and -not $TestLevel) { throw '-TestCategory needs -TestLevel (for example RunLocalTests); the Salesforce CLI rejects a category without a test level.' }
+    if ($Synchronous -and ($SuiteName.Count -gt 0 -or $ClassName.Count -gt 1)) { throw 'A synchronous run can include tests from only one class or flow. Drop -Synchronous or name one.' }
     if ($CodeCoverageDetailed -and -not $CodeCoverage) { throw '-CodeCoverageDetailed needs -CodeCoverage.' }
 
     $arguments = @('logic', 'run', 'test')
@@ -1023,7 +1029,8 @@ function Test-SalesforceLogic {
     }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += @('--result-format', $ResultFormat)
-    if ($ResultFormat -eq 'json') { $arguments += '--json' }
+    # --json makes the CLI return a run ID straight away for any run except RunSpecifiedTests, so a synchronous run asks for the JSON format only.
+    if ($ResultFormat -eq 'json' -and -not $Synchronous) { $arguments += '--json' }
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -1070,7 +1077,7 @@ function Get-SalesforceLogicTestResult {
 
 function ConvertFrom-SalesforceTestRunOutput {
     # Turns the output of a flow/logic test command into objects, keeping a failed test run apart from a command that could not run.
-    #   summary present  -> the run finished: write the tests; if the outcome is not Passed, throw PsfdxTestsFailed
+    #   summary present  -> the run finished: write TestRunId, Summary, Tests and Coverage; if the outcome is not Passed, throw PsfdxTestsFailed
     #   testRunId only   -> an asynchronous run, or a wait that timed out: return the run ID
     #   anything else    -> the command failed (no auth, bad flag, plugin missing...): throw PsfdxTestRunInvocationFailed
     # Other result formats are text for people or a CI system and are returned unchanged.
@@ -1103,7 +1110,11 @@ function ConvertFrom-SalesforceTestRunOutput {
     if ($null -ne $result -and $null -ne $result.PSObject.Properties['summary'] -and $null -ne $result.summary) {
         $tests = @()
         if ($null -ne $result.PSObject.Properties['tests']) { $tests = @($result.tests) }
-        $tests
+        $coverage = $null
+        if ($null -ne $result.PSObject.Properties['coverage']) { $coverage = $result.coverage }
+        $runId = $null
+        if ($null -ne $result.summary.PSObject.Properties['testRunId']) { $runId = [string] $result.summary.testRunId }
+        [pscustomobject]@{ TestRunId = $runId; Summary = $result.summary; Tests = $tests; Coverage = $coverage }
         if ($result.summary.outcome -ne 'Passed') {
             $message = "Tests did not pass: outcome $($result.summary.outcome), $($result.summary.failing) failing of $($result.summary.testsRan) run."
             $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $message), 'PsfdxTestsFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $result.summary)
