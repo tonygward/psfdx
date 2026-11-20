@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## 0.8.24 - 2026-11-20
+
 - psfdx, psfdx-development, psfdx-packages, psfdx-sandbox: `Disconnect-Salesforce`, `Remove-SalesforceScratchOrg`, `Remove-SalesforceScratchOrgs`, `Remove-SalesforceSandbox`, `Remove-SalesforcePackage` and `Remove-SalesforcePackageVersion` now ask for confirmation and support `-WhatIf` (which changes nothing). `Remove-SalesforceScratchOrgs` asks once, naming every scratch org it will delete. Scripts that run these unattended must now pass `-Confirm:$false`; `-NoPrompt` still only controls the Salesforce CLI prompt.
+
 ## 0.8.23 - 2026-11-20
 
 - psfdx-packages: `Get-SalesforcePackagesInstalled` now returns the installed packages; it previously returned nothing because it looked for a `records` list the CLI does not send.
