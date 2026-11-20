@@ -306,6 +306,21 @@ Describe 'psfdx module' {
                 Assert-MockCalled Invoke-Salesforce -ModuleName $module.Name -ParameterFilter { (($Arguments -join '|') -like 'api|request|rest|/services/data/v62.0/*') -and ($Arguments -notcontains '--target-org') }
             }
 
+            It 'updates: HTTP 200 (API v46.0 and later) returns Updated with the Id' {
+                $script:Reply = '{"status":0,"result":{"statusCode":200,"headers":{},"body":{"id":"001xx0000000001","success":true,"created":false,"errors":[]}}}'
+                $res = Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -ApiVersion 'v62.0'
+                $res.Operation | Should -Be 'Updated'
+                $res.Created | Should -BeFalse
+                $res.Id | Should -Be '001xx0000000001'
+                $res.StatusCode | Should -Be 200
+            }
+
+            It 'reports Created for an HTTP 200 that says created is true' {
+                $script:Reply = '{"status":0,"result":{"statusCode":200,"headers":{},"body":{"id":"001xx0000000002","success":true,"created":true,"errors":[]}}}'
+                $res = Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-101' -Fields @{ Name = 'Acme' } -ApiVersion 'v62.0'
+                $res.Operation | Should -Be 'Created'
+                $res.Id | Should -Be '001xx0000000002'
+            }
             It 'uses the latest org API version when none is given' {
                 $script:Reply = '{"status":0,"result":{"statusCode":204,"headers":{},"body":""}}'
                 Mock Get-SalesforceLatestApiVersion { 'v66.0' } -ModuleName $module.Name

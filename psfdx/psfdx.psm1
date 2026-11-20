@@ -507,8 +507,8 @@ function Set-SalesforceRecord {
 function Upsert-SalesforceRecord {
     # The Salesforce CLI has no `sf data upsert record` (only `sf data upsert bulk`, a CSV job). A single-record upsert is the REST
     # call PATCH /services/data/vXX.X/sobjects/<Type>/<ExternalIdField>/<value>, which `sf api request rest` sends with the org's login.
-    # Salesforce answers 201 when it created the record (body has the new Id) and 204, with no body, when it updated one. The 204
-    # carries no Id, so Id is $null for an update rather than a guess.
+    # Salesforce answers 201 when it created the record (body has the new Id). When it updated one, API v46.0 and later answer 200 with
+    # the Id and created=false, and older versions answer 204 with no body. Id is $null when the response does not carry one.
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
@@ -564,10 +564,13 @@ function Upsert-SalesforceRecord {
     $responseBody = $null
     if ($null -ne $response) { $responseBody = $response.body }
 
-    if ($statusCode -eq 201 -or $statusCode -eq 204) {
+    if ($statusCode -eq 200 -or $statusCode -eq 201 -or $statusCode -eq 204) {
         $created = ($statusCode -eq 201)
         $id = $null
-        if ($created -and $null -ne $responseBody -and $null -ne $responseBody.PSObject.Properties['id']) { $id = $responseBody.id }
+        if ($null -ne $responseBody -and $responseBody -isnot [string]) {
+            if ($null -ne $responseBody.PSObject.Properties['id']) { $id = $responseBody.id }
+            if ($statusCode -eq 200 -and $null -ne $responseBody.PSObject.Properties['created']) { $created = [bool] $responseBody.created }
+        }
         return [pscustomobject]@{
             Operation       = $(if ($created) { 'Created' } else { 'Updated' })
             Created         = $created

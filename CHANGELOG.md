@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- psfdx: new `Upsert-SalesforceRecord` creates or updates a single record by external ID, for example `Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -TargetOrg myalias`. It returns `Operation` (`Created` or `Updated`), `Created` and `StatusCode`, plus the new `Id` when a record was created (Salesforce does not return the Id for an update, so it is empty then). The Salesforce CLI has no single-record upsert command, so this uses the REST API through `sf api request rest`; it uses the org's latest API version unless you pass `-ApiVersion`. For bulk loads use `sf data upsert bulk`.
+- psfdx: new `Upsert-SalesforceRecord` creates or updates a single record by external ID, for example `Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -TargetOrg myalias`. It returns `Operation` (`Created` or `Updated`), `Created` and `StatusCode`, plus the new `Id` when a record was created (older API versions do not return the Id for an update, so it is empty then). The Salesforce CLI has no single-record upsert command, so this uses the REST API through `sf api request rest`; it uses the org's latest API version unless you pass `-ApiVersion`. For bulk loads use `sf data upsert bulk`.
 
 ## 0.8.26 - 2026-11-20
 
