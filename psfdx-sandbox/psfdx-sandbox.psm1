@@ -153,7 +153,7 @@ function Copy-SalesforceSandbox {
 }
 
 function Remove-SalesforceSandbox {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -164,8 +164,12 @@ function Remove-SalesforceSandbox {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    return Show-SalesforceResult -Result $result
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $TargetOrg } else { 'default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Delete sandbox')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
 }
 
 function Get-SalesforceSandboxRefreshStatus {
