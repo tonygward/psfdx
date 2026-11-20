@@ -135,12 +135,17 @@ function Get-SalesforcePackagesInstalled {
     )
 
     $arguments = @('package', 'installed', 'list')
-    if ($TargetOrg) { $arguments += @('--target-org', $TargetOrg) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($ApiVersion) { $arguments += @('--api-version', $ApiVersion) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    return Show-SalesforceResult -Result $result -ReturnRecords
+    # The CLI returns result as a plain array, not a records wrapper.
+    $packages = Show-SalesforceResult -Result $result
+    if ($null -eq $packages) { return @() }
+    if ($null -ne $packages.PSObject.Properties['records']) { $packages = $packages.records }
+    if ($null -eq $packages) { return @() }
+    return @($packages)
 }
 
 #endregion

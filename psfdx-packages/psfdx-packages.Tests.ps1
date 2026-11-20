@@ -113,7 +113,40 @@ Describe 'Remove-SalesforcePackage' {
 Describe 'Get-SalesforcePackagesInstalled' {
     InModuleScope 'psfdx-packages' {
         BeforeEach {
-            Mock Invoke-Salesforce { '{"status":0,"result":{"records":[]}}' }
+            Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
+        }
+
+        It 'returns nothing for zero installed packages' {
+            @(Get-SalesforcePackagesInstalled).Count | Should -Be 0
+        }
+
+        It 'returns one installed package from a result array' {
+            Mock Invoke-Salesforce { '{"status":0,"result":[{"SubscriberPackageName":"A","SubscriberPackageVersionId":"04t000000000001"}]}' }
+            $out = @(Get-SalesforcePackagesInstalled)
+            $out.Count | Should -Be 1
+            $out[0].SubscriberPackageName | Should -Be 'A'
+        }
+
+        It 'returns multiple installed packages' {
+            Mock Invoke-Salesforce { '{"status":0,"result":[{"SubscriberPackageName":"A"},{"SubscriberPackageName":"B"}]}' }
+            $out = @(Get-SalesforcePackagesInstalled)
+            $out.Count | Should -Be 2
+            $out[1].SubscriberPackageName | Should -Be 'B'
+        }
+
+        It 'still accepts a records wrapper' {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"records":[{"SubscriberPackageName":"A"}]}}' }
+            @(Get-SalesforcePackagesInstalled).Count | Should -Be 1
+        }
+
+        It 'throws the CLI message on non-zero status' {
+            Mock Invoke-Salesforce { '{"status":1,"message":"No authorization information found for x"}' }
+            { Get-SalesforcePackagesInstalled } | Should -Throw '*No authorization information*'
+        }
+
+        It 'throws on malformed JSON' {
+            Mock Invoke-Salesforce { 'not json' }
+            { Get-SalesforcePackagesInstalled } | Should -Throw '*not valid JSON*'
         }
 
         It 'builds command with target org and json' {
