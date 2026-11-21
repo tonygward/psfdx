@@ -529,3 +529,27 @@ Describe 'Trace flag pipelines' {
         }
     }
 }
+
+Describe 'Security regressions: event file IDs (issue 112)' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
+            Mock Get-SalesforceLatestApiVersion { 'v62.0' }
+        }
+        It 'refuses an ID that is a path or does not look like an ID, before any call or file write' {
+            $dir = Join-Path $TestDrive 'out'
+            New-Item -ItemType Directory -Path $dir | Out-Null
+            foreach ($id in '..\..\evil', '../evil', 'a/b', '0AT0000000000AB/../x', 'short', "0AT000000000001$([char]10)") {
+                { Export-SalesforceEventFile -Id $id -OutputFolder $dir } | Should -Throw -ExpectedMessage '*not a valid 15 or 18 character*'
+                { Get-SalesforceEventFile -Id $id } | Should -Throw -ExpectedMessage '*not a valid 15 or 18 character*'
+            }
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            @(Get-ChildItem -LiteralPath $dir).Count | Should -Be 0
+            @(Get-ChildItem -LiteralPath $TestDrive -File).Count | Should -Be 0
+        }
+        It 'still accepts 15 and 18 character IDs' {
+            { Get-SalesforceEventFile -Id '0AT000000000001' } | Should -Not -Throw
+            { Get-SalesforceEventFile -Id '0AT000000000001AAA' } | Should -Not -Throw
+        }
+    }
+}

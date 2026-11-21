@@ -119,6 +119,8 @@ function Get-PsfdxRedactedCommand {
 }
 
 $script:PsfdxPercentVariable = 'PSFDX_PERCENT'
+# cmd.exe allows 8191 characters in all; leave room for the shim path and the cmd.exe wrapper.
+$script:PsfdxMaxShimCommandLength = 7800
 
 function Test-PsfdxIsWindows {
     return [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
@@ -144,7 +146,8 @@ function Resolve-PsfdxNativeArguments {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $FilePath,
-        [Parameter(Mandatory = $false)][AllowEmptyCollection()][string[]] $Arguments = @()
+        [Parameter(Mandatory = $false)][AllowEmptyCollection()][string[]] $Arguments = @(),
+        [Parameter(Mandatory = $false)][string] $PercentVariable = $script:PsfdxPercentVariable
     )
 
     if (-not (Test-PsfdxIsWindows)) {
@@ -167,7 +170,7 @@ function Resolve-PsfdxNativeArguments {
             # reference to a variable whose value is a literal %, so it reaches the tool unchanged
             # (e.g. LIKE 'Acme%' or a literal %NAME%). Invoke-Salesforce defines the variable.
             if ($argument.Contains('%')) {
-                $argument = $argument.Replace('%', '%' + $script:PsfdxPercentVariable + '%')
+                $argument = $argument.Replace('%', '%' + $PercentVariable + '%')
             }
         }
         if ($legacy -and -not $isShim -and $argument.Contains('"')) {
@@ -180,6 +183,15 @@ function Resolve-PsfdxNativeArguments {
             $argument = $argument + $Matches[0]
         }
         $prepared.Add($argument)
+    }
+    if ($isShim) {
+        # cmd.exe refuses a command line over 8191 characters and says so only in its output ("The command line is too long."), which
+        # a non-JSON call would return as if it were a result. Stay well under the limit (the shim path and cmd.exe add to it) and say what to do.
+        $total = $FilePath.Length
+        foreach ($p in $prepared) { $total += $p.Length + 1 }
+        if ($total -gt $script:PsfdxMaxShimCommandLength) {
+            throw "The arguments for '$FilePath' are $total characters long after preparation; Windows cannot run a command line over about $($script:PsfdxMaxShimCommandLength) characters through a .cmd shim. Shorten the query, or put it in a file and pass --file."
+        }
     }
     return [string[]]$prepared.ToArray()
 }
@@ -238,17 +250,18 @@ function Invoke-Salesforce {
 
     Write-Verbose (Get-PsfdxRedactedCommand -Command $displayCommand)
     # Wrap in @() so an empty result is an empty array, not $null (Windows PowerShell 5.1 runs a foreach once over $null).
-    $nativeArguments = @(Resolve-PsfdxNativeArguments -FilePath $filePath -Arguments $rawArguments)
-    $percentToken = '%' + $script:PsfdxPercentVariable + '%'
+    # The variable that stands for a literal % is named per call, so concurrent calls (other runspaces, jobs or threads in the same process)
+    # never share it: one call cannot remove or overwrite another's variable while its child process starts.
+    $percentName = $script:PsfdxPercentVariable + '_' + [guid]::NewGuid().ToString('N').Substring(0, 8)
+    $nativeArguments = @(Resolve-PsfdxNativeArguments -FilePath $filePath -Arguments $rawArguments -PercentVariable $percentName)
+    $percentToken = '%' + $percentName + '%'
     $needsPercent = $false
     foreach ($nativeArgument in $nativeArguments) {
         if ($null -ne $nativeArgument -and $nativeArgument.Contains($percentToken)) { $needsPercent = $true; break }
     }
 
-    $previous = $null
     if ($needsPercent) {
-        $previous = [System.Environment]::GetEnvironmentVariable($script:PsfdxPercentVariable)
-        [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, '%')
+        [System.Environment]::SetEnvironmentVariable($percentName, '%')
     }
     try {
         $global:LASTEXITCODE = 0
@@ -256,7 +269,8 @@ function Invoke-Salesforce {
         $exitCode = $global:LASTEXITCODE
     } finally {
         if ($needsPercent) {
-            [System.Environment]::SetEnvironmentVariable($script:PsfdxPercentVariable, $previous)
+            # [NullString]::Value, not $null: PowerShell turns $null into an empty string for this call, which leaves the variable set.
+            [System.Environment]::SetEnvironmentVariable($percentName, [NullString]::Value)
         }
     }
 

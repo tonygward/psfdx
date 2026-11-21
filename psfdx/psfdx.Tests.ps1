@@ -1384,3 +1384,96 @@ Describe 'Record pipelines' {
         }
     }
 }
+
+Describe 'Security regressions (issue 112)' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+            Mock Invoke-RestMethod { [pscustomobject]@{ access_token = 'x' } }
+        }
+
+        Context 'credentials and tokens only travel over https' {
+            It 'refuses a plain http or malformed -CustomUrl before sending the password' {
+                foreach ($url in 'http://login.example.com', 'ftp://x', 'login.example.com', '//login.example.com', 'file:///etc/passwd') {
+                    { Connect-SalesforceApi -TargetOrg u@x.com -Password p -Token t -ClientId c -ClientSecret s -CustomUrl $url } | Should -Throw -ExpectedMessage '*absolute https://*'
+                }
+                Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly
+            }
+            It 'sends the login to an https -CustomUrl, with no doubled slash' {
+                Connect-SalesforceApi -TargetOrg u@x.com -Password p -Token t -ClientId c -ClientSecret s -CustomUrl 'https://example.my.salesforce.com/' | Out-Null
+                Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -ParameterFilter { $Uri -eq 'https://example.my.salesforce.com/services/oauth2/token' }
+            }
+            It 'keeps the default and sandbox login hosts' {
+                Connect-SalesforceApi -TargetOrg u@x.com -Password p -Token t -ClientId c -ClientSecret s | Out-Null
+                Connect-SalesforceApi -TargetOrg u@x.com -Password p -Token t -ClientId c -ClientSecret s -Sandbox | Out-Null
+                Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -ParameterFilter { $Uri -eq 'https://login.salesforce.com/services/oauth2/token' }
+                Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -ParameterFilter { $Uri -eq 'https://test.salesforce.com/services/oauth2/token' }
+            }
+            It 'refuses to send an access token to a non-https or relative URL' {
+                foreach ($url in 'http://x.my.salesforce.com/services/data', '/services/data', 'ftp://x/y') {
+                    { Invoke-SalesforceApi -Url $url -AccessToken 'tok' } | Should -Throw -ExpectedMessage '*absolute https://*'
+                }
+                Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly
+                Invoke-SalesforceApi -Url 'https://x.my.salesforce.com/services/data' -AccessToken 'tok' | Out-Null
+                Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly
+            }
+            It 'does not put the access token in the error text' {
+                $err = $null
+                try { Invoke-SalesforceApi -Url 'http://x/y' -AccessToken 'SECRETTOKEN123' } catch { $err = $_.Exception.Message }
+                $err | Should -Not -BeLike '*SECRETTOKEN123*'
+            }
+        }
+
+        Context 'field values stay out of the verbose stream' {
+            It 'does not echo -FieldUpdates itself from New and Set' {
+                $v1 = New-SalesforceRecord -Type Account -FieldUpdates "Name='Acme' Secret__c='hunter2'" -Verbose 4>&1 | Out-String
+                $v2 = Set-SalesforceRecord -Id 001xx000003DGb1AAG -Type Account -FieldUpdates "Secret__c='hunter2'" -Verbose 4>&1 | Out-String
+                $v1 | Should -Not -BeLike '*hunter2*'
+                $v2 | Should -Not -BeLike '*hunter2*'
+            }
+        }
+
+        Context 'installing code is previewable and validated' {
+            It 'makes no call under -WhatIf for CLI and plugin installs and updates' {
+                Install-SalesforceCli -WhatIf | Out-Null
+                Update-SalesforceCli -WhatIf | Out-Null
+                Install-SalesforcePlugin -Name '@salesforce/plugin-agent' -WhatIf | Out-Null
+                Update-SalesforcePlugins -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'still runs them when not asked to preview, without a prompt' {
+                Install-SalesforcePlugin -Name '@salesforce/plugin-agent' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'plugins|install|@salesforce/plugin-agent' }
+            }
+            It 'accepts npm names with scope and version, and GitHub URLs' {
+                foreach ($name in '@salesforce/plugin-agent', '@salesforce/plugin-agent@1.2.3', 'sfdx-hardis', 'https://github.com/org/repo') {
+                    { Install-SalesforcePlugin -Name $name -Confirm:$false } | Should -Not -Throw
+                }
+            }
+            It 'refuses a plugin name that could be read as an option or break the command' {
+                foreach ($name in '--force', '-x', 'a b', 'a;b', 'a|b', "a$([char]10)b", 'a$(x)', '', '"x"') {
+                    { Install-SalesforcePlugin -Name $name -Confirm:$false } | Should -Throw
+                }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+    }
+}
+
+Describe 'ID parameters reject a trailing line break (issue 112)' {
+    InModuleScope 'psfdx' {
+        BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' } }
+        It 'refuses a record ID or Bulk job ID that ends in a line feed, before any call' {
+            $lf = [string][char]10
+            { Get-SalesforceRecord -Type Account -Id ('001xx000003DGb1AAG' + $lf) } | Should -Throw
+            { Remove-SalesforceRecord -Type Account -Id ('001xx000003DGb1AAG' + $lf) -Confirm:$false } | Should -Throw
+            { Get-SalesforceBulkResult -JobId ('750xx000000001AAAA' + $lf) } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'refuses a name or prefix that ends in a line feed' {
+            $lf = [string][char]10
+            { Install-SalesforcePlugin -Name ('sfdx-hardis' + $lf) -Confirm:$false } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+    }
+}

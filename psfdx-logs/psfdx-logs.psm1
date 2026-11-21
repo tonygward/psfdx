@@ -510,12 +510,25 @@ function Select-SalesforceEventFiles {
     return Show-SalesforceResult -Result $raw -ReturnRecords
 }
 
+function Assert-SalesforceEventFileId {
+    # Private: an EventLogFile ID is 15 or 18 letters and digits.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string] $Id
+    )
+
+    if ($Id -notmatch '^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z') {
+        throw "Event log file ID '$Id' is not a valid 15 or 18 character Salesforce ID."
+    }
+}
+
 function Get-SalesforceEventFile {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Id,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
+    Assert-SalesforceEventFileId -Id $Id
     $apiVersion = (Get-SalesforceLatestApiVersion -TargetOrg $TargetOrg)
     $arguments = @('api', 'request', 'rest', "/services/data/$apiVersion/sobjects/EventLogFile/$Id/Logfile")
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
@@ -531,6 +544,8 @@ function Export-SalesforceEventFile {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
+    # The ID becomes part of the file name and of the REST path, so it must be an ID, not a path (..\x, a/b).
+    Assert-SalesforceEventFileId -Id $Id
     if (($OutputFolder -eq $null) -or ($OutputFolder -eq "")) {
         $OutputFolder = (Get-Location).Path
     }

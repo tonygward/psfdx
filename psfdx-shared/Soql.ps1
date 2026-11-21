@@ -57,7 +57,7 @@ function ConvertTo-SalesforceSoqlIdentifier {
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)][AllowEmptyString()][AllowNull()][string] $Value
     )
     process {
-        if ([string]::IsNullOrEmpty($Value) -or $Value -cnotmatch '^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)*$') {
+        if ([string]::IsNullOrEmpty($Value) -or $Value -cnotmatch '^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)*\z') {
             throw "'$Value' is not a valid Salesforce object or field API name."
         }
         return $Value

@@ -26,7 +26,7 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `tools/matrix/` | Matrix, the Node orchestrator that runs board work |
 | `tools/matrix-linux/` | The container, proxy and launcher Matrix runs in |
 | `tests/` | Repository-wide rules only (`Repository.Tests.ps1`). Other infrastructure tests sit beside the code they test |
-| `docs/`, `prompts/` | Policy, pipelines, release rules; backlog prompts. `docs/CODE-REVIEW.md` is an old review |
+| `docs/`, `prompts/` | Policy, pipelines, release rules; backlog prompts. `docs/CODE-REVIEW.md` is an old review; `docs/security-findings.md` is the security findings register |
 
 Rules that keep them apart:
 - Only a change to the product releases. Workflows, scripts, tools, tests and docs never bump the version. The rule is `scripts/release/changes.mjs`; don't copy it into a workflow.

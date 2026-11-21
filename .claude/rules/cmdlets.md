@@ -75,6 +75,9 @@ Run non-`sf` commands through `Invoke-Salesforce` too, so tests can mock them an
   }
   ```
   The better long-term fix is to stop the helper forwarding them.
+- Anchor every validation pattern with `\z`, not `$`. In .NET `$` also matches before a final line feed, so `'0AT000000000001' + "`n"` passes `'^[A-Za-z0-9]{15}$'`. This applies to `-match`, `-notmatch`, `-cnotmatch` and `[ValidatePattern()]` on IDs, names and anything else that reaches a command, a path or a query.
+- Send a password, token or client secret only to an https URL: call `Assert-SalesforceHttpsUrl` (psfdx) before any request that carries one. Build file names from validated IDs, never from raw input.
+- A cmdlet that deletes, releases or deploys needs `SupportsShouldProcess`: ConfirmImpact `High` when it cannot be undone, `Medium` for a change that can be (no prompt by default, but `-WhatIf` works). If the CLI has its own `--no-prompt`, let it skip the PowerShell prompt too, so existing unattended scripts keep working. The findings register is docs/security-findings.md.
 - Group cmdlets in `#region` / `#endregion` blocks.
 - Keep the `Retrieve-`, `Describe-` and `Promote-` verbs, even though PowerShell doesn't approve them.
 
