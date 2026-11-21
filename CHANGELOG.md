@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.28 - 2026-11-21
+
 - psfdx-development: new `Test-SalesforceFlow` and `Get-SalesforceFlowTestResult` run Flow tests and fetch their results (`sf flow run test` and `sf flow get test`), and new `Test-SalesforceLogic` and `Get-SalesforceLogicTestResult` run Flow and Apex tests together (`sf logic run test` and `sf logic get test`). A run is asynchronous by default and returns a `TestRunId`; use `-Synchronous` (or `-WaitMinutes` for the combined command) to wait for the results, which come back as one object with `Summary`, `Tests` and `Coverage`. `-TestCategory` needs `-TestLevel`, as the Salesforce CLI requires. A run with failing tests throws an error with the id `PsfdxTestsFailed` after writing the results; a command that could not run (no authorisation, missing plugin) throws `PsfdxTestRunInvocationFailed`, so CI can tell them apart. `Test-SalesforceApex` is unchanged.
 
 ## 0.8.27 - 2026-11-20
