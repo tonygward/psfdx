@@ -1133,6 +1133,9 @@ Describe 'Resume-SalesforceScratchOrg' {
             $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-development).ModuleBase 'psfdx-development.psd1')).FunctionsToExport
             $exports | Should -Contain 'Resume-SalesforceScratchOrg'
             @((Get-Help Resume-SalesforceScratchOrg -Examples).examples.example).Count | Should -BeGreaterThan 0
+        }
+    }
+}
 
 Describe 'Code Analyzer' {
     InModuleScope 'psfdx-development' {
