@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-development: new `Test-SalesforceFlow` and `Get-SalesforceFlowTestResult` run Flow tests and fetch their results (`sf flow run test` and `sf flow get test`), and new `Test-SalesforceLogic` and `Get-SalesforceLogicTestResult` run Flow and Apex tests together (`sf logic run test` and `sf logic get test`). A run is asynchronous by default and returns a `TestRunId`; use `-Synchronous` (or `-WaitMinutes` for the combined command) to wait for the results, which come back as one object with `Summary`, `Tests` and `Coverage`. `-TestCategory` needs `-TestLevel`, as the Salesforce CLI requires. A run with failing tests throws an error with the id `PsfdxTestsFailed` after writing the results; a command that could not run (no authorisation, missing plugin) throws `PsfdxTestRunInvocationFailed`, so CI can tell them apart. `Test-SalesforceApex` is unchanged.
+
 ## 0.8.27 - 2026-11-20
 
 - psfdx: new `Upsert-SalesforceRecord` creates or updates a single record by external ID, for example `Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId 'A-100' -Fields @{ Name = 'Acme' } -TargetOrg myalias`. It returns `Operation` (`Created` or `Updated`), `Created` and `StatusCode`, plus the new `Id` when a record was created (older API versions do not return the Id for an update, so it is empty then). The Salesforce CLI has no single-record upsert command, so this uses the REST API through `sf api request rest`; it uses the org's latest API version unless you pass `-ApiVersion`. For bulk loads use `sf data upsert bulk`.

@@ -10,6 +10,8 @@
     "apex trace create", "apex trace delete", "apex trace list",
     "config get", "config list", "config set", "config unset",
     "data create record", "data query", "data update record",
+    "flow get test", "flow run test",
+    "logic get test", "logic run test",
     "lightning dev",
     "limits api display",
     "org create sandbox", "org create scratch",
