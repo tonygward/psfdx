@@ -145,6 +145,8 @@ Included in the `psfdx` package.
 | `Grant-SalesforcePermissionSetLicense` | Assign permission set licences to users (`sf org assign permsetlicense`). Asks for confirmation. |
 | `New-SalesforceRecord` | Create a record. |
 | `Set-SalesforceRecord` | Update a record. |
+| `Get-SalesforceRecord` | Get one record by `-Id`, or by `-Where` field values that identify exactly one (`sf data get record`). |
+| `Remove-SalesforceRecord` | Delete one record by `-Id` or `-Where` (`sf data delete record`). Asks for confirmation; supports `-WhatIf`. |
 | `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
 | `Export-SalesforceTreeData` | Export records with their child records to JSON (and with `-Plan`, a plan file) for copying test data between orgs (`sf data export tree`). |
 | `Import-SalesforceTreeData` | Import tree JSON files or a plan into an org (`sf data import tree`); `-Plan` or `-File`, not both. Supports `-WhatIf`. |
@@ -401,7 +403,9 @@ Included in the `psfdx` package.
 | `New-SalesforcePackageVersion` | Create a new package version (coverage, tag, def file, waits, key). |
 | `Promote-SalesforcePackageVersion` | Promote a version (optional no-prompt). |
 | `Remove-SalesforcePackageVersion` | Delete a version (optional no-prompt; asks for confirmation, supports `-WhatIf`). |
-| `Install-SalesforcePackageVersion` | Install a version to a target org (waits/publish-wait, no-prompt). |
+| `Install-SalesforcePackageVersion` | Install a version to a target org (waits/publish-wait, no-prompt). `-AsObject` returns the install request, whose `Id` (0Hf...) goes to `Get-SalesforcePackageInstallStatus`. |
+| `Get-SalesforcePackageVersionCreateStatus` | Get a package version create request's status, IDs and errors by the `Id` (08c...) that `New-SalesforcePackageVersion` returned (`sf package version create report`). |
+| `Get-SalesforcePackageInstallStatus` | Get a package install request's status and errors by its `-RequestId` (`sf package install report`). |
 
 ### psfdx-shared
 

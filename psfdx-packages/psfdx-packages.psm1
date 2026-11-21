@@ -346,7 +346,8 @@ function Install-SalesforcePackageVersion {
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][int] $WaitMinutes = 10,
-        [Parameter(Mandatory = $false)][ValidateSet('AllUsers','AdminsOnly')][string] $SecurityType = 'AdminsOnly'
+        [Parameter(Mandatory = $false)][ValidateSet('AllUsers','AdminsOnly')][string] $SecurityType = 'AdminsOnly',
+        [Parameter(Mandatory = $false)][switch] $AsObject
     )
 
     $arguments = @('package', 'install')
@@ -358,8 +359,159 @@ function Install-SalesforcePackageVersion {
         $arguments += @('--wait', $WaitMinutes)
         $arguments += @('--publish-wait', $WaitMinutes)
     }
+    if ($AsObject) { $arguments += '--json' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    # Without -AsObject the CLI's own text is returned unchanged, as before. With it the install request comes back as an object: its Id (0Hf...)
+    # is the request ID for Get-SalesforcePackageInstallStatus, so a later step can report the outcome.
+    if ($AsObject) { return Show-SalesforceResult -Result $output }
+    $output
+}
+
+#endregion
+
+#region Package job reports
+
+# Package creation and installation can run for a long time, so each has a "start" command that can return at once and a "report" command that
+# fetches the outcome later, from another step or session. Capture the right ID from the start command:
+#   New-SalesforcePackageVersion    -> the result's Id (starts with 08c) is the create REQUEST ID for Get-SalesforcePackageVersionCreateStatus
+#   Install-SalesforcePackageVersion -AsObject -> the result's Id (starts with 0Hf) is the install REQUEST ID for Get-SalesforcePackageInstallStatus
+# These are not the package version ID (04t) that you install; the request ID names the job.
+
+function Get-SalesforcePackageVersionCreateStatus {
+    <#
+    .SYNOPSIS
+    Gets the status of a package version create request (sf package version create report).
+    .DESCRIPTION
+    Pass the create request ID: the Id (08c...) of the object that New-SalesforcePackageVersion returned. It is asked of the Dev Hub that owns the
+    package (-TargetDevHub). The result has Status, Completed and Succeeded, the IDs (RequestId, PackageId, PackageVersionId, SubscriberPackageVersionId,
+    the 04t ID to install) and Errors, a list of messages when the job failed. A job still queued or running returns Completed = $false. A failed job
+    is returned as a status (Status = Error) rather than thrown, so a script can read its Errors; add -ThrowOnFailure to make a failed job throw
+    PsfdxPackageJobFailed after the object is written, for CI.
+    .EXAMPLE
+    $create = New-SalesforcePackageVersion -PackageName MyPkg -TargetDevHub devhub; Get-SalesforcePackageVersionCreateStatus -RequestId $create.Id -TargetDevHub devhub
+    .EXAMPLE
+    # In a later step: wait for success, then install the version
+    $s = Get-SalesforcePackageVersionCreateStatus -RequestId 08c000000000001 -TargetDevHub devhub -ThrowOnFailure; $s.SubscriberPackageVersionId
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^08c[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $RequestId,
+        [Parameter(Mandatory = $false)][switch] $ThrowOnFailure,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'create', 'report', '--package-create-request-id', $RequestId)
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('ThrowOnFailure')
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $data = Show-SalesforceResult -Result $result
+    $record = @($data)[0]
+    if ($null -eq $record -or $null -eq $record.PSObject.Properties['Status']) { throw "The Salesforce CLI returned no status for package create request $RequestId." }
+
+    $get = { param([string] $Name) if ($null -ne $record.PSObject.Properties[$Name]) { return $record.$Name } return $null }
+    $status = [string] $record.Status
+    $errors = @(& $get 'Error' | Where-Object { $_ } | ForEach-Object { [string] $_ })
+    $succeeded = ($status -eq 'Success')
+    $failed = ($status -eq 'Error')
+    $out = [pscustomobject]@{
+        RequestId                  = [string] (& $get 'Id')
+        Status                     = $status
+        Completed                  = ($succeeded -or $failed)
+        Succeeded                  = $succeeded
+        PackageId                  = & $get 'Package2Id'
+        PackageVersionId           = & $get 'Package2VersionId'
+        SubscriberPackageVersionId = & $get 'SubscriberPackageVersionId'
+        Tag                        = & $get 'Tag'
+        Branch                     = & $get 'Branch'
+        CreatedDate                = & $get 'CreatedDate'
+        Errors                     = $errors
+    }
+    $out
+    if ($ThrowOnFailure -and $failed) {
+        $message = "Package version create request $RequestId failed."
+        if ($errors.Count -gt 0) { $message += ' ' + (($errors | Select-Object -First 5) -join '; ') }
+        $record2 = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $message), 'PsfdxPackageJobFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $out)
+        throw $record2
+    }
+}
+
+function Get-SalesforcePackageInstallStatus {
+    <#
+    .SYNOPSIS
+    Gets the status of a package install request (sf package install report).
+    .DESCRIPTION
+    Pass the install request ID: the Id (0Hf...) of the object that Install-SalesforcePackageVersion returned when run with -AsObject. The result has
+    Status (IN_PROGRESS, SUCCESS, ERROR or UNKNOWN), Completed, Succeeded, the SubscriberPackageVersionKey (04t) and Errors. A job still running returns
+    Completed = $false. A failed install is returned as a status with its Errors; add -ThrowOnFailure to make it throw PsfdxPackageJobFailed after the
+    object is written. The report is read from the org the package is being installed into (-TargetOrg).
+    .EXAMPLE
+    $install = Install-SalesforcePackageVersion -PackageVersionId 04t000000000001 -WaitMinutes 0 -NoPrompt -AsObject -TargetOrg myorg; Get-SalesforcePackageInstallStatus -RequestId $install.Id -TargetOrg myorg
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^0Hf[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $RequestId,
+        [Parameter(Mandatory = $false)][switch] $ThrowOnFailure,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package', 'install', 'report', '--request-id', $RequestId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('ThrowOnFailure')
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+
+    $text = [string]::Join([Environment]::NewLine, @($output | ForEach-Object { [string] $_ })).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) { throw 'sf package install report returned no output where JSON was expected.' }
+    $parsed = $null
+    try { $parsed = $text | ConvertFrom-Json -ErrorAction Stop } catch { throw 'sf package install report returned output that is not valid JSON.' }
+    if ($null -eq $parsed -or $parsed -is [array] -or $null -eq $parsed.PSObject.Properties['status']) { throw 'sf package install report returned JSON in an unexpected shape (no status).' }
+
+    $record = $null
+    $errors = @()
+    $status = $null
+    if ($parsed.status -eq 0 -and $null -ne $parsed.PSObject.Properties['result'] -and $null -ne $parsed.result) {
+        $record = $parsed.result
+        $status = [string] $record.Status
+        if ($null -ne $record.PSObject.Properties['Errors'] -and $null -ne $record.Errors -and $null -ne $record.Errors.PSObject.Properties['errors']) {
+            $errors = @($record.Errors.errors | ForEach-Object { if ($null -ne $_.PSObject.Properties['message']) { [string] $_.message } else { [string] $_ } })
+        }
+    } elseif ($parsed.status -ne 0 -and (
+            (($null -ne $parsed.PSObject.Properties['name']) -and ([string] $parsed.name -eq 'packageInstallError')) -or
+            (($null -ne $parsed.PSObject.Properties['message']) -and ([string] $parsed.message -match '(?i)errors installing the package|installation errors:|package installation failed')))) {
+        # A failed install makes the CLI exit with an error (name packageInstallError, "Encountered errors installing the package! ...") rather than
+        # a result: report it as a status, not a lost job. The numbered errors are listed in the message, or it says <empty> when there are none.
+        $status = 'ERROR'
+        $message = ''
+        if ($null -ne $parsed.PSObject.Properties['message'] -and $parsed.message) { $message = [string] $parsed.message }
+        $errors = @([regex]::Matches($message, '(?m)^\s*\d+\)\s*(.+)$') | ForEach-Object { $_.Groups[1].Value.Trim() })
+    } else {
+        Show-SalesforceResult -Result $text | Out-Null
+        throw "sf package install report returned no install request for $RequestId."
+    }
+
+    $key = $null
+    if ($null -ne $record -and $null -ne $record.PSObject.Properties['SubscriberPackageVersionKey']) { $key = $record.SubscriberPackageVersionKey }
+    $id = $RequestId
+    if ($null -ne $record -and $null -ne $record.PSObject.Properties['Id'] -and $record.Id) { $id = [string] $record.Id }
+    $succeeded = ($status -eq 'SUCCESS')
+    $failed = ($status -eq 'ERROR')
+    $out = [pscustomobject]@{
+        RequestId                  = $id
+        Status                     = $status
+        Completed                  = ($succeeded -or $failed)
+        Succeeded                  = $succeeded
+        SubscriberPackageVersionKey = $key
+        Errors                     = $errors
+    }
+    $out
+    if ($ThrowOnFailure -and $failed) {
+        $summary = "Package install request $RequestId failed."
+        if ($errors.Count -gt 0) { $summary += ' ' + (($errors | Select-Object -First 5) -join '; ') }
+        $record2 = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $summary), 'PsfdxPackageJobFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $out)
+        throw $record2
+    }
 }
 
 #endregion

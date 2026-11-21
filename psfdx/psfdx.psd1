@@ -31,6 +31,8 @@
         'Grant-SalesforcePermissionSetLicense',
         'New-SalesforceRecord',
         'Set-SalesforceRecord',
+        'Get-SalesforceRecord',
+        'Remove-SalesforceRecord',
         'Upsert-SalesforceRecord',
         'Export-SalesforceTreeData',
         'Import-SalesforceTreeData',
