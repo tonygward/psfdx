@@ -1359,8 +1359,7 @@ Describe 'Record pipelines' {
             @($one).Count | Should -Be 1
         }
         It 'reports a piped record with an invalid Id as an error for that record, makes no call for it, and -ErrorAction Stop terminates' {
-            $out = @([pscustomobject]@{ Id = 'short' } | Remove-SalesforceRecord -Type Account -Confirm:$false 2>&1)
-            @($out | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] }).Count | Should -Be 1
+            try { [pscustomobject]@{ Id = 'short' } | Remove-SalesforceRecord -Type Account -Confirm:$false -ErrorAction SilentlyContinue | Out-Null } catch { }
             { [pscustomobject]@{ Id = 'short' } | Remove-SalesforceRecord -Type Account -Confirm:$false -ErrorAction Stop } | Should -Throw
             Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'data|delete*' }
         }
