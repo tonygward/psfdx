@@ -1,0 +1,5758 @@
+{
+  "schema": 1,
+  "cli": {
+    "version": "2.159.7",
+    "commandCount": 279,
+    "plugins": [
+      {
+        "name": "@oclif/plugin-autocomplete",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@oclif/plugin-commands",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@oclif/plugin-help",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@oclif/plugin-plugins",
+        "type": "core",
+        "commands": 10
+      },
+      {
+        "name": "@oclif/plugin-search",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@oclif/plugin-update",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@oclif/plugin-version",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@oclif/plugin-which",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@salesforce/plugin-agent",
+        "type": "core",
+        "commands": 41
+      },
+      {
+        "name": "@salesforce/plugin-apex",
+        "type": "core",
+        "commands": 12
+      },
+      {
+        "name": "@salesforce/plugin-api",
+        "type": "core",
+        "commands": 2
+      },
+      {
+        "name": "@salesforce/plugin-auth",
+        "type": "core",
+        "commands": 6
+      },
+      {
+        "name": "@salesforce/plugin-code-analyzer",
+        "type": "jit",
+        "commands": 4
+      },
+      {
+        "name": "@salesforce/plugin-community",
+        "type": "jit",
+        "commands": 3
+      },
+      {
+        "name": "@salesforce/plugin-custom-metadata",
+        "type": "jit",
+        "commands": 5
+      },
+      {
+        "name": "@salesforce/plugin-data",
+        "type": "core",
+        "commands": 24
+      },
+      {
+        "name": "@salesforce/plugin-deploy-retrieve",
+        "type": "core",
+        "commands": 17
+      },
+      {
+        "name": "@salesforce/plugin-dev",
+        "type": "jit",
+        "commands": 6
+      },
+      {
+        "name": "@salesforce/plugin-devops-center",
+        "type": "jit",
+        "commands": 31
+      },
+      {
+        "name": "@salesforce/plugin-flow",
+        "type": "jit",
+        "commands": 2
+      },
+      {
+        "name": "@salesforce/plugin-info",
+        "type": "core",
+        "commands": 3
+      },
+      {
+        "name": "@salesforce/plugin-lightning-dev",
+        "type": "jit",
+        "commands": 3
+      },
+      {
+        "name": "@salesforce/plugin-limits",
+        "type": "core",
+        "commands": 2
+      },
+      {
+        "name": "@salesforce/plugin-marketplace",
+        "type": "core",
+        "commands": 1
+      },
+      {
+        "name": "@salesforce/plugin-org",
+        "type": "core",
+        "commands": 19
+      },
+      {
+        "name": "@salesforce/plugin-packaging",
+        "type": "core",
+        "commands": 30
+      },
+      {
+        "name": "@salesforce/plugin-schema",
+        "type": "core",
+        "commands": 2
+      },
+      {
+        "name": "@salesforce/plugin-settings",
+        "type": "core",
+        "commands": 7
+      },
+      {
+        "name": "@salesforce/plugin-signups",
+        "type": "jit",
+        "commands": 7
+      },
+      {
+        "name": "@salesforce/plugin-sobject",
+        "type": "core",
+        "commands": 4
+      },
+      {
+        "name": "@salesforce/plugin-templates",
+        "type": "core",
+        "commands": 17
+      },
+      {
+        "name": "@salesforce/plugin-trust",
+        "type": "core",
+        "commands": 4
+      },
+      {
+        "name": "@salesforce/plugin-ui-bundle-dev",
+        "type": "jit",
+        "commands": 1
+      },
+      {
+        "name": "@salesforce/plugin-user",
+        "type": "core",
+        "commands": 6
+      },
+      {
+        "name": "@salesforce/sfdx-plugin-lwc-test",
+        "type": "jit",
+        "commands": 3
+      }
+    ]
+  },
+  "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
+  "totals": {
+    "all": {
+      "commands": 279,
+      "wrapped": 56,
+      "partiallyWrapped": 43,
+      "missing": 156,
+      "excluded": 0,
+      "notApplicable": 24,
+      "inScope": 255,
+      "coveredPercent": "38.8"
+    },
+    "core": {
+      "commands": 214,
+      "wrapped": 53,
+      "partiallyWrapped": 39,
+      "missing": 107,
+      "excluded": 0,
+      "notApplicable": 15,
+      "inScope": 199,
+      "coveredPercent": "46.2"
+    },
+    "jit": {
+      "commands": 65,
+      "wrapped": 3,
+      "partiallyWrapped": 4,
+      "missing": 49,
+      "excluded": 0,
+      "notApplicable": 9,
+      "inScope": 56,
+      "coveredPercent": "12.5"
+    }
+  },
+  "psfdx": {
+    "exportedFunctions": 145,
+    "runningTheCli": 114,
+    "withoutADirectCliCommand": [
+      "Build-SalesforceQuery",
+      "Clear-SalesforceMetadataTypeCache",
+      "Connect-SalesforceApi",
+      "Convert-SalesforceDebugLog",
+      "Debug-SalesforceJest",
+      "Describe-SalesforceFields",
+      "Export-SalesforceDebugLogs",
+      "Export-SalesforceEventFile",
+      "Get-SalesforceApexClass",
+      "Get-SalesforceApiUsage",
+      "Get-SalesforceCodeCoverage",
+      "Get-SalesforceDataStorage",
+      "Get-SalesforceDateTime",
+      "Get-SalesforceLatestApiVersion",
+      "Get-SalesforceLoginFailures",
+      "Get-SalesforcePackage",
+      "Get-SalesforceRecordType",
+      "Get-SalesforceUsers",
+      "Install-SalesforceCli",
+      "Install-SalesforceJest",
+      "Invoke-SalesforceApi",
+      "New-SalesforceJestTest",
+      "Out-Notepad",
+      "Remove-SalesforceScratchOrgs",
+      "Retrieve-SalesforceField",
+      "Retrieve-SalesforceValidationRule",
+      "Test-SalesforceJest",
+      "Update-SalesforceCli",
+      "Wait-SalesforceApexTest",
+      "Watch-SalesforceApex",
+      "Watch-SalesforceJest"
+    ]
+  },
+  "capabilities": [
+    {
+      "topic": "agent",
+      "label": "Agentforce agents",
+      "totals": {
+        "commands": 41,
+        "wrapped": 4,
+        "partiallyWrapped": 4,
+        "missing": 33,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 41,
+        "coveredPercent": "19.5"
+      },
+      "commands": [
+        {
+          "id": "agent activate",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Activate an agent in an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Enable-SalesforceAgent"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "agent adl create",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "name",
+            "developer-name",
+            "source-type",
+            "description",
+            "index-mode",
+            "retriever-id",
+            "primary-index-field1",
+            "primary-index-field2",
+            "content-fields",
+            "data-category-ids",
+            "data-category-names",
+            "wait"
+          ]
+        },
+        {
+          "id": "agent adl delete",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id"
+          ]
+        },
+        {
+          "id": "agent adl file add",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Add files to an existing Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id",
+            "path"
+          ]
+        },
+        {
+          "id": "agent adl file delete",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete a file from an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id",
+            "file-id"
+          ]
+        },
+        {
+          "id": "agent adl file list",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List files in an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id",
+            "page-size",
+            "offset",
+            "status"
+          ]
+        },
+        {
+          "id": "agent adl get",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Get details of an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id"
+          ]
+        },
+        {
+          "id": "agent adl list",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List Agentforce Data Libraries in an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "source-type"
+          ]
+        },
+        {
+          "id": "agent adl status",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Get indexing status of an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id",
+            "include-artifacts"
+          ]
+        },
+        {
+          "id": "agent adl update",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Update an Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id",
+            "name",
+            "description",
+            "content-fields",
+            "restrict-to-public-articles",
+            "data-category-rule",
+            "retriever-id"
+          ]
+        },
+        {
+          "id": "agent adl upload",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Upload a file to an SFDRIVE Agentforce Data Library.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "library-id",
+            "file",
+            "wait"
+          ]
+        },
+        {
+          "id": "agent create",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create an agent in your org using a local agent spec file.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "name",
+            "api-name",
+            "spec",
+            "preview"
+          ]
+        },
+        {
+          "id": "agent deactivate",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Deactivate an agent in an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Disable-SalesforceAgent"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "agent generate agent-spec",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate an agent spec, which is a YAML file that captures what an agent can do.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "type",
+            "role",
+            "company-name",
+            "company-description",
+            "company-website",
+            "max-topics",
+            "agent-user",
+            "enrich-logs",
+            "tone",
+            "spec",
+            "output-file",
+            "full-interview",
+            "prompt-template",
+            "grounding-context",
+            "force-overwrite"
+          ]
+        },
+        {
+          "id": "agent generate authoring-bundle",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate an authoring bundle from an existing agent spec YAML file.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceAgentAuthoringBundle"
+          ],
+          "uncoveredFlags": [
+            "force-overwrite"
+          ]
+        },
+        {
+          "id": "agent generate template",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate an agent template from an existing agent in your DX project so you can then package the template in a second-generation managed package.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "source-org",
+            "agent-version",
+            "agent-file",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "agent generate test-spec",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate an agent test spec, which is a YAML file that lists the test cases for testing a specific agent.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "from-definition",
+            "force-overwrite",
+            "output-file",
+            "test-runner"
+          ]
+        },
+        {
+          "id": "agent mcp asset list",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "List the assets (tools, prompts, and resources) for an MCP server in the catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "mcp-server-id"
+          ]
+        },
+        {
+          "id": "agent mcp asset replace",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Replace the asset set of an MCP server in the API Catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "mcp-server-id",
+            "assets",
+            "assets-file"
+          ]
+        },
+        {
+          "id": "agent mcp create",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Create an MCP server in the API Catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "name",
+            "label",
+            "description",
+            "server-url",
+            "auth-type",
+            "identity-provider",
+            "client-id",
+            "client-secret",
+            "scope"
+          ]
+        },
+        {
+          "id": "agent mcp delete",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Delete an MCP server from the API Catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "mcp-server-id",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "agent mcp fetch",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Fetch the live assets (tools, prompts, resources) advertised by an MCP server.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "mcp-server-id"
+          ]
+        },
+        {
+          "id": "agent mcp get",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Get a single MCP server registered in the API Catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "mcp-server-id"
+          ]
+        },
+        {
+          "id": "agent mcp list",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "List the MCP servers registered in the API Catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "label",
+            "type",
+            "status"
+          ]
+        },
+        {
+          "id": "agent mcp update",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Update an MCP server registered in the API Catalog.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "mcp-server-id",
+            "label",
+            "description",
+            "server-url",
+            "auth-type",
+            "identity-provider",
+            "client-id",
+            "client-secret",
+            "scope"
+          ]
+        },
+        {
+          "id": "agent preview",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Interact with an agent to preview how it responds to your statements, questions, and commands (utterances).",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "api-name",
+            "authoring-bundle",
+            "output-dir",
+            "apex-debug",
+            "use-live-actions",
+            "context-variables",
+            "context-variables-json"
+          ]
+        },
+        {
+          "id": "agent preview end",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "End an existing programmatic agent preview session and get trace location.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "session-id",
+            "api-name",
+            "authoring-bundle",
+            "all",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "agent preview send",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Send a message to an existing agent preview session.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "session-id",
+            "utterance",
+            "api-name",
+            "authoring-bundle"
+          ]
+        },
+        {
+          "id": "agent preview sessions",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all known programmatic agent preview sessions.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "agent preview start",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Start a programmatic agent preview session.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "api-name",
+            "authoring-bundle",
+            "use-live-actions",
+            "simulate-actions",
+            "context-variables",
+            "context-variables-json"
+          ]
+        },
+        {
+          "id": "agent publish authoring-bundle",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Publish an authoring bundle to your org, which results in a new agent or a new version of an existing agent.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Publish-SalesforceAgentAuthoringBundle"
+          ],
+          "uncoveredFlags": [
+            "source-type",
+            "verbose",
+            "concise"
+          ]
+        },
+        {
+          "id": "agent test create",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create an agent test in your org using a local test spec YAML file.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "api-name",
+            "spec",
+            "target-org",
+            "preview",
+            "force-overwrite",
+            "test-runner"
+          ]
+        },
+        {
+          "id": "agent test list",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List the available agent tests in your org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceAgentTests"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "agent test results",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Get the results of a completed agent test run.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceAgentTestResult"
+          ],
+          "uncoveredFlags": [
+            "result-format",
+            "output-dir",
+            "test-runner",
+            "verbose"
+          ]
+        },
+        {
+          "id": "agent test resume",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume an agent test that you previously started in your org so you can view the test results.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "job-id",
+            "use-most-recent",
+            "wait",
+            "result-format",
+            "output-dir",
+            "test-runner",
+            "verbose"
+          ]
+        },
+        {
+          "id": "agent test run",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Start an agent test in your org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceAgentTest"
+          ],
+          "uncoveredFlags": [
+            "result-format",
+            "output-dir",
+            "test-runner",
+            "verbose"
+          ]
+        },
+        {
+          "id": "agent test run-eval",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "beta",
+          "summary": "Run rich evaluation tests against an Agentforce agent.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "spec",
+            "api-name",
+            "result-format",
+            "batch-size",
+            "no-normalize"
+          ]
+        },
+        {
+          "id": "agent trace delete",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete trace files from an agent preview session.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "agent",
+            "session-id",
+            "older-than",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "agent trace list",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List the available trace files that were recorded during all agent preview sessions.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "session-id",
+            "agent",
+            "since"
+          ]
+        },
+        {
+          "id": "agent trace read",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Read trace files from an agent preview session.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "session-id",
+            "format",
+            "dimension",
+            "turn"
+          ]
+        },
+        {
+          "id": "agent validate authoring-bundle",
+          "topic": "agent",
+          "plugin": "@salesforce/plugin-agent",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Validate an authoring bundle to ensure its Agent Script file compiles successfully and can be used to publish an agent.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Test-SalesforceAgentAuthoringBundle"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "alias",
+      "label": "Aliases",
+      "totals": {
+        "commands": 3,
+        "wrapped": 2,
+        "partiallyWrapped": 1,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 3,
+        "coveredPercent": "100.0"
+      },
+      "commands": [
+        {
+          "id": "alias list",
+          "topic": "alias",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all aliases currently set on your local computer.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceAlias"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "alias set",
+          "topic": "alias",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Set one or more aliases on your local computer.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Add-SalesforceAlias"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "alias unset",
+          "topic": "alias",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Unset one or more aliases that are currently set on your local computer.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceAlias"
+          ],
+          "uncoveredFlags": [
+            "all",
+            "no-prompt"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "apex",
+      "label": "Apex",
+      "totals": {
+        "commands": 10,
+        "wrapped": 7,
+        "partiallyWrapped": 2,
+        "missing": 1,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 10,
+        "coveredPercent": "90.0"
+      },
+      "commands": [
+        {
+          "id": "apex get compile-status",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Fetches the compilation status for Apex classes that are currently invalid or have compilation warnings.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "apex get log",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Fetch the specified log or given number of most recent logs from the org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDebugLogs"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "apex get test",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display test results for a specific asynchronous test run.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceApexTestResult"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "apex list log",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display a list of IDs and general information about debug logs.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Select-SalesforceDebugLogs"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "apex run",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Execute anonymous Apex code entered on the command line or from a local file.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Invoke-SalesforceApex"
+          ],
+          "uncoveredFlags": [
+            "debug-level",
+            "category-level"
+          ]
+        },
+        {
+          "id": "apex run test",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Invoke Apex tests in an org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceApexTest",
+            "Test-SalesforceApex"
+          ],
+          "uncoveredFlags": [
+            "poll-interval",
+            "synchronous"
+          ]
+        },
+        {
+          "id": "apex tail log",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Activate debug logging and display logs in the terminal.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Watch-SalesforceDebugLogs"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "apex trace create",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a trace flag for a user, Apex class, or Apex trigger.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Enable-SalesforceDebugLogging"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "apex trace delete",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete a trace flag in your org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Disable-SalesforceDebugLogging"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "apex trace list",
+          "topic": "apex",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List trace flags in your org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDebugLogging"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "api",
+      "label": "REST API requests",
+      "totals": {
+        "commands": 2,
+        "wrapped": 0,
+        "partiallyWrapped": 1,
+        "missing": 1,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 2,
+        "coveredPercent": "50.0"
+      },
+      "commands": [
+        {
+          "id": "api request graphql",
+          "topic": "api",
+          "plugin": "@salesforce/plugin-api",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Execute a GraphQL statement.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "stream-to-file",
+            "include",
+            "body"
+          ]
+        },
+        {
+          "id": "api request rest",
+          "topic": "api",
+          "plugin": "@salesforce/plugin-api",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Make an authenticated HTTP request using the Salesforce REST API.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceApiVersions",
+            "Get-SalesforceEventFile",
+            "Upsert-SalesforceRecord"
+          ],
+          "uncoveredFlags": [
+            "include",
+            "header",
+            "file",
+            "stream-to-file"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "autocomplete",
+      "label": "Shell autocomplete",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "autocomplete",
+          "topic": "autocomplete",
+          "plugin": "@oclif/plugin-autocomplete",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "refresh-cache"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "cmdt",
+      "label": "Custom metadata types",
+      "totals": {
+        "commands": 5,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 5,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 5,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "cmdt generate field",
+          "topic": "cmdt",
+          "plugin": "@salesforce/plugin-custom-metadata",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a field for a custom metadata type based on the provided field type.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "type",
+            "picklist-values",
+            "decimal-places",
+            "label",
+            "output-directory"
+          ]
+        },
+        {
+          "id": "cmdt generate fromorg",
+          "topic": "cmdt",
+          "plugin": "@salesforce/plugin-custom-metadata",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a custom metadata type and all its records from a Salesforce object.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "dev-name",
+            "label",
+            "plural-label",
+            "visibility",
+            "sobject",
+            "ignore-unsupported",
+            "type-output-directory",
+            "records-output-dir"
+          ]
+        },
+        {
+          "id": "cmdt generate object",
+          "topic": "cmdt",
+          "plugin": "@salesforce/plugin-custom-metadata",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a new custom metadata type in the current project.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "type-name",
+            "label",
+            "plural-label",
+            "visibility",
+            "output-directory"
+          ]
+        },
+        {
+          "id": "cmdt generate record",
+          "topic": "cmdt",
+          "plugin": "@salesforce/plugin-custom-metadata",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a new record for a given custom metadata type in the current project.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "type-name",
+            "record-name",
+            "label",
+            "protected",
+            "input-directory",
+            "output-directory"
+          ]
+        },
+        {
+          "id": "cmdt generate records",
+          "topic": "cmdt",
+          "plugin": "@salesforce/plugin-custom-metadata",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate new custom metadata type records from a CSV file.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "csv",
+            "type-name",
+            "input-directory",
+            "output-directory",
+            "name-column"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "code-analyzer",
+      "label": "Code Analyzer",
+      "totals": {
+        "commands": 4,
+        "wrapped": 0,
+        "partiallyWrapped": 2,
+        "missing": 2,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 4,
+        "coveredPercent": "50.0"
+      },
+      "commands": [
+        {
+          "id": "code-analyzer ast-dump",
+          "topic": "code-analyzer",
+          "plugin": "@salesforce/plugin-code-analyzer",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Dump the Abstract Syntax Tree (AST) for a given source file.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "file",
+            "language",
+            "format",
+            "output-file"
+          ]
+        },
+        {
+          "id": "code-analyzer config",
+          "topic": "code-analyzer",
+          "plugin": "@salesforce/plugin-code-analyzer",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Output the current state of configuration for Code Analyzer.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "workspace",
+            "target",
+            "rule-selector",
+            "config-file",
+            "output-file",
+            "include-unmodified-rules",
+            "no-suppressions"
+          ]
+        },
+        {
+          "id": "code-analyzer rules",
+          "topic": "code-analyzer",
+          "plugin": "@salesforce/plugin-code-analyzer",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "List the rules that are available to analyze your code.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceCodeAnalyzerRule"
+          ],
+          "uncoveredFlags": [
+            "view"
+          ]
+        },
+        {
+          "id": "code-analyzer run",
+          "topic": "code-analyzer",
+          "plugin": "@salesforce/plugin-code-analyzer",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Analyze your code with a selection of rules to ensure good coding practices.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Invoke-SalesforceCodeAnalyzer"
+          ],
+          "uncoveredFlags": [
+            "target-org",
+            "view",
+            "include-fixes",
+            "include-suggestions",
+            "no-suppressions"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "commands",
+      "label": "CLI command list",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "commands",
+          "topic": "commands",
+          "plugin": "@oclif/plugin-commands",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Lists the sf commands. psfdx reads it only to build this report.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "columns",
+            "deprecated",
+            "extended",
+            "hidden",
+            "no-truncate",
+            "sort",
+            "tree"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "community",
+      "label": "Experience Cloud sites",
+      "totals": {
+        "commands": 3,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 3,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 3,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "community create",
+          "topic": "community",
+          "plugin": "@salesforce/plugin-community",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create an Experience Cloud site using a template.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template-name",
+            "url-path-prefix",
+            "description",
+            "target-org"
+          ]
+        },
+        {
+          "id": "community list template",
+          "topic": "community",
+          "plugin": "@salesforce/plugin-community",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Retrieve the list of templates available in your org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "community publish",
+          "topic": "community",
+          "plugin": "@salesforce/plugin-community",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Publish an Experience Builder site to make it live.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "target-org"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "config",
+      "label": "CLI configuration",
+      "totals": {
+        "commands": 4,
+        "wrapped": 3,
+        "partiallyWrapped": 1,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 4,
+        "coveredPercent": "100.0"
+      },
+      "commands": [
+        {
+          "id": "config get",
+          "topic": "config",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Get the value of a configuration variable.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceTargetDevHub",
+            "Get-SalesforceTargetOrg"
+          ],
+          "uncoveredFlags": [
+            "verbose"
+          ]
+        },
+        {
+          "id": "config list",
+          "topic": "config",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List the configuration variables that you've previously set.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceConfig"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "config set",
+          "topic": "config",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Set one or more configuration variables, such as your default org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Set-SalesforceTargetDevHub",
+            "Set-SalesforceTargetOrg"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "config unset",
+          "topic": "config",
+          "plugin": "@salesforce/plugin-settings",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Unset local or global configuration variables.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceTargetDevHub",
+            "Remove-SalesforceTargetOrg"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "data",
+      "label": "Data and records",
+      "totals": {
+        "commands": 21,
+        "wrapped": 10,
+        "partiallyWrapped": 6,
+        "missing": 5,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 21,
+        "coveredPercent": "76.2"
+      },
+      "commands": [
+        {
+          "id": "data bulk results",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Get the results of a bulk ingest job that you previously ran.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceBulkResult"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data create file",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Upload a local file to an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "title",
+            "file",
+            "parent-id"
+          ]
+        },
+        {
+          "id": "data create record",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create and insert a record into a Salesforce or Tooling API object.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceRecord"
+          ],
+          "uncoveredFlags": [
+            "skip-assignment-rules"
+          ]
+        },
+        {
+          "id": "data delete bulk",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk delete records from an org using a CSV file. Uses Bulk API 2.0.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "file",
+            "sobject",
+            "wait",
+            "line-ending",
+            "hard-delete"
+          ]
+        },
+        {
+          "id": "data delete record",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Deletes a single record from a Salesforce or Tooling API object.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceRecord"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data delete resume",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume a bulk delete job that you previously started. Uses Bulk API 2.0.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "job-id",
+            "use-most-recent",
+            "wait"
+          ]
+        },
+        {
+          "id": "data export bulk",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk export records from an org into a file using a SOQL query. Uses Bulk API 2.0.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Export-SalesforceBulkData"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data export resume",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume a bulk export job that you previously started. Uses Bulk API 2.0.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceBulkJob"
+          ],
+          "uncoveredFlags": [
+            "use-most-recent"
+          ]
+        },
+        {
+          "id": "data export tree",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Export data from an org into one or more JSON files.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Export-SalesforceTreeData"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data get record",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve and display a single record of a Salesforce or Tooling API object.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceRecord"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data import bulk",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk import records into a Salesforce object from a CSV file. Uses Bulk API 2.0.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Import-SalesforceBulkData"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data import resume",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume a bulk import job that you previously started. Uses Bulk API 2.0.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceBulkJob"
+          ],
+          "uncoveredFlags": [
+            "use-most-recent"
+          ]
+        },
+        {
+          "id": "data import tree",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Import data from one or more JSON files into an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Import-SalesforceTreeData"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data query",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Execute a SOQL query.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Export-SalesforceEventFiles",
+            "Get-SalesforceFlowInterviews",
+            "Get-SalesforceLoginHistory",
+            "Get-SalesforceSandboxRefreshStatus",
+            "Select-SalesforceEventFiles",
+            "Select-SalesforceRecords"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data resume",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "View the status of a bulk data load job or batch.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "batch-id",
+            "job-id"
+          ]
+        },
+        {
+          "id": "data search",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Execute a SOSL text-based search query.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "query",
+            "file",
+            "result-format"
+          ]
+        },
+        {
+          "id": "data update bulk",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk update records to an org from a CSV file. Uses Bulk API 2.0.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Update-SalesforceBulkData"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data update record",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Updates a single record of a Salesforce or Tooling API object.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Set-SalesforceRecord"
+          ],
+          "uncoveredFlags": [
+            "where",
+            "skip-assignment-rules"
+          ]
+        },
+        {
+          "id": "data update resume",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume a bulk update job that you previously started. Uses Bulk API 2.0.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceBulkJob"
+          ],
+          "uncoveredFlags": [
+            "use-most-recent"
+          ]
+        },
+        {
+          "id": "data upsert bulk",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk upsert records to an org from a CSV file. Uses Bulk API 2.0.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Upsert-SalesforceBulkData"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "data upsert resume",
+          "topic": "data",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume a bulk upsert job that you previously started. Uses Bulk API 2.0.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceBulkJob"
+          ],
+          "uncoveredFlags": [
+            "use-most-recent"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "dev",
+      "label": "CLI plugin development",
+      "totals": {
+        "commands": 6,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 6,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "dev audit messages",
+          "topic": "dev",
+          "plugin": "@salesforce/plugin-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Audit messages in a plugin's messages directory to locate unused messages and missing messages that have references in source code.",
+          "status": "not applicable",
+          "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "project-dir",
+            "messages-dir",
+            "source-dir"
+          ]
+        },
+        {
+          "id": "dev convert messages",
+          "topic": "dev",
+          "plugin": "@salesforce/plugin-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Convert a .json messages file into Markdown.",
+          "status": "not applicable",
+          "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "project-dir",
+            "file-name"
+          ]
+        },
+        {
+          "id": "dev convert script",
+          "topic": "dev",
+          "plugin": "@salesforce/plugin-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Convert a script file that contains deprecated sfdx-style commands to use the new sf-style commands instead.",
+          "status": "not applicable",
+          "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "script"
+          ]
+        },
+        {
+          "id": "dev generate command",
+          "topic": "dev",
+          "plugin": "@salesforce/plugin-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a new sf command.",
+          "status": "not applicable",
+          "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "force",
+            "dry-run",
+            "nuts",
+            "unit"
+          ]
+        },
+        {
+          "id": "dev generate flag",
+          "topic": "dev",
+          "plugin": "@salesforce/plugin-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a flag for an existing command.",
+          "status": "not applicable",
+          "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "dry-run"
+          ]
+        },
+        {
+          "id": "dev generate plugin",
+          "topic": "dev",
+          "plugin": "@salesforce/plugin-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Generate a new sf plugin.",
+          "status": "not applicable",
+          "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "dry-run"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "devops",
+      "label": "DevOps Center",
+      "totals": {
+        "commands": 26,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 26,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 26,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "devops pipeline create",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create a DevOps Center pipeline.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "name",
+            "repo",
+            "repo-type",
+            "create-repo",
+            "repo-owner",
+            "bitbucket-workspace",
+            "bitbucket-project-key",
+            "stage",
+            "project-id"
+          ]
+        },
+        {
+          "id": "devops pipeline get",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Get details of a DevOps Center pipeline including its stages, repositories, and connected projects.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id"
+          ]
+        },
+        {
+          "id": "devops pipeline list",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "List DevOps Center pipelines with their stages, repositories, and connected projects.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "devops pipeline project add",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Attach a DevOps Center project to a pipeline.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "project-id"
+          ]
+        },
+        {
+          "id": "devops pipeline project delete",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Remove a DevOps Center project's connection to a pipeline.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "project-id"
+          ]
+        },
+        {
+          "id": "devops pipeline stage add",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Add a stage to a DevOps Center pipeline.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "name",
+            "next-stage-id"
+          ]
+        },
+        {
+          "id": "devops pipeline stage delete",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Delete a stage from a DevOps Center pipeline.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "stage-id"
+          ]
+        },
+        {
+          "id": "devops pipeline stage update",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Update a DevOps Center pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "stage-id",
+            "name"
+          ]
+        },
+        {
+          "id": "devops pipeline update",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Update a DevOps Center pipeline.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "activate",
+            "deactivate",
+            "name"
+          ]
+        },
+        {
+          "id": "devops project create",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create a DevOps Center project in a DevOps Center org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "name",
+            "description"
+          ]
+        },
+        {
+          "id": "devops project list",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "List all DevOps Center projects in a Salesforce org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "devops project update",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Update a DevOps Center project.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "project-id",
+            "name",
+            "description",
+            "is-active"
+          ]
+        },
+        {
+          "id": "devops promote",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Promote work items or a pipeline stage to a target pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "target-stage-id",
+            "work-item-id",
+            "stage-id",
+            "deploy-all",
+            "test-level",
+            "tests",
+            "skip-validation",
+            "force"
+          ]
+        },
+        {
+          "id": "devops promotion complete",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Deploy undeployed work items to a pipeline stage org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "target-stage-id",
+            "work-item-id",
+            "deploy-all",
+            "test-level",
+            "tests"
+          ]
+        },
+        {
+          "id": "devops promotion validate",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Validate work item promotion for a pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "target-stage-id",
+            "work-item-id"
+          ]
+        },
+        {
+          "id": "devops request status",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Get the status of a request.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "request-token"
+          ]
+        },
+        {
+          "id": "devops review create",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create a pull request for a work item branch.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "work-item-name",
+            "work-item-id"
+          ]
+        },
+        {
+          "id": "devops stage branch add",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Add a source code repository branch to a pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "stage-id",
+            "branch-name",
+            "create-vcs-branch",
+            "force"
+          ]
+        },
+        {
+          "id": "devops stage branch delete",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Delete the source code repository branch associated with a pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "stage-id"
+          ]
+        },
+        {
+          "id": "devops stage environment add",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Add a Salesforce environment to a pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "stage-id",
+            "environment-name",
+            "org-type",
+            "no-browser",
+            "force"
+          ]
+        },
+        {
+          "id": "devops stage environment delete",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Delete an environment from a DevOps Center pipeline stage.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "pipeline-id",
+            "environment-id"
+          ]
+        },
+        {
+          "id": "devops work-item combine",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Prepare work items to be combined for custom promotion.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "parent-work-item-id",
+            "child-work-item-id",
+            "target-stage-id"
+          ]
+        },
+        {
+          "id": "devops work-item create",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create a new work item in a DevOps Center project.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "project-id",
+            "subject",
+            "description"
+          ]
+        },
+        {
+          "id": "devops work-item list",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "List all work items for a DevOps Center project.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "project-id"
+          ]
+        },
+        {
+          "id": "devops work-item prepare",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Prepare a work item for one-off promotion between pipeline stages.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "work-item-id",
+            "target-stage-id"
+          ]
+        },
+        {
+          "id": "devops work-item update",
+          "topic": "devops",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Update a work item in DevOps Center.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "work-item-name",
+            "work-item-id",
+            "subject",
+            "description",
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "doctor",
+      "label": "CLI diagnostics",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 1,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 1,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "doctor",
+          "topic": "doctor",
+          "plugin": "@salesforce/plugin-info",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Gather CLI configuration data and run diagnostic tests to discover and report potential problems in your environment.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "command",
+            "plugin",
+            "output-dir",
+            "create-issue"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "flow",
+      "label": "Flow",
+      "totals": {
+        "commands": 2,
+        "wrapped": 2,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 2,
+        "coveredPercent": "100.0"
+      },
+      "commands": [
+        {
+          "id": "flow get test",
+          "topic": "flow",
+          "plugin": "@salesforce/plugin-flow",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Display test results for a specific asynchronous test run.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceFlowTestResult"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "flow run test",
+          "topic": "flow",
+          "plugin": "@salesforce/plugin-flow",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Invoke flow tests in an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Test-SalesforceFlow"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "force",
+      "label": "Legacy force commands",
+      "totals": {
+        "commands": 7,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 7,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "force data bulk delete",
+          "topic": "force",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk delete records from an org using a CSV file. Uses Bulk API 1.0.",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "file",
+            "sobject",
+            "wait"
+          ]
+        },
+        {
+          "id": "force data bulk status",
+          "topic": "force",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "View the status of a bulk data load job or batch. Uses Bulk API 1.0.",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "batch-id",
+            "job-id"
+          ]
+        },
+        {
+          "id": "force data bulk upsert",
+          "topic": "force",
+          "plugin": "@salesforce/plugin-data",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Bulk upsert records to an org from a CSV file. Uses Bulk API 1.0.",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "external-id",
+            "file",
+            "sobject",
+            "wait",
+            "serial"
+          ]
+        },
+        {
+          "id": "force lightning lwc test create",
+          "topic": "force",
+          "plugin": "@salesforce/sfdx-plugin-lwc-test",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "loglevel",
+            "filepath"
+          ]
+        },
+        {
+          "id": "force lightning lwc test run",
+          "topic": "force",
+          "plugin": "@salesforce/sfdx-plugin-lwc-test",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "loglevel",
+            "debug",
+            "watch"
+          ]
+        },
+        {
+          "id": "force lightning lwc test setup",
+          "topic": "force",
+          "plugin": "@salesforce/sfdx-plugin-lwc-test",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "loglevel"
+          ]
+        },
+        {
+          "id": "force package push-upgrade list",
+          "topic": "force",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Lists the status of push upgrade requests for a given package.",
+          "status": "not applicable",
+          "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "scheduled-last-days",
+            "status",
+            "show-push-migrations-only"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "help",
+      "label": "CLI help",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "help",
+          "topic": "help",
+          "plugin": "@oclif/plugin-help",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Prints sf help for a person at a terminal.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "nested-commands"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "info",
+      "label": "CLI information",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "info releasenotes display",
+          "topic": "info",
+          "plugin": "@salesforce/plugin-info",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display Salesforce CLI release notes on the command line.",
+          "status": "not applicable",
+          "reason": "Shows CLI release notes to a person.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "version"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "lightning",
+      "label": "Lightning development",
+      "totals": {
+        "commands": 3,
+        "wrapped": 1,
+        "partiallyWrapped": 2,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 3,
+        "coveredPercent": "100.0"
+      },
+      "commands": [
+        {
+          "id": "lightning dev app",
+          "topic": "lightning",
+          "plugin": "@salesforce/plugin-lightning-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Preview a Lightning Experience app locally and in real-time, without deploying it.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceLwcDevServer"
+          ],
+          "uncoveredFlags": [
+            "device-id"
+          ]
+        },
+        {
+          "id": "lightning dev component",
+          "topic": "lightning",
+          "plugin": "@salesforce/plugin-lightning-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Preview LWC components in isolation.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceLwcDevServer"
+          ],
+          "uncoveredFlags": [
+            "client-select"
+          ]
+        },
+        {
+          "id": "lightning dev site",
+          "topic": "lightning",
+          "plugin": "@salesforce/plugin-lightning-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Preview an Experience Builder site locally and in real-time, without deploying it.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceLwcDevServer"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "logic",
+      "label": "Logic tests",
+      "totals": {
+        "commands": 2,
+        "wrapped": 2,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 2,
+        "coveredPercent": "100.0"
+      },
+      "commands": [
+        {
+          "id": "logic get test",
+          "topic": "logic",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "beta",
+          "summary": "Get the results of a test run.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceLogicTestResult"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "logic run test",
+          "topic": "logic",
+          "plugin": "@salesforce/plugin-apex",
+          "pluginType": "core",
+          "state": "beta",
+          "summary": "Invoke tests for Apex and Flows in an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Test-SalesforceLogic"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "org",
+      "label": "Orgs, users and sandboxes",
+      "totals": {
+        "commands": 40,
+        "wrapped": 12,
+        "partiallyWrapped": 8,
+        "missing": 20,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 40,
+        "coveredPercent": "50.0"
+      },
+      "commands": [
+        {
+          "id": "org assign permset",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-user",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Assign a permission set to one or more org users.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Grant-SalesforcePermissionSet"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org assign permsetlicense",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-user",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Assign a permission set license to one or more org users.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Grant-SalesforcePermissionSetLicense"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org auth show-access-token",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Show the current access token for an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org auth show-sfdx-auth-url",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Show the SFDX Auth URL for an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org auth show-user-password",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Show the stored password for an org's user.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org create agent-user",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create the default Salesforce user that is used to run an agent.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "base-username",
+            "first-name",
+            "last-name"
+          ]
+        },
+        {
+          "id": "org create sandbox",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a sandbox org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Copy-SalesforceSandbox",
+            "New-SalesforceSandbox"
+          ],
+          "uncoveredFlags": [
+            "set-default",
+            "poll-interval",
+            "async",
+            "source-id"
+          ]
+        },
+        {
+          "id": "org create scratch",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a scratch org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceScratchOrg"
+          ],
+          "uncoveredFlags": [
+            "alias",
+            "no-ancestors",
+            "no-namespace",
+            "client-id",
+            "track-source"
+          ]
+        },
+        {
+          "id": "org create shape",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create a scratch org configuration (shape) based on the specified source org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "org create snapshot",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Create a snapshot of a scratch org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "source-org",
+            "name",
+            "description"
+          ]
+        },
+        {
+          "id": "org create user",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-user",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a user for a scratch org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceUser"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org delete sandbox",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete a sandbox.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceSandbox"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org delete scratch",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete a scratch org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceScratchOrg"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org delete shape",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Delete all org shapes for a target org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org delete snapshot",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Delete a scratch org snapshot.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "snapshot",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org disable tracking",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Prevent Salesforce CLI from tracking changes in your source files between your project and an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "org display",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display information about an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "verbose"
+          ]
+        },
+        {
+          "id": "org display user",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-user",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display information about a Salesforce user.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceOrgUser"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org enable tracking",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Allow Salesforce CLI to track changes in your source files between your project and an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org"
+          ]
+        },
+        {
+          "id": "org generate password",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-user",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a random password for scratch org users.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceUserPassword"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org get snapshot",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Get details about a scratch org snapshot.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "snapshot"
+          ]
+        },
+        {
+          "id": "org list",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all orgs you’ve created or authenticated to.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceConnections",
+            "Get-SalesforceSandboxes",
+            "Get-SalesforceScratchOrgs",
+            "Repair-SalesforceConnections"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org list auth",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-auth",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List authorization information about the orgs you created or logged into.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org list limits",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-limits",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display information about limits in your org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceLimits"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org list metadata",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List the metadata components and properties of a specified type.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "output-file",
+            "metadata-type",
+            "folder"
+          ]
+        },
+        {
+          "id": "org list metadata-types",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display details about the metadata types that are enabled for your org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Describe-SalesforceMetadataTypes"
+          ],
+          "uncoveredFlags": [
+            "output-file"
+          ]
+        },
+        {
+          "id": "org list shape",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "List all org shapes you’ve created.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org list snapshot",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-signups",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "List scratch org snapshots.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub"
+          ]
+        },
+        {
+          "id": "org list sobject record-counts",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-limits",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display record counts for the specified standard or custom objects.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "sobject",
+            "target-org"
+          ]
+        },
+        {
+          "id": "org list users",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-user",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all locally-authenticated users of an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceAuthenticatedUser"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org login access-token",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-auth",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Authorize an org using an existing Salesforce access token.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "instance-url",
+            "set-default-dev-hub",
+            "set-default",
+            "alias",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org login jwt",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-auth",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Log in to a Salesforce org using a JSON web token (JWT).",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Connect-SalesforceJwt"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "org login sfdx-url",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-auth",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Authorize an org using a Salesforce DX authorization URL stored in a file or through standard input (stdin).",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Connect-SalesforceAuthUrl"
+          ],
+          "uncoveredFlags": [
+            "sfdx-url-stdin"
+          ]
+        },
+        {
+          "id": "org login web",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-auth",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Log in to a Salesforce org using the web server flow.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Connect-Salesforce"
+          ],
+          "uncoveredFlags": [
+            "client-app",
+            "username",
+            "scopes"
+          ]
+        },
+        {
+          "id": "org logout",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-auth",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Log out of a Salesforce org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Disconnect-Salesforce"
+          ],
+          "uncoveredFlags": [
+            "client-app"
+          ]
+        },
+        {
+          "id": "org open",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Open your default scratch org, or another specified org, in a browser.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Open-Salesforce"
+          ],
+          "uncoveredFlags": [
+            "path",
+            "source-file"
+          ]
+        },
+        {
+          "id": "org open agent",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Open an agent in your org's Agentforce Builder UI in a browser.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "api-name",
+            "private",
+            "browser",
+            "url-only",
+            "authoring-bundle",
+            "version"
+          ]
+        },
+        {
+          "id": "org refresh sandbox",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Refresh a sandbox org using the sandbox name.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "no-auto-activate",
+            "wait",
+            "poll-interval",
+            "source-sandbox-name",
+            "source-id",
+            "async",
+            "name",
+            "definition-file",
+            "target-org",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "org resume sandbox",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Check the status of a sandbox creation, and log in to it if it's ready.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceSandbox"
+          ],
+          "uncoveredFlags": [
+            "job-id",
+            "use-most-recent"
+          ]
+        },
+        {
+          "id": "org resume scratch",
+          "topic": "org",
+          "plugin": "@salesforce/plugin-org",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume the creation of an incomplete scratch org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceScratchOrg"
+          ],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "package",
+      "label": "Packages (second generation)",
+      "totals": {
+        "commands": 25,
+        "wrapped": 8,
+        "partiallyWrapped": 3,
+        "missing": 14,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 25,
+        "coveredPercent": "44.0"
+      },
+      "commands": [
+        {
+          "id": "package convert",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Convert a managed-released first-generation managed package into a second-generation managed package.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "installation-key",
+            "definition-file",
+            "installation-key-bypass",
+            "wait",
+            "seed-metadata",
+            "verbose",
+            "patch-version",
+            "code-coverage"
+          ]
+        },
+        {
+          "id": "package create",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a package.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforcePackage"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package delete",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete a package.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforcePackage"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package install",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Install or upgrade a version of a package in the target org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Install-SalesforcePackageVersion"
+          ],
+          "uncoveredFlags": [
+            "installation-key",
+            "apex-compile",
+            "upgrade-type"
+          ]
+        },
+        {
+          "id": "package install report",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve the status of a package installation request.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforcePackageInstallStatus"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package installed list",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List the org’s installed packages.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforcePackagesInstalled"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package list",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all packages in the Dev Hub org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforcePackages"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package push-upgrade abort",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Abort a package push upgrade that has been scheduled. Only push upgrade requests with a status of Created or Pending can be aborted.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "push-request-id"
+          ]
+        },
+        {
+          "id": "package push-upgrade list",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Lists the status of push upgrade requests for a given package.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "scheduled-last-days",
+            "status",
+            "show-push-migrations-only"
+          ]
+        },
+        {
+          "id": "package push-upgrade report",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve the status of a package push upgrade.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "push-request-id"
+          ]
+        },
+        {
+          "id": "package push-upgrade schedule",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Schedule a package push upgrade.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "start-time",
+            "org-list",
+            "org-file",
+            "migrate-to-2gp"
+          ]
+        },
+        {
+          "id": "package uninstall",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Uninstall a second-generation package from the target org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "wait",
+            "package"
+          ]
+        },
+        {
+          "id": "package uninstall report",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve the status of a package uninstall request.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "request-id"
+          ]
+        },
+        {
+          "id": "package update",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Update package details.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "name",
+            "description",
+            "error-notification-username",
+            "enable-app-analytics",
+            "recommended-version-id",
+            "skip-ancestor-check"
+          ]
+        },
+        {
+          "id": "package version create",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a package version in the Dev Hub org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforcePackageVersion"
+          ],
+          "uncoveredFlags": [
+            "branch",
+            "path",
+            "post-install-script",
+            "post-install-url",
+            "releasenotes-url",
+            "skip-ancestor-check",
+            "async-validation",
+            "generate-pkg-zip",
+            "uninstall-script",
+            "version-number",
+            "language"
+          ]
+        },
+        {
+          "id": "package version create list",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List package version creation requests.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "created-last-days",
+            "status",
+            "show-conversions-only",
+            "verbose"
+          ]
+        },
+        {
+          "id": "package version create report",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve details about a package version creation request.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforcePackageVersionCreateStatus"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package version delete",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete a package version.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforcePackageVersion"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package version displayancestry",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display the ancestry tree for a 2GP managed package version.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "dot-code",
+            "verbose"
+          ]
+        },
+        {
+          "id": "package version displaydependencies",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display the dependency graph for an unlocked or 2GP managed package version.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "installation-key",
+            "edge-direction",
+            "verbose"
+          ]
+        },
+        {
+          "id": "package version list",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all package versions in the Dev Hub org.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforcePackageVersions"
+          ],
+          "uncoveredFlags": [
+            "created-last-days",
+            "modified-last-days",
+            "order-by"
+          ]
+        },
+        {
+          "id": "package version promote",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Promote a package version to released.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Promote-SalesforcePackageVersion"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "package version report",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve details about a package version in the Dev Hub org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "verbose"
+          ]
+        },
+        {
+          "id": "package version retrieve",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve package metadata for a specified package version. Package metadata can be retrieved for only second-generation managed package versions or unlocked packages.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "package version update",
+          "topic": "package",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Update a package version.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-dev-hub",
+            "package",
+            "version-name",
+            "version-description",
+            "branch",
+            "tag",
+            "installation-key"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "package1",
+      "label": "Packages (first generation)",
+      "totals": {
+        "commands": 4,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 4,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 4,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "package1 version create",
+          "topic": "package1",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a first-generation package version in the release org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "package-id",
+            "name",
+            "description",
+            "version",
+            "managed-released",
+            "release-notes-url",
+            "post-install-url",
+            "installation-key",
+            "wait"
+          ]
+        },
+        {
+          "id": "package1 version create get",
+          "topic": "package1",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve the status of a package version creation request.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "request-id"
+          ]
+        },
+        {
+          "id": "package1 version display",
+          "topic": "package1",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display details about a first-generation package version.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "package-version-id"
+          ]
+        },
+        {
+          "id": "package1 version list",
+          "topic": "package1",
+          "plugin": "@salesforce/plugin-packaging",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List package versions for the specified first-generation package or for the org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "package-id"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "plugins",
+      "label": "CLI plugins",
+      "totals": {
+        "commands": 15,
+        "wrapped": 1,
+        "partiallyWrapped": 2,
+        "missing": 10,
+        "excluded": 0,
+        "notApplicable": 2,
+        "inScope": 13,
+        "coveredPercent": "23.1"
+      },
+      "commands": [
+        {
+          "id": "plugins",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforcePlugins",
+            "Test-SalesforceAgentPlugin",
+            "Test-SalesforceLightningDevPluginInstalled (internal)"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "plugins add",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Installs a plugin into sf.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "force",
+            "help",
+            "silent",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins discover",
+          "topic": "plugins",
+          "plugin": "@salesforce/plugin-marketplace",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "See a list of 3rd-party sf plugins you can install.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "plugins inspect",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "help",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins install",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Installs a plugin into sf.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Install-SalesforceLwcDevServer",
+            "Install-SalesforcePlugin"
+          ],
+          "uncoveredFlags": [
+            "force",
+            "help",
+            "silent",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins link",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Links a plugin into the CLI for development.",
+          "status": "not applicable",
+          "reason": "Links a local plugin under development, which only plugin authors do.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "help",
+            "install",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins remove",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "help",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins reset",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Remove all user-installed and linked plugins.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "hard",
+            "reinstall"
+          ]
+        },
+        {
+          "id": "plugins trust allowlist add",
+          "topic": "plugins",
+          "plugin": "@salesforce/plugin-trust",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Add plugins to the plugin allowlist.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name"
+          ]
+        },
+        {
+          "id": "plugins trust allowlist list",
+          "topic": "plugins",
+          "plugin": "@salesforce/plugin-trust",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List the plugins on the plugin allowlist.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "plugins trust allowlist remove",
+          "topic": "plugins",
+          "plugin": "@salesforce/plugin-trust",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Remove plugins from the plugin allowlist.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name"
+          ]
+        },
+        {
+          "id": "plugins trust verify",
+          "topic": "plugins",
+          "plugin": "@salesforce/plugin-trust",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Validate a digital signature.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "npm",
+            "registry"
+          ]
+        },
+        {
+          "id": "plugins uninstall",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "help",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins unlink",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Unlinks a local plugin under development, which only plugin authors do.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "help",
+            "verbose"
+          ]
+        },
+        {
+          "id": "plugins update",
+          "topic": "plugins",
+          "plugin": "@oclif/plugin-plugins",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Update-SalesforcePlugins"
+          ],
+          "uncoveredFlags": [
+            "help",
+            "verbose"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "project",
+      "label": "Project, deploy and retrieve",
+      "totals": {
+        "commands": 22,
+        "wrapped": 2,
+        "partiallyWrapped": 8,
+        "missing": 12,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 22,
+        "coveredPercent": "45.5"
+      },
+      "commands": [
+        {
+          "id": "project convert mdapi",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Convert metadata retrieved via Metadata API into the source format used in Salesforce DX projects.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "root-dir",
+            "output-dir",
+            "manifest",
+            "metadata-dir",
+            "metadata"
+          ]
+        },
+        {
+          "id": "project convert source",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Convert source-formatted files into metadata that you can deploy using Metadata API.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "root-dir",
+            "output-dir",
+            "package-name",
+            "manifest",
+            "source-dir",
+            "metadata"
+          ]
+        },
+        {
+          "id": "project convert source-behavior",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "beta",
+          "summary": "Enable a behavior of your project source files, and then update your Salesforce DX project to implement the behavior.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "behavior",
+            "dry-run",
+            "preserve-temp-dir",
+            "target-org"
+          ]
+        },
+        {
+          "id": "project delete source",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete source from your project and from a non-source-tracked org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "check-only",
+            "wait",
+            "tests",
+            "test-level",
+            "no-prompt",
+            "metadata",
+            "source-dir",
+            "track-source",
+            "force-overwrite",
+            "verbose"
+          ]
+        },
+        {
+          "id": "project delete tracking",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Delete all local source tracking information.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "project deploy cancel",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Cancel a deploy operation.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Stop-SalesforceDeploy"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "project deploy pipeline quick",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "beta",
+          "summary": "Quickly deploy a validated deployment to an org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "async",
+            "concise",
+            "verbose",
+            "wait",
+            "devops-center-username",
+            "job-id",
+            "use-most-recent"
+          ]
+        },
+        {
+          "id": "project deploy pipeline report",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "beta",
+          "summary": "Check the status of a pipeline deploy operation.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "devops-center-username",
+            "job-id",
+            "use-most-recent"
+          ]
+        },
+        {
+          "id": "project deploy pipeline resume",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "beta",
+          "summary": "Resume watching a pipeline deploy operation.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "devops-center-username",
+            "job-id",
+            "use-most-recent",
+            "concise",
+            "verbose",
+            "wait"
+          ]
+        },
+        {
+          "id": "project deploy pipeline start",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "beta",
+          "summary": "Deploy changes from a branch to the pipeline stage’s org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "branch-name",
+            "bundle-version-name",
+            "deploy-all",
+            "devops-center-project-name",
+            "devops-center-username",
+            "tests",
+            "test-level",
+            "async",
+            "wait",
+            "verbose",
+            "concise"
+          ]
+        },
+        {
+          "id": "project deploy pipeline validate",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-devops-center",
+          "pluginType": "jit",
+          "state": "beta",
+          "summary": "Perform a validate-only deployment from a branch to the pipeline stage’s org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "branch-name",
+            "bundle-version-name",
+            "deploy-all",
+            "devops-center-project-name",
+            "devops-center-username",
+            "tests",
+            "test-level",
+            "async",
+            "wait",
+            "verbose",
+            "concise"
+          ]
+        },
+        {
+          "id": "project deploy preview",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Preview a deployment to see what will deploy to the org, the potential conflicts, and the ignored files.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDeployPreview"
+          ],
+          "uncoveredFlags": [
+            "concise"
+          ]
+        },
+        {
+          "id": "project deploy quick",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Quickly deploy a validated deployment to an org.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceQuickDeploy"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "project deploy report",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Check or poll for the status of a deploy operation.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDeployStatus"
+          ],
+          "uncoveredFlags": [
+            "coverage-formatters",
+            "junit",
+            "results-dir"
+          ]
+        },
+        {
+          "id": "project deploy resume",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Resume watching a deploy operation and update source tracking when the deploy completes.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Resume-SalesforceDeploy"
+          ],
+          "uncoveredFlags": [
+            "coverage-formatters",
+            "junit",
+            "results-dir"
+          ]
+        },
+        {
+          "id": "project deploy start",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Deploy metadata to an org from your local project.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Deploy-SalesforceComponent",
+            "Deploy-SalesforceMetadata",
+            "Watch-SalesforceApexAction (internal)"
+          ],
+          "uncoveredFlags": [
+            "async",
+            "purge-on-delete",
+            "pre-destructive-changes",
+            "post-destructive-changes",
+            "coverage-formatters",
+            "junit",
+            "results-dir"
+          ]
+        },
+        {
+          "id": "project deploy validate",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Validate a metadata deployment without actually executing it.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Test-SalesforceDeploy"
+          ],
+          "uncoveredFlags": [
+            "metadata",
+            "coverage-formatters",
+            "junit",
+            "results-dir",
+            "purge-on-delete",
+            "pre-destructive-changes",
+            "post-destructive-changes"
+          ]
+        },
+        {
+          "id": "project generate manifest",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Create a project manifest that lists the metadata components you want to deploy or retrieve.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Retrieve-SalesforceOrg"
+          ],
+          "uncoveredFlags": [
+            "metadata",
+            "source-dir",
+            "name",
+            "type",
+            "include-packages",
+            "excluded-metadata"
+          ]
+        },
+        {
+          "id": "project list ignored",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Check your local project package directories for forceignored files.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "source-dir"
+          ]
+        },
+        {
+          "id": "project reset tracking",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Reset local and remote source tracking.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "revision",
+            "no-prompt"
+          ]
+        },
+        {
+          "id": "project retrieve preview",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Preview a retrieval to see what will be retrieved from the org, the potential conflicts, and the ignored files.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceRetrievePreview"
+          ],
+          "uncoveredFlags": [
+            "concise"
+          ]
+        },
+        {
+          "id": "project retrieve start",
+          "topic": "project",
+          "plugin": "@salesforce/plugin-deploy-retrieve",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Retrieve metadata from an org to your local project.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Retrieve-SalesforceComponent",
+            "Retrieve-SalesforceMetadata",
+            "Retrieve-SalesforceOrg",
+            "Retrieve-SalesforcePackage"
+          ],
+          "uncoveredFlags": [
+            "root-type-with-dependencies",
+            "single-package",
+            "source-dir",
+            "zip-file-name"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "schema",
+      "label": "Schema",
+      "totals": {
+        "commands": 4,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 4,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 4,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "schema generate field",
+          "topic": "schema",
+          "plugin": "@salesforce/plugin-sobject",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate metadata source files for a new custom field on a specified object.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "label",
+            "object"
+          ]
+        },
+        {
+          "id": "schema generate platformevent",
+          "topic": "schema",
+          "plugin": "@salesforce/plugin-sobject",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate metadata source files for a new platform event.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "label"
+          ]
+        },
+        {
+          "id": "schema generate sobject",
+          "topic": "schema",
+          "plugin": "@salesforce/plugin-sobject",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate metadata source files for a new custom object.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "label",
+            "use-default-features"
+          ]
+        },
+        {
+          "id": "schema generate tab",
+          "topic": "schema",
+          "plugin": "@salesforce/plugin-sobject",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate the metadata source files for a new custom tab on a custom object.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "object",
+            "directory",
+            "icon"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "search",
+      "label": "CLI search",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "search",
+          "topic": "search",
+          "plugin": "@oclif/plugin-search",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Search for a command.",
+          "status": "not applicable",
+          "reason": "Interactive search of the CLI command list.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        }
+      ]
+    },
+    {
+      "topic": "sobject",
+      "label": "Objects",
+      "totals": {
+        "commands": 2,
+        "wrapped": 1,
+        "partiallyWrapped": 1,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 2,
+        "coveredPercent": "100.0"
+      },
+      "commands": [
+        {
+          "id": "sobject describe",
+          "topic": "sobject",
+          "plugin": "@salesforce/plugin-schema",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display the metadata for a standard or custom object or a Tooling API object.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Describe-SalesforceObject"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "sobject list",
+          "topic": "sobject",
+          "plugin": "@salesforce/plugin-schema",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "List all Salesforce objects of a specified category.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Describe-SalesforceObjects"
+          ],
+          "uncoveredFlags": [
+            "sobject"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "template",
+      "label": "Templates and generators",
+      "totals": {
+        "commands": 17,
+        "wrapped": 1,
+        "partiallyWrapped": 2,
+        "missing": 14,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 17,
+        "coveredPercent": "17.6"
+      },
+      "commands": [
+        {
+          "id": "template generate analytics template",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a simple Analytics template.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "output-dir",
+            "name"
+          ]
+        },
+        {
+          "id": "template generate apex class",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate an Apex class.",
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceApexClass"
+          ],
+          "uncoveredFlags": []
+        },
+        {
+          "id": "template generate apex trigger",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate an Apex trigger.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceApexTrigger"
+          ],
+          "uncoveredFlags": [
+            "template"
+          ]
+        },
+        {
+          "id": "template generate digital-experience site",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "preview",
+          "summary": "Generate an Experience Cloud site.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "target-org",
+            "name",
+            "template-name",
+            "url-path-prefix",
+            "admin-email",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate flexipage",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "beta",
+          "summary": "Generate a FlexiPage, also known as a Lightning page.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir",
+            "label",
+            "description",
+            "sobject",
+            "primary-field",
+            "secondary-fields",
+            "detail-fields"
+          ]
+        },
+        {
+          "id": "template generate lightning app",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Lightning App.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate lightning component",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a bundle for an Aura component or a Lightning web component.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir",
+            "type"
+          ]
+        },
+        {
+          "id": "template generate lightning event",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Lightning Event.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate lightning interface",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Lightning Interface.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate lightning test",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Lightning test.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate lightning-out",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate the required metadata to scaffold a Lightning Out 2.0 app.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "app-name",
+            "eca-name",
+            "runtime",
+            "host-domains",
+            "components",
+            "eca-contact-email",
+            "eca-callback-url",
+            "definition-file",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate project",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Salesforce DX project.",
+          "status": "partially wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceProject"
+          ],
+          "uncoveredFlags": [
+            "lwc-language"
+          ]
+        },
+        {
+          "id": "template generate static-resource",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a static resource.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "type",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate ui-bundle",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a UI bundle, which contains the code and metadata to build a UI experience that uses non-native Salesforce frameworks, such as React or Angular.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "label",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate ui-embedding",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Lightning Web Component (LWC) bundle that wraps the <lightning-ui-embedding> base component.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "src",
+            "sandbox",
+            "title",
+            "output-dir"
+          ]
+        },
+        {
+          "id": "template generate visualforce component",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Visualforce Component.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "template",
+            "output-dir",
+            "label"
+          ]
+        },
+        {
+          "id": "template generate visualforce page",
+          "topic": "template",
+          "plugin": "@salesforce/plugin-templates",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Generate a Visualforce Page.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "output-dir",
+            "label"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "ui-bundle",
+      "label": "UI bundles",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 1,
+        "excluded": 0,
+        "notApplicable": 0,
+        "inScope": 1,
+        "coveredPercent": "0.0"
+      },
+      "commands": [
+        {
+          "id": "ui-bundle dev",
+          "topic": "ui-bundle",
+          "plugin": "@salesforce/plugin-ui-bundle-dev",
+          "pluginType": "jit",
+          "state": "ga",
+          "summary": "Preview a UI bundle locally and in real-time, without deploying it to your org.",
+          "status": "missing",
+          "reason": null,
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "name",
+            "url",
+            "port",
+            "target-org",
+            "open"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "update",
+      "label": "CLI update",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "update",
+          "topic": "update",
+          "plugin": "@oclif/plugin-update",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Updates the sf program itself; psfdx installs and updates it with Install-SalesforceCli and Update-SalesforceCli (npm).",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "available",
+            "force",
+            "interactive",
+            "verbose",
+            "version"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "version",
+      "label": "CLI version",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "version",
+          "topic": "version",
+          "plugin": "@oclif/plugin-version",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Prints the CLI version; psfdx reads it only for this report and the compatibility lane.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "verbose"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "whatsnew",
+      "label": "CLI release notes",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "whatsnew",
+          "topic": "whatsnew",
+          "plugin": "@salesforce/plugin-info",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "Display Salesforce CLI release notes on the command line.",
+          "status": "not applicable",
+          "reason": "Shows CLI release notes to a person.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": [
+            "version"
+          ]
+        }
+      ]
+    },
+    {
+      "topic": "which",
+      "label": "CLI command lookup",
+      "totals": {
+        "commands": 1,
+        "wrapped": 0,
+        "partiallyWrapped": 0,
+        "missing": 0,
+        "excluded": 0,
+        "notApplicable": 1,
+        "inScope": 0,
+        "coveredPercent": null
+      },
+      "commands": [
+        {
+          "id": "which",
+          "topic": "which",
+          "plugin": "@oclif/plugin-which",
+          "pluginType": "core",
+          "state": "ga",
+          "summary": "",
+          "status": "not applicable",
+          "reason": "Tells a person which plugin provides a command.",
+          "issue": null,
+          "psfdx": [],
+          "uncoveredFlags": []
+        }
+      ]
+    }
+  ],
+  "aliasUse": [
+    {
+      "function": "New-SalesforceApexClass",
+      "alias": "apex generate class",
+      "command": "template generate apex class",
+      "deprecated": true,
+      "kind": "alias"
+    },
+    {
+      "function": "New-SalesforceApexTrigger",
+      "alias": "apex generate trigger",
+      "command": "template generate apex trigger",
+      "deprecated": true,
+      "kind": "alias"
+    },
+    {
+      "function": "Get-SalesforceDebugLogs",
+      "alias": "apex log get",
+      "command": "apex get log",
+      "deprecated": false,
+      "kind": "word order"
+    },
+    {
+      "function": "Select-SalesforceDebugLogs",
+      "alias": "apex log list",
+      "command": "apex list log",
+      "deprecated": false,
+      "kind": "word order"
+    },
+    {
+      "function": "Watch-SalesforceDebugLogs",
+      "alias": "apex log tail",
+      "command": "apex tail log",
+      "deprecated": false,
+      "kind": "word order"
+    },
+    {
+      "function": "Get-SalesforceLimits",
+      "alias": "limits api display",
+      "command": "org list limits",
+      "deprecated": true,
+      "kind": "alias"
+    },
+    {
+      "function": "New-SalesforceProject",
+      "alias": "project generate",
+      "command": "template generate project",
+      "deprecated": true,
+      "kind": "alias"
+    }
+  ],
+  "crossCutting": {
+    "flags": [
+      {
+        "flag": "json",
+        "psfdxFunctionsPassingIt": 88,
+        "commandsPsfdxRunsThatHaveIt": 93
+      },
+      {
+        "flag": "flags-dir",
+        "psfdxFunctionsPassingIt": 0,
+        "commandsPsfdxRunsThatHaveIt": 96
+      },
+      {
+        "flag": "api-version",
+        "psfdxFunctionsPassingIt": 1,
+        "commandsPsfdxRunsThatHaveIt": 69
+      }
+    ]
+  },
+  "unresolved": [],
+  "warnings": []
+}
