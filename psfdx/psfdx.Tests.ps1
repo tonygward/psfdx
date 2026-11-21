@@ -1312,3 +1312,75 @@ Describe 'Single-record get and delete' {
         }
     }
 }
+
+Describe 'Record pipelines' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            $script:Accounts = '{"status":0,"result":{"records":[{"attributes":{"type":"Account"},"Id":"001xx000003DGb1AAG","Name":"A"},{"attributes":{"type":"Account"},"Id":"001xx000003DGb2AAG","Name":"B"}],"totalSize":2}}'
+            Mock Invoke-Salesforce {
+                $joined = $Arguments -join '|'
+                if ($joined -like 'data|query*') { return $script:Accounts }
+                if ($joined -like 'data|get|record*') { return '{"status":0,"result":{"Id":"001xx000003DGb1AAG","Name":"A"}}' }
+                return '{"status":0,"result":{"id":"001xx000003DGb1AAG","success":true}}'
+            }
+        }
+
+        It 'pipes queried records into Remove-SalesforceRecord, one delete per record, using each Id' {
+            Select-SalesforceRecords -Query 'SELECT Id FROM Account' -TargetOrg me | Remove-SalesforceRecord -Type Account -TargetOrg me -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|delete|record|--sobject|Account|--record-id|001xx000003DGb1AAG|--target-org|me|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|delete|record|--sobject|Account|--record-id|001xx000003DGb2AAG|--target-org|me|--json' }
+        }
+        It 'makes no delete call for any piped record under -WhatIf' {
+            Select-SalesforceRecords -Query 'SELECT Id FROM Account' | Remove-SalesforceRecord -Type Account -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'data|delete*' }
+        }
+        It 'pipes queried records into Get-SalesforceRecord and Set-SalesforceRecord' {
+            @(Select-SalesforceRecords -Query 'SELECT Id FROM Account' | Get-SalesforceRecord -Type Account).Count | Should -Be 2
+            Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'data|get|record|--sobject|Account|--record-id|*' }
+            Select-SalesforceRecords -Query 'SELECT Id FROM Account' | Set-SalesforceRecord -Type Account -FieldUpdates 'Name=X' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|update|record|--sobject|Account|--record-id|001xx000003DGb2AAG|--values|Name=X|--json' }
+        }
+        It 'accepts the Id by its RecordId alias' {
+            [pscustomobject]@{ RecordId = '001xx000003DGb3AAG' } | Remove-SalesforceRecord -Type Account -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'data|delete|record|--sobject|Account|--record-id|001xx000003DGb3AAG*' }
+        }
+        It 'returns an empty collection for an empty query and the pipeline then does nothing' {
+            $script:Accounts = '{"status":0,"result":{"records":[],"totalSize":0}}'
+            $rows = @(Select-SalesforceRecords -Query 'SELECT Id FROM Account WHERE Name = ''none''')
+            $rows.Count | Should -Be 0
+            Select-SalesforceRecords -Query 'SELECT Id FROM Account' | Remove-SalesforceRecord -Type Account -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'data|delete*' }
+        }
+        It 'returns one record as an object and several as an array (wrap in @() for a stable shape)' {
+            $script:Accounts = '{"status":0,"result":{"records":[{"attributes":{"type":"Account"},"Id":"001xx000003DGb1AAG"}],"totalSize":1}}'
+            $one = Select-SalesforceRecords -Query 'SELECT Id FROM Account'
+            $one.Id | Should -Be '001xx000003DGb1AAG'
+            $one -is [array] | Should -BeFalse
+            @($one).Count | Should -Be 1
+        }
+        It 'reports a piped record with an invalid Id as an error for that record, makes no call for it, and -ErrorAction Stop terminates' {
+            try { [pscustomobject]@{ Id = 'short' } | Remove-SalesforceRecord -Type Account -Confirm:$false -ErrorAction SilentlyContinue | Out-Null } catch { }
+            { [pscustomobject]@{ Id = 'short' } | Remove-SalesforceRecord -Type Account -Confirm:$false -ErrorAction Stop } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'data|delete*' }
+        }
+        It 'throws the CLI message for a failed delete mid-pipeline and stops' {
+            Mock Invoke-Salesforce { '{"status":1,"name":"NOT_FOUND","message":"entity is deleted or does not exist"}' } -ParameterFilter { ($Arguments -join '|') -like 'data|delete*' }
+            { Select-SalesforceRecords -Query 'SELECT Id FROM Account' | Remove-SalesforceRecord -Type Account -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+        }
+        It 'does not use -Where from the pipeline, and keeps -Where working' {
+            Remove-SalesforceRecord -Type Account -Where @{ Name = 'A' } -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|delete|record|--sobject|Account|--where|Name='A'|--json" }
+        }
+        It 'makes New-SalesforceRecord and Set-SalesforceRecord respect -WhatIf' {
+            New-SalesforceRecord -Type Account -FieldUpdates 'Name=X' -WhatIf | Out-Null
+            Set-SalesforceRecord -Id 001xx000003DGb1AAG -Type Account -FieldUpdates 'Name=X' -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'keeps New and Set from prompting by default (ConfirmImpact Medium)' {
+            (Get-Command New-SalesforceRecord).ScriptBlock.Attributes.ConfirmImpact | Should -Contain 'Medium'
+            (Get-Command Set-SalesforceRecord).ScriptBlock.Attributes.ConfirmImpact | Should -Contain 'Medium'
+            New-SalesforceRecord -Type Account -FieldUpdates 'Name=X' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+        }
+    }
+}

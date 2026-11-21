@@ -438,6 +438,7 @@ function Select-SalesforceRecords {
         throw $result.message
     }
     # Exclude Salesforce's built-in 'attributes' metadata from each row
+    if ($null -eq $result.result -or $null -eq $result.result.records) { return }
     return ($result.result.records | Select-Object -Property * -ExcludeProperty attributes)
 }
 
@@ -463,7 +464,15 @@ function Get-SalesforceUsers {
 }
 
 function New-SalesforceRecord {
-    [CmdletBinding()]
+    <#
+    .SYNOPSIS
+    Creates one record (sf data create record).
+    .DESCRIPTION
+    -FieldUpdates is the CLI's values string, for example "Name='Acme' Industry='Energy'". Supports -WhatIf and -Confirm; it does not prompt by default.
+    .EXAMPLE
+    New-SalesforceRecord -Type Account -FieldUpdates "Name='Acme'" -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
@@ -478,30 +487,45 @@ function New-SalesforceRecord {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess("new $Type record", 'Create record')) { return }
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
 function Set-SalesforceRecord {
-    [CmdletBinding()]
+    <#
+    .SYNOPSIS
+    Updates one record by ID (sf data update record).
+    .DESCRIPTION
+    -Id can come from the pipeline (Id or RecordId property). -FieldUpdates is the CLI's values string, for example "Name='Acme' Active__c=true".
+    Supports -WhatIf and -Confirm; it does not prompt by default.
+    .EXAMPLE
+    Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name = 'Old'" | Set-SalesforceRecord -Type Account -FieldUpdates "Name='New'" -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
-        [Parameter(Mandatory = $true)][string] $Id,
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][string] $Id,
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    Write-Verbose $FieldUpdates
-    $arguments = @('data', 'update', 'record')
-    $arguments += @('--sobject', $Type)
-    $arguments += @('--record-id', $Id)
-    $arguments += @('--values', $FieldUpdates)
-    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
-    $arguments += '--json'
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    return Show-SalesforceResult -Result $result
+    process {
+        Write-Verbose $FieldUpdates
+        $arguments = @('data', 'update', 'record')
+        $arguments += @('--sobject', $Type)
+        $arguments += @('--record-id', $Id)
+        $arguments += @('--values', $FieldUpdates)
+        if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+        if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+        $arguments += '--json'
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+        if (-not $PSCmdlet.ShouldProcess("$Type $Id", 'Update record')) { return }
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
 }
 
 function Get-SalesforceRecord {
@@ -518,26 +542,31 @@ function Get-SalesforceRecord {
     Get-SalesforceRecord -Type Account -Id 001xx000003DGb2AAG -TargetOrg myorg
     .EXAMPLE
     Get-SalesforceRecord -Type Account -Where @{ Name = 'Acme Corporation' } -TargetOrg myorg
+    .EXAMPLE
+    Select-SalesforceRecords -Query 'SELECT Id FROM Account LIMIT 5' | Get-SalesforceRecord -Type Account
+    The Id of each piped record is used (a RecordId property works too). The object type is not in a query result, so -Type is always given.
     #>
     [CmdletBinding(DefaultParameterSetName = 'ById')]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
-        [Parameter(Mandatory = $true, ParameterSetName = 'ById')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
         [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
-    $arguments = @('data', 'get', 'record', '--sobject', $objectName)
-    if ($PSCmdlet.ParameterSetName -eq 'ById') { $arguments += @('--record-id', $Id) } else { $arguments += @('--where', (ConvertTo-SalesforceRecordSelector -Where $Where)) }
-    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
-    $arguments += '--json'
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    $record = Show-SalesforceResult -Result $result
-    if ($null -eq $record) { throw "The Salesforce CLI returned no record for $objectName." }
-    return ($record | Select-Object -Property * -ExcludeProperty attributes)
+    process {
+        $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
+        $arguments = @('data', 'get', 'record', '--sobject', $objectName)
+        if ($PSCmdlet.ParameterSetName -eq 'ById') { $arguments += @('--record-id', $Id) } else { $arguments += @('--where', (ConvertTo-SalesforceRecordSelector -Where $Where)) }
+        if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+        if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+        $arguments += '--json'
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        $record = Show-SalesforceResult -Result $result
+        if ($null -eq $record) { throw "The Salesforce CLI returned no record for $objectName." }
+        return ($record | Select-Object -Property * -ExcludeProperty attributes)
+    }
 }
 
 function Remove-SalesforceRecord {
@@ -553,35 +582,40 @@ function Remove-SalesforceRecord {
     Remove-SalesforceRecord -Type Account -Id 001xx000003DGb2AAG -TargetOrg myorg -WhatIf
     .EXAMPLE
     Remove-SalesforceRecord -Type Account -Where @{ Name = 'Test Account 42' } -TargetOrg myorg -Confirm:$false
+    .EXAMPLE
+    Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name LIKE 'Test%'" | Remove-SalesforceRecord -Type Account -WhatIf
+    Each piped record is confirmed and deleted on its own, so -WhatIf previews every delete. An empty query deletes nothing.
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'ById')]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
-        [Parameter(Mandatory = $true, ParameterSetName = 'ById')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
         [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
-    $arguments = @('data', 'delete', 'record', '--sobject', $objectName)
-    if ($PSCmdlet.ParameterSetName -eq 'ById') {
-        $arguments += @('--record-id', $Id)
-        $what = "$objectName $Id"
-    } else {
-        $selector = ConvertTo-SalesforceRecordSelector -Where $Where
-        $arguments += @('--where', $selector)
-        $what = "$objectName where $selector"
+    process {
+        $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
+        $arguments = @('data', 'delete', 'record', '--sobject', $objectName)
+        if ($PSCmdlet.ParameterSetName -eq 'ById') {
+            $arguments += @('--record-id', $Id)
+            $what = "$objectName $Id"
+        } else {
+            $selector = ConvertTo-SalesforceRecordSelector -Where $Where
+            $arguments += @('--where', $selector)
+            $what = "$objectName where $selector"
+        }
+        if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+        if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+        $arguments += '--json'
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+        $orgLabel = 'the default org'
+        if (-not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+        if (-not $PSCmdlet.ShouldProcess("$what in $orgLabel", 'Delete record')) { return }
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
     }
-    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
-    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
-    $arguments += '--json'
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
-    $orgLabel = 'the default org'
-    if (-not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
-    if (-not $PSCmdlet.ShouldProcess("$what in $orgLabel", 'Delete record')) { return }
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    return Show-SalesforceResult -Result $result
 }
 
 function ConvertTo-SalesforceRecordSelector {

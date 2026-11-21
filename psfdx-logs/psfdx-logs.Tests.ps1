@@ -501,3 +501,31 @@ Describe 'psfdx-logs SOQL regression' {
         }
     }
 }
+
+Describe 'Trace flag pipelines' {
+    InModuleScope 'psfdx-logs' {
+        BeforeEach {
+            $script:Flags = '{"status":0,"result":[{"Id":"7tf000000000001AAA","LogType":"USER_DEBUG"},{"Id":"7tf000000000002AAA","LogType":"USER_DEBUG"}]}'
+            Mock Invoke-Salesforce {
+                if (($Arguments -join '|') -like 'apex|trace|list*') { return $script:Flags }
+                return '{"status":0,"result":{"success":true}}'
+            }
+        }
+
+        It 'pipes listed trace flags into Disable-SalesforceDebugLogging, one delete per flag' {
+            Get-SalesforceDebugLogging -TargetOrg me | Disable-SalesforceDebugLogging -TargetOrg me -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|delete|--trace-flag-id|7tf000000000001AAA|--target-org|me|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|delete|--trace-flag-id|7tf000000000002AAA|--target-org|me|--json' }
+        }
+        It 'deletes nothing under -WhatIf' {
+            Get-SalesforceDebugLogging | Disable-SalesforceDebugLogging -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'apex|trace|delete*' }
+        }
+        It 'returns an empty collection when there are no trace flags, and piping it does nothing' {
+            $script:Flags = '{"status":0,"result":[]}'
+            @(Get-SalesforceDebugLogging).Count | Should -Be 0
+            Get-SalesforceDebugLogging | Disable-SalesforceDebugLogging -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'apex|trace|delete*' }
+        }
+    }
+}

@@ -301,41 +301,62 @@ function New-SalesforcePackageVersion {
 }
 
 function Promote-SalesforcePackageVersion {
+    <#
+    .SYNOPSIS
+    Promotes a package version to released (sf package version promote).
+    .DESCRIPTION
+    -PackageVersionId can come from the pipeline, through the SubscriberPackageVersionId (04t) of a version from Get-SalesforcePackageVersions.
+    .EXAMPLE
+    Get-SalesforcePackageVersions -PackageName MyPkg | Select-Object -First 1 | Promote-SalesforcePackageVersion -NoPrompt
+    #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][string] $PackageVersionId,
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('SubscriberPackageVersionId')][string] $PackageVersionId,
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
+    process {
 
-    $arguments = @('package', 'version', 'promote')
-    $arguments += @('--package', $PackageVersionId)
-    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
-    if ($NoPrompt) { $arguments += '--no-prompt' }
-    $arguments += '--json'
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-    return Show-SalesforceResult -Result $result
+        $arguments = @('package', 'version', 'promote')
+        $arguments += @('--package', $PackageVersionId)
+        if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+        if ($NoPrompt) { $arguments += '--no-prompt' }
+        $arguments += '--json'
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
 }
 
 function Remove-SalesforcePackageVersion {
+    <#
+    .SYNOPSIS
+    Deletes a package version (sf package version delete).
+    .DESCRIPTION
+    -PackageVersionId can come from the pipeline: a version from Get-SalesforcePackageVersions is used through its SubscriberPackageVersionId (04t).
+    Each version is confirmed on its own, so -WhatIf previews every delete.
+    .EXAMPLE
+    Get-SalesforcePackageVersions -PackageName MyPkg | Where-Object { -not $_.IsReleased } | Remove-SalesforcePackageVersion -WhatIf
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
-        [Parameter(Mandatory = $true)][string] $PackageVersionId,
+        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('SubscriberPackageVersionId')][string] $PackageVersionId,
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
+    process {
 
-    $arguments = @('package', 'version', 'delete')
-    $arguments += @('--package', $PackageVersionId)
-    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
-    if ($NoPrompt) { $arguments += '--no-prompt' }
-    $arguments += '--json'
-    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
-    if ($PSCmdlet.ShouldProcess($PackageVersionId, 'Delete package version')) {
-        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-        return Show-SalesforceResult -Result $result
+        $arguments = @('package', 'version', 'delete')
+        $arguments += @('--package', $PackageVersionId)
+        if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+        if ($NoPrompt) { $arguments += '--no-prompt' }
+        $arguments += '--json'
+        $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+        $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+        if ($PSCmdlet.ShouldProcess($PackageVersionId, 'Delete package version')) {
+            $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+            return Show-SalesforceResult -Result $result
+        }
     }
 }
 

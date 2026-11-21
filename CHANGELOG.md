@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx, psfdx-packages: records, package versions and trace flags now work in pipelines. `Remove-`, `Get-` and `Set-SalesforceRecord` take the ID from piped records, `Remove-` and `Promote-SalesforcePackageVersion` take the version from `Get-SalesforcePackageVersions`, and `Disable-SalesforceDebugLogging` already took trace flags. Each piped object is confirmed and honours `-WhatIf` on its own. `New-SalesforceRecord` and `Set-SalesforceRecord` now support `-WhatIf` and `-Confirm` (they still do not prompt by default). Existing calls work unchanged. The README has a new Pipelines section on empty results, single versus many results and errors.
+
 ## 0.8.37 - 2026-11-21
 
 - psfdx-agentforce: new `New-SalesforceAgentAuthoringBundle`, `Test-SalesforceAgentAuthoringBundle` and `Publish-SalesforceAgentAuthoringBundle` script the Agent Script flow of generate, validate and publish. Validation returns its diagnostics as objects (and `-ThrowOnInvalid` fails a CI step); generating files and publishing ask for confirmation and support `-WhatIf`. These upstream commands are newer and may be beta, so they need a recent `@salesforce/plugin-agent`.
