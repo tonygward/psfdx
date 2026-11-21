@@ -12,7 +12,10 @@
         'Start-SalesforceAgentTest',
         'Get-SalesforceAgentTestResult',
         'Enable-SalesforceAgent',
-        'Disable-SalesforceAgent'
+        'Disable-SalesforceAgent',
+        'New-SalesforceAgentAuthoringBundle',
+        'Test-SalesforceAgentAuthoringBundle',
+        'Publish-SalesforceAgentAuthoringBundle'
     )
     CmdletsToExport = @()
     AliasesToExport = @()

@@ -336,6 +336,9 @@ Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with 
 | `Get-SalesforceAgentTestResult` | Get the results of an agent test run by `-JobId`. |
 | `Enable-SalesforceAgent` | Activate an agent by `-ApiName` (optional `-Version`); asks for confirmation, supports `-WhatIf`. |
 | `Disable-SalesforceAgent` | Deactivate an agent by `-ApiName`; asks for confirmation, supports `-WhatIf`. |
+| `New-SalesforceAgentAuthoringBundle` | Generate an Agent Script authoring bundle (`sf agent generate authoring-bundle`) from `-Spec` (or a blank one with `-NoSpec`; `-Name` is required); asks for confirmation, supports `-WhatIf`. |
+| `Test-SalesforceAgentAuthoringBundle` | Validate a bundle by `-ApiName`. Returns `Valid` and `Diagnostics` (message, line, column); `-ThrowOnInvalid` fails a CI step. |
+| `Publish-SalesforceAgentAuthoringBundle` | Publish a bundle to the org as an agent; asks for confirmation, supports `-WhatIf`. The authoring commands are newer upstream (possibly beta) and need a recent `@salesforce/plugin-agent`. |
 
 ### psfdx-logs
 
