@@ -137,6 +137,12 @@ Included in the `psfdx` package.
 | :--- | :--- |
 | `Select-SalesforceRecords` | Run SOQL and return records. |
 | `Get-SalesforceUsers` | List users with optional filters (username, active only, limit). |
+| `Get-SalesforceAuthenticatedUser` | List the users of an org that the CLI has authorised here (`sf org list users`); tokens removed. |
+| `Get-SalesforceOrgUser` | Show the user the CLI is signed in as (`sf org display user`); never returns the token, and the password only as a SecureString with `-IncludePassword`. |
+| `New-SalesforceUser` | Create a user from a definition file and/or `-Field` values (`sf org create user`). Supports `-WhatIf`. |
+| `New-SalesforceUserPassword` | Generate a password for a user, returned as a SecureString (`sf org generate password`). Asks for confirmation. |
+| `Grant-SalesforcePermissionSet` | Assign permission sets to users (`sf org assign permset`); re-running is safe (`AlreadyAssigned`). Asks for confirmation. |
+| `Grant-SalesforcePermissionSetLicense` | Assign permission set licences to users (`sf org assign permsetlicense`). Asks for confirmation. |
 | `New-SalesforceRecord` | Create a record. |
 | `Set-SalesforceRecord` | Update a record. |
 | `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |

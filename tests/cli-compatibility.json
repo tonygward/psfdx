@@ -16,6 +16,8 @@
     "flow get test", "flow run test",
     "logic get test", "logic run test",
     "lightning dev",
+    "org assign permset", "org assign permsetlicense", "org create user",
+    "org display user", "org generate password", "org list users",
     "limits api display",
     "org create sandbox", "org create scratch",
     "org delete sandbox", "org delete scratch",

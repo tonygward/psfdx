@@ -1058,6 +1058,307 @@ function Get-SalesforceLatestApiVersion {
 
 #endregion
 
+#region Users and Permissions
+
+# Wraps the Salesforce CLI `org` user commands: list users, display user, create user, generate password, assign permset and permsetlicense.
+# Secrets never reach the output stream, -Verbose or error messages: access tokens are dropped from every result, and a password is returned
+# only as a SecureString and only when it was asked for.
+#
+# Limits of the CLI: `org list users` and `org display user` read the CLI's local authorisation files, so they list the users the CLI knows
+# here, not every user in the org (use Get-SalesforceUsers for a query). The caller needs the org permissions for the action (Manage Users
+# to create a user or assign permission sets, and for a password the "Manage Users" and "Reset User Passwords and Unlock Users" permissions);
+# Salesforce rejects the call otherwise and the cmdlet throws the CLI's message.
+
+function Get-SalesforceAuthenticatedUser {
+    <#
+    .SYNOPSIS
+    Lists the users of an org that the Salesforce CLI has authorised on this computer (sf org list users).
+    .DESCRIPTION
+    Tokens are removed from the result. To search all users in the org, use Get-SalesforceUsers.
+    .EXAMPLE
+    Get-SalesforceAuthenticatedUser -TargetOrg myscratch
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'list', 'users')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $users = Show-SalesforceResult -Result $result
+    return @($users | ForEach-Object { Remove-SalesforceSecretProperty -InputObject $_ })
+}
+
+function Get-SalesforceOrgUser {
+    <#
+    .SYNOPSIS
+    Shows the user the CLI is signed in as in an org (sf org display user).
+    .DESCRIPTION
+    The access token is never returned. The password, which exists only for a user created with the CLI, is returned as a SecureString in
+    Password when -IncludePassword is given, and is otherwise left out.
+    .EXAMPLE
+    Get-SalesforceOrgUser -TargetOrg myscratch
+    .EXAMPLE
+    $u = Get-SalesforceOrgUser -TargetOrg myscratch -IncludePassword; [System.Net.NetworkCredential]::new('', $u.Password).Password
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $IncludePassword,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'display', 'user')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $user = Show-SalesforceResult -Result $result
+    $clean = Remove-SalesforceSecretProperty -InputObject $user
+    if ($IncludePassword -and $null -ne $user.PSObject.Properties['password'] -and -not [string]::IsNullOrEmpty([string] $user.password)) {
+        $clean | Add-Member -NotePropertyName Password -NotePropertyValue (ConvertTo-SecureString -String ([string] $user.password) -AsPlainText -Force) -Force
+    }
+    return $clean
+}
+
+function New-SalesforceUser {
+    <#
+    .SYNOPSIS
+    Creates a user in an org and authorises it in the CLI (sf org create user).
+    .DESCRIPTION
+    Give the user's fields in a definition file (-DefinitionFile), in -Field, or both; fields in -Field override the file. Asks for confirmation
+    only when $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. Field values go to the CLI as separate arguments, so quotes
+    and spaces need no escaping, but a value with a double quote or a line break is rejected by the Windows CLI shim. Needs the Manage Users
+    permission. The CLI creates users for scratch orgs and sandboxes it can sign in to.
+    .EXAMPLE
+    New-SalesforceUser -Field @{ username = 'qa1@example.org'; profileName = 'Standard User'; lastName = 'QA' } -SetAlias qa1 -TargetOrg myscratch
+    .EXAMPLE
+    New-SalesforceUser -DefinitionFile .\config\user-def.json -SetUniqueUsername -TargetOrg myscratch -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $DefinitionFile,
+        [Parameter(Mandatory = $false)][System.Collections.IDictionary] $Field,
+        [Parameter(Mandatory = $false)][string] $SetAlias,
+        [Parameter(Mandatory = $false)][switch] $SetUniqueUsername,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if ($DefinitionFile -and -not (Test-Path -LiteralPath $DefinitionFile -PathType Leaf)) { throw "Definition file '$DefinitionFile' does not exist." }
+    $pairs = @()
+    if ($null -ne $Field) {
+        foreach ($key in $Field.Keys) {
+            $name = [string] $key
+            if ($name -cnotmatch '^[A-Za-z][A-Za-z0-9_]*$') { throw "'$name' is not a valid user field name." }
+            $value = [string] $Field[$key]
+            if ($value -match '[\x00-\x1F\x7F]') { throw "The value of field '$name' must not contain control characters." }
+            $pairs += "$name=$value"
+        }
+    }
+
+    $arguments = @('org', 'create', 'user')
+    if ($DefinitionFile) { $arguments += @('--definition-file', $DefinitionFile) }
+    if ($SetAlias) { $arguments += @('--set-alias', $SetAlias) }
+    if ($SetUniqueUsername) { $arguments += '--set-unique-username' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += $pairs
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $orgLabel = 'the default org'
+    if (-not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+    if (-not $PSCmdlet.ShouldProcess("a user in $orgLabel", 'Create user')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $created = Show-SalesforceResult -Result $result
+    return Remove-SalesforceSecretProperty -InputObject $created
+}
+
+function New-SalesforceUserPassword {
+    <#
+    .SYNOPSIS
+    Generates a new password for a user and returns it as a SecureString (sf org generate password).
+    .DESCRIPTION
+    This changes the user's password, so it asks for confirmation by default; -WhatIf makes no CLI call. The password is returned only as a
+    SecureString in Password, and is never written to -Verbose, -Debug or error output by this cmdlet. Length is 20 to 1000 and complexity 3 to
+    5 (higher is stronger), as the CLI allows. One user at a time (-OnBehalfOf takes a single username or alias). Needs the Manage Users and
+    Reset User Passwords and Unlock Users permissions.
+    .EXAMPLE
+    $p = New-SalesforceUserPassword -OnBehalfOf qa1 -TargetOrg myscratch -Confirm:$false; $p.Username
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $OnBehalfOf,
+        [Parameter(Mandatory = $false)][ValidateRange(20, 1000)][int] $Length = 20,
+        [Parameter(Mandatory = $false)][ValidateRange(3, 5)][int] $Complexity = 5,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if ($OnBehalfOf -and $OnBehalfOf.Contains(',')) { throw '-OnBehalfOf takes one username or alias, not a list.' }
+    $arguments = @('org', 'generate', 'password')
+    if ($OnBehalfOf) { $arguments += @('--on-behalf-of', $OnBehalfOf) }
+    $arguments += @('--length', $Length, '--complexity', $Complexity)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $who = $OnBehalfOf
+    if (-not $who) { $who = 'the target org user' }
+    if (-not $PSCmdlet.ShouldProcess($who, 'Generate a new password')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $data = Show-SalesforceResult -Result $result
+    $out = @()
+    foreach ($item in @($data)) {
+        if ($null -eq $item -or $null -eq $item.PSObject.Properties['password'] -or [string]::IsNullOrEmpty([string] $item.password)) { continue }
+        $username = $null
+        if ($null -ne $item.PSObject.Properties['username']) { $username = [string] $item.username }
+        $out += [pscustomobject]@{ Username = $username; Password = (ConvertTo-SecureString -String ([string] $item.password) -AsPlainText -Force) }
+    }
+    if ($out.Count -eq 0) { throw 'The Salesforce CLI did not return a password.' }
+    return $out
+}
+
+function Grant-SalesforcePermissionSet {
+    <#
+    .SYNOPSIS
+    Assigns permission sets to users (sf org assign permset).
+    .DESCRIPTION
+    Without -OnBehalfOf the permission sets go to the target org's own user. Returns one object per user and permission set with Status
+    Assigned or AlreadyAssigned; assigning a set the user already has is not an error, so a script can run again safely. Failures (a missing
+    set, no permission) are returned with Status Failed and the cmdlet then throws PsfdxPermissionAssignmentFailed, whose TargetObject lists
+    them. Asks for confirmation by default; -WhatIf makes no CLI call. Needs the Assign Permission Sets permission.
+    .EXAMPLE
+    Grant-SalesforcePermissionSet -Name Sales_Admin, Reports_User -OnBehalfOf qa1, qa2 -TargetOrg myscratch -Confirm:$false
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Name,
+        [Parameter(Mandatory = $false)][string[]] $OnBehalfOf,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $names = Test-SalesforceAssignmentNames -Name $Name -OnBehalfOf $OnBehalfOf
+    $users = @($OnBehalfOf | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+    $arguments = @('org', 'assign', 'permset')
+    foreach ($item in $names) { $arguments += @('--name', $item) }
+    foreach ($item in $users) { $arguments += @('--on-behalf-of', $item) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $who = 'the target org user'
+    if ($users.Count -gt 0) { $who = $users -join ', ' }
+    if (-not $PSCmdlet.ShouldProcess($who, "Assign permission set $($names -join ', ')")) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    ConvertFrom-SalesforceAssignmentOutput -Output $output -Command 'org assign permset' -Names $names
+}
+
+function Grant-SalesforcePermissionSetLicense {
+    <#
+    .SYNOPSIS
+    Assigns permission set licenses to users (sf org assign permsetlicense).
+    .DESCRIPTION
+    Results, idempotency, failures and confirmation work as for Grant-SalesforcePermissionSet. The org must have the licence available.
+    .EXAMPLE
+    Grant-SalesforcePermissionSetLicense -Name SalesforceCPQ_Admin -OnBehalfOf qa1 -TargetOrg myscratch -Confirm:$false
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Name,
+        [Parameter(Mandatory = $false)][string[]] $OnBehalfOf,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $names = Test-SalesforceAssignmentNames -Name $Name -OnBehalfOf $OnBehalfOf
+    $users = @($OnBehalfOf | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+    $arguments = @('org', 'assign', 'permsetlicense')
+    foreach ($item in $names) { $arguments += @('--name', $item) }
+    foreach ($item in $users) { $arguments += @('--on-behalf-of', $item) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $who = 'the target org user'
+    if ($users.Count -gt 0) { $who = $users -join ', ' }
+    if (-not $PSCmdlet.ShouldProcess($who, "Assign permission set license $($names -join ', ')")) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    ConvertFrom-SalesforceAssignmentOutput -Output $output -Command 'org assign permsetlicense' -Names $names
+}
+
+function Test-SalesforceAssignmentNames {
+    # Cleans and checks the names and users given to an assignment, and returns the names.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]] $Name,
+        [Parameter(Mandatory = $false)][string[]] $OnBehalfOf
+    )
+    $names = @($Name | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object { $_.Trim() })
+    if ($names.Count -eq 0) { throw '-Name needs at least one name.' }
+    foreach ($item in $names) { if ($item -match '[,\x00-\x1F\x7F]') { throw "'$item' is not a valid name: give one name per value, without commas." } }
+    foreach ($item in @($OnBehalfOf | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })) {
+        if ($item -match '[,\x00-\x1F\x7F]') { throw "'$item' is not a valid username or alias: give one per value, without commas." }
+    }
+    return $names
+}
+
+function ConvertFrom-SalesforceAssignmentOutput {
+    # Turns the result of `sf org assign permset|permsetlicense` into one object per assignment. The CLI exits with status 68 when some
+    # assignments failed but still returns the successes and failures, so the result is read whatever the status is.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][AllowEmptyCollection()] $Output,
+        [Parameter(Mandatory = $true)][string] $Command,
+        [Parameter(Mandatory = $true)][string[]] $Names
+    )
+    $text = [string]::Join([Environment]::NewLine, @($Output | ForEach-Object { [string] $_ })).Trim()
+    $parsed = $null
+    if (-not [string]::IsNullOrWhiteSpace($text)) { try { $parsed = $text | ConvertFrom-Json -ErrorAction Stop } catch { $parsed = $null } }
+    $result = $null
+    if ($null -ne $parsed -and $null -ne $parsed.PSObject.Properties['result']) { $result = $parsed.result }
+    $hasLists = ($null -ne $result) -and (($null -ne $result.PSObject.Properties['successes']) -or ($null -ne $result.PSObject.Properties['failures']))
+    if (-not $hasLists) {
+        # Not an assignment result: an ordinary CLI failure (no authorisation, unknown flag...) or unusable output.
+        Show-SalesforceResult -Result $text | Out-Null
+        throw "sf $Command returned no assignment result."
+    }
+
+    $items = @()
+    if ($null -ne $result.PSObject.Properties['successes']) {
+        foreach ($s in @($result.successes)) {
+            $items += [pscustomobject]@{ Username = [string] $s.name; PermissionSet = [string] $s.value; Status = 'Assigned'; Message = $null }
+        }
+    }
+    $failed = @()
+    if ($null -ne $result.PSObject.Properties['failures']) {
+        foreach ($f in @($result.failures)) {
+            $message = [string] $f.message
+            $status = 'Failed'
+            if ($message -match '(?i)duplicate') { $status = 'AlreadyAssigned' }
+            $permSet = $null
+            if ($Names.Count -eq 1) { $permSet = $Names[0] }
+            $item = [pscustomobject]@{ Username = [string] $f.name; PermissionSet = $permSet; Status = $status; Message = $message }
+            $items += $item
+            if ($status -eq 'Failed') { $failed += $item }
+        }
+    }
+    $items
+    if ($failed.Count -gt 0) {
+        $summary = ($failed | ForEach-Object { "$($_.Username): $($_.Message)" }) -join '; '
+        if ($summary.Length -gt 400) { $summary = $summary.Substring(0, 400) + '...' }
+        $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException "sf $Command failed for $($failed.Count) assignment(s): $summary"), 'PsfdxPermissionAssignmentFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $failed)
+        throw $record
+    }
+}
+
+function Remove-SalesforceSecretProperty {
+    # Returns a copy of a CLI result without credential properties, so a token or password cannot leak through the pipeline.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][AllowNull()] $InputObject
+    )
+    if ($null -eq $InputObject) { return $null }
+    return ($InputObject | Select-Object -Property * -ExcludeProperty accessToken, refreshToken, password, sfdxAuthUrl, clientSecret, privateKey)
+}
+
+#endregion
+
 #region Plugins
 
 function Test-SalesforceIsMacOS {
