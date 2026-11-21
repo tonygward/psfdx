@@ -21,8 +21,8 @@ Until the psfdx worker exists, run these **on the Matrix server** in an interact
 | AUTO-07 | [Bounded Claude agent loop with CI repair, Blocked and resume](done/AUTO-07-bounded-agent-loop.md) | AUTO-06, AUTO-04 | yes |
 | AUTO-08 | [Delivery: verify, final comment, close, Done](done/AUTO-08-delivery.md) | AUTO-07, AUTO-03 | yes |
 | AUTO-09 | [Isolated Linux container](done/AUTO-09-linux-container.md) | AUTO-07 | yes (Dockerfile, scripts) |
-| AUTO-10 | [Supervised end-to-end pilot](AUTO-10-supervised-pilot.md) | AUTO-08, AUTO-09 | not applicable: owner-run |
-| AUTO-11 | [Publish releases to the PowerShell Gallery](AUTO-11-powershell-gallery.md) (**Backlog**: waits for the owner's Gallery account and API key) | AUTO-03, AUTO-08 | yes (workflows, secrets) |
+| AUTO-10 | [Supervised end-to-end pilot](done/AUTO-10-supervised-pilot.md) (closed as not planned; the pilot was never run) | AUTO-08, AUTO-09 | not applicable: owner-run |
+| AUTO-11 | [Publish releases to the PowerShell Gallery](done/AUTO-11-powershell-gallery.md) | AUTO-03, AUTO-08 | yes (workflows, secrets) |
 
 AUTO-05 to AUTO-08 can each be built and unit-tested without a live board, Claude or container: every outside call goes through an injected adapter.
 
