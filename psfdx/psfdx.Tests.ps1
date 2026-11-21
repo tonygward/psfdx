@@ -910,3 +910,193 @@ Describe 'Bulk API 2.0 commands' {
         }
     }
 }
+
+Describe 'User administration commands' {
+    InModuleScope 'psfdx' {
+        BeforeAll {
+            $script:Secret = 'S3cr3t-Pa55word-Value'
+            $script:Token = '00Dxx!AQEAQtokenvalue'
+        }
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":[]}'
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+
+        Context 'Get-SalesforceAuthenticatedUser and Get-SalesforceOrgUser' {
+            It 'lists users with the exact command and drops tokens' {
+                $script:Reply = '{"status":0,"result":[{"username":"a@x.org","alias":"a","orgId":"00Dxx","accessToken":"' + $script:Token + '"},{"username":"b@x.org","orgId":"00Dxx"}]}'
+                $users = @(Get-SalesforceAuthenticatedUser -TargetOrg me)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|users|--target-org|me|--json' }
+                $users.Count | Should -Be 2
+                $users[0].username | Should -Be 'a@x.org'
+                ($users | ConvertTo-Json -Depth 3) | Should -Not -BeLike "*$script:Token*"
+                $users[0].PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+            }
+            It 'returns an empty list when the CLI knows no users' {
+                @(Get-SalesforceAuthenticatedUser).Count | Should -Be 0
+            }
+            It 'shows the user without the token or password by default' {
+                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","orgId":"00Dxx","profileName":"Admin","accessToken":"' + $script:Token + '","password":"' + $script:Secret + '"}}'
+                $u = Get-SalesforceOrgUser -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|display|user|--target-org|me|--json' }
+                $u.username | Should -Be 'a@x.org'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'Password'
+            }
+            It 'handles the redacted password and token the current CLI returns, and says whether a password exists' {
+                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","accessToken":"[redacted: use the sf org auth show-user-password command]","password":"[redacted]"}}'
+                $u = Get-SalesforceOrgUser
+                $u.HasPassword | Should -BeTrue
+                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                ($u | ConvertTo-Json) | Should -Not -BeLike '*redacted*'
+                $script:Reply = '{"status":0,"result":{"username":"b@x.org","id":"005yy"}}'
+                (Get-SalesforceOrgUser).HasPassword | Should -BeFalse
+            }
+            It 'no longer offers -IncludePassword, which the CLI cannot honour' {
+                (Get-Command Get-SalesforceOrgUser).Parameters.Keys | Should -Not -Contain 'IncludePassword'
+            }
+            It 'throws the CLI message on failure, without echoing a token' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
+                { Get-SalesforceOrgUser -TargetOrg nobody } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+
+        Context 'New-SalesforceUser' {
+            It 'builds the exact command from a definition file, fields and options' {
+                $file = Join-Path $TestDrive 'user def.json'
+                Set-Content -LiteralPath $file -Value '{}'
+                $script:Reply = '{"status":0,"result":{"orgId":"00Dxx","fields":{"username":"qa1@x.org"}}}'
+                $res = New-SalesforceUser -DefinitionFile $file -Field ([ordered]@{ username = 'qa1@x.org'; lastName = "O'Brien Smith" }) -SetAlias qa1 -SetUniqueUsername -TargetOrg me
+                $expected = "org|create|user|--definition-file|$file|--set-alias|qa1|--set-unique-username|--target-org|me|username=qa1@x.org|lastName=O'Brien Smith|--json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+                $res.orgId | Should -Be '00Dxx'
+            }
+            It 'makes no CLI call under -WhatIf' {
+                New-SalesforceUser -Field @{ username = 'a@x.org' } -WhatIf | Should -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'a missing definition file'; Run = { New-SalesforceUser -DefinitionFile (Join-Path $TestDrive 'nope.json') }; Message = '*does not exist*' }
+                @{ Case = 'a bad field name';          Run = { New-SalesforceUser -Field @{ 'user name' = 'x' } };                         Message = '*not a valid user field name*' }
+                @{ Case = 'a field name with =';       Run = { New-SalesforceUser -Field @{ 'a=b' = 'x' } };                                Message = '*not a valid user field name*' }
+                @{ Case = 'a control character';       Run = { New-SalesforceUser -Field @{ lastName = "a`nb" } };                          Message = '*control characters*' }
+            ) {
+                { & $Run } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'reports a CLI error such as missing permissions' {
+                $script:Reply = '{"status":1,"name":"INSUFFICIENT_ACCESS","message":"insufficient access rights on object id"}'
+                { New-SalesforceUser -Field @{ lastName = 'x' } -Confirm:$false } | Should -Throw -ExpectedMessage '*insufficient access*'
+            }
+        }
+
+        Context 'New-SalesforceUserPassword' {
+            It 'builds the exact command and returns the password only as a SecureString' {
+                $script:Reply = '{"status":0,"result":{"username":"qa1@x.org","password":"' + $script:Secret + '"}}'
+                $res = New-SalesforceUserPassword -OnBehalfOf qa1 -Length 30 -Complexity 4 -TargetOrg me -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|generate|password|--on-behalf-of|qa1|--length|30|--complexity|4|--target-org|me|--json' }
+                $res.Username | Should -Be 'qa1@x.org'
+                $res.Password | Should -BeOfType [System.Security.SecureString]
+                ($res | Out-String) | Should -Not -BeLike "*$script:Secret*"
+                ($res | ConvertTo-Json -Depth 2) | Should -Not -BeLike "*$script:Secret*"
+            }
+            It 'does not put the password in verbose output' {
+                $script:Reply = '{"status":0,"result":{"username":"qa1@x.org","password":"' + $script:Secret + '"}}'
+                $verbose = New-SalesforceUserPassword -OnBehalfOf qa1 -Confirm:$false -Verbose 4>&1 | Where-Object { $_ -is [System.Management.Automation.VerboseRecord] } | ForEach-Object { $_.Message }
+                ($verbose -join ' ') | Should -Not -BeLike "*$script:Secret*"
+            }
+            It 'does not put the password in an error message' {
+                $script:Reply = '{"status":1,"message":"Cannot generate"}'
+                $err = $null
+                try { New-SalesforceUserPassword -Confirm:$false } catch { $err = $_ }
+                $err.Exception.Message | Should -Not -BeLike "*$script:Secret*"
+            }
+            It 'makes no CLI call under -WhatIf, and asks by default (ConfirmImpact High)' {
+                New-SalesforceUserPassword -OnBehalfOf qa1 -WhatIf | Should -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                (Get-Command New-SalesforceUserPassword).ScriptBlock.Attributes.ConfirmImpact | Should -Contain 'High'
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'a list of users';       Run = { New-SalesforceUserPassword -OnBehalfOf 'a,b' -Confirm:$false } }
+                @{ Case = 'a length below 20';     Run = { New-SalesforceUserPassword -Length 19 -Confirm:$false } }
+                @{ Case = 'a complexity above 5';  Run = { New-SalesforceUserPassword -Complexity 6 -Confirm:$false } }
+            ) {
+                { & $Run } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'fails clearly when the CLI returns no password' {
+                $script:Reply = '{"status":0,"result":{"username":"qa1@x.org"}}'
+                { New-SalesforceUserPassword -Confirm:$false } | Should -Throw -ExpectedMessage '*did not return a password*'
+            }
+        }
+
+        Context 'permission set assignment' {
+            It 'builds the exact permset command for several sets and users' {
+                $script:Reply = '{"status":0,"result":{"successes":[{"name":"qa1","value":"Sales_Admin"},{"name":"qa1","value":"Reports_User"}],"failures":[]}}'
+                $res = @(Grant-SalesforcePermissionSet -Name Sales_Admin, Reports_User -OnBehalfOf qa1 -TargetOrg me -Confirm:$false)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|assign|permset|--name|Sales_Admin|--name|Reports_User|--on-behalf-of|qa1|--target-org|me|--json' }
+                $res.Count | Should -Be 2
+                $res[0].Status | Should -Be 'Assigned'
+                $res[0].PermissionSet | Should -Be 'Sales_Admin'
+                $res[0].Username | Should -Be 'qa1'
+            }
+            It 'builds the exact permset licence command' {
+                $script:Reply = '{"status":0,"result":{"successes":[{"name":"qa1","value":"CPQ_Admin"}],"failures":[]}}'
+                Grant-SalesforcePermissionSetLicense -Name CPQ_Admin -OnBehalfOf qa1, qa2 -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|assign|permsetlicense|--name|CPQ_Admin|--on-behalf-of|qa1|--on-behalf-of|qa2|--json' }
+            }
+            It 'is idempotent: a set the user already has is AlreadyAssigned, not an error' {
+                $script:Reply = '{"status":68,"result":{"successes":[],"failures":[{"name":"qa1","message":"duplicate value found: PermissionSetAssignment duplicates value on record with id: 0Pa000000000001"}]}}'
+                $res = @(Grant-SalesforcePermissionSet -Name Sales_Admin -OnBehalfOf qa1 -Confirm:$false)
+                $res.Count | Should -Be 1
+                $res[0].Status | Should -Be 'AlreadyAssigned'
+                $res[0].PermissionSet | Should -Be 'Sales_Admin'
+            }
+            It 'writes every result, then throws PsfdxPermissionAssignmentFailed for real failures' {
+                $script:Reply = '{"status":68,"result":{"successes":[{"name":"qa1","value":"Sales_Admin"}],"failures":[{"name":"qa2","message":"Insufficient access rights on cross-reference id"}]}}'
+                $err = $null
+                try { Grant-SalesforcePermissionSet -Name Sales_Admin -OnBehalfOf qa1, qa2 -Confirm:$false | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxPermissionAssignmentFailed'
+                @($err.TargetObject).Count | Should -Be 1
+                $err.TargetObject[0].Username | Should -Be 'qa2'
+                $err.Exception.Message | Should -BeLike '*qa2*Insufficient access*'
+            }
+            It 'throws the CLI message when there is no assignment result at all' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
+                { Grant-SalesforcePermissionSet -Name X -TargetOrg nobody -Confirm:$false } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+            It 'makes no CLI call under -WhatIf, and asks by default' {
+                Grant-SalesforcePermissionSet -Name X -OnBehalfOf qa1 -WhatIf | Should -BeNullOrEmpty
+                Grant-SalesforcePermissionSetLicense -Name X -OnBehalfOf qa1 -WhatIf | Should -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                (Get-Command Grant-SalesforcePermissionSet).ScriptBlock.Attributes.ConfirmImpact | Should -Contain 'High'
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'an empty name list';   Run = { Grant-SalesforcePermissionSet -Name @('', ' ') -Confirm:$false } }
+                @{ Case = 'a comma in a name';    Run = { Grant-SalesforcePermissionSet -Name 'A,B' -Confirm:$false } }
+                @{ Case = 'a comma in a user';    Run = { Grant-SalesforcePermissionSet -Name 'A' -OnBehalfOf 'u1,u2' -Confirm:$false } }
+                @{ Case = 'a missing name';       Run = { Grant-SalesforcePermissionSetLicense -Name @() -Confirm:$false } }
+            ) {
+                { & $Run } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'module surface' {
+            It 'exports the six commands and keeps the helpers private' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
+                foreach ($name in 'Get-SalesforceAuthenticatedUser', 'Get-SalesforceOrgUser', 'New-SalesforceUser', 'New-SalesforceUserPassword', 'Grant-SalesforcePermissionSet', 'Grant-SalesforcePermissionSetLicense') {
+                    $exports | Should -Contain $name
+                }
+                foreach ($name in 'Remove-SalesforceSecretProperty', 'ConvertFrom-SalesforceAssignmentOutput', 'Test-SalesforceAssignmentNames') { $exports | Should -Not -Contain $name }
+            }
+            It 'has help examples' {
+                foreach ($name in 'Get-SalesforceAuthenticatedUser', 'Get-SalesforceOrgUser', 'New-SalesforceUser', 'New-SalesforceUserPassword', 'Grant-SalesforcePermissionSet', 'Grant-SalesforcePermissionSetLicense') {
+                    @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0
+                }
+            }
+        }
+    }
+}
