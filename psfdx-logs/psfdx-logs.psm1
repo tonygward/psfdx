@@ -317,6 +317,15 @@ function Get-SalesforceDebugLogging {
 }
 
 function Disable-SalesforceDebugLogging {
+    <#
+    .SYNOPSIS
+    Deletes a trace flag to stop debug logging (sf apex trace delete).
+    .DESCRIPTION
+    -TraceId can come from the pipeline: a trace flag from Get-SalesforceDebugLogging is used through its Id. Each flag is confirmed on its own,
+    so -WhatIf previews every delete, and an org with no trace flags deletes nothing.
+    .EXAMPLE
+    Get-SalesforceDebugLogging -TargetOrg myorg | Disable-SalesforceDebugLogging -TargetOrg myorg -WhatIf
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('Id', 'TraceFlagId')][string] $TraceId,

@@ -83,6 +83,23 @@ Get-Command -Module psfdx*
 The Gallery is the supported way to install psfdx. If you want to change psfdx itself, clone the repository and run `./install.ps1` (Mac or Linux) or `./install-windows.ps1` (Windows). That installs the modules separately, so each one is imported on its own (for example `Import-Module psfdx-logs`). Don't combine it with the Gallery install on the same machine. See [CLAUDE.md](CLAUDE.md) and [docs/](docs/) for how the project is built and tested.
 
 
+## Pipelines
+
+Reading cmdlets return objects, and the cmdlets that change things take the ID from the pipeline, so a query can feed a change:
+
+```powershell
+Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name LIKE 'Test%'" -TargetOrg myorg |
+    Remove-SalesforceRecord -Type Account -TargetOrg myorg -WhatIf          # previews every delete
+Get-SalesforceDebugLogging -TargetOrg myorg | Disable-SalesforceDebugLogging -TargetOrg myorg
+Get-SalesforcePackageVersions -PackageName MyPkg | Remove-SalesforcePackageVersion -WhatIf
+```
+
+- **Piped ID parameters.** `Remove-`, `Get-` and `Set-SalesforceRecord` take `-Id` (or `RecordId`) from the pipeline; the object type is not in a query result, so `-Type` is always given. `Remove-` and `Promote-SalesforcePackageVersion` take the `SubscriberPackageVersionId`; `Disable-SalesforceDebugLogging` takes the trace flag `Id`.
+- **Each piped object is its own operation.** Every mutation asks for confirmation and honours `-WhatIf` and `-Confirm` per object. `New-` and `Set-SalesforceRecord` support `-WhatIf` but do not prompt by default; `Remove-` cmdlets prompt.
+- **Empty results.** A query or list with no rows emits nothing, so a pipeline after it does nothing. Use `@(...)` to get an empty array in a variable.
+- **One result or many.** PowerShell unrolls a single result into the object itself, so wrap a call in `@(...)` when you need a stable array (`@(Select-SalesforceRecords ...).Count`).
+- **Errors.** A failure reported by the Salesforce CLI throws, with the CLI's message, and stops the pipeline. A piped record whose ID is not a valid Salesforce ID is reported as an error for that record and skipped; use `-ErrorAction Stop` to stop instead. No result data is discarded or turned into text.
+
 ## Licence
 
 psfdx is released under the MIT licence. See [LICENSE](LICENSE).

@@ -455,3 +455,39 @@ Describe 'Package job reports' {
         }
     }
 }
+
+Describe 'Package version pipelines' {
+    InModuleScope 'psfdx-packages' {
+        BeforeEach {
+            $script:Versions = '{"status":0,"result":[{"Id":"05i000000000001AAA","SubscriberPackageVersionId":"04t000000000001AAA","Version":"1.0.0.1"},{"Id":"05i000000000002AAA","SubscriberPackageVersionId":"04t000000000002AAA","Version":"1.0.0.2"}]}'
+            Mock Invoke-Salesforce {
+                if (($Arguments -join '|') -like 'package|version|list*') { return $script:Versions }
+                return '{"status":0,"result":{"success":true}}'
+            }
+        }
+
+        It 'pipes listed versions into Remove-SalesforcePackageVersion using the subscriber version ID' {
+            Get-SalesforcePackageVersions -PackageId 0Ho000000000001AAA | Remove-SalesforcePackageVersion -NoPrompt -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|delete|--package|04t000000000001AAA|--no-prompt|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|delete|--package|04t000000000002AAA|--no-prompt|--json' }
+        }
+        It 'deletes nothing under -WhatIf for piped versions' {
+            Get-SalesforcePackageVersions -PackageId 0Ho000000000001AAA | Remove-SalesforcePackageVersion -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'package|version|delete*' }
+        }
+        It 'pipes a listed version into Promote-SalesforcePackageVersion' {
+            Get-SalesforcePackageVersions -PackageId 0Ho000000000001AAA | Select-Object -First 1 | Promote-SalesforcePackageVersion -NoPrompt | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|promote|--package|04t000000000001AAA|--no-prompt|--json' }
+        }
+        It 'returns an empty collection for no versions, and piping it does nothing' {
+            $script:Versions = '{"status":0,"result":[]}'
+            @(Get-SalesforcePackageVersions -PackageId 0Ho000000000001AAA).Count | Should -Be 0
+            Get-SalesforcePackageVersions -PackageId 0Ho000000000001AAA | Remove-SalesforcePackageVersion -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'package|version|delete*' }
+        }
+        It 'still takes an explicit -PackageVersionId' {
+            Remove-SalesforcePackageVersion -PackageVersionId 04t000000000009AAA -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|delete|--package|04t000000000009AAA|--json' }
+        }
+    }
+}
