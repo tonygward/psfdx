@@ -32,6 +32,8 @@
         'New-SalesforceRecord',
         'Set-SalesforceRecord',
         'Upsert-SalesforceRecord',
+        'Export-SalesforceTreeData',
+        'Import-SalesforceTreeData',
         'Export-SalesforceBulkData',
         'Import-SalesforceBulkData',
         'Update-SalesforceBulkData',
