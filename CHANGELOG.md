@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.34 - 2026-11-21
+
 - psfdx-metadata: new `Get-SalesforceDeployPreview` and `Get-SalesforceRetrievePreview` show what a deploy or retrieve would change, and any conflicts, before you run it. They are read-only and return the changes, deletes, conflicts and ignored files as lists, with `HasChanges` and `HasConflicts`. They need an org with source tracking; for other orgs they return the CLI error with guidance.
 
 ## 0.8.33 - 2026-11-21
