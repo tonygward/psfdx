@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.39 - 2026-11-21
+
 - psfdx: Breaking: `Connect-SalesforceApi -CustomUrl` and `Invoke-SalesforceApi -Url` now accept only an absolute https:// URL. They send a password, client secret or access token, which must not travel over plain http. Before this, an http URL was used as given.
 - psfdx-packages: `Promote-SalesforcePackageVersion` now asks for confirmation and supports `-WhatIf`, because a promoted version can no longer be deleted. `-NoPrompt` skips the question, so existing unattended scripts keep working. `Install-SalesforcePackageVersion` now supports `-WhatIf` and `-Confirm` without asking by default.
 - psfdx-metadata: `Deploy-SalesforceMetadata` and `Deploy-SalesforceComponent` now support `-WhatIf` and `-Confirm` without asking by default. A validation-only deploy (`-DryRun`) still runs under `-WhatIf`.
