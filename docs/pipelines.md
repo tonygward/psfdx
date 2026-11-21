@@ -27,6 +27,7 @@ Every workflow name starts with one of four prefixes, so its kind is clear at a 
 | `CI - Salesforce CLI compatibility` | `ci-cli-compat.yml` | CI | Pull requests that touch a module or the check, every Monday, and by hand; installs the latest stable Salesforce CLI on Ubuntu and Windows and checks every `sf` command and flag psfdx uses against its `--help`; see [cli-compatibility](cli-compatibility.md) |
 | `CI - Gallery install check` | `ci-gallery-install.yml` | CI | After the Gallery publish; installs `psfdx` from the Gallery on Ubuntu, Windows PowerShell 7 and Windows PowerShell 5.1 |
 | `CD - Publish release` | `cd-publish-release.yml` | CD | Push of a `v*.*.*` tag; see [releases](release.md) |
+| `Housekeeping - Scratch org integration smoke tests` | `housekeeping-integration.yml` | Housekeeping | By hand (the owner approves the `scratch-org-integration` environment), or weekly if the repository variable `PSFDX_INTEGRATION_SCHEDULE` is `true`; never on pull requests. Creates a one-day scratch org from a dedicated Dev Hub, runs `tests/integration` against it, always deletes it, and uploads a report; advisory, never required by the gate. See [integration testing](integration-testing.md) |
 | `Housekeeping - Claude on mention` | `claude.yml` | Housekeeping | `@claude` mentions |
 | `Housekeeping - Claude code review` | `claude-code-review.yml` | Housekeeping | Pull requests |
 
