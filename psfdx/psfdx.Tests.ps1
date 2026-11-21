@@ -536,7 +536,7 @@ Describe 'SOQL query regression' {
                 @{ Name = 'backslash';    Value = 'a\b@example.com';        Literal = "'a\\b@example.com'" }
                 @{ Name = 'trailing \';   Value = 'end\';                   Literal = "'end\\'" }
                 @{ Name = 'injection';    Value = "x' OR Name != '";        Literal = "'x\' OR Name != \''" }
-                @{ Name = 'unicode';      Value = 'Zoë 日本語@example.com';   Literal = "'Zoë 日本語@example.com'" }
+                @{ Name = 'unicode';      Value = 'Zo├½ µùÑµ£¼Þ¬×@example.com';   Literal = "'Zo├½ µùÑµ£¼Þ¬×@example.com'" }
                 @{ Name = 'percent';      Value = '50%_off';                Literal = "'50%_off'" }
                 @{ Name = 'spaces';       Value = 'a b  c';                 Literal = "'a b  c'" }
                 @{ Name = 'shell chars';  Value = 'a&b|c;$(x)';             Literal = "'a&b|c;`$(x)'" }
@@ -629,7 +629,6 @@ Describe 'SOQL query regression' {
     }
 }
 
-<<<<<<< HEAD
 Describe 'Bulk API 2.0 commands' {
     InModuleScope 'psfdx' {
         BeforeAll {
@@ -812,84 +811,10 @@ Describe 'Bulk API 2.0 commands' {
                 @{ Case = 'both query forms';       Run = { Export-SalesforceBulkData -Query 'SELECT Id FROM Account' -QueryFile 'q.soql' -OutputFile 'o.csv' };      Message = '*exactly one*' }
                 @{ Case = 'a missing query file';   Run = { Export-SalesforceBulkData -QueryFile (Join-Path $TestDrive 'no.soql') -OutputFile 'o.csv' };              Message = '*does not exist*' }
                 @{ Case = 'a missing output folder'; Run = { Export-SalesforceBulkData -Query 'SELECT Id FROM Account' -OutputFile (Join-Path (Join-Path $TestDrive 'nodir') 'o.csv') }; Message = '*Output directory*does not exist*' }
-=======
-Describe 'User administration commands' {
-    InModuleScope 'psfdx' {
-        BeforeAll {
-            $script:Secret = 'S3cr3t-Pa55word-Value'
-            $script:Token = '00Dxx!AQEAQtokenvalue'
-        }
-        BeforeEach {
-            $script:Reply = '{"status":0,"result":[]}'
-            Mock Invoke-Salesforce { $script:Reply }
-        }
-
-        Context 'Get-SalesforceAuthenticatedUser and Get-SalesforceOrgUser' {
-            It 'lists users with the exact command and drops tokens' {
-                $script:Reply = '{"status":0,"result":[{"username":"a@x.org","alias":"a","orgId":"00Dxx","accessToken":"' + $script:Token + '"},{"username":"b@x.org","orgId":"00Dxx"}]}'
-                $users = @(Get-SalesforceAuthenticatedUser -TargetOrg me)
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|users|--target-org|me|--json' }
-                $users.Count | Should -Be 2
-                $users[0].username | Should -Be 'a@x.org'
-                ($users | ConvertTo-Json -Depth 3) | Should -Not -BeLike "*$script:Token*"
-                $users[0].PSObject.Properties.Name | Should -Not -Contain 'accessToken'
-            }
-            It 'returns an empty list when the CLI knows no users' {
-                @(Get-SalesforceAuthenticatedUser).Count | Should -Be 0
-            }
-            It 'shows the user without the token or password by default' {
-                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","orgId":"00Dxx","profileName":"Admin","accessToken":"' + $script:Token + '","password":"' + $script:Secret + '"}}'
-                $u = Get-SalesforceOrgUser -TargetOrg me
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|display|user|--target-org|me|--json' }
-                $u.username | Should -Be 'a@x.org'
-                $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
-                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
-                $u.PSObject.Properties.Name | Should -Not -Contain 'Password'
-            }
-            It 'handles the redacted password and token the current CLI returns, and says whether a password exists' {
-                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","accessToken":"[redacted: use the sf org auth show-user-password command]","password":"[redacted]"}}'
-                $u = Get-SalesforceOrgUser
-                $u.HasPassword | Should -BeTrue
-                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
-                $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
-                ($u | ConvertTo-Json) | Should -Not -BeLike '*redacted*'
-                $script:Reply = '{"status":0,"result":{"username":"b@x.org","id":"005yy"}}'
-                (Get-SalesforceOrgUser).HasPassword | Should -BeFalse
-            }
-            It 'no longer offers -IncludePassword, which the CLI cannot honour' {
-                (Get-Command Get-SalesforceOrgUser).Parameters.Keys | Should -Not -Contain 'IncludePassword'
-            }
-            It 'throws the CLI message on failure, without echoing a token' {
-                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
-                { Get-SalesforceOrgUser -TargetOrg nobody } | Should -Throw -ExpectedMessage '*No authorization information found*'
-            }
-        }
-
-        Context 'New-SalesforceUser' {
-            It 'builds the exact command from a definition file, fields and options' {
-                $file = Join-Path $TestDrive 'user def.json'
-                Set-Content -LiteralPath $file -Value '{}'
-                $script:Reply = '{"status":0,"result":{"orgId":"00Dxx","fields":{"username":"qa1@x.org"}}}'
-                $res = New-SalesforceUser -DefinitionFile $file -Field ([ordered]@{ username = 'qa1@x.org'; lastName = "O'Brien Smith" }) -SetAlias qa1 -SetUniqueUsername -TargetOrg me
-                $expected = "org|create|user|--definition-file|$file|--set-alias|qa1|--set-unique-username|--target-org|me|username=qa1@x.org|lastName=O'Brien Smith|--json"
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
-                $res.orgId | Should -Be '00Dxx'
-            }
-            It 'makes no CLI call under -WhatIf' {
-                New-SalesforceUser -Field @{ username = 'a@x.org' } -WhatIf | Should -BeNullOrEmpty
-                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
-            }
-            It 'rejects <Case> without calling the CLI' -ForEach @(
-                @{ Case = 'a missing definition file'; Run = { New-SalesforceUser -DefinitionFile (Join-Path $TestDrive 'nope.json') }; Message = '*does not exist*' }
-                @{ Case = 'a bad field name';          Run = { New-SalesforceUser -Field @{ 'user name' = 'x' } };                         Message = '*not a valid user field name*' }
-                @{ Case = 'a field name with =';       Run = { New-SalesforceUser -Field @{ 'a=b' = 'x' } };                                Message = '*not a valid user field name*' }
-                @{ Case = 'a control character';       Run = { New-SalesforceUser -Field @{ lastName = "a`nb" } };                          Message = '*control characters*' }
->>>>>>> 8cf7f99 (psfdx: add user administration and permission assignment commands (#208))
             ) {
                 { & $Run } | Should -Throw -ExpectedMessage $Message
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
             }
-<<<<<<< HEAD
         }
 
         Context 'Resume-SalesforceBulkJob' {
@@ -963,7 +888,104 @@ Describe 'User administration commands' {
             It 'rejects a missing output directory and a malformed job ID without calling the CLI' {
                 { Get-SalesforceBulkResult -JobId $script:JobId -OutputDirectory (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
                 { Get-SalesforceBulkResult -JobId 'abc' } | Should -Throw
-=======
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'module surface' {
+            It 'exports the six commands and keeps the helpers private' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
+                foreach ($name in 'Export-SalesforceBulkData', 'Import-SalesforceBulkData', 'Update-SalesforceBulkData', 'Upsert-SalesforceBulkData', 'Resume-SalesforceBulkJob', 'Get-SalesforceBulkResult') {
+                    $exports | Should -Contain $name
+                }
+                $exports | Should -Not -Contain 'ConvertFrom-SalesforceBulkOutput'
+                $exports | Should -Not -Contain 'ConvertTo-SalesforceBulkJobObject'
+                $exports | Should -Not -Contain 'Get-SalesforceBulkTargetLabel'
+            }
+            It 'has help examples' {
+                foreach ($name in 'Export-SalesforceBulkData', 'Import-SalesforceBulkData', 'Update-SalesforceBulkData', 'Upsert-SalesforceBulkData', 'Resume-SalesforceBulkJob', 'Get-SalesforceBulkResult') {
+                    @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0
+                }
+            }
+        }
+    }
+}
+
+Describe 'User administration commands' {
+    InModuleScope 'psfdx' {
+        BeforeAll {
+            $script:Secret = 'S3cr3t-Pa55word-Value'
+            $script:Token = '00Dxx!AQEAQtokenvalue'
+        }
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":[]}'
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+
+        Context 'Get-SalesforceAuthenticatedUser and Get-SalesforceOrgUser' {
+            It 'lists users with the exact command and drops tokens' {
+                $script:Reply = '{"status":0,"result":[{"username":"a@x.org","alias":"a","orgId":"00Dxx","accessToken":"' + $script:Token + '"},{"username":"b@x.org","orgId":"00Dxx"}]}'
+                $users = @(Get-SalesforceAuthenticatedUser -TargetOrg me)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|users|--target-org|me|--json' }
+                $users.Count | Should -Be 2
+                $users[0].username | Should -Be 'a@x.org'
+                ($users | ConvertTo-Json -Depth 3) | Should -Not -BeLike "*$script:Token*"
+                $users[0].PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+            }
+            It 'returns an empty list when the CLI knows no users' {
+                @(Get-SalesforceAuthenticatedUser).Count | Should -Be 0
+            }
+            It 'shows the user without the token or password by default' {
+                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","orgId":"00Dxx","profileName":"Admin","accessToken":"' + $script:Token + '","password":"' + $script:Secret + '"}}'
+                $u = Get-SalesforceOrgUser -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|display|user|--target-org|me|--json' }
+                $u.username | Should -Be 'a@x.org'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'Password'
+            }
+            It 'handles the redacted password and token the current CLI returns, and says whether a password exists' {
+                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","accessToken":"[redacted: use the sf org auth show-user-password command]","password":"[redacted]"}}'
+                $u = Get-SalesforceOrgUser
+                $u.HasPassword | Should -BeTrue
+                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
+                $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                ($u | ConvertTo-Json) | Should -Not -BeLike '*redacted*'
+                $script:Reply = '{"status":0,"result":{"username":"b@x.org","id":"005yy"}}'
+                (Get-SalesforceOrgUser).HasPassword | Should -BeFalse
+            }
+            It 'no longer offers -IncludePassword, which the CLI cannot honour' {
+                (Get-Command Get-SalesforceOrgUser).Parameters.Keys | Should -Not -Contain 'IncludePassword'
+            }
+            It 'throws the CLI message on failure, without echoing a token' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
+                { Get-SalesforceOrgUser -TargetOrg nobody } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+
+        Context 'New-SalesforceUser' {
+            It 'builds the exact command from a definition file, fields and options' {
+                $file = Join-Path $TestDrive 'user def.json'
+                Set-Content -LiteralPath $file -Value '{}'
+                $script:Reply = '{"status":0,"result":{"orgId":"00Dxx","fields":{"username":"qa1@x.org"}}}'
+                $res = New-SalesforceUser -DefinitionFile $file -Field ([ordered]@{ username = 'qa1@x.org'; lastName = "O'Brien Smith" }) -SetAlias qa1 -SetUniqueUsername -TargetOrg me
+                $expected = "org|create|user|--definition-file|$file|--set-alias|qa1|--set-unique-username|--target-org|me|username=qa1@x.org|lastName=O'Brien Smith|--json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+                $res.orgId | Should -Be '00Dxx'
+            }
+            It 'makes no CLI call under -WhatIf' {
+                New-SalesforceUser -Field @{ username = 'a@x.org' } -WhatIf | Should -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'a missing definition file'; Run = { New-SalesforceUser -DefinitionFile (Join-Path $TestDrive 'nope.json') }; Message = '*does not exist*' }
+                @{ Case = 'a bad field name';          Run = { New-SalesforceUser -Field @{ 'user name' = 'x' } };                         Message = '*not a valid user field name*' }
+                @{ Case = 'a field name with =';       Run = { New-SalesforceUser -Field @{ 'a=b' = 'x' } };                                Message = '*not a valid user field name*' }
+                @{ Case = 'a control character';       Run = { New-SalesforceUser -Field @{ lastName = "a`nb" } };                          Message = '*control characters*' }
+            ) {
+                { & $Run } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
             It 'reports a CLI error such as missing permissions' {
                 $script:Reply = '{"status":1,"name":"INSUFFICIENT_ACCESS","message":"insufficient access rights on object id"}'
                 { New-SalesforceUser -Field @{ lastName = 'x' } -Confirm:$false } | Should -Throw -ExpectedMessage '*insufficient access*'
@@ -1058,7 +1080,6 @@ Describe 'User administration commands' {
                 @{ Case = 'a missing name';       Run = { Grant-SalesforcePermissionSetLicense -Name @() -Confirm:$false } }
             ) {
                 { & $Run } | Should -Throw
->>>>>>> 8cf7f99 (psfdx: add user administration and permission assignment commands (#208))
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
             }
         }
@@ -1066,17 +1087,6 @@ Describe 'User administration commands' {
         Context 'module surface' {
             It 'exports the six commands and keeps the helpers private' {
                 $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
-<<<<<<< HEAD
-                foreach ($name in 'Export-SalesforceBulkData', 'Import-SalesforceBulkData', 'Update-SalesforceBulkData', 'Upsert-SalesforceBulkData', 'Resume-SalesforceBulkJob', 'Get-SalesforceBulkResult') {
-                    $exports | Should -Contain $name
-                }
-                $exports | Should -Not -Contain 'ConvertFrom-SalesforceBulkOutput'
-                $exports | Should -Not -Contain 'ConvertTo-SalesforceBulkJobObject'
-                $exports | Should -Not -Contain 'Get-SalesforceBulkTargetLabel'
-            }
-            It 'has help examples' {
-                foreach ($name in 'Export-SalesforceBulkData', 'Import-SalesforceBulkData', 'Update-SalesforceBulkData', 'Upsert-SalesforceBulkData', 'Resume-SalesforceBulkJob', 'Get-SalesforceBulkResult') {
-=======
                 foreach ($name in 'Get-SalesforceAuthenticatedUser', 'Get-SalesforceOrgUser', 'New-SalesforceUser', 'New-SalesforceUserPassword', 'Grant-SalesforcePermissionSet', 'Grant-SalesforcePermissionSetLicense') {
                     $exports | Should -Contain $name
                 }
@@ -1084,7 +1094,6 @@ Describe 'User administration commands' {
             }
             It 'has help examples' {
                 foreach ($name in 'Get-SalesforceAuthenticatedUser', 'Get-SalesforceOrgUser', 'New-SalesforceUser', 'New-SalesforceUserPassword', 'Grant-SalesforcePermissionSet', 'Grant-SalesforcePermissionSetLicense') {
->>>>>>> 8cf7f99 (psfdx: add user administration and permission assignment commands (#208))
                     @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0
                 }
             }
