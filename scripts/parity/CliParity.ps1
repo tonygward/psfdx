@@ -43,7 +43,21 @@ function ConvertTo-ParityInventory {
             foreach ($property in $command.flags.PSObject.Properties) {
                 $flag = $property.Value
                 if ($flag.PSObject.Properties['hidden'] -and $flag.hidden) { continue }
-                $flags.Add([pscustomobject][ordered]@{ name = [string]$property.Name; required = [bool]($flag.PSObject.Properties['required'] -and $flag.required) })
+                $kind = 'boolean'
+                if ($flag.PSObject.Properties['type'] -and $flag.type) { $kind = [string]$flag.type }
+                $entry = [ordered]@{
+                    name     = [string]$property.Name
+                    type     = $kind
+                    required = [bool]($flag.PSObject.Properties['required'] -and $flag.required)
+                    multiple = [bool]($flag.PSObject.Properties['multiple'] -and $flag.multiple)
+                }
+                # The values the CLI lists for a flag (for example --test-level). A flag without a list takes free text or a number.
+                if ($flag.PSObject.Properties['options'] -and $flag.options) {
+                    $entry['options'] = @($flag.options | ForEach-Object { [string]$_ })
+                    # What the CLI uses when the flag is left out, where it says (not every default is recorded).
+                    if ($flag.PSObject.Properties['default'] -and $null -ne $flag.default -and (($flag.default -is [string]) -or ($flag.default -is [array]))) { $entry['default'] = @($flag.default | ForEach-Object { [string]$_ }) }
+                }
+                $flags.Add([pscustomobject]$entry)
             }
         }
         $state = 'ga'
@@ -69,7 +83,7 @@ function ConvertTo-ParityInventory {
             [pscustomobject][ordered]@{ name = $_.Group[0].plugin; type = $_.Group[0].pluginType; commands = $_.Count }
         } | Sort-ParityObject { $_.name })
     return [pscustomobject][ordered]@{
-        schema     = 1
+        schema     = 2
         cliVersion = $CliVersion
         plugins    = $plugins
         commands   = $sorted
@@ -131,7 +145,66 @@ function Get-ParityPsfdxScan {
                 $flags = New-Object System.Collections.Generic.SortedSet[string] ([System.StringComparer]::Ordinal)
                 $strings = $definition.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.StringConstantExpressionAst] }, $true)
                 foreach ($s in $strings) {
-                    if ($s.Value -match '^--([a-z][a-z0-9-]*)\z') { [void]$flags.Add($Matches[1]) }
+                    if ($s.Value -match '^--([a-z][a-z0-9-]*)(?:=.*)?\z') { [void]$flags.Add($Matches[1]) }
+                }
+                # Parameters with a [ValidateSet()]: the values a caller can pass through them.
+                $paramSets = @{}
+                if ($definition.Body.ParamBlock) {
+                    foreach ($parameter in $definition.Body.ParamBlock.Parameters) {
+                        foreach ($attribute in $parameter.Attributes) {
+                            if (($attribute -is [System.Management.Automation.Language.AttributeAst]) -and ($attribute.TypeName.Name -eq 'ValidateSet')) {
+                                $paramSets[$parameter.Name.VariablePath.UserPath] = @($attribute.PositionalArguments | Where-Object { $_ -is [System.Management.Automation.Language.StringConstantExpressionAst] } | ForEach-Object { $_.Value })
+                            }
+                        }
+                    }
+                }
+                # Lookup tables: `$map = @{ 'Name' = 'CliValue' }`, so `$map[$x]` written after a flag can only be one of the table's values.
+                $maps = @{}
+                foreach ($assignment in @($definition.Body.FindAll({ param($n) ($n -is [System.Management.Automation.Language.AssignmentStatementAst]) -and ($n.Operator -eq 'Equals') -and ($n.Left -is [System.Management.Automation.Language.VariableExpressionAst]) }, $true))) {
+                    $table = $assignment.Right.Find({ param($n) $n -is [System.Management.Automation.Language.HashtableAst] }, $true)
+                    if ($null -eq $table) { continue }
+                    $mapValues = New-Object System.Collections.Generic.List[string]
+                    $allStrings = $true
+                    foreach ($pair in $table.KeyValuePairs) {
+                        $valueNode = $pair.Item2.Find({ param($n) $n -is [System.Management.Automation.Language.StringConstantExpressionAst] }, $true)
+                        if ($valueNode) { $mapValues.Add($valueNode.Value) } else { $allStrings = $false }
+                    }
+                    if ($allStrings -and $mapValues.Count -gt 0) { $maps[$assignment.Left.VariablePath.UserPath] = $mapValues.ToArray() }
+                }
+                # The value written after each flag in an argument array: a literal, a [ValidateSet()] parameter, or something free-form.
+                $flagValues = New-Object System.Collections.Generic.List[object]
+                foreach ($node in @($definition.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.ArrayLiteralAst] }, $true))) {
+                    $items = @($node.Elements)
+                    for ($i = 0; $i -lt $items.Count; $i++) {
+                        if ($items[$i] -isnot [System.Management.Automation.Language.StringConstantExpressionAst]) { continue }
+                        if ($items[$i].Value -notmatch '^--([a-z][a-z0-9-]*)(=(.*))?\z') { continue }
+                        $flagName = $Matches[1]
+                        $inlineValue = $null
+                        if ($Matches[2]) { $inlineValue = $Matches[3] }
+                        $entry = [pscustomobject]@{ Flag = $flagName; Mode = 'none'; Values = @(); Variable = $null }
+                        if ($null -ne $inlineValue) {
+                            $entry.Mode = 'literal'; $entry.Values = @($inlineValue)
+                        } elseif (($i + 1) -lt $items.Count) {
+                            $next = $items[$i + 1]
+                            if ($next -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
+                                if ($next.Value -notlike '--*') { $entry.Mode = 'literal'; $entry.Values = @($next.Value) }
+                            } elseif (($next -is [System.Management.Automation.Language.IndexExpressionAst]) -and ($next.Target -is [System.Management.Automation.Language.VariableExpressionAst]) -and $maps.ContainsKey($next.Target.VariablePath.UserPath)) {
+                                $entry.Mode = 'set'; $entry.Values = @($maps[$next.Target.VariablePath.UserPath])
+                            } elseif ($next -is [System.Management.Automation.Language.VariableExpressionAst]) {
+                                $variable = $next.VariablePath.UserPath
+                                $entry.Variable = $variable
+                                if ($paramSets.ContainsKey($variable)) { $entry.Mode = 'set'; $entry.Values = @($paramSets[$variable]) } else { $entry.Mode = 'any' }
+                            } else {
+                                $entry.Mode = 'any'
+                            }
+                        }
+                        $flagValues.Add($entry)
+                    }
+                }
+                # A flag and its value joined in one string, `--name=value`, outside an array (`$arguments += '--name=value'`).
+                foreach ($s in $strings) {
+                    if ($s.Parent -is [System.Management.Automation.Language.ArrayLiteralAst]) { continue }
+                    if ($s.Value -match '^--([a-z][a-z0-9-]*)=(.*)\z') { $flagValues.Add([pscustomobject]@{ Flag = $Matches[1]; Mode = 'literal'; Values = @($Matches[2]); Variable = $null }) }
                 }
                 $functions.Add([pscustomobject]@{
                         Name     = $definition.Name
@@ -140,6 +213,8 @@ function Get-ParityPsfdxScan {
                         Exported = ($exported -contains $definition.Name)
                         Calls    = $calls
                         Flags    = @($flags)
+                        FlagValues = $flagValues.ToArray()
+                        ParamSets = $paramSets
                     })
 
                 # Structured argv: an array of words passed to `Invoke-Salesforce -FilePath 'sf' -Arguments ...`, inline or through a variable.
@@ -234,11 +309,22 @@ function Read-ParityMapping {
         if (-not $rule.PSObject.Properties['match'] -or [string]::IsNullOrWhiteSpace([string]$rule.match)) { $problems.Add("$label has no 'match'."); continue }
         $label = "rule '$($rule.match)'"
         foreach ($property in $rule.PSObject.Properties.Name) {
-            if ($property -notin 'match', 'status', 'reason', 'issue', 'ignoreFlags') { $problems.Add("$label has an unknown field '$property'.") }
+            if ($property -notin 'match', 'status', 'reason', 'issue', 'ignoreFlags', 'ignoreValues') { $problems.Add("$label has an unknown field '$property'.") }
         }
         if ($seen.ContainsKey($rule.match)) { $problems.Add("$label appears twice.") }
         $seen[$rule.match] = $true
-        if (-not $rule.PSObject.Properties['status'] -or $rule.status -notin $script:ParityStatuses) {
+        $hasIgnores = ($rule.PSObject.Properties['ignoreFlags'] -or $rule.PSObject.Properties['ignoreValues'])
+        if ($rule.PSObject.Properties['ignoreValues']) {
+            foreach ($pair in @($rule.ignoreValues)) {
+                if (([string]$pair) -notmatch '^[a-z][a-z0-9-]*=.+\z') { $problems.Add("$label has an ignoreValues entry '$pair' that is not flag=value.") }
+            }
+            if ([string]::IsNullOrWhiteSpace([string]$rule.reason)) { $problems.Add("$label accepts values with ignoreValues and needs a reason.") }
+        }
+        if (-not $rule.PSObject.Properties['status']) {
+            if (-not $hasIgnores) { $problems.Add("$label needs a status of: " + ($script:ParityStatuses -join ', ') + ', or ignoreFlags or ignoreValues.') }
+            continue
+        }
+        if ($rule.status -notin $script:ParityStatuses) {
             $problems.Add("$label needs a status of: " + ($script:ParityStatuses -join ', ') + '.')
             continue
         }
@@ -347,11 +433,17 @@ function New-ParityReport {
         if ($usage.ContainsKey($command.id)) { $owners = @($usage[$command.id].ToArray() | Sort-ParityObject) }
         $ruleIgnored = @()
         if ($rule -and $rule.PSObject.Properties['ignoreFlags']) { $ruleIgnored = @($rule.ignoreFlags) }
+        $ruleValues = @()
+        if ($rule -and $rule.PSObject.Properties['ignoreValues']) { $ruleValues = @($rule.ignoreValues) }
+        $ruleStatus = $null
+        if ($rule -and $rule.PSObject.Properties['status']) { $ruleStatus = [string]$rule.status }
 
         $covered = New-Object System.Collections.Generic.SortedSet[string] ([System.StringComparer]::Ordinal)
+        $valueEntries = New-Object System.Collections.Generic.List[object]
         foreach ($owner in $owners) {
             if (-not $functionByName.ContainsKey($owner)) { continue }
             foreach ($flag in $functionByName[$owner].Flags) { [void]$covered.Add($flag) }
+            foreach ($entry in $functionByName[$owner].FlagValues) { $valueEntries.Add([pscustomobject]@{ Entry = $entry; Owner = $owner; FromHelper = $false }) }
             # Flags built by helpers the owner calls count too: helpers in the same file, and anything in psfdx-shared, followed through their own calls.
             $seen = @{}
             $pending = New-Object System.Collections.Generic.Queue[string]
@@ -363,31 +455,63 @@ function New-ParityReport {
                 if ($helper.File -ne $functionByName[$owner].File -and $helper.Module -ne 'psfdx-shared') { continue }
                 $seen[$called] = $true
                 foreach ($flag in $helper.Flags) { [void]$covered.Add($flag) }
+                foreach ($entry in $helper.FlagValues) { $valueEntries.Add([pscustomobject]@{ Entry = $entry; Owner = $owner; FromHelper = $true }) }
                 foreach ($next in $helper.Calls) { $pending.Enqueue($next) }
             }
         }
         $cliFlags = @($command.flags | ForEach-Object { $_.name } | Where-Object { $ignored -notcontains $_ -and $ruleIgnored -notcontains $_ })
         $uncovered = @($cliFlags | Where-Object { -not $covered.Contains($_) })
+        $requiredUncovered = @($command.flags | Where-Object { $_.required -and ($uncovered -contains $_.name) } | ForEach-Object { $_.name })
+
+        # For a flag with a list of values: a value is reachable when psfdx writes it literally, accepts it through a [ValidateSet()] parameter,
+        # or takes the value as free text (any value can be passed). A helper that takes the value as a plain parameter gets the [ValidateSet()] of the
+        # owner's parameter with the same name, if there is one.
+        $valueGaps = New-Object System.Collections.Generic.List[object]
+        $enumeratedPassed = 0; $valuesTotal = 0; $valuesReachable = 0
+        foreach ($flag in @($command.flags)) {
+            if ($ignored -contains $flag.name -or $ruleIgnored -contains $flag.name) { continue }
+            if (-not $flag.PSObject.Properties['options'] -or -not $covered.Contains($flag.name)) { continue }
+            $reach = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+            $anyValue = $false
+            # Left out, the flag takes its default, so that value is reachable (unless the CLI requires the flag).
+            if (-not $flag.required -and $flag.PSObject.Properties['default']) { foreach ($d in @($flag.default)) { [void]$reach.Add([string]$d) } }
+            foreach ($pair in $ruleValues) { $parts = ([string]$pair).Split([char]'=', 2); if ($parts[0] -eq $flag.name) { [void]$reach.Add($parts[1]) } }
+            foreach ($item in @($valueEntries.ToArray() | Where-Object { $_.Entry.Flag -eq $flag.name })) {
+                $entry = $item.Entry
+                if ($entry.Mode -in 'literal', 'set') { foreach ($v in $entry.Values) { [void]$reach.Add([string]$v) }; continue }
+                if ($entry.Mode -ne 'any') { continue }
+                $ownerSets = $functionByName[$item.Owner].ParamSets
+                if ($item.FromHelper -and $entry.Variable -and $ownerSets.ContainsKey($entry.Variable)) { foreach ($v in $ownerSets[$entry.Variable]) { [void]$reach.Add([string]$v) } } else { $anyValue = $true }
+            }
+            $options = @($flag.options)
+            $missingValues = @()
+            if (-not $anyValue) { $missingValues = @($options | Where-Object { -not $reach.Contains($_) }) }
+            $enumeratedPassed++
+            $valuesTotal += $options.Count
+            $valuesReachable += ($options.Count - $missingValues.Count)
+            if ($missingValues.Count -gt 0) { $valueGaps.Add([pscustomobject][ordered]@{ flag = $flag.name; values = $missingValues }) }
+        }
+        $flagsPassed = $cliFlags.Count - $uncovered.Count
 
         $status = 'missing'
         $reason = $null
         $issue = $null
         if ($rule) {
-            if ($rule.PSObject.Properties['reason'] -and $rule.reason) { $reason = [string]$rule.reason }
+            if ($rule.PSObject.Properties['reason'] -and $rule.reason -and $rule.PSObject.Properties['status']) { $reason = [string]$rule.reason }
             if ($rule.PSObject.Properties['issue'] -and $null -ne $rule.issue) { $issue = [int]$rule.issue }
         }
         if ($owners.Count -gt 0) {
-            if ($uncovered.Count -eq 0) { $status = 'wrapped' } else { $status = 'partially wrapped' }
-            if ($rule) {
-                if ($rule.status -in 'wrapped', 'partially wrapped') {
-                    $status = [string]$rule.status
+            if ($uncovered.Count -eq 0 -and $valueGaps.Count -eq 0) { $status = 'wrapped' } else { $status = 'partially wrapped' }
+            if ($ruleStatus) {
+                if ($ruleStatus -in 'wrapped', 'partially wrapped') {
+                    $status = $ruleStatus
                 } else {
-                    $warnings.Add("Command '$($command.id)' is mapped '$($rule.status)' but psfdx runs it (" + ($owners -join ', ') + '); the report treats it as run by psfdx.')
+                    $warnings.Add("Command '$($command.id)' is mapped '$ruleStatus' but psfdx runs it (" + ($owners -join ', ') + '); the report treats it as run by psfdx.')
                     $reason = $null
                 }
             }
-        } elseif ($rule) {
-            $status = [string]$rule.status
+        } elseif ($ruleStatus) {
+            $status = $ruleStatus
             if ($status -in 'wrapped', 'partially wrapped') {
                 $warnings.Add("Command '$($command.id)' is mapped '$status' but no psfdx function runs it; the report shows it as missing.")
                 $status = 'missing'
@@ -411,7 +535,11 @@ function New-ParityReport {
                         if ($f -and -not $f.Exported) { $label = $_ + ' (internal)' }
                         $label
                     })
+                flags          = [pscustomobject][ordered]@{ total = $cliFlags.Count; passed = $flagsPassed; required = @($command.flags | Where-Object { $_.required }).Count }
                 uncoveredFlags = $uncovered
+                requiredFlagsNotPassed = $requiredUncovered
+                valuesNotReachable = @($valueGaps.ToArray() | Sort-ParityObject { $_.flag })
+                values         = [pscustomobject][ordered]@{ flagsWithAList = $enumeratedPassed; total = $valuesTotal; reachable = $valuesReachable }
             })
     }
 
@@ -432,6 +560,15 @@ function New-ParityReport {
     }
 
     $allRows = $rows.ToArray()
+    $ran = @($allRows | Where-Object { $_.status -in 'wrapped', 'partially wrapped' })
+    $sumOf = { param($rowsIn, $selector) $n = 0; foreach ($r in $rowsIn) { $n += (& $selector $r) }; $n }
+    $flagCoverage = [pscustomobject][ordered]@{
+        commandsPsfdxRuns      = $ran.Count
+        flags                  = [pscustomobject][ordered]@{ total = (& $sumOf $ran { param($r) $r.flags.total }); passed = (& $sumOf $ran { param($r) $r.flags.passed }) }
+        requiredFlagsNotPassed = (& $sumOf $ran { param($r) @($r.requiredFlagsNotPassed).Count })
+        flagsWithAListOfValues = (& $sumOf $ran { param($r) $r.values.flagsWithAList })
+        values                 = [pscustomobject][ordered]@{ total = (& $sumOf $ran { param($r) $r.values.total }); reachable = (& $sumOf $ran { param($r) $r.values.reachable }) }
+    }
     $coreRows = @($allRows | Where-Object { $_.pluginType -eq 'core' })
     $jitRows = @($allRows | Where-Object { $_.pluginType -ne 'core' })
 
@@ -454,6 +591,7 @@ function New-ParityReport {
         schema       = 1
         cli          = [pscustomobject][ordered]@{ version = $Inventory.cliVersion; commandCount = $commands.Count; plugins = @($Inventory.plugins) }
         scope        = [string]$Mapping.scope
+        flagCoverage = $flagCoverage
         totals       = [pscustomobject][ordered]@{
             all  = Get-ParityTotals -Rows $allRows
             core = Get-ParityTotals -Rows $coreRows
@@ -533,6 +671,8 @@ function ConvertTo-ParityMarkdown {
     [void]$sb.Append($nl + '"Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.' + $nl + $nl)
     [void]$sb.Append("psfdx exports **$($Report.psfdx.exportedFunctions)** cmdlets; **$($Report.psfdx.runningTheCli)** of them run an `sf` command themselves. The other **$($Report.psfdx.withoutADirectCliCommand.Count)** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own." + $nl + $nl)
 
+    $fc = $Report.flagCoverage
+    [void]$sb.Append("**Flags and values.** Across the **$($fc.commandsPsfdxRuns)** commands psfdx runs, it passes **$($fc.flags.passed) of $($fc.flags.total)** of their flags (not counting the universal ones listed below). $($fc.requiredFlagsNotPassed) of the flags it does not pass are required by the CLI. For the flags it does pass, **$($fc.flagsWithAListOfValues)** have a list of allowed values in the CLI, and psfdx can pass **$($fc.values.reachable) of $($fc.values.total)** of those values." + $nl + $nl)
     [void]$sb.Append('## By capability' + $nl + $nl)
     [void]$sb.Append('| Capability | Commands | Wrapped | Partially wrapped | Missing | Excluded | Not applicable | Covered of in scope |' + $nl)
     [void]$sb.Append('| :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |' + $nl)
@@ -548,32 +688,41 @@ function ConvertTo-ParityMarkdown {
         $gaps = @($cap.commands | Where-Object { $_.status -in 'missing', 'deliberately excluded', 'not applicable' })
         if ($gaps.Count -eq 0) { continue }
         [void]$sb.Append("### $(& $cell $cap.label) (``sf $($cap.topic)``)" + $nl + $nl)
-        [void]$sb.Append('| Command | Plugin | Status | Why, or issue |' + $nl + '| :--- | :--- | :--- | :--- |' + $nl)
+        [void]$sb.Append('| Command | Plugin | Flags | Status | Why, or issue |' + $nl + '| :--- | :--- | :--- | :--- | :--- |' + $nl)
         foreach ($c in $gaps) {
             $note = ''
             if ($c.reason) { $note = & $cell $c.reason }
             if ($null -ne $c.issue) { if ($note) { $note += ' ' }; $note += "[#$($c.issue)](https://github.com/tonygward/psfdx/issues/$($c.issue))" }
             $state = ''
             if ($c.state -ne 'ga') { $state = " ($($c.state))" }
-            [void]$sb.Append("| ``sf $($c.id)``$state | $(& $cell $c.plugin) | $($c.status) | $note |" + $nl)
+            $flagText = "$($c.flags.total)"
+            if ($c.flags.required -gt 0) { $flagText += " ($($c.flags.required) required)" }
+            [void]$sb.Append("| ``sf $($c.id)``$state | $(& $cell $c.plugin) | $flagText | $($c.status) | $note |" + $nl)
         }
         [void]$sb.Append($nl)
     }
 
     [void]$sb.Append('## Covered' + $nl + $nl)
-    [void]$sb.Append('Commands psfdx runs, with the cmdlets that run them. "Flags not passed" lists the command''s flags that no psfdx function passes, which is why a command is partially wrapped.' + $nl + $nl)
+    [void]$sb.Append('Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the command''s flags that some psfdx function passes. "Flags not passed" lists the rest (a flag the CLI requires is marked). "Values not reachable" lists, for a flag that has a list of allowed values in the CLI, the values psfdx cannot pass. Either kind of gap makes a command partially wrapped.' + $nl + $nl)
     foreach ($cap in $Report.capabilities) {
         $done = @($cap.commands | Where-Object { $_.status -in 'wrapped', 'partially wrapped' })
         if ($done.Count -eq 0) { continue }
         [void]$sb.Append("### $(& $cell $cap.label) (``sf $($cap.topic)``)" + $nl + $nl)
-        [void]$sb.Append('| Command | Status | psfdx cmdlets | Flags not passed |' + $nl + '| :--- | :--- | :--- | :--- |' + $nl)
+        [void]$sb.Append('| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |' + $nl + '| :--- | :--- | :--- | ---: | :--- | :--- |' + $nl)
         foreach ($c in $done) {
             $names = (@($c.psfdx | ForEach-Object { if ($_ -like '* (internal)') { $_ } else { '`' + $_ + '`' } }) -join ', ')
             $flags = ''
-            if (@($c.uncoveredFlags).Count -gt 0) { $flags = ((@($c.uncoveredFlags) | ForEach-Object { '`--' + $_ + '`' }) -join ' ') }
+            if (@($c.uncoveredFlags).Count -gt 0) {
+                $required = @($c.requiredFlagsNotPassed)
+                $flags = ((@($c.uncoveredFlags) | ForEach-Object { $text = '`--' + $_ + '`'; if ($required -contains $_) { $text += ' (required)' }; $text }) -join ' ')
+            }
+            $values = ''
+            if (@($c.valuesNotReachable).Count -gt 0) {
+                $values = ((@($c.valuesNotReachable) | ForEach-Object { '`--' + $_.flag + '`: ' + ((@($_.values) | ForEach-Object { '`' + $_ + '`' }) -join ', ') }) -join '; ')
+            }
             $note = ''
             if ($c.status -eq 'partially wrapped' -and $c.reason) { $note = ' ' + (& $cell $c.reason) }
-            [void]$sb.Append("| ``sf $($c.id)`` | $($c.status) | $names | $flags$note |" + $nl)
+            [void]$sb.Append("| ``sf $($c.id)`` | $($c.status) | $names | $($c.flags.passed) of $($c.flags.total) | $flags$note | $values |" + $nl)
         }
         [void]$sb.Append($nl)
     }
@@ -609,7 +758,8 @@ function ConvertTo-ParityMarkdown {
     }
 
     [void]$sb.Append('## How to read this' + $nl + $nl)
-    [void]$sb.Append('- **Wrapped:** some psfdx function runs the command and passes every one of its flags (apart from `--json`, `--flags-dir` and `--api-version`, which are reported once). **Partially wrapped:** psfdx runs it but not every flag is exposed; the missing flags are listed, and a reviewed mapping rule can accept that with a reason. Flags are matched by function (the function that builds the command, and the helpers in the same file that it calls), so this is a close estimate, not a proof.' + $nl)
+    [void]$sb.Append('- **Wrapped:** some psfdx function runs the command, passes every one of its flags (apart from `--json`, `--flags-dir` and `--api-version`, which are reported once) and can pass every value the CLI lists for them. **Partially wrapped:** a flag is not passed, or a listed value cannot be passed; both are shown, and a reviewed mapping rule can accept the gap with a reason. Flags are matched by function (the function that builds the command, and the helpers it calls in the same file or in psfdx-shared), so this is a close estimate, not a proof.' + $nl)
+    [void]$sb.Append('- **Values:** the CLI lists the allowed values for some flags (for example `--test-level`). A value is reachable when psfdx writes it literally in the arguments, accepts it through a parameter with a `[ValidateSet()]` (compared without regard to case), or takes the flag''s value as free text, in which case any value can be passed. A parameter that is not a `[ValidateSet()]` is free text, even if its help names the values. Flags with no list (names, paths, numbers, query text) are checked for being passed, not for values. The CLI''s recorded default counts as reachable, because leaving the flag out uses it; a default the CLI does not record in its command data does not, so such a value is listed even though omitting the flag would use it, unless the mapping accepts it (`ignoreValues`). A lookup table such as `$map = @{ ''Name'' = ''CliValue'' }` used as `$map[$x]` after a flag counts as exactly its values. A value that psfdx builds some other way is not followed.' + $nl)
     [void]$sb.Append('- **Missing:** no psfdx function runs it and nobody has decided why. **Deliberately excluded:** reviewed and left out on purpose, with a reason. **Not applicable:** CLI housekeeping or interactive tooling that a PowerShell wrapper has no use for.' + $nl)
     [void]$sb.Append('- **One to many, many to one:** a cmdlet can run several commands (a bulk job and its resume), and a command can be run by several cmdlets; both are shown. A cmdlet that only calls other psfdx cmdlets is a convenience and is not counted as coverage.' + $nl)
     [void]$sb.Append('- **Scope:** the plugin set is what `sf commands` lists for this CLI: the core plugins that ship with it and the just-in-time plugins it installs on first use. Percentages are per plugin set. Plugins you install yourself are not in this report. `Beta` and `preview` commands are counted like the rest and marked.' + $nl)

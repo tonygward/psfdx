@@ -102,7 +102,7 @@ Get-SalesforcePackageVersions -PackageName MyPkg | Remove-SalesforcePackageVersi
 
 ## Salesforce CLI coverage
 
-How much of the Salesforce CLI does psfdx wrap? [docs/cli-parity.md](docs/cli-parity.md) answers it command by command. It compares the latest stable `sf` with the commands the modules actually run, not with cmdlet counts, and shows for every command whether psfdx wraps it, wraps part of it (and which flags are missing), has not covered it, or leaves it out on purpose.
+How much of the Salesforce CLI does psfdx wrap? [docs/cli-parity.md](docs/cli-parity.md) answers it command by command. It compares the latest stable `sf` with the commands the modules actually run, not with cmdlet counts, and shows for every command whether psfdx wraps it, wraps part of it, has not covered it, or leaves it out on purpose. For the commands psfdx runs it goes down to the flags and their values: which flags no cmdlet passes (a required one is marked), and which of the values the CLI lists for a flag (such as `--test-level`) psfdx cannot pass.
 
 - **Read it per plugin set.** The report is for the core plugins that ship with the CLI and, separately, the just-in-time plugins it installs on first use. A percentage means "of the commands in that set that apply to a PowerShell wrapper", never of the whole CLI.
 - **Missing is not a promise.** A gap with no reason has simply not been decided. A reviewed gap carries a reason or an issue link. The reviewed classifications are in [docs/cli-parity-mapping.json](docs/cli-parity-mapping.json); everything else is read from the code.

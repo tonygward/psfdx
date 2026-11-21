@@ -10,13 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 53 | 39 | 107 | 0 | 15 | 46.2% of 199 |
+| Core plugins (bundled with the CLI) | 214 | 51 | 41 | 107 | 0 | 15 | 46.2% of 199 |
 | Just-in-time plugins (installed on first use) | 65 | 3 | 4 | 49 | 0 | 9 | 12.5% of 56 |
-| Both | 279 | 56 | 43 | 156 | 0 | 24 | 38.8% of 255 |
+| Both | 279 | 54 | 45 | 156 | 0 | 24 | 38.8% of 255 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
 psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+
+**Flags and values.** Across the **99** commands psfdx runs, it passes **406 of 519** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **36** have a list of allowed values in the CLI, and psfdx can pass **123 of 143** of those values.
 
 ## By capability
 
@@ -24,7 +26,7 @@ psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Agentforce agents (sf agent) | 41 | 4 | 4 | 33 | 0 | 0 | 19.5% of 41 |
 | Aliases (sf alias) | 3 | 2 | 1 | 0 | 0 | 0 | 100.0% of 3 |
-| Apex (sf apex) | 10 | 7 | 2 | 1 | 0 | 0 | 90.0% of 10 |
+| Apex (sf apex) | 10 | 6 | 3 | 1 | 0 | 0 | 90.0% of 10 |
 | REST API requests (sf api) | 2 | 0 | 1 | 1 | 0 | 0 | 50.0% of 2 |
 | Shell autocomplete (sf autocomplete) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Custom metadata types (sf cmdt) | 5 | 0 | 0 | 5 | 0 | 0 | 0.0% of 5 |
@@ -50,7 +52,7 @@ psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The
 | Schema (sf schema) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
 | CLI search (sf search) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Objects (sf sobject) | 2 | 1 | 1 | 0 | 0 | 0 | 100.0% of 2 |
-| Templates and generators (sf template) | 17 | 1 | 2 | 14 | 0 | 0 | 17.6% of 17 |
+| Templates and generators (sf template) | 17 | 0 | 3 | 14 | 0 | 0 | 17.6% of 17 |
 | UI bundles (sf ui-bundle) | 1 | 0 | 0 | 1 | 0 | 0 | 0.0% of 1 |
 | CLI update (sf update) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | CLI version (sf version) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
@@ -63,506 +65,506 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 
 ### Agentforce agents (`sf agent`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf agent adl create` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl delete` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl file add` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl file delete` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl file list` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl get` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl list` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl status` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl update` | @salesforce/plugin-agent | missing |  |
-| `sf agent adl upload` | @salesforce/plugin-agent | missing |  |
-| `sf agent create` | @salesforce/plugin-agent | missing |  |
-| `sf agent generate agent-spec` | @salesforce/plugin-agent | missing |  |
-| `sf agent generate template` | @salesforce/plugin-agent | missing |  |
-| `sf agent generate test-spec` | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp asset list` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp asset replace` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp create` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp delete` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp fetch` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp get` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp list` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent mcp update` (preview) | @salesforce/plugin-agent | missing |  |
-| `sf agent preview` | @salesforce/plugin-agent | missing |  |
-| `sf agent preview end` | @salesforce/plugin-agent | missing |  |
-| `sf agent preview send` | @salesforce/plugin-agent | missing |  |
-| `sf agent preview sessions` | @salesforce/plugin-agent | missing |  |
-| `sf agent preview start` | @salesforce/plugin-agent | missing |  |
-| `sf agent test create` | @salesforce/plugin-agent | missing |  |
-| `sf agent test resume` | @salesforce/plugin-agent | missing |  |
-| `sf agent test run-eval` (beta) | @salesforce/plugin-agent | missing |  |
-| `sf agent trace delete` | @salesforce/plugin-agent | missing |  |
-| `sf agent trace list` | @salesforce/plugin-agent | missing |  |
-| `sf agent trace read` | @salesforce/plugin-agent | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf agent adl create` | @salesforce/plugin-agent | 13 (4 required) | missing |  |
+| `sf agent adl delete` | @salesforce/plugin-agent | 2 (2 required) | missing |  |
+| `sf agent adl file add` | @salesforce/plugin-agent | 3 (3 required) | missing |  |
+| `sf agent adl file delete` | @salesforce/plugin-agent | 3 (3 required) | missing |  |
+| `sf agent adl file list` | @salesforce/plugin-agent | 5 (2 required) | missing |  |
+| `sf agent adl get` | @salesforce/plugin-agent | 2 (2 required) | missing |  |
+| `sf agent adl list` | @salesforce/plugin-agent | 2 (1 required) | missing |  |
+| `sf agent adl status` | @salesforce/plugin-agent | 3 (2 required) | missing |  |
+| `sf agent adl update` | @salesforce/plugin-agent | 8 (2 required) | missing |  |
+| `sf agent adl upload` | @salesforce/plugin-agent | 4 (3 required) | missing |  |
+| `sf agent create` | @salesforce/plugin-agent | 5 (1 required) | missing |  |
+| `sf agent generate agent-spec` | @salesforce/plugin-agent | 16 (1 required) | missing |  |
+| `sf agent generate template` | @salesforce/plugin-agent | 4 (3 required) | missing |  |
+| `sf agent generate test-spec` | @salesforce/plugin-agent | 4 | missing |  |
+| `sf agent mcp asset list` (preview) | @salesforce/plugin-agent | 2 (2 required) | missing |  |
+| `sf agent mcp asset replace` (preview) | @salesforce/plugin-agent | 4 (2 required) | missing |  |
+| `sf agent mcp create` (preview) | @salesforce/plugin-agent | 10 (3 required) | missing |  |
+| `sf agent mcp delete` (preview) | @salesforce/plugin-agent | 3 (2 required) | missing |  |
+| `sf agent mcp fetch` (preview) | @salesforce/plugin-agent | 2 (2 required) | missing |  |
+| `sf agent mcp get` (preview) | @salesforce/plugin-agent | 2 (2 required) | missing |  |
+| `sf agent mcp list` (preview) | @salesforce/plugin-agent | 4 (1 required) | missing |  |
+| `sf agent mcp update` (preview) | @salesforce/plugin-agent | 10 (2 required) | missing |  |
+| `sf agent preview` | @salesforce/plugin-agent | 8 (1 required) | missing |  |
+| `sf agent preview end` | @salesforce/plugin-agent | 6 (1 required) | missing |  |
+| `sf agent preview send` | @salesforce/plugin-agent | 5 (2 required) | missing |  |
+| `sf agent preview sessions` | @salesforce/plugin-agent | 0 | missing |  |
+| `sf agent preview start` | @salesforce/plugin-agent | 7 (1 required) | missing |  |
+| `sf agent test create` | @salesforce/plugin-agent | 6 (1 required) | missing |  |
+| `sf agent test resume` | @salesforce/plugin-agent | 8 (1 required) | missing |  |
+| `sf agent test run-eval` (beta) | @salesforce/plugin-agent | 6 (2 required) | missing |  |
+| `sf agent trace delete` | @salesforce/plugin-agent | 4 | missing |  |
+| `sf agent trace list` | @salesforce/plugin-agent | 3 | missing |  |
+| `sf agent trace read` | @salesforce/plugin-agent | 4 (1 required) | missing |  |
 
 ### Apex (`sf apex`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf apex get compile-status` | @salesforce/plugin-apex | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf apex get compile-status` | @salesforce/plugin-apex | 1 (1 required) | missing |  |
 
 ### REST API requests (`sf api`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf api request graphql` | @salesforce/plugin-api | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf api request graphql` | @salesforce/plugin-api | 4 (2 required) | missing |  |
 
 ### Shell autocomplete (`sf autocomplete`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf autocomplete` | @oclif/plugin-autocomplete | not applicable | Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf autocomplete` | @oclif/plugin-autocomplete | 1 | not applicable | Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it. |
 
 ### Custom metadata types (`sf cmdt`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf cmdt generate field` | @salesforce/plugin-custom-metadata | missing |  |
-| `sf cmdt generate fromorg` | @salesforce/plugin-custom-metadata | missing |  |
-| `sf cmdt generate object` | @salesforce/plugin-custom-metadata | missing |  |
-| `sf cmdt generate record` | @salesforce/plugin-custom-metadata | missing |  |
-| `sf cmdt generate records` | @salesforce/plugin-custom-metadata | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf cmdt generate field` | @salesforce/plugin-custom-metadata | 6 (2 required) | missing |  |
+| `sf cmdt generate fromorg` | @salesforce/plugin-custom-metadata | 9 (3 required) | missing |  |
+| `sf cmdt generate object` | @salesforce/plugin-custom-metadata | 5 (1 required) | missing |  |
+| `sf cmdt generate record` | @salesforce/plugin-custom-metadata | 6 (2 required) | missing |  |
+| `sf cmdt generate records` | @salesforce/plugin-custom-metadata | 5 (2 required) | missing |  |
 
 ### Code Analyzer (`sf code-analyzer`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf code-analyzer ast-dump` | @salesforce/plugin-code-analyzer | missing |  |
-| `sf code-analyzer config` | @salesforce/plugin-code-analyzer | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf code-analyzer ast-dump` | @salesforce/plugin-code-analyzer | 4 (1 required) | missing |  |
+| `sf code-analyzer config` | @salesforce/plugin-code-analyzer | 7 | missing |  |
 
 ### CLI command list (`sf commands`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf commands` | @oclif/plugin-commands | not applicable | Lists the sf commands. psfdx reads it only to build this report. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf commands` | @oclif/plugin-commands | 7 | not applicable | Lists the sf commands. psfdx reads it only to build this report. |
 
 ### Experience Cloud sites (`sf community`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf community create` | @salesforce/plugin-community | missing |  |
-| `sf community list template` | @salesforce/plugin-community | missing |  |
-| `sf community publish` | @salesforce/plugin-community | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf community create` | @salesforce/plugin-community | 5 (3 required) | missing |  |
+| `sf community list template` | @salesforce/plugin-community | 1 (1 required) | missing |  |
+| `sf community publish` | @salesforce/plugin-community | 2 (2 required) | missing |  |
 
 ### Data and records (`sf data`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf data create file` | @salesforce/plugin-data | missing |  |
-| `sf data delete bulk` | @salesforce/plugin-data | missing |  |
-| `sf data delete resume` | @salesforce/plugin-data | missing |  |
-| `sf data resume` | @salesforce/plugin-data | missing |  |
-| `sf data search` | @salesforce/plugin-data | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf data create file` | @salesforce/plugin-data | 4 (2 required) | missing |  |
+| `sf data delete bulk` | @salesforce/plugin-data | 6 (3 required) | missing |  |
+| `sf data delete resume` | @salesforce/plugin-data | 4 | missing |  |
+| `sf data resume` | @salesforce/plugin-data | 3 (2 required) | missing |  |
+| `sf data search` | @salesforce/plugin-data | 4 (1 required) | missing |  |
 
 ### CLI plugin development (`sf dev`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf dev audit messages` | @salesforce/plugin-dev | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
-| `sf dev convert messages` | @salesforce/plugin-dev | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
-| `sf dev convert script` | @salesforce/plugin-dev | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
-| `sf dev generate command` | @salesforce/plugin-dev | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
-| `sf dev generate flag` | @salesforce/plugin-dev | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
-| `sf dev generate plugin` | @salesforce/plugin-dev | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf dev audit messages` | @salesforce/plugin-dev | 3 | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
+| `sf dev convert messages` | @salesforce/plugin-dev | 2 (1 required) | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
+| `sf dev convert script` | @salesforce/plugin-dev | 1 (1 required) | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
+| `sf dev generate command` | @salesforce/plugin-dev | 5 (1 required) | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
+| `sf dev generate flag` | @salesforce/plugin-dev | 1 | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
+| `sf dev generate plugin` | @salesforce/plugin-dev | 1 | not applicable | Commands for building Salesforce CLI plugins, not for working with an org. |
 
 ### DevOps Center (`sf devops`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf devops pipeline create` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline get` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline list` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline project add` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline project delete` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline stage add` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline stage delete` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline stage update` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops pipeline update` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops project create` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops project list` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops project update` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops promote` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops promotion complete` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops promotion validate` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops request status` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops review create` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops stage branch add` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops stage branch delete` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops stage environment add` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops stage environment delete` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops work-item combine` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops work-item create` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops work-item list` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops work-item prepare` | @salesforce/plugin-devops-center | missing |  |
-| `sf devops work-item update` | @salesforce/plugin-devops-center | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf devops pipeline create` | @salesforce/plugin-devops-center | 10 (3 required) | missing |  |
+| `sf devops pipeline get` | @salesforce/plugin-devops-center | 2 (2 required) | missing |  |
+| `sf devops pipeline list` | @salesforce/plugin-devops-center | 1 (1 required) | missing |  |
+| `sf devops pipeline project add` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops pipeline project delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops pipeline stage add` | @salesforce/plugin-devops-center | 4 (4 required) | missing |  |
+| `sf devops pipeline stage delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops pipeline stage update` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops pipeline update` | @salesforce/plugin-devops-center | 5 (2 required) | missing |  |
+| `sf devops project create` | @salesforce/plugin-devops-center | 3 (2 required) | missing |  |
+| `sf devops project list` | @salesforce/plugin-devops-center | 1 (1 required) | missing |  |
+| `sf devops project update` | @salesforce/plugin-devops-center | 5 (2 required) | missing |  |
+| `sf devops promote` | @salesforce/plugin-devops-center | 9 (2 required) | missing |  |
+| `sf devops promotion complete` | @salesforce/plugin-devops-center | 6 (2 required) | missing |  |
+| `sf devops promotion validate` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops request status` | @salesforce/plugin-devops-center | 2 (2 required) | missing |  |
+| `sf devops review create` | @salesforce/plugin-devops-center | 3 (1 required) | missing |  |
+| `sf devops stage branch add` | @salesforce/plugin-devops-center | 6 (4 required) | missing |  |
+| `sf devops stage branch delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops stage environment add` | @salesforce/plugin-devops-center | 7 (5 required) | missing |  |
+| `sf devops stage environment delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops work-item combine` | @salesforce/plugin-devops-center | 4 (4 required) | missing |  |
+| `sf devops work-item create` | @salesforce/plugin-devops-center | 4 (3 required) | missing |  |
+| `sf devops work-item list` | @salesforce/plugin-devops-center | 2 (2 required) | missing |  |
+| `sf devops work-item prepare` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
+| `sf devops work-item update` | @salesforce/plugin-devops-center | 6 (1 required) | missing |  |
 
 ### CLI diagnostics (`sf doctor`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf doctor` | @salesforce/plugin-info | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf doctor` | @salesforce/plugin-info | 4 | missing |  |
 
 ### Legacy force commands (`sf force`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf force data bulk delete` | @salesforce/plugin-data | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
-| `sf force data bulk status` | @salesforce/plugin-data | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
-| `sf force data bulk upsert` | @salesforce/plugin-data | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
-| `sf force lightning lwc test create` | @salesforce/sfdx-plugin-lwc-test | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
-| `sf force lightning lwc test run` | @salesforce/sfdx-plugin-lwc-test | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
-| `sf force lightning lwc test setup` | @salesforce/sfdx-plugin-lwc-test | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
-| `sf force package push-upgrade list` | @salesforce/plugin-packaging | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf force data bulk delete` | @salesforce/plugin-data | 4 (3 required) | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| `sf force data bulk status` | @salesforce/plugin-data | 3 (2 required) | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| `sf force data bulk upsert` | @salesforce/plugin-data | 6 (4 required) | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| `sf force lightning lwc test create` | @salesforce/sfdx-plugin-lwc-test | 2 (1 required) | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| `sf force lightning lwc test run` | @salesforce/sfdx-plugin-lwc-test | 3 | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| `sf force lightning lwc test setup` | @salesforce/sfdx-plugin-lwc-test | 1 | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
+| `sf force package push-upgrade list` | @salesforce/plugin-packaging | 5 (2 required) | not applicable | Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md). |
 
 ### CLI help (`sf help`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf help` | @oclif/plugin-help | not applicable | Prints sf help for a person at a terminal. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf help` | @oclif/plugin-help | 1 | not applicable | Prints sf help for a person at a terminal. |
 
 ### CLI information (`sf info`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf info releasenotes display` | @salesforce/plugin-info | not applicable | Shows CLI release notes to a person. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf info releasenotes display` | @salesforce/plugin-info | 1 | not applicable | Shows CLI release notes to a person. |
 
 ### Orgs, users and sandboxes (`sf org`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf org auth show-access-token` | @salesforce/plugin-org | missing |  |
-| `sf org auth show-sfdx-auth-url` | @salesforce/plugin-org | missing |  |
-| `sf org auth show-user-password` | @salesforce/plugin-org | missing |  |
-| `sf org create agent-user` | @salesforce/plugin-org | missing |  |
-| `sf org create shape` | @salesforce/plugin-signups | missing |  |
-| `sf org create snapshot` | @salesforce/plugin-signups | missing |  |
-| `sf org delete shape` | @salesforce/plugin-signups | missing |  |
-| `sf org delete snapshot` | @salesforce/plugin-signups | missing |  |
-| `sf org disable tracking` | @salesforce/plugin-org | missing |  |
-| `sf org display` | @salesforce/plugin-org | missing |  |
-| `sf org enable tracking` | @salesforce/plugin-org | missing |  |
-| `sf org get snapshot` | @salesforce/plugin-signups | missing |  |
-| `sf org list auth` | @salesforce/plugin-auth | missing |  |
-| `sf org list metadata` | @salesforce/plugin-org | missing |  |
-| `sf org list shape` | @salesforce/plugin-signups | missing |  |
-| `sf org list snapshot` | @salesforce/plugin-signups | missing |  |
-| `sf org list sobject record-counts` | @salesforce/plugin-limits | missing |  |
-| `sf org login access-token` | @salesforce/plugin-auth | missing |  |
-| `sf org open agent` | @salesforce/plugin-org | missing |  |
-| `sf org refresh sandbox` | @salesforce/plugin-org | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf org auth show-access-token` | @salesforce/plugin-org | 2 (1 required) | missing |  |
+| `sf org auth show-sfdx-auth-url` | @salesforce/plugin-org | 2 (1 required) | missing |  |
+| `sf org auth show-user-password` | @salesforce/plugin-org | 2 (1 required) | missing |  |
+| `sf org create agent-user` | @salesforce/plugin-org | 4 (1 required) | missing |  |
+| `sf org create shape` | @salesforce/plugin-signups | 1 (1 required) | missing |  |
+| `sf org create snapshot` | @salesforce/plugin-signups | 4 (3 required) | missing |  |
+| `sf org delete shape` | @salesforce/plugin-signups | 2 (1 required) | missing |  |
+| `sf org delete snapshot` | @salesforce/plugin-signups | 3 (2 required) | missing |  |
+| `sf org disable tracking` | @salesforce/plugin-org | 1 (1 required) | missing |  |
+| `sf org display` | @salesforce/plugin-org | 2 (1 required) | missing |  |
+| `sf org enable tracking` | @salesforce/plugin-org | 1 (1 required) | missing |  |
+| `sf org get snapshot` | @salesforce/plugin-signups | 2 (2 required) | missing |  |
+| `sf org list auth` | @salesforce/plugin-auth | 0 | missing |  |
+| `sf org list metadata` | @salesforce/plugin-org | 4 (2 required) | missing |  |
+| `sf org list shape` | @salesforce/plugin-signups | 0 | missing |  |
+| `sf org list snapshot` | @salesforce/plugin-signups | 1 (1 required) | missing |  |
+| `sf org list sobject record-counts` | @salesforce/plugin-limits | 2 (1 required) | missing |  |
+| `sf org login access-token` | @salesforce/plugin-auth | 5 (1 required) | missing |  |
+| `sf org open agent` | @salesforce/plugin-org | 7 (1 required) | missing |  |
+| `sf org refresh sandbox` | @salesforce/plugin-org | 10 (1 required) | missing |  |
 
 ### Packages (second generation) (`sf package`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf package convert` | @salesforce/plugin-packaging | missing |  |
-| `sf package push-upgrade abort` | @salesforce/plugin-packaging | missing |  |
-| `sf package push-upgrade list` | @salesforce/plugin-packaging | missing |  |
-| `sf package push-upgrade report` | @salesforce/plugin-packaging | missing |  |
-| `sf package push-upgrade schedule` | @salesforce/plugin-packaging | missing |  |
-| `sf package uninstall` | @salesforce/plugin-packaging | missing |  |
-| `sf package uninstall report` | @salesforce/plugin-packaging | missing |  |
-| `sf package update` | @salesforce/plugin-packaging | missing |  |
-| `sf package version create list` | @salesforce/plugin-packaging | missing |  |
-| `sf package version displayancestry` | @salesforce/plugin-packaging | missing |  |
-| `sf package version displaydependencies` | @salesforce/plugin-packaging | missing |  |
-| `sf package version report` | @salesforce/plugin-packaging | missing |  |
-| `sf package version retrieve` | @salesforce/plugin-packaging | missing |  |
-| `sf package version update` | @salesforce/plugin-packaging | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf package convert` | @salesforce/plugin-packaging | 10 (2 required) | missing |  |
+| `sf package push-upgrade abort` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
+| `sf package push-upgrade list` | @salesforce/plugin-packaging | 5 (2 required) | missing |  |
+| `sf package push-upgrade report` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
+| `sf package push-upgrade schedule` | @salesforce/plugin-packaging | 6 (2 required) | missing |  |
+| `sf package uninstall` | @salesforce/plugin-packaging | 3 (2 required) | missing |  |
+| `sf package uninstall report` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
+| `sf package update` | @salesforce/plugin-packaging | 8 (2 required) | missing |  |
+| `sf package version create list` | @salesforce/plugin-packaging | 5 (1 required) | missing |  |
+| `sf package version displayancestry` | @salesforce/plugin-packaging | 4 (2 required) | missing |  |
+| `sf package version displaydependencies` | @salesforce/plugin-packaging | 5 (2 required) | missing |  |
+| `sf package version report` | @salesforce/plugin-packaging | 3 (2 required) | missing |  |
+| `sf package version retrieve` | @salesforce/plugin-packaging | 3 (2 required) | missing |  |
+| `sf package version update` | @salesforce/plugin-packaging | 7 (2 required) | missing |  |
 
 ### Packages (first generation) (`sf package1`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf package1 version create` | @salesforce/plugin-packaging | missing |  |
-| `sf package1 version create get` | @salesforce/plugin-packaging | missing |  |
-| `sf package1 version display` | @salesforce/plugin-packaging | missing |  |
-| `sf package1 version list` | @salesforce/plugin-packaging | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf package1 version create` | @salesforce/plugin-packaging | 10 (3 required) | missing |  |
+| `sf package1 version create get` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
+| `sf package1 version display` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
+| `sf package1 version list` | @salesforce/plugin-packaging | 2 (1 required) | missing |  |
 
 ### CLI plugins (`sf plugins`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf plugins add` | @oclif/plugin-plugins | missing |  |
-| `sf plugins discover` | @salesforce/plugin-marketplace | missing |  |
-| `sf plugins inspect` | @oclif/plugin-plugins | missing |  |
-| `sf plugins link` | @oclif/plugin-plugins | not applicable | Links a local plugin under development, which only plugin authors do. |
-| `sf plugins remove` | @oclif/plugin-plugins | missing |  |
-| `sf plugins reset` | @oclif/plugin-plugins | missing |  |
-| `sf plugins trust allowlist add` | @salesforce/plugin-trust | missing |  |
-| `sf plugins trust allowlist list` | @salesforce/plugin-trust | missing |  |
-| `sf plugins trust allowlist remove` | @salesforce/plugin-trust | missing |  |
-| `sf plugins trust verify` | @salesforce/plugin-trust | missing |  |
-| `sf plugins uninstall` | @oclif/plugin-plugins | missing |  |
-| `sf plugins unlink` | @oclif/plugin-plugins | not applicable | Unlinks a local plugin under development, which only plugin authors do. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf plugins add` | @oclif/plugin-plugins | 4 | missing |  |
+| `sf plugins discover` | @salesforce/plugin-marketplace | 0 | missing |  |
+| `sf plugins inspect` | @oclif/plugin-plugins | 2 | missing |  |
+| `sf plugins link` | @oclif/plugin-plugins | 3 | not applicable | Links a local plugin under development, which only plugin authors do. |
+| `sf plugins remove` | @oclif/plugin-plugins | 2 | missing |  |
+| `sf plugins reset` | @oclif/plugin-plugins | 2 | missing |  |
+| `sf plugins trust allowlist add` | @salesforce/plugin-trust | 1 (1 required) | missing |  |
+| `sf plugins trust allowlist list` | @salesforce/plugin-trust | 0 | missing |  |
+| `sf plugins trust allowlist remove` | @salesforce/plugin-trust | 1 (1 required) | missing |  |
+| `sf plugins trust verify` | @salesforce/plugin-trust | 2 (1 required) | missing |  |
+| `sf plugins uninstall` | @oclif/plugin-plugins | 2 | missing |  |
+| `sf plugins unlink` | @oclif/plugin-plugins | 2 | not applicable | Unlinks a local plugin under development, which only plugin authors do. |
 
 ### Project, deploy and retrieve (`sf project`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf project convert mdapi` | @salesforce/plugin-deploy-retrieve | missing |  |
-| `sf project convert source` | @salesforce/plugin-deploy-retrieve | missing |  |
-| `sf project convert source-behavior` (beta) | @salesforce/plugin-deploy-retrieve | missing |  |
-| `sf project delete source` | @salesforce/plugin-deploy-retrieve | missing |  |
-| `sf project delete tracking` | @salesforce/plugin-deploy-retrieve | missing |  |
-| `sf project deploy pipeline quick` (beta) | @salesforce/plugin-devops-center | missing |  |
-| `sf project deploy pipeline report` (beta) | @salesforce/plugin-devops-center | missing |  |
-| `sf project deploy pipeline resume` (beta) | @salesforce/plugin-devops-center | missing |  |
-| `sf project deploy pipeline start` (beta) | @salesforce/plugin-devops-center | missing |  |
-| `sf project deploy pipeline validate` (beta) | @salesforce/plugin-devops-center | missing |  |
-| `sf project list ignored` | @salesforce/plugin-deploy-retrieve | missing |  |
-| `sf project reset tracking` | @salesforce/plugin-deploy-retrieve | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf project convert mdapi` | @salesforce/plugin-deploy-retrieve | 5 (1 required) | missing |  |
+| `sf project convert source` | @salesforce/plugin-deploy-retrieve | 6 | missing |  |
+| `sf project convert source-behavior` (beta) | @salesforce/plugin-deploy-retrieve | 4 (1 required) | missing |  |
+| `sf project delete source` | @salesforce/plugin-deploy-retrieve | 11 (1 required) | missing |  |
+| `sf project delete tracking` | @salesforce/plugin-deploy-retrieve | 2 (1 required) | missing |  |
+| `sf project deploy pipeline quick` (beta) | @salesforce/plugin-devops-center | 7 (1 required) | missing |  |
+| `sf project deploy pipeline report` (beta) | @salesforce/plugin-devops-center | 3 (1 required) | missing |  |
+| `sf project deploy pipeline resume` (beta) | @salesforce/plugin-devops-center | 6 (1 required) | missing |  |
+| `sf project deploy pipeline start` (beta) | @salesforce/plugin-devops-center | 11 (3 required) | missing |  |
+| `sf project deploy pipeline validate` (beta) | @salesforce/plugin-devops-center | 11 (3 required) | missing |  |
+| `sf project list ignored` | @salesforce/plugin-deploy-retrieve | 1 | missing |  |
+| `sf project reset tracking` | @salesforce/plugin-deploy-retrieve | 3 (1 required) | missing |  |
 
 ### Schema (`sf schema`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf schema generate field` | @salesforce/plugin-sobject | missing |  |
-| `sf schema generate platformevent` | @salesforce/plugin-sobject | missing |  |
-| `sf schema generate sobject` | @salesforce/plugin-sobject | missing |  |
-| `sf schema generate tab` | @salesforce/plugin-sobject | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf schema generate field` | @salesforce/plugin-sobject | 2 (1 required) | missing |  |
+| `sf schema generate platformevent` | @salesforce/plugin-sobject | 1 (1 required) | missing |  |
+| `sf schema generate sobject` | @salesforce/plugin-sobject | 2 (1 required) | missing |  |
+| `sf schema generate tab` | @salesforce/plugin-sobject | 3 (3 required) | missing |  |
 
 ### CLI search (`sf search`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf search` | @oclif/plugin-search | not applicable | Interactive search of the CLI command list. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf search` | @oclif/plugin-search | 0 | not applicable | Interactive search of the CLI command list. |
 
 ### Templates and generators (`sf template`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf template generate analytics template` | @salesforce/plugin-templates | missing |  |
-| `sf template generate digital-experience site` (preview) | @salesforce/plugin-templates | missing |  |
-| `sf template generate flexipage` (beta) | @salesforce/plugin-templates | missing |  |
-| `sf template generate lightning app` | @salesforce/plugin-templates | missing |  |
-| `sf template generate lightning component` | @salesforce/plugin-templates | missing |  |
-| `sf template generate lightning event` | @salesforce/plugin-templates | missing |  |
-| `sf template generate lightning interface` | @salesforce/plugin-templates | missing |  |
-| `sf template generate lightning test` | @salesforce/plugin-templates | missing |  |
-| `sf template generate lightning-out` | @salesforce/plugin-templates | missing |  |
-| `sf template generate static-resource` | @salesforce/plugin-templates | missing |  |
-| `sf template generate ui-bundle` | @salesforce/plugin-templates | missing |  |
-| `sf template generate ui-embedding` | @salesforce/plugin-templates | missing |  |
-| `sf template generate visualforce component` | @salesforce/plugin-templates | missing |  |
-| `sf template generate visualforce page` | @salesforce/plugin-templates | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf template generate analytics template` | @salesforce/plugin-templates | 2 (1 required) | missing |  |
+| `sf template generate digital-experience site` (preview) | @salesforce/plugin-templates | 6 (2 required) | missing |  |
+| `sf template generate flexipage` (beta) | @salesforce/plugin-templates | 9 (2 required) | missing |  |
+| `sf template generate lightning app` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
+| `sf template generate lightning component` | @salesforce/plugin-templates | 4 (1 required) | missing |  |
+| `sf template generate lightning event` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
+| `sf template generate lightning interface` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
+| `sf template generate lightning test` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
+| `sf template generate lightning-out` | @salesforce/plugin-templates | 9 | missing |  |
+| `sf template generate static-resource` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
+| `sf template generate ui-bundle` | @salesforce/plugin-templates | 4 (1 required) | missing |  |
+| `sf template generate ui-embedding` | @salesforce/plugin-templates | 5 (4 required) | missing |  |
+| `sf template generate visualforce component` | @salesforce/plugin-templates | 4 (2 required) | missing |  |
+| `sf template generate visualforce page` | @salesforce/plugin-templates | 3 (2 required) | missing |  |
 
 ### UI bundles (`sf ui-bundle`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf ui-bundle dev` | @salesforce/plugin-ui-bundle-dev | missing |  |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf ui-bundle dev` | @salesforce/plugin-ui-bundle-dev | 5 (1 required) | missing |  |
 
 ### CLI update (`sf update`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf update` | @oclif/plugin-update | not applicable | Updates the sf program itself; psfdx installs and updates it with Install-SalesforceCli and Update-SalesforceCli (npm). |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf update` | @oclif/plugin-update | 5 | not applicable | Updates the sf program itself; psfdx installs and updates it with Install-SalesforceCli and Update-SalesforceCli (npm). |
 
 ### CLI version (`sf version`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf version` | @oclif/plugin-version | not applicable | Prints the CLI version; psfdx reads it only for this report and the compatibility lane. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf version` | @oclif/plugin-version | 1 | not applicable | Prints the CLI version; psfdx reads it only for this report and the compatibility lane. |
 
 ### CLI release notes (`sf whatsnew`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf whatsnew` | @salesforce/plugin-info | not applicable | Shows CLI release notes to a person. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf whatsnew` | @salesforce/plugin-info | 1 | not applicable | Shows CLI release notes to a person. |
 
 ### CLI command lookup (`sf which`)
 
-| Command | Plugin | Status | Why, or issue |
-| :--- | :--- | :--- | :--- |
-| `sf which` | @oclif/plugin-which | not applicable | Tells a person which plugin provides a command. |
+| Command | Plugin | Flags | Status | Why, or issue |
+| :--- | :--- | :--- | :--- | :--- |
+| `sf which` | @oclif/plugin-which | 0 | not applicable | Tells a person which plugin provides a command. |
 
 ## Covered
 
-Commands psfdx runs, with the cmdlets that run them. "Flags not passed" lists the command's flags that no psfdx function passes, which is why a command is partially wrapped.
+Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the command's flags that some psfdx function passes. "Flags not passed" lists the rest (a flag the CLI requires is marked). "Values not reachable" lists, for a flag that has a list of allowed values in the CLI, the values psfdx cannot pass. Either kind of gap makes a command partially wrapped.
 
 ### Agentforce agents (`sf agent`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf agent activate` | wrapped | `Enable-SalesforceAgent` |  |
-| `sf agent deactivate` | wrapped | `Disable-SalesforceAgent` |  |
-| `sf agent generate authoring-bundle` | partially wrapped | `New-SalesforceAgentAuthoringBundle` | `--force-overwrite` |
-| `sf agent publish authoring-bundle` | partially wrapped | `Publish-SalesforceAgentAuthoringBundle` | `--source-type` `--verbose` `--concise` |
-| `sf agent test list` | wrapped | `Get-SalesforceAgentTests` |  |
-| `sf agent test results` | partially wrapped | `Get-SalesforceAgentTestResult` | `--result-format` `--output-dir` `--test-runner` `--verbose` |
-| `sf agent test run` | partially wrapped | `Start-SalesforceAgentTest` | `--result-format` `--output-dir` `--test-runner` `--verbose` |
-| `sf agent validate authoring-bundle` | wrapped | `Test-SalesforceAgentAuthoringBundle` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf agent activate` | wrapped | `Enable-SalesforceAgent` | 3 of 3 |  |  |
+| `sf agent deactivate` | wrapped | `Disable-SalesforceAgent` | 2 of 2 |  |  |
+| `sf agent generate authoring-bundle` | partially wrapped | `New-SalesforceAgentAuthoringBundle` | 6 of 7 | `--force-overwrite` |  |
+| `sf agent publish authoring-bundle` | partially wrapped | `Publish-SalesforceAgentAuthoringBundle` | 3 of 6 | `--concise` `--source-type` `--verbose` |  |
+| `sf agent test list` | wrapped | `Get-SalesforceAgentTests` | 1 of 1 |  |  |
+| `sf agent test results` | partially wrapped | `Get-SalesforceAgentTestResult` | 2 of 6 | `--output-dir` `--result-format` `--test-runner` `--verbose` |  |
+| `sf agent test run` | partially wrapped | `Start-SalesforceAgentTest` | 3 of 7 | `--output-dir` `--result-format` `--test-runner` `--verbose` |  |
+| `sf agent validate authoring-bundle` | wrapped | `Test-SalesforceAgentAuthoringBundle` | 2 of 2 |  |  |
 
 ### Aliases (`sf alias`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf alias list` | wrapped | `Get-SalesforceAlias` |  |
-| `sf alias set` | wrapped | `Add-SalesforceAlias` |  |
-| `sf alias unset` | partially wrapped | `Remove-SalesforceAlias` | `--all` `--no-prompt` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf alias list` | wrapped | `Get-SalesforceAlias` | 0 of 0 |  |  |
+| `sf alias set` | wrapped | `Add-SalesforceAlias` | 0 of 0 |  |  |
+| `sf alias unset` | partially wrapped | `Remove-SalesforceAlias` | 0 of 2 | `--all` `--no-prompt` |  |
 
 ### Apex (`sf apex`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf apex get log` | wrapped | `Get-SalesforceDebugLogs` |  |
-| `sf apex get test` | wrapped | `Get-SalesforceApexTestResult` |  |
-| `sf apex list log` | wrapped | `Select-SalesforceDebugLogs` |  |
-| `sf apex run` | partially wrapped | `Invoke-SalesforceApex` | `--debug-level` `--category-level` |
-| `sf apex run test` | partially wrapped | `Start-SalesforceApexTest`, `Test-SalesforceApex` | `--poll-interval` `--synchronous` |
-| `sf apex tail log` | wrapped | `Watch-SalesforceDebugLogs` |  |
-| `sf apex trace create` | wrapped | `Enable-SalesforceDebugLogging` |  |
-| `sf apex trace delete` | wrapped | `Disable-SalesforceDebugLogging` |  |
-| `sf apex trace list` | wrapped | `Get-SalesforceDebugLogging` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf apex get log` | wrapped | `Get-SalesforceDebugLogs` | 4 of 4 |  |  |
+| `sf apex get test` | partially wrapped | `Get-SalesforceApexTestResult` | 7 of 7 |  | `--result-format`: `tap`, `junit` |
+| `sf apex list log` | wrapped | `Select-SalesforceDebugLogs` | 1 of 1 |  |  |
+| `sf apex run` | partially wrapped | `Invoke-SalesforceApex` | 2 of 4 | `--category-level` `--debug-level` |  |
+| `sf apex run test` | partially wrapped | `Start-SalesforceApexTest`, `Test-SalesforceApex` | 11 of 13 | `--poll-interval` `--synchronous` |  |
+| `sf apex tail log` | wrapped | `Watch-SalesforceDebugLogs` | 4 of 4 |  |  |
+| `sf apex trace create` | wrapped | `Enable-SalesforceDebugLogging` | 5 of 5 |  |  |
+| `sf apex trace delete` | wrapped | `Disable-SalesforceDebugLogging` | 2 of 2 |  |  |
+| `sf apex trace list` | wrapped | `Get-SalesforceDebugLogging` | 1 of 1 |  |  |
 
 ### REST API requests (`sf api`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf api request rest` | partially wrapped | `Get-SalesforceApiVersions`, `Get-SalesforceEventFile`, `Upsert-SalesforceRecord` | `--include` `--header` `--file` `--stream-to-file` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf api request rest` | partially wrapped | `Get-SalesforceApiVersions`, `Get-SalesforceEventFile`, `Upsert-SalesforceRecord` | 3 of 7 | `--file` `--header` `--include` `--stream-to-file` | `--method`: `POST`, `PUT`, `HEAD`, `DELETE`, `OPTIONS`, `TRACE` |
 
 ### Code Analyzer (`sf code-analyzer`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf code-analyzer rules` | partially wrapped | `Get-SalesforceCodeAnalyzerRule` | `--view` |
-| `sf code-analyzer run` | partially wrapped | `Invoke-SalesforceCodeAnalyzer` | `--target-org` `--view` `--include-fixes` `--include-suggestions` `--no-suppressions` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf code-analyzer rules` | partially wrapped | `Get-SalesforceCodeAnalyzerRule` | 5 of 6 | `--view` |  |
+| `sf code-analyzer run` | partially wrapped | `Invoke-SalesforceCodeAnalyzer` | 6 of 11 | `--include-fixes` `--include-suggestions` `--no-suppressions` `--target-org` `--view` |  |
 
 ### CLI configuration (`sf config`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf config get` | partially wrapped | `Get-SalesforceTargetDevHub`, `Get-SalesforceTargetOrg` | `--verbose` |
-| `sf config list` | wrapped | `Get-SalesforceConfig` |  |
-| `sf config set` | wrapped | `Set-SalesforceTargetDevHub`, `Set-SalesforceTargetOrg` |  |
-| `sf config unset` | wrapped | `Remove-SalesforceTargetDevHub`, `Remove-SalesforceTargetOrg` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf config get` | partially wrapped | `Get-SalesforceTargetDevHub`, `Get-SalesforceTargetOrg` | 0 of 1 | `--verbose` |  |
+| `sf config list` | wrapped | `Get-SalesforceConfig` | 0 of 0 |  |  |
+| `sf config set` | wrapped | `Set-SalesforceTargetDevHub`, `Set-SalesforceTargetOrg` | 1 of 1 |  |  |
+| `sf config unset` | wrapped | `Remove-SalesforceTargetDevHub`, `Remove-SalesforceTargetOrg` | 1 of 1 |  |  |
 
 ### Data and records (`sf data`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf data bulk results` | wrapped | `Get-SalesforceBulkResult` |  |
-| `sf data create record` | partially wrapped | `New-SalesforceRecord` | `--skip-assignment-rules` |
-| `sf data delete record` | wrapped | `Remove-SalesforceRecord` |  |
-| `sf data export bulk` | wrapped | `Export-SalesforceBulkData` |  |
-| `sf data export resume` | partially wrapped | `Resume-SalesforceBulkJob` | `--use-most-recent` |
-| `sf data export tree` | wrapped | `Export-SalesforceTreeData` |  |
-| `sf data get record` | wrapped | `Get-SalesforceRecord` |  |
-| `sf data import bulk` | wrapped | `Import-SalesforceBulkData` |  |
-| `sf data import resume` | partially wrapped | `Resume-SalesforceBulkJob` | `--use-most-recent` |
-| `sf data import tree` | wrapped | `Import-SalesforceTreeData` |  |
-| `sf data query` | wrapped | `Export-SalesforceEventFiles`, `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Get-SalesforceSandboxRefreshStatus`, `Select-SalesforceEventFiles`, `Select-SalesforceRecords` |  |
-| `sf data update bulk` | wrapped | `Update-SalesforceBulkData` |  |
-| `sf data update record` | partially wrapped | `Set-SalesforceRecord` | `--where` `--skip-assignment-rules` |
-| `sf data update resume` | partially wrapped | `Resume-SalesforceBulkJob` | `--use-most-recent` |
-| `sf data upsert bulk` | wrapped | `Upsert-SalesforceBulkData` |  |
-| `sf data upsert resume` | partially wrapped | `Resume-SalesforceBulkJob` | `--use-most-recent` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf data bulk results` | wrapped | `Get-SalesforceBulkResult` | 2 of 2 |  |  |
+| `sf data create record` | partially wrapped | `New-SalesforceRecord` | 4 of 5 | `--skip-assignment-rules` |  |
+| `sf data delete record` | wrapped | `Remove-SalesforceRecord` | 5 of 5 |  |  |
+| `sf data export bulk` | wrapped | `Export-SalesforceBulkData` | 9 of 9 |  |  |
+| `sf data export resume` | partially wrapped | `Resume-SalesforceBulkJob` | 1 of 2 | `--use-most-recent` |  |
+| `sf data export tree` | wrapped | `Export-SalesforceTreeData` | 5 of 5 |  |  |
+| `sf data get record` | wrapped | `Get-SalesforceRecord` | 5 of 5 |  |  |
+| `sf data import bulk` | wrapped | `Import-SalesforceBulkData` | 6 of 6 |  |  |
+| `sf data import resume` | partially wrapped | `Resume-SalesforceBulkJob` | 2 of 3 | `--use-most-recent` |  |
+| `sf data import tree` | wrapped | `Import-SalesforceTreeData` | 3 of 3 |  |  |
+| `sf data query` | wrapped | `Export-SalesforceEventFiles`, `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Get-SalesforceSandboxRefreshStatus`, `Select-SalesforceEventFiles`, `Select-SalesforceRecords` | 7 of 7 |  |  |
+| `sf data update bulk` | wrapped | `Update-SalesforceBulkData` | 6 of 6 |  |  |
+| `sf data update record` | partially wrapped | `Set-SalesforceRecord` | 5 of 7 | `--skip-assignment-rules` `--where` |  |
+| `sf data update resume` | partially wrapped | `Resume-SalesforceBulkJob` | 2 of 3 | `--use-most-recent` |  |
+| `sf data upsert bulk` | wrapped | `Upsert-SalesforceBulkData` | 7 of 7 |  |  |
+| `sf data upsert resume` | partially wrapped | `Resume-SalesforceBulkJob` | 3 of 4 | `--use-most-recent` |  |
 
 ### Flow (`sf flow`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf flow get test` | wrapped | `Get-SalesforceFlowTestResult` |  |
-| `sf flow run test` | wrapped | `Test-SalesforceFlow` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf flow get test` | wrapped | `Get-SalesforceFlowTestResult` | 7 of 7 |  |  |
+| `sf flow run test` | wrapped | `Test-SalesforceFlow` | 10 of 10 |  |  |
 
 ### Lightning development (`sf lightning`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf lightning dev app` | partially wrapped | `Start-SalesforceLwcDevServer` | `--device-id` |
-| `sf lightning dev component` | partially wrapped | `Start-SalesforceLwcDevServer` | `--client-select` |
-| `sf lightning dev site` | wrapped | `Start-SalesforceLwcDevServer` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf lightning dev app` | partially wrapped | `Start-SalesforceLwcDevServer` | 3 of 4 | `--device-id` | `--device-type`: `desktop` |
+| `sf lightning dev component` | partially wrapped | `Start-SalesforceLwcDevServer` | 2 of 3 | `--client-select` |  |
+| `sf lightning dev site` | wrapped | `Start-SalesforceLwcDevServer` | 2 of 2 |  |  |
 
 ### Logic tests (`sf logic`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf logic get test` | wrapped | `Get-SalesforceLogicTestResult` |  |
-| `sf logic run test` | wrapped | `Test-SalesforceLogic` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf logic get test` | wrapped | `Get-SalesforceLogicTestResult` | 7 of 7 |  |  |
+| `sf logic run test` | wrapped | `Test-SalesforceLogic` | 13 of 13 |  |  |
 
 ### Orgs, users and sandboxes (`sf org`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf org assign permset` | wrapped | `Grant-SalesforcePermissionSet` |  |
-| `sf org assign permsetlicense` | wrapped | `Grant-SalesforcePermissionSetLicense` |  |
-| `sf org create sandbox` | partially wrapped | `Copy-SalesforceSandbox`, `New-SalesforceSandbox` | `--set-default` `--poll-interval` `--async` `--source-id` |
-| `sf org create scratch` | partially wrapped | `New-SalesforceScratchOrg` | `--alias` `--no-ancestors` `--no-namespace` `--client-id` `--track-source` |
-| `sf org create user` | wrapped | `New-SalesforceUser` |  |
-| `sf org delete sandbox` | wrapped | `Remove-SalesforceSandbox` |  |
-| `sf org delete scratch` | wrapped | `Remove-SalesforceScratchOrg` |  |
-| `sf org display user` | wrapped | `Get-SalesforceOrgUser` |  |
-| `sf org generate password` | wrapped | `New-SalesforceUserPassword` |  |
-| `sf org list` | wrapped | `Get-SalesforceConnections`, `Get-SalesforceSandboxes`, `Get-SalesforceScratchOrgs`, `Repair-SalesforceConnections` |  |
-| `sf org list limits` | wrapped | `Get-SalesforceLimits` |  |
-| `sf org list metadata-types` | partially wrapped | `Describe-SalesforceMetadataTypes` | `--output-file` |
-| `sf org list users` | wrapped | `Get-SalesforceAuthenticatedUser` |  |
-| `sf org login jwt` | wrapped | `Connect-SalesforceJwt` |  |
-| `sf org login sfdx-url` | partially wrapped | `Connect-SalesforceAuthUrl` | `--sfdx-url-stdin` |
-| `sf org login web` | partially wrapped | `Connect-Salesforce` | `--client-app` `--username` `--scopes` |
-| `sf org logout` | partially wrapped | `Disconnect-Salesforce` | `--client-app` |
-| `sf org open` | partially wrapped | `Open-Salesforce` | `--path` `--source-file` |
-| `sf org resume sandbox` | partially wrapped | `Resume-SalesforceSandbox` | `--job-id` `--use-most-recent` |
-| `sf org resume scratch` | wrapped | `Resume-SalesforceScratchOrg` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf org assign permset` | wrapped | `Grant-SalesforcePermissionSet` | 3 of 3 |  |  |
+| `sf org assign permsetlicense` | wrapped | `Grant-SalesforcePermissionSetLicense` | 3 of 3 |  |  |
+| `sf org create sandbox` | partially wrapped | `Copy-SalesforceSandbox`, `New-SalesforceSandbox` | 9 of 13 | `--async` `--poll-interval` `--set-default` `--source-id` |  |
+| `sf org create scratch` | partially wrapped | `New-SalesforceScratchOrg` | 14 of 19 | `--alias` `--client-id` `--no-ancestors` `--no-namespace` `--track-source` |  |
+| `sf org create user` | wrapped | `New-SalesforceUser` | 4 of 4 |  |  |
+| `sf org delete sandbox` | wrapped | `Remove-SalesforceSandbox` | 2 of 2 |  |  |
+| `sf org delete scratch` | wrapped | `Remove-SalesforceScratchOrg` | 2 of 2 |  |  |
+| `sf org display user` | wrapped | `Get-SalesforceOrgUser` | 1 of 1 |  |  |
+| `sf org generate password` | wrapped | `New-SalesforceUserPassword` | 4 of 4 |  |  |
+| `sf org list` | wrapped | `Get-SalesforceConnections`, `Get-SalesforceSandboxes`, `Get-SalesforceScratchOrgs`, `Repair-SalesforceConnections` | 5 of 5 |  |  |
+| `sf org list limits` | wrapped | `Get-SalesforceLimits` | 1 of 1 |  |  |
+| `sf org list metadata-types` | partially wrapped | `Describe-SalesforceMetadataTypes` | 1 of 2 | `--output-file` |  |
+| `sf org list users` | wrapped | `Get-SalesforceAuthenticatedUser` | 1 of 1 |  |  |
+| `sf org login jwt` | wrapped | `Connect-SalesforceJwt` | 7 of 7 |  |  |
+| `sf org login sfdx-url` | partially wrapped | `Connect-SalesforceAuthUrl` | 4 of 5 | `--sfdx-url-stdin` |  |
+| `sf org login web` | partially wrapped | `Connect-Salesforce` | 6 of 9 | `--client-app` `--scopes` `--username` |  |
+| `sf org logout` | partially wrapped | `Disconnect-Salesforce` | 3 of 4 | `--client-app` |  |
+| `sf org open` | partially wrapped | `Open-Salesforce` | 4 of 6 | `--path` `--source-file` |  |
+| `sf org resume sandbox` | partially wrapped | `Resume-SalesforceSandbox` | 3 of 5 | `--job-id` `--use-most-recent` |  |
+| `sf org resume scratch` | wrapped | `Resume-SalesforceScratchOrg` | 3 of 3 |  |  |
 
 ### Packages (second generation) (`sf package`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf package create` | wrapped | `New-SalesforcePackage` |  |
-| `sf package delete` | wrapped | `Remove-SalesforcePackage` |  |
-| `sf package install` | partially wrapped | `Install-SalesforcePackageVersion` | `--installation-key` `--apex-compile` `--upgrade-type` |
-| `sf package install report` | wrapped | `Get-SalesforcePackageInstallStatus` |  |
-| `sf package installed list` | wrapped | `Get-SalesforcePackagesInstalled` |  |
-| `sf package list` | wrapped | `Get-SalesforcePackages` |  |
-| `sf package version create` | partially wrapped | `New-SalesforcePackageVersion` | `--branch` `--path` `--post-install-script` `--post-install-url` `--releasenotes-url` `--skip-ancestor-check` `--async-validation` `--generate-pkg-zip` `--uninstall-script` `--version-number` `--language` |
-| `sf package version create report` | wrapped | `Get-SalesforcePackageVersionCreateStatus` |  |
-| `sf package version delete` | wrapped | `Remove-SalesforcePackageVersion` |  |
-| `sf package version list` | partially wrapped | `Get-SalesforcePackageVersions` | `--created-last-days` `--modified-last-days` `--order-by` |
-| `sf package version promote` | wrapped | `Promote-SalesforcePackageVersion` |  |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf package create` | wrapped | `New-SalesforcePackage` | 8 of 8 |  |  |
+| `sf package delete` | wrapped | `Remove-SalesforcePackage` | 3 of 3 |  |  |
+| `sf package install` | partially wrapped | `Install-SalesforcePackageVersion` | 6 of 9 | `--apex-compile` `--installation-key` `--upgrade-type` |  |
+| `sf package install report` | wrapped | `Get-SalesforcePackageInstallStatus` | 2 of 2 |  |  |
+| `sf package installed list` | wrapped | `Get-SalesforcePackagesInstalled` | 1 of 1 |  |  |
+| `sf package list` | wrapped | `Get-SalesforcePackages` | 2 of 2 |  |  |
+| `sf package version create` | partially wrapped | `New-SalesforcePackageVersion` | 12 of 23 | `--async-validation` `--branch` `--generate-pkg-zip` `--language` `--path` `--post-install-script` `--post-install-url` `--releasenotes-url` `--skip-ancestor-check` `--uninstall-script` `--version-number` |  |
+| `sf package version create report` | wrapped | `Get-SalesforcePackageVersionCreateStatus` | 2 of 2 |  |  |
+| `sf package version delete` | wrapped | `Remove-SalesforcePackageVersion` | 3 of 3 |  |  |
+| `sf package version list` | partially wrapped | `Get-SalesforcePackageVersions` | 7 of 10 | `--created-last-days` `--modified-last-days` `--order-by` |  |
+| `sf package version promote` | wrapped | `Promote-SalesforcePackageVersion` | 3 of 3 |  |  |
 
 ### CLI plugins (`sf plugins`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf plugins` | wrapped | `Get-SalesforcePlugins`, `Test-SalesforceAgentPlugin`, Test-SalesforceLightningDevPluginInstalled (internal) |  |
-| `sf plugins install` | partially wrapped | `Install-SalesforceLwcDevServer`, `Install-SalesforcePlugin` | `--force` `--help` `--silent` `--verbose` |
-| `sf plugins update` | partially wrapped | `Update-SalesforcePlugins` | `--help` `--verbose` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf plugins` | wrapped | `Get-SalesforcePlugins`, `Test-SalesforceAgentPlugin`, Test-SalesforceLightningDevPluginInstalled (internal) | 1 of 1 |  |  |
+| `sf plugins install` | partially wrapped | `Install-SalesforceLwcDevServer`, `Install-SalesforcePlugin` | 0 of 4 | `--force` `--help` `--silent` `--verbose` |  |
+| `sf plugins update` | partially wrapped | `Update-SalesforcePlugins` | 0 of 2 | `--help` `--verbose` |  |
 
 ### Project, deploy and retrieve (`sf project`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf project deploy cancel` | wrapped | `Stop-SalesforceDeploy` |  |
-| `sf project deploy preview` | partially wrapped | `Get-SalesforceDeployPreview` | `--concise` |
-| `sf project deploy quick` | wrapped | `Start-SalesforceQuickDeploy` |  |
-| `sf project deploy report` | partially wrapped | `Get-SalesforceDeployStatus` | `--coverage-formatters` `--junit` `--results-dir` |
-| `sf project deploy resume` | partially wrapped | `Resume-SalesforceDeploy` | `--coverage-formatters` `--junit` `--results-dir` |
-| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | `--async` `--purge-on-delete` `--pre-destructive-changes` `--post-destructive-changes` `--coverage-formatters` `--junit` `--results-dir` |
-| `sf project deploy validate` | partially wrapped | `Test-SalesforceDeploy` | `--metadata` `--coverage-formatters` `--junit` `--results-dir` `--purge-on-delete` `--pre-destructive-changes` `--post-destructive-changes` |
-| `sf project generate manifest` | partially wrapped | `Retrieve-SalesforceOrg` | `--metadata` `--source-dir` `--name` `--type` `--include-packages` `--excluded-metadata` |
-| `sf project retrieve preview` | partially wrapped | `Get-SalesforceRetrievePreview` | `--concise` |
-| `sf project retrieve start` | partially wrapped | `Retrieve-SalesforceComponent`, `Retrieve-SalesforceMetadata`, `Retrieve-SalesforceOrg`, `Retrieve-SalesforcePackage` | `--root-type-with-dependencies` `--single-package` `--source-dir` `--zip-file-name` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf project deploy cancel` | wrapped | `Stop-SalesforceDeploy` | 5 of 5 |  |  |
+| `sf project deploy preview` | partially wrapped | `Get-SalesforceDeployPreview` | 5 of 6 | `--concise` |  |
+| `sf project deploy quick` | wrapped | `Start-SalesforceQuickDeploy` | 7 of 7 |  |  |
+| `sf project deploy report` | partially wrapped | `Get-SalesforceDeployStatus` | 4 of 7 | `--coverage-formatters` `--junit` `--results-dir` |  |
+| `sf project deploy resume` | partially wrapped | `Resume-SalesforceDeploy` | 5 of 8 | `--coverage-formatters` `--junit` `--results-dir` |  |
+| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | 15 of 22 | `--async` `--coverage-formatters` `--junit` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` |  |
+| `sf project deploy validate` | partially wrapped | `Test-SalesforceDeploy` | 12 of 19 | `--coverage-formatters` `--junit` `--metadata` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` |  |
+| `sf project generate manifest` | partially wrapped | `Retrieve-SalesforceOrg` | 4 of 8 | `--excluded-metadata` `--metadata` `--source-dir` `--type` | `--include-packages`: `managed` |
+| `sf project retrieve preview` | partially wrapped | `Get-SalesforceRetrievePreview` | 2 of 3 | `--concise` |  |
+| `sf project retrieve start` | partially wrapped | `Retrieve-SalesforceComponent`, `Retrieve-SalesforceMetadata`, `Retrieve-SalesforceOrg`, `Retrieve-SalesforcePackage` | 9 of 13 | `--root-type-with-dependencies` `--single-package` `--source-dir` `--zip-file-name` |  |
 
 ### Objects (`sf sobject`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf sobject describe` | wrapped | `Describe-SalesforceObject` |  |
-| `sf sobject list` | partially wrapped | `Describe-SalesforceObjects` | `--sobject` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf sobject describe` | wrapped | `Describe-SalesforceObject` | 3 of 3 |  |  |
+| `sf sobject list` | partially wrapped | `Describe-SalesforceObjects` | 1 of 2 | `--sobject` |  |
 
 ### Templates and generators (`sf template`)
 
-| Command | Status | psfdx cmdlets | Flags not passed |
-| :--- | :--- | :--- | :--- |
-| `sf template generate apex class` | wrapped | `New-SalesforceApexClass` |  |
-| `sf template generate apex trigger` | partially wrapped | `New-SalesforceApexTrigger` | `--template` |
-| `sf template generate project` | partially wrapped | `New-SalesforceProject` | `--lwc-language` |
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf template generate apex class` | partially wrapped | `New-SalesforceApexClass` | 3 of 3 |  | `--template`: `ApexException`, `BasicUnitTest`, `Batchable`, `Queueable` |
+| `sf template generate apex trigger` | partially wrapped | `New-SalesforceApexTrigger` | 4 of 5 | `--template` |  |
+| `sf template generate project` | partially wrapped | `New-SalesforceProject` | 6 of 7 | `--lwc-language` | `--template`: `reactinternalapp`, `reactexternalapp`, `angularinternalapp`, `angularexternalapp`, `vueinternalapp`, `agent` |
 
 ## Commands psfdx runs by another name
 
@@ -590,7 +592,8 @@ These flags are on almost every command, so they are not counted against each on
 
 ## How to read this
 
-- **Wrapped:** some psfdx function runs the command and passes every one of its flags (apart from `--json`, `--flags-dir` and `--api-version`, which are reported once). **Partially wrapped:** psfdx runs it but not every flag is exposed; the missing flags are listed, and a reviewed mapping rule can accept that with a reason. Flags are matched by function (the function that builds the command, and the helpers in the same file that it calls), so this is a close estimate, not a proof.
+- **Wrapped:** some psfdx function runs the command, passes every one of its flags (apart from `--json`, `--flags-dir` and `--api-version`, which are reported once) and can pass every value the CLI lists for them. **Partially wrapped:** a flag is not passed, or a listed value cannot be passed; both are shown, and a reviewed mapping rule can accept the gap with a reason. Flags are matched by function (the function that builds the command, and the helpers it calls in the same file or in psfdx-shared), so this is a close estimate, not a proof.
+- **Values:** the CLI lists the allowed values for some flags (for example `--test-level`). A value is reachable when psfdx writes it literally in the arguments, accepts it through a parameter with a `[ValidateSet()]` (compared without regard to case), or takes the flag's value as free text, in which case any value can be passed. A parameter that is not a `[ValidateSet()]` is free text, even if its help names the values. Flags with no list (names, paths, numbers, query text) are checked for being passed, not for values. The CLI's recorded default counts as reachable, because leaving the flag out uses it; a default the CLI does not record in its command data does not, so such a value is listed even though omitting the flag would use it, unless the mapping accepts it (`ignoreValues`). A lookup table such as `$map = @{ 'Name' = 'CliValue' }` used as `$map[$x]` after a flag counts as exactly its values. A value that psfdx builds some other way is not followed.
 - **Missing:** no psfdx function runs it and nobody has decided why. **Deliberately excluded:** reviewed and left out on purpose, with a reason. **Not applicable:** CLI housekeeping or interactive tooling that a PowerShell wrapper has no use for.
 - **One to many, many to one:** a cmdlet can run several commands (a bulk job and its resume), and a command can be run by several cmdlets; both are shown. A cmdlet that only calls other psfdx cmdlets is a convenience and is not counted as coverage.
 - **Scope:** the plugin set is what `sf commands` lists for this CLI: the core plugins that ship with it and the just-in-time plugins it installs on first use. Percentages are per plugin set. Plugins you install yourself are not in this report. `Beta` and `preview` commands are counted like the rest and marked.
