@@ -1088,3 +1088,48 @@ Describe 'Apex test run lifecycle' {
         }
     }
 }
+
+Describe 'Resume-SalesforceScratchOrg' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":{"orgId":"00Dxx0000000001","username":"test-abc@example.com","instanceUrl":"https://x.my.salesforce.com"}}'
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+        It 'builds the exact command for a job ID with a wait and marks a ready org Completed' {
+            $r = Resume-SalesforceScratchOrg -JobId '2SR000000000001AAA' -WaitMinutes 10
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|scratch|--job-id|2SR000000000001AAA|--wait|10|--json' }
+            $r.username | Should -Be 'test-abc@example.com'
+            $r.Completed | Should -BeTrue
+        }
+        It 'builds the exact command for -UseMostRecent' {
+            Resume-SalesforceScratchOrg -UseMostRecent | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|scratch|--use-most-recent|--json' }
+        }
+        It 'reports a creation that is still queued as not completed' {
+            $script:Reply = '{"status":0,"result":{"scratchOrgInfo":{"Id":"2SR000000000001AAA"},"status":"Creating"}}'
+            (Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 1).Completed | Should -BeFalse
+        }
+        It 'throws the CLI message for a failed creation' {
+            $script:Reply = '{"status":1,"name":"ScratchOrgCreationError","message":"The scratch org creation failed."}'
+            { Resume-SalesforceScratchOrg -UseMostRecent } | Should -Throw -ExpectedMessage '*creation failed*'
+        }
+        It 'rejects missing, conflicting and invalid inputs without calling the CLI' {
+            { Resume-SalesforceScratchOrg } | Should -Throw -ExpectedMessage '*Specify -JobId or -UseMostRecent*'
+            { Resume-SalesforceScratchOrg -JobId '2SR000000000001AAA' -UseMostRecent } | Should -Throw -ExpectedMessage '*only one of*'
+            { Resume-SalesforceScratchOrg -JobId '08c000000000001AAA' } | Should -Throw -ExpectedMessage '*2SR*'
+            { Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 0 } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'adds --async to New-SalesforceScratchOrg only when asked' {
+            New-SalesforceScratchOrg -Async -Name ci-1 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--definition-file|config/project-scratch-def.json|--async|--name|ci-1|--json' }
+            New-SalesforceScratchOrg -Name ci-2 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--definition-file|config/project-scratch-def.json|--name|ci-2|--json' }
+        }
+        It 'is exported and has examples' {
+            $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-development).ModuleBase 'psfdx-development.psd1')).FunctionsToExport
+            $exports | Should -Contain 'Resume-SalesforceScratchOrg'
+            @((Get-Help Resume-SalesforceScratchOrg -Examples).examples.example).Count | Should -BeGreaterThan 0
+        }
+    }
+}

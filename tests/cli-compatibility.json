@@ -23,7 +23,7 @@
     "org delete sandbox", "org delete scratch",
     "org list", "org list metadata-types",
     "org login jwt", "org login sfdx-url", "org login web",
-    "org logout", "org open", "org resume sandbox",
+    "org logout", "org open", "org resume sandbox", "org resume scratch",
     "package create", "package delete", "package install", "package install report",
     "package installed list", "package list",
     "package version create", "package version create report", "package version delete",

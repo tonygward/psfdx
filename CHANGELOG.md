@@ -4,6 +4,8 @@
 
 - psfdx-metadata: new `Get-SalesforceDeployPreview` and `Get-SalesforceRetrievePreview` show what a deploy or retrieve would change, and any conflicts, before you run it. They are read-only and return the changes, deletes, conflicts and ignored files as lists, with `HasChanges` and `HasConflicts`. They need an org with source tracking; for other orgs they return the CLI error with guidance.
 
+- psfdx-development: new `Resume-SalesforceScratchOrg` picks up a scratch org creation that was started with `-Async` or timed out, by `-JobId` or `-UseMostRecent`, and returns the org with a `Completed` flag. `New-SalesforceScratchOrg` gained `-Async`. To give the new org access, follow with `Grant-SalesforcePermissionSet` from psfdx, which already wraps `sf org assign permset`.
+
 ## 0.8.33 - 2026-11-21
 
 - psfdx: new `Get-SalesforceRecord` and `Remove-SalesforceRecord` complete single-record create, read, update and delete. Select the record with `-Id`, or with `-Where` (a hashtable of field values that identify exactly one record); the two are alternatives. Get returns the record without the internal `attributes` property. Remove asks for confirmation, naming the object, record and org, supports `-WhatIf`, and returns the CLI result; a missing record or a `-Where` that matches several throws the CLI message. Unattended scripts need `-Confirm:$false`.
