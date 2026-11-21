@@ -305,11 +305,13 @@ function Promote-SalesforcePackageVersion {
     .SYNOPSIS
     Promotes a package version to released (sf package version promote).
     .DESCRIPTION
+    Promotion cannot be undone: a released version can no longer be deleted. The cmdlet asks for confirmation and supports -WhatIf. -NoPrompt means you have
+    already decided (as it does for the CLI), so it skips the confirmation and keeps existing unattended scripts working; -WhatIf still makes no call.
     -PackageVersionId can come from the pipeline, through the SubscriberPackageVersionId (04t) of a version from Get-SalesforcePackageVersions.
     .EXAMPLE
-    Get-SalesforcePackageVersions -PackageName MyPkg | Select-Object -First 1 | Promote-SalesforcePackageVersion -NoPrompt
+    Get-SalesforcePackageVersions -PackageName MyPkg | Select-Object -First 1 | Promote-SalesforcePackageVersion -WhatIf
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('SubscriberPackageVersionId')][string] $PackageVersionId,
         [Parameter(Mandatory = $false)][string] $TargetDevHub,
@@ -323,8 +325,13 @@ function Promote-SalesforcePackageVersion {
         if ($NoPrompt) { $arguments += '--no-prompt' }
         $arguments += '--json'
         $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-        return Show-SalesforceResult -Result $result
+        $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+        # -NoPrompt is the caller's decision not to be asked; it does not turn off -WhatIf.
+        if ($NoPrompt) { $ConfirmPreference = 'None' }
+        if ($PSCmdlet.ShouldProcess($PackageVersionId, 'Promote package version (cannot be undone)')) {
+            $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+            return Show-SalesforceResult -Result $result
+        }
     }
 }
 
@@ -361,7 +368,7 @@ function Remove-SalesforcePackageVersion {
 }
 
 function Install-SalesforcePackageVersion {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
         [Parameter(Mandatory = $true)][string] $PackageVersionId,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
@@ -382,6 +389,10 @@ function Install-SalesforcePackageVersion {
     }
     if ($AsObject) { $arguments += '--json' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $orgLabel = 'the default org'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = $TargetOrg }
+    if (-not $PSCmdlet.ShouldProcess("$PackageVersionId in $orgLabel", 'Install package version')) { return }
     $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     # Without -AsObject the CLI's own text is returned unchanged, as before. With it the install request comes back as an object: its Id (0Hf...)
     # is the request ID for Get-SalesforcePackageInstallStatus, so a later step can report the outcome.
@@ -417,7 +428,7 @@ function Get-SalesforcePackageVersionCreateStatus {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^08c[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $RequestId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^08c[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $RequestId,
         [Parameter(Mandatory = $false)][switch] $ThrowOnFailure,
         [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
@@ -472,7 +483,7 @@ function Get-SalesforcePackageInstallStatus {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^0Hf[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $RequestId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^0Hf[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $RequestId,
         [Parameter(Mandatory = $false)][switch] $ThrowOnFailure,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )

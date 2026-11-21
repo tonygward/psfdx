@@ -344,7 +344,7 @@ function Resume-SalesforceScratchOrg {
 
     if ($JobId -and $UseMostRecent) { throw 'Specify only one of -JobId or -UseMostRecent.' }
     if (-not $JobId -and -not $UseMostRecent) { throw 'Specify -JobId or -UseMostRecent.' }
-    if ($JobId -and $JobId -notmatch '^2SR[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$') {
+    if ($JobId -and $JobId -notmatch '^2SR[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z') {
         throw "Job ID '$JobId' is not a valid scratch org info ID. Expected a 15 or 18 character ID starting with 2SR."
     }
 
@@ -1190,7 +1190,7 @@ function Get-SalesforceApexTestResult {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $TestRunId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $TestRunId,
         [Parameter(Mandatory = $false)][switch] $CodeCoverage,
         [Parameter(Mandatory = $false)][switch] $CodeCoverageDetailed,
         [Parameter(Mandatory = $false)][switch] $Concise,
@@ -1235,7 +1235,7 @@ function Wait-SalesforceApexTest {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $TestRunId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $TestRunId,
         [Parameter(Mandatory = $false)][ValidateRange(1, 1440)][int] $TimeoutMinutes = 10,
         [Parameter(Mandatory = $false)][ValidateRange(1, 600)][int] $PollSeconds = 10,
         [Parameter(Mandatory = $false)][switch] $CodeCoverage,
@@ -1366,7 +1366,7 @@ function Get-SalesforceFlowTestResult {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $TestRunId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $TestRunId,
         [Parameter(Mandatory = $false)][ValidateSet('human', 'tap', 'junit', 'json')][string] $ResultFormat = 'json',
         [Parameter(Mandatory = $false)][switch] $Concise,
         [Parameter(Mandatory = $false)][switch] $CodeCoverage,
@@ -1475,7 +1475,7 @@ function Get-SalesforceLogicTestResult {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $TestRunId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $TestRunId,
         [Parameter(Mandatory = $false)][ValidateSet('human', 'tap', 'junit', 'json')][string] $ResultFormat = 'json',
         [Parameter(Mandatory = $false)][switch] $Concise,
         [Parameter(Mandatory = $false)][switch] $CodeCoverage,
@@ -1689,7 +1689,7 @@ function New-SalesforceJestTest {
     )
     # The legacy 'sf force lightning lwc test create' command was removed from the Salesforce CLI,
     # so the Jest test scaffold is written directly.
-    if ($LwcName -notmatch '^[A-Za-z][A-Za-z0-9_]*$') {
+    if ($LwcName -notmatch '^[A-Za-z][A-Za-z0-9_]*\z') {
         throw "LWC name '$LwcName' is not valid. Use letters, numbers and underscores, starting with a letter."
     }
     if (-not (Test-Path -LiteralPath $ProjectPath -PathType Container)) {

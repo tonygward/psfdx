@@ -479,7 +479,6 @@ function New-SalesforceRecord {
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
-    Write-Verbose $FieldUpdates
     $arguments = @('data', 'create', 'record')
     $arguments += @('--sobject', $Type)
     $arguments += @('--values', $FieldUpdates)
@@ -512,8 +511,7 @@ function Set-SalesforceRecord {
         [Parameter(Mandatory = $false)][switch] $UseToolingApi
     )
     process {
-        Write-Verbose $FieldUpdates
-        $arguments = @('data', 'update', 'record')
+            $arguments = @('data', 'update', 'record')
         $arguments += @('--sobject', $Type)
         $arguments += @('--record-id', $Id)
         $arguments += @('--values', $FieldUpdates)
@@ -549,7 +547,7 @@ function Get-SalesforceRecord {
     [CmdletBinding(DefaultParameterSetName = 'ById')]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
-        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $Id,
         [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -589,7 +587,7 @@ function Remove-SalesforceRecord {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'ById')]
     Param(
         [Parameter(Mandatory = $true)][string] $Type,
-        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $Id,
         [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
         [Parameter(Mandatory = $false)][switch] $UseToolingApi,
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -673,7 +671,7 @@ function Upsert-SalesforceRecord {
         $ApiVersion = Get-SalesforceLatestApiVersion @latestParams
         if ([string]::IsNullOrWhiteSpace($ApiVersion)) { throw 'Could not work out the org API version. Pass -ApiVersion, for example v62.0.' }
     }
-    if ($ApiVersion -notmatch '^v?(\d{2,3}\.\d)$') { throw "ApiVersion '$ApiVersion' is not valid. Use a form like v62.0 or 62.0." }
+    if ($ApiVersion -notmatch '^v?(\d{2,3}\.\d)\z') { throw "ApiVersion '$ApiVersion' is not valid. Use a form like v62.0 or 62.0." }
     $version = 'v' + $Matches[1]
 
     $url = "/services/data/$version/sobjects/$objectName/$externalIdFieldName/" + [uri]::EscapeDataString($ExternalId)
@@ -766,7 +764,7 @@ function Export-SalesforceTreeData {
     )
     $queries = @($Query | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     if ($queries.Count -eq 0) { throw '-Query needs at least one SOQL query.' }
-    if ($Prefix -and $Prefix -notmatch '^[A-Za-z0-9_.-]+$') { throw "Prefix '$Prefix' is not valid: use letters, digits, underscore, dot and hyphen only." }
+    if ($Prefix -and $Prefix -notmatch '^[A-Za-z0-9_.-]+\z') { throw "Prefix '$Prefix' is not valid: use letters, digits, underscore, dot and hyphen only." }
     if ($OutputDirectory -and (Test-Path -LiteralPath $OutputDirectory -PathType Leaf)) { throw "Output directory '$OutputDirectory' is a file." }
 
     $arguments = @('data', 'export', 'tree')
@@ -1068,7 +1066,7 @@ function Resume-SalesforceBulkJob {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][ValidateSet('Export', 'Import', 'Update', 'Upsert')][string] $Operation,
-        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $JobId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $JobId,
         [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
@@ -1105,7 +1103,7 @@ function Get-SalesforceBulkResult {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $JobId,
+        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $JobId,
         [Parameter(Mandatory = $false)][string] $OutputDirectory,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
@@ -1274,6 +1272,20 @@ function ConvertTo-SalesforceBulkJobObject {
 
 #region Salesforce REST API
 
+function Assert-SalesforceHttpsUrl {
+    # Private: stops with a clear message unless the value is an absolute https URL.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string] $Url,
+        [Parameter(Mandatory = $true)][string] $What
+    )
+
+    $uri = $null
+    if (-not [System.Uri]::TryCreate($Url, [System.UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https') {
+        throw "$What must be an absolute https:// URL, because credentials or an access token are sent to it. Got '$Url'."
+    }
+}
+
 function Connect-SalesforceApi {
     [CmdletBinding()]
     Param(
@@ -1288,7 +1300,11 @@ function Connect-SalesforceApi {
 
     $loginUrl = "https://login.salesforce.com/services/oauth2/token"
     if ($Sandbox) { $loginUrl = "https://test.salesforce.com/services/oauth2/token" }
-    if ($CustomUrl) { $loginUrl = "$CustomUrl/services/oauth2/token" }
+    if ($CustomUrl) {
+        # The password, security token and client secret are in the request body, so never send them over plain http.
+        Assert-SalesforceHttpsUrl -Url $CustomUrl -What '-CustomUrl'
+        $loginUrl = $CustomUrl.TrimEnd('/') + '/services/oauth2/token'
+    }
 
     return Invoke-RestMethod -Uri $loginUrl `
         -Method Post `
@@ -1308,6 +1324,8 @@ function Invoke-SalesforceApi {
         [Parameter(Mandatory = $true)][string] $AccessToken,
         [Parameter(Mandatory = $false)][string][ValidateSet('GET', 'POST', 'PATCH', 'DELETE')] $Method = "GET"
     )
+    # The access token is sent in the Authorization header, so only to an https URL.
+    Assert-SalesforceHttpsUrl -Url $Url -What '-Url'
     return Invoke-RestMethod -Uri $Url -Method $Method -Headers @{Authorization = "Bearer " + $AccessToken }
 }
 
@@ -1428,7 +1446,7 @@ function New-SalesforceUser {
     if ($null -ne $Field) {
         foreach ($key in $Field.Keys) {
             $name = [string] $key
-            if ($name -cnotmatch '^[A-Za-z][A-Za-z0-9_]*$') { throw "'$name' is not a valid user field name." }
+            if ($name -cnotmatch '^[A-Za-z][A-Za-z0-9_]*\z') { throw "'$name' is not a valid user field name." }
             $value = [string] $Field[$key]
             if ($value -match '[\x00-\x1F\x7F]') { throw "The value of field '$name' must not contain control characters." }
             $pairs += "$name=$value"
@@ -1648,28 +1666,50 @@ function Test-SalesforceIsMacOS {
 }
 
 function Install-SalesforceCli {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    # npm is the Salesforce-supported install on Windows, Linux and macOS
-    Invoke-Salesforce -FilePath 'npm' -Arguments @('install', '--global', '@salesforce/cli') @commonParams
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    # npm is the Salesforce-supported install on Windows, Linux and macOS. It downloads and runs code from the npm registry.
+    if ($PSCmdlet.ShouldProcess('@salesforce/cli', 'Install globally with npm')) {
+        Invoke-Salesforce -FilePath 'npm' -Arguments @('install', '--global', '@salesforce/cli') @commonParams
+    }
 }
 
 function Update-SalesforceCli {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -FilePath 'npm' -Arguments @('update', '--global', '@salesforce/cli') @commonParams
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess('@salesforce/cli', 'Update globally with npm')) {
+        Invoke-Salesforce -FilePath 'npm' -Arguments @('update', '--global', '@salesforce/cli') @commonParams
+    }
 }
 
 function Install-SalesforcePlugin {
-    [CmdletBinding()]
+    <#
+    .SYNOPSIS
+    Installs a Salesforce CLI plugin (sf plugins install).
+    .DESCRIPTION
+    A plugin is code that runs with your permissions, so install only plugins you trust: the CLI may ask you to confirm one that is not on its
+    allow list. -Name is an npm package name (optionally scoped and with a version, such as @salesforce/plugin-agent@latest) or a GitHub URL. A
+    value that starts with a dash or contains spaces or control characters is refused, so it cannot be read as a CLI option. Supports -WhatIf and -Confirm.
+    .EXAMPLE
+    Install-SalesforcePlugin -Name @salesforce/plugin-agent -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
         [Parameter(Mandatory = $true)][string] $Name
     )
+    if ($Name -notmatch '^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z') {
+        throw "Plugin name '$Name' is not valid. Use an npm package name such as @salesforce/plugin-agent, or a GitHub URL; it must not start with a dash or contain spaces."
+    }
     $arguments = @('plugins', 'install', $Name)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess($Name, 'Install Salesforce CLI plugin')) {
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
 }
 
 function Get-SalesforcePlugins {
@@ -1684,11 +1724,14 @@ function Get-SalesforcePlugins {
 }
 
 function Update-SalesforcePlugins {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param()
     $arguments = @('plugins', 'update')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess('installed Salesforce CLI plugins', 'Update')) {
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
 }
 
 #endregion

@@ -340,6 +340,223 @@ public static class FakeSf {
             $out | Should -Be @('<data>', '<query>', '<--result-format>', '<csv>')
         }
     }
+
+Describe 'Argument transport table (issue 184)' {
+    $isWin = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+    $hasPwsh = [bool](Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue)
+    BeforeAll {
+        $script:windowsHost = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+        $nbsp = [string][char]0x00A0
+        # Name, value, and whether the argument can reach the program unchanged ('exact') or must be refused on a Windows .cmd shim ('reject').
+        $script:cases = @(
+            @{ Name = 'ampersand in spaced text'; Value = 'a & b'; Windows = 'exact' }
+            @{ Name = 'pipe in spaced text'; Value = 'a | b'; Windows = 'exact' }
+            @{ Name = 'caret in spaced text'; Value = 'a ^ b'; Windows = 'exact' }
+            @{ Name = 'redirects in spaced text'; Value = 'a > b < c'; Windows = 'exact' }
+            @{ Name = 'trailing backslash'; Value = 'C:\dir\'; Windows = 'exact' }
+            @{ Name = 'trailing backslash after a space'; Value = 'C:\my dir\'; Windows = 'exact' }
+            @{ Name = 'two trailing backslashes after a space'; Value = 'C:\my dir\\'; Windows = 'exact' }
+            @{ Name = 'LIKE with a trailing percent'; Value = "SELECT Id FROM Account WHERE Name LIKE 'Acme%'"; Windows = 'exact' }
+            @{ Name = 'LIKE with a leading percent'; Value = "SELECT Id FROM Account WHERE Name LIKE '%Acme'"; Windows = 'exact' }
+            @{ Name = 'literal percent name'; Value = "SELECT Id FROM Account WHERE Name = '%NAME%'"; Windows = 'exact' }
+            @{ Name = 'percent environment variable'; Value = '%PATH%'; Windows = 'exact' }
+            @{ Name = 'percent next to text'; Value = 'a%b c%'; Windows = 'exact' }
+            @{ Name = 'exclamation mark'; Value = 'Hello!World!'; Windows = 'exact' }
+            @{ Name = 'parentheses'; Value = 'a(b) (c)'; Windows = 'exact' }
+            @{ Name = 'apostrophe'; Value = "O'Brien's"; Windows = 'exact' }
+            @{ Name = 'backtick'; Value = 'back`tick `n'; Windows = 'exact' }
+            @{ Name = 'PowerShell expressions'; Value = '$(whoami) $env:PATH ${x}'; Windows = 'exact' }
+            @{ Name = 'semicolon'; Value = 'a;b;c'; Windows = 'exact' }
+            @{ Name = 'unicode'; Value = ('caf' + [char]0x00E9 + ' ' + [char]0x4E16 + [char]0x754C); Windows = 'exact' }
+            @{ Name = 'tab as the only whitespace with a metacharacter'; Value = "x&echo`twhoami"; Windows = 'exact' }
+            @{ Name = 'vertical tab as the only whitespace with a metacharacter'; Value = ('x&echo' + [char]0x0B + 'whoami'); Windows = 'exact' }
+            @{ Name = 'form feed as the only whitespace with a metacharacter'; Value = ('x&echo' + [char]0x0C + 'whoami'); Windows = 'exact' }
+            @{ Name = 'no-break space as the only whitespace with a metacharacter'; Value = ('x&echo' + $nbsp + 'whoami'); Windows = 'exact' }
+            @{ Name = 'em space as the only whitespace with a metacharacter'; Value = ('x&echo' + [char]0x2003 + 'whoami'); Windows = 'exact' }
+            @{ Name = 'double quote'; Value = 'a"b'; Windows = 'reject' }
+            @{ Name = 'line feed'; Value = "a`nb"; Windows = 'reject' }
+            @{ Name = 'carriage return'; Value = "a`rb c"; Windows = 'reject' }
+            @{ Name = 'bare ampersand'; Value = 'x&whoami'; Windows = 'reject' }
+            @{ Name = 'bare pipe'; Value = 'x|more'; Windows = 'reject' }
+            @{ Name = 'bare redirect'; Value = 'x>out.txt'; Windows = 'reject' }
+            @{ Name = 'bare caret'; Value = 'a^b'; Windows = 'reject' }
+            @{ Name = 'a command line over the cmd.exe limit'; Value = ('x' * 9000); Windows = 'reject' }
+        )
+    }
+
+    Context 'Windows .cmd shim, in PowerShell 7 and Windows PowerShell 5.1' {
+        BeforeAll {
+            if ($script:windowsHost) {
+                $script:shimDir = Join-Path $TestDrive 'table shim'
+                New-Item -ItemType Directory -Path $script:shimDir | Out-Null
+                $source = Join-Path $script:shimDir 'argvcapture.cs'
+                Set-Content -LiteralPath $source -Encoding ascii -Value @'
+using System;
+using System.IO;
+using System.Text;
+public static class ArgvCapture {
+    public static int Main(string[] args) {
+        var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
+        foreach (var a in args) { writer.Write("<" + a + ">\n"); }
+        writer.Flush();
+        return 0;
+    }
+}
+'@
+                $csc = Join-Path $env:windir (Join-Path 'Microsoft.NET' (Join-Path 'Framework64' (Join-Path 'v4.0.30319' 'csc.exe')))
+                & $csc /nologo "/out:$(Join-Path $script:shimDir 'argvcapture.exe')" $source | Out-Null
+                Set-Content -LiteralPath (Join-Path $script:shimDir 'sf.cmd') -Encoding ascii -Value "@echo off`r`n`"%~dp0argvcapture.exe`" %*"
+                $script:casesFile = Join-Path $script:shimDir 'cases.json'
+                ConvertTo-Json -InputObject @($script:cases | ForEach-Object { [pscustomobject]@{ Name = $_.Name; Value = $_.Value } }) -Depth 4 | Set-Content -LiteralPath $script:casesFile -Encoding utf8
+                $script:runner = Join-Path $script:shimDir 'run.ps1'
+                Set-Content -LiteralPath $script:runner -Encoding utf8 -Value @'
+param([string] $ShimDir, [string] $CasesFile, [string] $Manifest, [string] $OutFile)
+$env:PATH = $ShimDir + ';' + $env:PATH
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+Import-Module $Manifest -Force
+$cases = @(Get-Content -LiteralPath $CasesFile -Raw -Encoding UTF8 | ConvertFrom-Json | ForEach-Object { $_ })
+$rows = @()
+foreach ($case in $cases) {
+    $failure = $null; $lines = @()
+    try { $lines = @(Invoke-Salesforce -FilePath 'sf' -Arguments @('--probe', [string]$case.Value)) } catch { $failure = $_.Exception.Message }
+    $rows += [pscustomobject]@{ Name = $case.Name; Error = $failure; Lines = @($lines | ForEach-Object { [string]$_ }) }
+}
+$leftover = @([System.Environment]::GetEnvironmentVariables().Keys | Where-Object { $_ -like 'PSFDX_PERCENT*' })
+ConvertTo-Json -InputObject ([pscustomobject]@{ Rows = $rows; Leftover = $leftover }) -Depth 6 | Set-Content -LiteralPath $OutFile -Encoding utf8
+'@
+                $script:sharedManifest = Join-Path (Split-Path -Parent $PSScriptRoot) (Join-Path 'psfdx-shared' 'psfdx-shared.psd1')
+            }
+        }
+
+        foreach ($shell in @('pwsh', 'powershell')) {
+            $available = ([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) -and [bool](Get-Command $shell -CommandType Application -ErrorAction SilentlyContinue)
+            It "passes every table case exactly or refuses it with a clear error in $shell, and leaves no environment variable behind" -TestCases @(@{ shell = $shell }) -Skip:(-not $available) {
+                param($shell)
+                $outFile = Join-Path $script:shimDir "table-$shell.json"
+                & $shell -NoProfile -ExecutionPolicy Bypass -File $script:runner -ShimDir $script:shimDir -CasesFile $script:casesFile -Manifest $script:sharedManifest -OutFile $outFile | Out-Null
+                $parsed = Get-Content -LiteralPath $outFile -Raw -Encoding UTF8 | ConvertFrom-Json
+                $rows = @($parsed.Rows | ForEach-Object { $_ })
+                $rows.Count | Should -Be $script:cases.Count
+                for ($n = 0; $n -lt $script:cases.Count; $n++) {
+                    $case = $script:cases[$n]
+                    $row = $rows[$n]
+                    $row.Name | Should -Be $case.Name
+                    if ($case.Windows -eq 'exact') {
+                        $row.Error | Should -BeNullOrEmpty -Because $case.Name
+                        $lines = @($row.Lines | ForEach-Object { $_ })
+                        $lines.Count | Should -Be 2 -Because $case.Name
+                        $lines[0] | Should -Be '<--probe>'
+                        $lines[1] | Should -Be ('<' + $case.Value + '>') -Because $case.Name
+                    } else {
+                        $row.Error | Should -Not -BeNullOrEmpty -Because $case.Name
+                        if ($case.Name -like '*over the cmd.exe limit*') { $row.Error | Should -BeLike '*characters long*' } else { $row.Error | Should -BeLike '*cannot be passed safely*' -Because $case.Name }
+                        @($row.Lines | ForEach-Object { $_ }).Count | Should -Be 0 -Because $case.Name
+                    }
+                }
+                @($parsed.Leftover | ForEach-Object { $_ }).Count | Should -Be 0
+            }
+        }
+
+        It 'runs concurrent calls in one process without losing a percent sign or leaving a variable' -Skip:(-not ($isWin -and $hasPwsh)) {
+            $concurrent = Join-Path $script:shimDir 'concurrent.ps1'
+            Set-Content -LiteralPath $concurrent -Encoding utf8 -Value @'
+param([string] $ShimDir, [string] $Manifest, [string] $OutFile)
+$env:PATH = $ShimDir + ';' + $env:PATH
+$rows = 1..6 | ForEach-Object -Parallel {
+    Import-Module $using:Manifest -Force
+    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
+    $bad = 0
+    for ($i = 0; $i -lt 15; $i++) {
+        $out = @(Invoke-Salesforce -FilePath 'sf' -Arguments @('--probe', "Name LIKE 'Acme%' AND X = '%NAME%'"))
+        if ($out.Count -lt 2 -or $out[1] -ne "<Name LIKE 'Acme%' AND X = '%NAME%'>") { $bad++ }
+    }
+    $bad
+} -ThrottleLimit 6
+$leftover = @([System.Environment]::GetEnvironmentVariables().Keys | Where-Object { $_ -like 'PSFDX_PERCENT*' })
+ConvertTo-Json -InputObject ([pscustomobject]@{ Bad = ($rows | Measure-Object -Sum).Sum; Leftover = $leftover }) | Set-Content -LiteralPath $OutFile -Encoding utf8
+'@
+            $outFile = Join-Path $script:shimDir 'concurrent.json'
+            & pwsh -NoProfile -File $concurrent -ShimDir $script:shimDir -Manifest $script:sharedManifest -OutFile $outFile | Out-Null
+            $result = Get-Content -LiteralPath $outFile -Raw -Encoding UTF8 | ConvertFrom-Json
+            $result.Bad | Should -Be 0
+            @($result.Leftover | ForEach-Object { $_ }).Count | Should -Be 0
+        }
+    }
+
+    Context 'Unix executable' {
+        BeforeAll {
+            if (-not $script:windowsHost) {
+                $script:unixDir = Join-Path $TestDrive 'unix table'
+                New-Item -ItemType Directory -Path $script:unixDir | Out-Null
+                $script:unixFake = Join-Path $script:unixDir 'fakesf'
+                Set-Content -LiteralPath $script:unixFake -Value "#!/bin/sh`nfor a in `"`$@`"; do printf '<%s>\n' `"`$a`"; done" -Encoding ascii
+                & chmod +x $script:unixFake
+            }
+        }
+
+        It 'passes every table case unchanged, because no shell is involved' -Skip:$isWin {
+            foreach ($case in $script:cases) {
+                # Line breaks are not testable through a line-oriented fake.
+                if ($case.Value -match '[\r\n]') { continue }
+                $lines = @(Invoke-Salesforce -FilePath $script:unixFake -Arguments @('--probe', [string]$case.Value))
+                $lines.Count | Should -Be 2 -Because $case.Name
+                $lines[1] | Should -Be ('<' + $case.Value + '>') -Because $case.Name
+            }
+        }
+    }
+
+    Context 'Resolve-PsfdxNativeArguments' {
+        BeforeEach {
+            Mock Test-PsfdxIsWindows { $true }
+        }
+
+        It 'uses the percent variable it is given, so each call can have its own' {
+            Mock Test-PsfdxIsCmdShim { $true }
+            @(Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('a%b') -PercentVariable 'PSFDX_PERCENT_abc12345')[0] | Should -Be 'a%PSFDX_PERCENT_abc12345%b'
+        }
+
+        It 'refuses a command line over the limit with advice, and allows one just under it' {
+            Mock Test-PsfdxIsCmdShim { $true }
+            { Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('x' * 9000) } | Should -Throw -ExpectedMessage '*Shorten the query*--file*'
+            { Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('x' * 7000) } | Should -Not -Throw
+        }
+
+        It 'counts the extra characters a percent sign adds' {
+            Mock Test-PsfdxIsCmdShim { $true }
+            { Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('%' * 1000) } | Should -Throw -ExpectedMessage '*characters long after preparation*'
+        }
+
+        It 'does not apply the limit to a native executable' {
+            Mock Test-PsfdxIsCmdShim { $false }
+            { Resolve-PsfdxNativeArguments -FilePath 'sf' -Arguments @('x' * 9000) } | Should -Not -Throw
+        }
+    }
+
+    Context 'ConvertTo-PsfdxArgumentList edge cases' {
+        It 'splits on any whitespace, including tabs and line breaks' {
+            $r = ConvertTo-PsfdxArgumentList -Command "sf`tdata`r`nquery"
+            $r.FilePath | Should -Be 'sf'
+            @($r.Arguments) | Should -Be @('data', 'query')
+        }
+        It 'keeps a trailing backslash and a backslash before a quote as literal text' {
+            @((ConvertTo-PsfdxArgumentList -Command 'sf C:\dir\ next').Arguments) | Should -Be @('C:\dir\', 'next')
+            @((ConvertTo-PsfdxArgumentList -Command 'sf "C:\my dir\" next').Arguments) | Should -Be @('C:\my dir\', 'next')
+        }
+        It 'handles backtick and quote combinations' {
+            @((ConvertTo-PsfdxArgumentList -Command 'sf "a`"b" ''c''''d'' e`f').Arguments) | Should -Be @('a"b', "c'd", 'ef')
+            @((ConvertTo-PsfdxArgumentList -Command 'sf "a`xb"').Arguments) | Should -Be @('a`xb')
+        }
+        It 'keeps nested quotes of the other kind literal' {
+            @((ConvertTo-PsfdxArgumentList -Command "sf `"it's`" 'say `"hi`"'").Arguments) | Should -Be @("it's", 'say "hi"')
+        }
+        It 'keeps control characters and Unicode inside a token' {
+            @((ConvertTo-PsfdxArgumentList -Command ("sf `"a" + [char]0x1 + "b`" caf" + [char]0xE9)).Arguments).Count | Should -Be 2
+        }
+        It 'treats a lone trailing backtick as literal' {
+            @((ConvertTo-PsfdxArgumentList -Command 'sf abc`').Arguments) | Should -Be @('abc`')
+        }
+    }
+}
 }
 
 # Windows only: an offline sf.cmd shim (like the real one, it forwards %* to a program) that records argv.
@@ -755,5 +972,13 @@ Describe 'Import-PsfdxSharedModule resolution' {
         Set-Content -LiteralPath (Join-Path $host1 'host.psd1') -Value "@{ RootModule = 'host.psm1'; ModuleVersion = '0.8.20'; GUID = '1f3a8c52-6d0e-4f8e-b2a4-5c9d7e1a3b60'; FunctionsToExport = @() }"
         { Import-Module (Join-Path $host1 'host.psd1') -Force -ErrorAction Stop } | Should -Throw -ExpectedMessage '*version 0.8.20*needs*0.8.x*Found only: 0.8.5*'
         Remove-Module host -Force -ErrorAction SilentlyContinue
+    }
+}
+
+Describe 'Identifier checks reject a trailing line break (issue 112)' {
+    It 'does not let a value ending in a line feed pass as an API name' {
+        foreach ($value in "Account$([char]10)", "Account$([char]13)$([char]10)", "My_Field__c$([char]10)", "Account.Owner$([char]10)") {
+            { ConvertTo-SalesforceSoqlIdentifier -Value $value } | Should -Throw -ExpectedMessage '*not a valid Salesforce*'
+        }
     }
 }

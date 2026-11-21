@@ -749,3 +749,27 @@ Describe 'Deploy and retrieve preview' {
         }
     }
 }
+
+Describe 'Security regressions: deployments can be previewed (issue 112)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+            $script:manifest = Join-Path $TestDrive 'package.xml'
+            Set-Content -Path $script:manifest -Value '<Package/>'
+        }
+        It 'deploys nothing under -WhatIf from a manifest, a directory or a component' {
+            Deploy-SalesforceMetadata -Manifest $script:manifest -WhatIf | Out-Null
+            Deploy-SalesforceComponent -SourceDir $TestDrive -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'still deploys when not previewing, without a prompt' {
+            Deploy-SalesforceMetadata -Manifest $script:manifest | Out-Null
+            Deploy-SalesforceComponent -SourceDir $TestDrive | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly
+        }
+        It 'runs a validation-only deployment (-DryRun) even under -WhatIf, because it changes nothing' {
+            Deploy-SalesforceComponent -SourceDir $TestDrive -DryRun -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Arguments -contains '--dry-run' }
+        }
+    }
+}

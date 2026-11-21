@@ -142,7 +142,7 @@ function Assert-SalesforceAgentApiName {
         [Parameter(Mandatory = $true)][string] $What
     )
 
-    if ($Value -notmatch '^[A-Za-z][A-Za-z0-9_]*$') {
+    if ($Value -notmatch '^[A-Za-z][A-Za-z0-9_]*\z') {
         throw "$What '$Value' is not a valid API name. Use letters, digits and underscores, starting with a letter."
     }
 }
@@ -196,7 +196,7 @@ function Get-SalesforceAgentTestResult {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    if ($JobId -notmatch '^[A-Za-z0-9]{15,18}$') {
+    if ($JobId -notmatch '^[A-Za-z0-9]{15,18}\z') {
         throw "Job ID '$JobId' is not a valid 15 or 18 character Salesforce ID."
     }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters

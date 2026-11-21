@@ -491,3 +491,31 @@ Describe 'Package version pipelines' {
         }
     }
 }
+
+Describe 'Security regressions: package confirmation (issue 112)' {
+    InModuleScope 'psfdx-packages' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+        It 'promotes nothing under -WhatIf, even with -NoPrompt' {
+            Promote-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -WhatIf | Out-Null
+            Promote-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -NoPrompt -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'declares a High confirmation impact, so an interactive caller is asked' {
+            (Get-Command Promote-SalesforcePackageVersion).ScriptBlock.Attributes.ConfirmImpact | Should -Contain 'High'
+        }
+        It 'promotes with -Confirm:$false, and with -NoPrompt without asking (existing scripts keep working)' {
+            Promote-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -Confirm:$false | Out-Null
+            Promote-SalesforcePackageVersion -PackageVersionId 04t000000000002AAA -NoPrompt | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|promote|--package|04t000000000001AAA|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|promote|--package|04t000000000002AAA|--no-prompt|--json' }
+        }
+        It 'installs nothing under -WhatIf and still installs normally' {
+            Install-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -TargetOrg me -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            Install-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -TargetOrg me | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+        }
+    }
+}

@@ -495,7 +495,7 @@ function Retrieve-SalesforceOrg {
 #region Deploy
 
 function Deploy-SalesforceComponent {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
         [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata -All | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
@@ -533,6 +533,7 @@ function Deploy-SalesforceComponent {
     if ($Type) { Assert-SalesforceMetadataType -Type $Type }
 
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
 
     $arguments = @('project', 'deploy', 'start')
     if ($Type) {
@@ -558,12 +559,15 @@ function Deploy-SalesforceComponent {
     if ($ConciseResults) { $arguments += '--concise' }
     if ($DetailedResults) { $arguments += '--verbose' }
     $arguments += '--json'
+    # A dry run (--dry-run) deploys nothing, so only a real deployment needs confirming.
+    $what = @($Type, $Name, $SourceDir | Where-Object { $_ }) -join ' '
+    if (-not $DryRun -and -not $PSCmdlet.ShouldProcess("$what to the org", 'Deploy metadata')) { return }
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
 
 function Deploy-SalesforceMetadata {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
         [Parameter(Mandatory = $false)][string] $Manifest,
         [Parameter(Mandatory = $false)][string] $InputDir,
@@ -599,6 +603,10 @@ function Deploy-SalesforceMetadata {
     if ($IgnoreErrors) { $arguments += '--ignore-errors' }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $what = @($Manifest, $InputDir | Where-Object { $_ }) -join ' '
+    if ($ManifestPackage) { $what = 'the manifest package' }
+    if (-not $PSCmdlet.ShouldProcess("$what to the org", 'Deploy metadata')) { return }
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
@@ -621,7 +629,7 @@ function Get-SalesforceDeployJobParams {
         throw "Specify -JobId or -UseMostRecent."
     }
     if ($JobId) {
-        if ($JobId -notmatch '^0Af[a-zA-Z0-9]{12}([a-zA-Z0-9]{3})?$') {
+        if ($JobId -notmatch '^0Af[a-zA-Z0-9]{12}([a-zA-Z0-9]{3})?\z') {
             throw "Job ID '$JobId' is not a valid deploy job ID. Expected a 15 or 18 character ID starting with 0Af."
         }
         return @('--job-id', $JobId)

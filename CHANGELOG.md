@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- psfdx: Breaking: `Connect-SalesforceApi -CustomUrl` and `Invoke-SalesforceApi -Url` now accept only an absolute https:// URL. They send a password, client secret or access token, which must not travel over plain http. Before this, an http URL was used as given.
+- psfdx-packages: `Promote-SalesforcePackageVersion` now asks for confirmation and supports `-WhatIf`, because a promoted version can no longer be deleted. `-NoPrompt` skips the question, so existing unattended scripts keep working. `Install-SalesforcePackageVersion` now supports `-WhatIf` and `-Confirm` without asking by default.
+- psfdx-metadata: `Deploy-SalesforceMetadata` and `Deploy-SalesforceComponent` now support `-WhatIf` and `-Confirm` without asking by default. A validation-only deploy (`-DryRun`) still runs under `-WhatIf`.
+- psfdx: `Install-SalesforceCli`, `Update-SalesforceCli`, `Install-SalesforcePlugin` and `Update-SalesforcePlugins` now support `-WhatIf` and `-Confirm` without asking by default. `Install-SalesforcePlugin` refuses a name that starts with a dash or contains spaces or control characters. `New-SalesforceRecord` and `Set-SalesforceRecord` no longer repeat the field values on the verbose stream.
+- psfdx-logs: `Export-SalesforceEventFile` and `Get-SalesforceEventFile` check that `-Id` is a Salesforce ID, so an ID such as `..\..\x` can no longer write outside the output folder.
+- All modules: ID and name checks now reject a value that ends in a line break, which the old checks let through.
+- On Windows, a command that is too long for `cmd.exe` (over about 7800 characters through the `sf.cmd` shim) now stops with a message to shorten the query or use `--file`, instead of returning cmd.exe's error text as a result. Calls that run at the same time in one session no longer share a temporary environment variable. The security audit and its findings are in docs/security-findings.md.
+
 ## 0.8.38 - 2026-11-21
 
 - psfdx, psfdx-packages: records, package versions and trace flags now work in pipelines. `Remove-`, `Get-` and `Set-SalesforceRecord` take the ID from piped records, `Remove-` and `Promote-SalesforcePackageVersion` take the version from `Get-SalesforcePackageVersions`, and `Disable-SalesforceDebugLogging` already took trace flags. Each piped object is confirmed and honours `-WhatIf` on its own. `New-SalesforceRecord` and `Set-SalesforceRecord` now support `-WhatIf` and `-Confirm` (they still do not prompt by default). Existing calls work unchanged. The README has a new Pipelines section on empty results, single versus many results and errors.
