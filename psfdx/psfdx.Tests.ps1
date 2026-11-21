@@ -846,12 +846,18 @@ Describe 'User administration commands' {
                 $u.PSObject.Properties.Name | Should -Not -Contain 'password'
                 $u.PSObject.Properties.Name | Should -Not -Contain 'Password'
             }
-            It 'returns the password only as a SecureString when asked' {
-                $script:Reply = '{"status":0,"result":{"username":"a@x.org","accessToken":"' + $script:Token + '","password":"' + $script:Secret + '"}}'
-                $u = Get-SalesforceOrgUser -IncludePassword
-                $u.Password | Should -BeOfType [System.Security.SecureString]
-                [System.Net.NetworkCredential]::new('', $u.Password).Password | Should -Be $script:Secret
+            It 'handles the redacted password and token the current CLI returns, and says whether a password exists' {
+                $script:Reply = '{"status":0,"result":{"username":"a@x.org","id":"005xx","accessToken":"[redacted: use the sf org auth show-user-password command]","password":"[redacted]"}}'
+                $u = Get-SalesforceOrgUser
+                $u.HasPassword | Should -BeTrue
+                $u.PSObject.Properties.Name | Should -Not -Contain 'password'
                 $u.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                ($u | ConvertTo-Json) | Should -Not -BeLike '*redacted*'
+                $script:Reply = '{"status":0,"result":{"username":"b@x.org","id":"005yy"}}'
+                (Get-SalesforceOrgUser).HasPassword | Should -BeFalse
+            }
+            It 'no longer offers -IncludePassword, which the CLI cannot honour' {
+                (Get-Command Get-SalesforceOrgUser).Parameters.Keys | Should -Not -Contain 'IncludePassword'
             }
             It 'throws the CLI message on failure, without echoing a token' {
                 $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'

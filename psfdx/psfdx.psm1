@@ -1096,16 +1096,14 @@ function Get-SalesforceOrgUser {
     .SYNOPSIS
     Shows the user the CLI is signed in as in an org (sf org display user).
     .DESCRIPTION
-    The access token is never returned. The password, which exists only for a user created with the CLI, is returned as a SecureString in
-    Password when -IncludePassword is given, and is otherwise left out.
+    The access token and password are never returned: current Salesforce CLI versions replace both with a redaction message in this command, so
+    there is nothing real to return. HasPassword says whether the CLI holds a password for the user. To set a known password, use
+    New-SalesforceUserPassword.
     .EXAMPLE
     Get-SalesforceOrgUser -TargetOrg myscratch
-    .EXAMPLE
-    $u = Get-SalesforceOrgUser -TargetOrg myscratch -IncludePassword; [System.Net.NetworkCredential]::new('', $u.Password).Password
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][switch] $IncludePassword,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $arguments = @('org', 'display', 'user')
@@ -1115,9 +1113,8 @@ function Get-SalesforceOrgUser {
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     $user = Show-SalesforceResult -Result $result
     $clean = Remove-SalesforceSecretProperty -InputObject $user
-    if ($IncludePassword -and $null -ne $user.PSObject.Properties['password'] -and -not [string]::IsNullOrEmpty([string] $user.password)) {
-        $clean | Add-Member -NotePropertyName Password -NotePropertyValue (ConvertTo-SecureString -String ([string] $user.password) -AsPlainText -Force) -Force
-    }
+    $hasPassword = ($null -ne $user.PSObject.Properties['password']) -and -not [string]::IsNullOrEmpty([string] $user.password)
+    $clean | Add-Member -NotePropertyName HasPassword -NotePropertyValue $hasPassword -Force
     return $clean
 }
 
