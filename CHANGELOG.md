@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.36 - 2026-11-21
+
 - psfdx-development: new `Invoke-SalesforceCodeAnalyzer` and `Get-SalesforceCodeAnalyzerRule` wrap `sf code-analyzer run` and `sf code-analyzer rules`. The run returns each finding as an object (rule, engine, severity, message, file and position). A run that fails your `-SeverityThreshold` still returns its findings with `ThresholdExceeded`, and `-ThrowOnThreshold` turns that into an error for CI; a missing plugin or an engine that cannot start always throws, with install guidance (Java 11 or later for the Java-based engines).
 
 ## 0.8.35 - 2026-11-21
