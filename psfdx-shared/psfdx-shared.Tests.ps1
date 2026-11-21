@@ -434,7 +434,7 @@ ConvertTo-Json -InputObject ([pscustomobject]@{ Rows = $rows; Leftover = $leftov
                 param($shell)
                 $outFile = Join-Path $script:shimDir "table-$shell.json"
                 & $shell -NoProfile -ExecutionPolicy Bypass -File $script:runner -ShimDir $script:shimDir -CasesFile $script:casesFile -Manifest $script:sharedManifest -OutFile $outFile | Out-Null
-                $parsed = Get-Content -LiteralPath $outFile -Raw | ConvertFrom-Json
+                $parsed = Get-Content -LiteralPath $outFile -Raw -Encoding UTF8 | ConvertFrom-Json
                 $rows = @($parsed.Rows | ForEach-Object { $_ })
                 $rows.Count | Should -Be $script:cases.Count
                 for ($n = 0; $n -lt $script:cases.Count; $n++) {
@@ -477,7 +477,7 @@ ConvertTo-Json -InputObject ([pscustomobject]@{ Bad = ($rows | Measure-Object -S
 '@
             $outFile = Join-Path $script:shimDir 'concurrent.json'
             & pwsh -NoProfile -File $concurrent -ShimDir $script:shimDir -Manifest $script:sharedManifest -OutFile $outFile | Out-Null
-            $result = Get-Content -LiteralPath $outFile -Raw | ConvertFrom-Json
+            $result = Get-Content -LiteralPath $outFile -Raw -Encoding UTF8 | ConvertFrom-Json
             $result.Bad | Should -Be 0
             @($result.Leftover | ForEach-Object { $_ }).Count | Should -Be 0
         }
