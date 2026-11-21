@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.37 - 2026-11-21
+
 - psfdx-agentforce: new `New-SalesforceAgentAuthoringBundle`, `Test-SalesforceAgentAuthoringBundle` and `Publish-SalesforceAgentAuthoringBundle` script the Agent Script flow of generate, validate and publish. Validation returns its diagnostics as objects (and `-ThrowOnInvalid` fails a CI step); generating files and publishing ask for confirmation and support `-WhatIf`. These upstream commands are newer and may be beta, so they need a recent `@salesforce/plugin-agent`.
 
 ## 0.8.36 - 2026-11-21
