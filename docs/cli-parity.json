@@ -192,7 +192,7 @@
     "flagsWithAListOfValues": 36,
     "values": {
       "total": 143,
-      "reachable": 123
+      "reachable": 121
     }
   },
   "totals": {
@@ -1816,6 +1816,7 @@
             {
               "flag": "result-format",
               "values": [
+                "human",
                 "tap",
                 "junit"
               ]
@@ -1824,7 +1825,7 @@
           "values": {
             "flagsWithAList": 1,
             "total": 4,
-            "reachable": 2
+            "reachable": 1
           }
         },
         {
@@ -8249,11 +8250,18 @@
             "results-dir"
           ],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [],
+          "valuesNotReachable": [
+            {
+              "flag": "test-level",
+              "values": [
+                "RunRelevantTests"
+              ]
+            }
+          ],
           "values": {
             "flagsWithAList": 1,
             "total": 5,
-            "reachable": 5
+            "reachable": 4
           }
         },
         {

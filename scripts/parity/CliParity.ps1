@@ -90,6 +90,95 @@ function ConvertTo-ParityInventory {
     }
 }
 
+function Test-ParityConditional {
+    # True when the node sits inside an if, switch or loop of its function, so the code may not run on every call.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)] $Node,
+        [Parameter(Mandatory = $true)] $Stop
+    )
+    $current = $Node.Parent
+    while ($null -ne $current -and -not [object]::ReferenceEquals($current, $Stop)) {
+        if (($current -is [System.Management.Automation.Language.IfStatementAst]) -or ($current -is [System.Management.Automation.Language.SwitchStatementAst]) -or
+            ($current -is [System.Management.Automation.Language.ForEachStatementAst]) -or ($current -is [System.Management.Automation.Language.ForStatementAst]) -or
+            ($current -is [System.Management.Automation.Language.WhileStatementAst]) -or ($current -is [System.Management.Automation.Language.DoWhileStatementAst]) -or
+            ($current -is [System.Management.Automation.Language.DoUntilStatementAst])) { return $true }
+        $current = $current.Parent
+    }
+    return $false
+}
+
+function Get-ParityLiteralValues {
+    # The string values an expression can have when it is made only of string literals, possibly chosen by an if/else:
+    # 'a', (if ($x) { 'a' } else { 'b' }). Returns $null for anything else, which means the value is not known.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][AllowNull()] $Ast
+    )
+
+    if ($null -eq $Ast) { return $null }
+    if ($Ast -is [System.Management.Automation.Language.StringConstantExpressionAst]) { return @($Ast.Value) }
+    if ($Ast -is [System.Management.Automation.Language.CommandExpressionAst]) { return Get-ParityLiteralValues -Ast $Ast.Expression }
+    if ($Ast -is [System.Management.Automation.Language.ParenExpressionAst]) { return Get-ParityLiteralValues -Ast $Ast.Pipeline }
+    if ($Ast -is [System.Management.Automation.Language.PipelineAst]) {
+        if (@($Ast.PipelineElements).Count -ne 1) { return $null }
+        return Get-ParityLiteralValues -Ast $Ast.PipelineElements[0]
+    }
+    if ($Ast -is [System.Management.Automation.Language.IfStatementAst]) {
+        if ($null -eq $Ast.ElseClause) { return $null }
+        $values = New-Object System.Collections.Generic.List[string]
+        $bodies = @($Ast.Clauses | ForEach-Object { $_.Item2 }) + @($Ast.ElseClause)
+        foreach ($body in $bodies) {
+            $last = @($body.Statements) | Select-Object -Last 1
+            $inner = Get-ParityLiteralValues -Ast $last
+            if ($null -eq $inner) { return $null }
+            foreach ($v in $inner) { $values.Add([string]$v) }
+        }
+        return $values.ToArray()
+    }
+    return $null
+}
+
+function Get-ParityInputValues {
+    # The values a variable can have when it is a parameter of the last function on a call path (owner first, helper last): the values the callers
+    # pass for it, followed up the path. Returns $null when that is not known, which means any value.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)] $Functions,
+        [Parameter(Mandatory = $true)][string[]] $Path,
+        [Parameter(Mandatory = $false)][AllowNull()][string] $Variable,
+        [Parameter(Mandatory = $false)][int] $Level = -1
+    )
+
+    if ([string]::IsNullOrEmpty($Variable)) { return $null }
+    if ($Level -lt 0) { $Level = $Path.Count - 1 }
+    $here = $Functions[$Path[$Level]]
+    if ($here -and $here.Literals.ContainsKey($Variable)) { return @($here.Literals[$Variable]) }
+    if ($Level -eq 0) {
+        $top = $Functions[$Path[0]]
+        if ($top -and $top.ParamSets.ContainsKey($Variable)) { return @($top.ParamSets[$Variable]) }
+        return $null
+    }
+    $caller = $Functions[$Path[$Level - 1]]
+    if ($null -eq $caller) { return $null }
+    $sites = @($caller.CallSites | Where-Object { $_.Callee -eq $Path[$Level] })
+    if ($sites.Count -eq 0) { return $null }
+    $values = New-Object System.Collections.Generic.List[string]
+    foreach ($site in $sites) {
+        if (-not $site.Args.ContainsKey($Variable)) { return $null }
+        $argument = $site.Args[$Variable]
+        if ($argument.Mode -eq 'literal') { foreach ($v in $argument.Values) { $values.Add([string]$v) }; continue }
+        if ($argument.Mode -eq 'var') {
+            $inner = Get-ParityInputValues -Functions $Functions -Path $Path -Variable $argument.Variable -Level ($Level - 1)
+            if ($null -eq $inner) { return $null }
+            foreach ($v in $inner) { $values.Add([string]$v) }
+            continue
+        }
+        return $null
+    }
+    return $values.ToArray()
+}
+
 function Get-ParityArrayElements {
     # The elements of the first array written in an expression: @('a', 'b'), a bare 'a', 'b', and a one-element @('a') (which is not an ArrayLiteralAst).
     [CmdletBinding()]
@@ -158,18 +247,51 @@ function Get-ParityPsfdxScan {
                         }
                     }
                 }
-                # Lookup tables: `$map = @{ 'Name' = 'CliValue' }`, so `$map[$x]` written after a flag can only be one of the table's values.
+                # Lookup tables: `$map = @{ 'Name' = 'CliValue' }`, so `$map[$x]` written after a flag is one of the table's values, chosen by $x.
                 $maps = @{}
                 foreach ($assignment in @($definition.Body.FindAll({ param($n) ($n -is [System.Management.Automation.Language.AssignmentStatementAst]) -and ($n.Operator -eq 'Equals') -and ($n.Left -is [System.Management.Automation.Language.VariableExpressionAst]) }, $true))) {
                     $table = $assignment.Right.Find({ param($n) $n -is [System.Management.Automation.Language.HashtableAst] }, $true)
                     if ($null -eq $table) { continue }
-                    $mapValues = New-Object System.Collections.Generic.List[string]
+                    $mapEntries = @{}
                     $allStrings = $true
                     foreach ($pair in $table.KeyValuePairs) {
                         $valueNode = $pair.Item2.Find({ param($n) $n -is [System.Management.Automation.Language.StringConstantExpressionAst] }, $true)
-                        if ($valueNode) { $mapValues.Add($valueNode.Value) } else { $allStrings = $false }
+                        if (($pair.Item1 -is [System.Management.Automation.Language.StringConstantExpressionAst]) -and $valueNode) { $mapEntries[$pair.Item1.Value] = $valueNode.Value } else { $allStrings = $false }
                     }
-                    if ($allStrings -and $mapValues.Count -gt 0) { $maps[$assignment.Left.VariablePath.UserPath] = $mapValues.ToArray() }
+                    if ($allStrings -and $mapEntries.Count -gt 0) { $maps[$assignment.Left.VariablePath.UserPath] = $mapEntries }
+                }
+                # Local variables that are only ever given string literals, so a flag value taken from one has a known set of values.
+                $literals = @{}
+                $unknownLocals = @{}
+                foreach ($assignment in @($definition.Body.FindAll({ param($n) ($n -is [System.Management.Automation.Language.AssignmentStatementAst]) -and ($n.Left -is [System.Management.Automation.Language.VariableExpressionAst]) }, $true))) {
+                    $variableName = $assignment.Left.VariablePath.UserPath
+                    $known = $null
+                    if ($assignment.Operator -eq 'Equals') { $known = Get-ParityLiteralValues -Ast $assignment.Right }
+                    if ($null -eq $known) { $unknownLocals[$variableName] = $true; continue }
+                    if (-not $literals.ContainsKey($variableName)) { $literals[$variableName] = @() }
+                    $literals[$variableName] = @($literals[$variableName]) + @($known)
+                }
+                foreach ($name in @($unknownLocals.Keys)) { $literals.Remove($name) }
+                foreach ($name in @($paramSets.Keys)) { $literals.Remove($name) }
+                # Every call this function makes to another function, with the argument it passes for each named parameter.
+                $callSites = New-Object System.Collections.Generic.List[object]
+                foreach ($call in @($definition.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true))) {
+                    $calleeName = $call.GetCommandName()
+                    if (-not $calleeName -or $calleeName -notmatch '^[A-Za-z]+-[A-Za-z0-9]+\z') { continue }
+                    $callArgs = @{}
+                    $parts = @($call.CommandElements)
+                    for ($i = 1; $i -lt $parts.Count; $i++) {
+                        if ($parts[$i] -isnot [System.Management.Automation.Language.CommandParameterAst]) { continue }
+                        $valueNode = $null
+                        if ($parts[$i].Argument) { $valueNode = $parts[$i].Argument }
+                        elseif (($i + 1) -lt $parts.Count -and $parts[$i + 1] -isnot [System.Management.Automation.Language.CommandParameterAst]) { $valueNode = $parts[$i + 1] }
+                        if ($null -eq $valueNode) { continue }
+                        $argument = [pscustomobject]@{ Mode = 'unknown'; Values = @(); Variable = $null }
+                        if ($valueNode -is [System.Management.Automation.Language.StringConstantExpressionAst]) { $argument.Mode = 'literal'; $argument.Values = @($valueNode.Value) }
+                        elseif (($valueNode -is [System.Management.Automation.Language.VariableExpressionAst]) -and -not $valueNode.Splatted) { $argument.Mode = 'var'; $argument.Variable = $valueNode.VariablePath.UserPath }
+                        $callArgs[$parts[$i].ParameterName] = $argument
+                    }
+                    $callSites.Add([pscustomobject]@{ Callee = $calleeName; Args = $callArgs })
                 }
                 # The value written after each flag in an argument array: a literal, a [ValidateSet()] parameter, or something free-form.
                 $flagValues = New-Object System.Collections.Generic.List[object]
@@ -181,7 +303,7 @@ function Get-ParityPsfdxScan {
                         $flagName = $Matches[1]
                         $inlineValue = $null
                         if ($Matches[2]) { $inlineValue = $Matches[3] }
-                        $entry = [pscustomobject]@{ Flag = $flagName; Mode = 'none'; Values = @(); Variable = $null }
+                        $entry = [pscustomobject]@{ Flag = $flagName; Mode = 'none'; Values = @(); Variable = $null; Map = $null; Conditional = (Test-ParityConditional -Node $items[$i] -Stop $definition.Body) }
                         if ($null -ne $inlineValue) {
                             $entry.Mode = 'literal'; $entry.Values = @($inlineValue)
                         } elseif (($i + 1) -lt $items.Count) {
@@ -189,7 +311,8 @@ function Get-ParityPsfdxScan {
                             if ($next -is [System.Management.Automation.Language.StringConstantExpressionAst]) {
                                 if ($next.Value -notlike '--*') { $entry.Mode = 'literal'; $entry.Values = @($next.Value) }
                             } elseif (($next -is [System.Management.Automation.Language.IndexExpressionAst]) -and ($next.Target -is [System.Management.Automation.Language.VariableExpressionAst]) -and $maps.ContainsKey($next.Target.VariablePath.UserPath)) {
-                                $entry.Mode = 'set'; $entry.Values = @($maps[$next.Target.VariablePath.UserPath])
+                                $entry.Mode = 'map'; $entry.Map = $maps[$next.Target.VariablePath.UserPath]
+                                if ($next.Index -is [System.Management.Automation.Language.VariableExpressionAst]) { $entry.Variable = $next.Index.VariablePath.UserPath }
                             } elseif ($next -is [System.Management.Automation.Language.VariableExpressionAst]) {
                                 $variable = $next.VariablePath.UserPath
                                 $entry.Variable = $variable
@@ -204,7 +327,7 @@ function Get-ParityPsfdxScan {
                 # A flag and its value joined in one string, `--name=value`, outside an array (`$arguments += '--name=value'`).
                 foreach ($s in $strings) {
                     if ($s.Parent -is [System.Management.Automation.Language.ArrayLiteralAst]) { continue }
-                    if ($s.Value -match '^--([a-z][a-z0-9-]*)=(.*)\z') { $flagValues.Add([pscustomobject]@{ Flag = $Matches[1]; Mode = 'literal'; Values = @($Matches[2]); Variable = $null }) }
+                    if ($s.Value -match '^--([a-z][a-z0-9-]*)=(.*)\z') { $flagValues.Add([pscustomobject]@{ Flag = $Matches[1]; Mode = 'literal'; Values = @($Matches[2]); Variable = $null; Map = $null; Conditional = (Test-ParityConditional -Node $s -Stop $definition.Body) }) }
                 }
                 $functions.Add([pscustomobject]@{
                         Name     = $definition.Name
@@ -215,6 +338,8 @@ function Get-ParityPsfdxScan {
                         Flags    = @($flags)
                         FlagValues = $flagValues.ToArray()
                         ParamSets = $paramSets
+                        Literals = $literals
+                        CallSites = $callSites.ToArray()
                     })
 
                 # Structured argv: an array of words passed to `Invoke-Salesforce -FilePath 'sf' -Arguments ...`, inline or through a variable.
@@ -443,29 +568,31 @@ function New-ParityReport {
         foreach ($owner in $owners) {
             if (-not $functionByName.ContainsKey($owner)) { continue }
             foreach ($flag in $functionByName[$owner].Flags) { [void]$covered.Add($flag) }
-            foreach ($entry in $functionByName[$owner].FlagValues) { $valueEntries.Add([pscustomobject]@{ Entry = $entry; Owner = $owner; FromHelper = $false }) }
+            foreach ($entry in $functionByName[$owner].FlagValues) { $valueEntries.Add([pscustomobject]@{ Entry = $entry; Owner = $owner; FromHelper = $false; Path = @($owner) }) }
             # Flags built by helpers the owner calls count too: helpers in the same file, and anything in psfdx-shared, followed through their own calls.
             $seen = @{}
-            $pending = New-Object System.Collections.Generic.Queue[string]
-            foreach ($called in $functionByName[$owner].Calls) { $pending.Enqueue($called) }
+            $pending = New-Object System.Collections.Generic.Queue[object]
+            foreach ($called in $functionByName[$owner].Calls) { $pending.Enqueue([pscustomobject]@{ Name = $called; Path = @($owner) }) }
             while ($pending.Count -gt 0) {
-                $called = $pending.Dequeue()
+                $step = $pending.Dequeue()
+                $called = $step.Name
+                $stepPath = @($step.Path) + @($called)
                 if ($seen.ContainsKey($called) -or -not $functionByName.ContainsKey($called)) { continue }
                 $helper = $functionByName[$called]
                 if ($helper.File -ne $functionByName[$owner].File -and $helper.Module -ne 'psfdx-shared') { continue }
                 $seen[$called] = $true
                 foreach ($flag in $helper.Flags) { [void]$covered.Add($flag) }
-                foreach ($entry in $helper.FlagValues) { $valueEntries.Add([pscustomobject]@{ Entry = $entry; Owner = $owner; FromHelper = $true }) }
-                foreach ($next in $helper.Calls) { $pending.Enqueue($next) }
+                foreach ($entry in $helper.FlagValues) { $valueEntries.Add([pscustomobject]@{ Entry = $entry; Owner = $owner; FromHelper = $true; Path = $stepPath }) }
+                foreach ($next in $helper.Calls) { $pending.Enqueue([pscustomobject]@{ Name = $next; Path = $stepPath }) }
             }
         }
         $cliFlags = @($command.flags | ForEach-Object { $_.name } | Where-Object { $ignored -notcontains $_ -and $ruleIgnored -notcontains $_ })
         $uncovered = @($cliFlags | Where-Object { -not $covered.Contains($_) })
         $requiredUncovered = @($command.flags | Where-Object { $_.required -and ($uncovered -contains $_.name) } | ForEach-Object { $_.name })
 
-        # For a flag with a list of values: a value is reachable when psfdx writes it literally, accepts it through a [ValidateSet()] parameter,
-        # or takes the value as free text (any value can be passed). A helper that takes the value as a plain parameter gets the [ValidateSet()] of the
-        # owner's parameter with the same name, if there is one.
+        # For a flag with a list of values, a value is reachable when psfdx writes it literally, accepts it through a [ValidateSet()] parameter, takes the
+        # value as free text (any value can be passed), or it is the CLI's default and psfdx can leave the flag out. A value a helper takes from its caller
+        # (a plain parameter, or the key of a lookup table) is limited to what the callers can pass, followed up the call path.
         $valueGaps = New-Object System.Collections.Generic.List[object]
         $enumeratedPassed = 0; $valuesTotal = 0; $valuesReachable = 0
         foreach ($flag in @($command.flags)) {
@@ -473,15 +600,28 @@ function New-ParityReport {
             if (-not $flag.PSObject.Properties['options'] -or -not $covered.Contains($flag.name)) { continue }
             $reach = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
             $anyValue = $false
-            # Left out, the flag takes its default, so that value is reachable (unless the CLI requires the flag).
-            if (-not $flag.required -and $flag.PSObject.Properties['default']) { foreach ($d in @($flag.default)) { [void]$reach.Add([string]$d) } }
             foreach ($pair in $ruleValues) { $parts = ([string]$pair).Split([char]'=', 2); if ($parts[0] -eq $flag.name) { [void]$reach.Add($parts[1]) } }
-            foreach ($item in @($valueEntries.ToArray() | Where-Object { $_.Entry.Flag -eq $flag.name })) {
+            $items = @($valueEntries.ToArray() | Where-Object { $_.Entry.Flag -eq $flag.name })
+            foreach ($item in $items) {
                 $entry = $item.Entry
                 if ($entry.Mode -in 'literal', 'set') { foreach ($v in $entry.Values) { [void]$reach.Add([string]$v) }; continue }
-                if ($entry.Mode -ne 'any') { continue }
-                $ownerSets = $functionByName[$item.Owner].ParamSets
-                if ($item.FromHelper -and $entry.Variable -and $ownerSets.ContainsKey($entry.Variable)) { foreach ($v in $ownerSets[$entry.Variable]) { [void]$reach.Add([string]$v) } } else { $anyValue = $true }
+                if ($entry.Mode -eq 'any') {
+                    $inputs = Get-ParityInputValues -Functions $functionByName -Path @($item.Path) -Variable $entry.Variable
+                    if ($null -ne $inputs) { foreach ($v in $inputs) { [void]$reach.Add([string]$v) } } else { $anyValue = $true }
+                    continue
+                }
+                if ($entry.Mode -eq 'map') {
+                    $keys = Get-ParityInputValues -Functions $functionByName -Path @($item.Path) -Variable $entry.Variable
+                    if ($null -eq $keys) { foreach ($v in $entry.Map.Values) { [void]$reach.Add([string]$v) } }
+                    else { foreach ($k in $keys) { if ($entry.Map.ContainsKey($k)) { [void]$reach.Add([string]$entry.Map[$k]) } } }
+                }
+            }
+            # Left out, the flag takes its default. That counts only when psfdx can leave it out: some code path writes it conditionally,
+            # or one of the functions that runs the command does not write it at all.
+            if (-not $flag.required -and $flag.PSObject.Properties['default']) {
+                $ownersWithFlag = @($items | ForEach-Object { $_.Owner } | Sort-Object -Unique)
+                $canOmit = (@($items | Where-Object { $_.Entry.Conditional }).Count -gt 0) -or (@($owners | Where-Object { $functionByName.ContainsKey($_) -and ($ownersWithFlag -notcontains $_) }).Count -gt 0)
+                if ($canOmit) { foreach ($d in @($flag.default)) { [void]$reach.Add([string]$d) } }
             }
             $options = @($flag.options)
             $missingValues = @()
@@ -759,7 +899,7 @@ function ConvertTo-ParityMarkdown {
 
     [void]$sb.Append('## How to read this' + $nl + $nl)
     [void]$sb.Append('- **Wrapped:** some psfdx function runs the command, passes every one of its flags (apart from `--json`, `--flags-dir` and `--api-version`, which are reported once) and can pass every value the CLI lists for them. **Partially wrapped:** a flag is not passed, or a listed value cannot be passed; both are shown, and a reviewed mapping rule can accept the gap with a reason. Flags are matched by function (the function that builds the command, and the helpers it calls in the same file or in psfdx-shared), so this is a close estimate, not a proof.' + $nl)
-    [void]$sb.Append('- **Values:** the CLI lists the allowed values for some flags (for example `--test-level`). A value is reachable when psfdx writes it literally in the arguments, accepts it through a parameter with a `[ValidateSet()]` (compared without regard to case), or takes the flag''s value as free text, in which case any value can be passed. A parameter that is not a `[ValidateSet()]` is free text, even if its help names the values. Flags with no list (names, paths, numbers, query text) are checked for being passed, not for values. The CLI''s recorded default counts as reachable, because leaving the flag out uses it; a default the CLI does not record in its command data does not, so such a value is listed even though omitting the flag would use it, unless the mapping accepts it (`ignoreValues`). A lookup table such as `$map = @{ ''Name'' = ''CliValue'' }` used as `$map[$x]` after a flag counts as exactly its values. A value that psfdx builds some other way is not followed.' + $nl)
+    [void]$sb.Append('- **Values:** the CLI lists the allowed values for some flags (for example `--test-level`). A value is reachable when psfdx writes it literally in the arguments, accepts it through a parameter with a `[ValidateSet()]` (compared without regard to case), or takes the flag''s value as free text, in which case any value can be passed. A parameter that is not a `[ValidateSet()]` is free text, even if its help names the values. Flags with no list (names, paths, numbers, query text) are checked for being passed, not for values. The CLI''s recorded default counts as reachable only where psfdx can leave the flag out (some code writes it conditionally, or another function that runs the command does not write it); a default the CLI does not record in its command data never counts, so such a value is listed unless the mapping accepts it (`ignoreValues`). A lookup table such as `$map = @{ ''Name'' = ''CliValue'' }` used as `$map[$x]` after a flag counts as the values for the names a caller can pass for `$x`, followed up the calls. A value that psfdx builds some other way is not followed.' + $nl)
     [void]$sb.Append('- **Missing:** no psfdx function runs it and nobody has decided why. **Deliberately excluded:** reviewed and left out on purpose, with a reason. **Not applicable:** CLI housekeeping or interactive tooling that a PowerShell wrapper has no use for.' + $nl)
     [void]$sb.Append('- **One to many, many to one:** a cmdlet can run several commands (a bulk job and its resume), and a command can be run by several cmdlets; both are shown. A cmdlet that only calls other psfdx cmdlets is a convenience and is not counted as coverage.' + $nl)
     [void]$sb.Append('- **Scope:** the plugin set is what `sf commands` lists for this CLI: the core plugins that ship with it and the just-in-time plugins it installs on first use. Percentages are per plugin set. Plugins you install yourself are not in this report. `Beta` and `preview` commands are counted like the rest and marked.' + $nl)

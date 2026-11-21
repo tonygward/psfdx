@@ -18,7 +18,7 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **99** commands psfdx runs, it passes **406 of 519** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **36** have a list of allowed values in the CLI, and psfdx can pass **123 of 143** of those values.
+**Flags and values.** Across the **99** commands psfdx runs, it passes **406 of 519** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **36** have a list of allowed values in the CLI, and psfdx can pass **121 of 143** of those values.
 
 ## By capability
 
@@ -413,7 +413,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf apex get log` | wrapped | `Get-SalesforceDebugLogs` | 4 of 4 |  |  |
-| `sf apex get test` | partially wrapped | `Get-SalesforceApexTestResult` | 7 of 7 |  | `--result-format`: `tap`, `junit` |
+| `sf apex get test` | partially wrapped | `Get-SalesforceApexTestResult` | 7 of 7 |  | `--result-format`: `human`, `tap`, `junit` |
 | `sf apex list log` | wrapped | `Select-SalesforceDebugLogs` | 1 of 1 |  |  |
 | `sf apex run` | partially wrapped | `Invoke-SalesforceApex` | 2 of 4 | `--category-level` `--debug-level` |  |
 | `sf apex run test` | partially wrapped | `Start-SalesforceApexTest`, `Test-SalesforceApex` | 11 of 13 | `--poll-interval` `--synchronous` |  |
@@ -545,7 +545,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf project deploy quick` | wrapped | `Start-SalesforceQuickDeploy` | 7 of 7 |  |  |
 | `sf project deploy report` | partially wrapped | `Get-SalesforceDeployStatus` | 4 of 7 | `--coverage-formatters` `--junit` `--results-dir` |  |
 | `sf project deploy resume` | partially wrapped | `Resume-SalesforceDeploy` | 5 of 8 | `--coverage-formatters` `--junit` `--results-dir` |  |
-| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | 15 of 22 | `--async` `--coverage-formatters` `--junit` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` |  |
+| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | 15 of 22 | `--async` `--coverage-formatters` `--junit` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` | `--test-level`: `RunRelevantTests` |
 | `sf project deploy validate` | partially wrapped | `Test-SalesforceDeploy` | 12 of 19 | `--coverage-formatters` `--junit` `--metadata` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` |  |
 | `sf project generate manifest` | partially wrapped | `Retrieve-SalesforceOrg` | 4 of 8 | `--excluded-metadata` `--metadata` `--source-dir` `--type` | `--include-packages`: `managed` |
 | `sf project retrieve preview` | partially wrapped | `Get-SalesforceRetrievePreview` | 2 of 3 | `--concise` |  |
@@ -593,7 +593,7 @@ These flags are on almost every command, so they are not counted against each on
 ## How to read this
 
 - **Wrapped:** some psfdx function runs the command, passes every one of its flags (apart from `--json`, `--flags-dir` and `--api-version`, which are reported once) and can pass every value the CLI lists for them. **Partially wrapped:** a flag is not passed, or a listed value cannot be passed; both are shown, and a reviewed mapping rule can accept the gap with a reason. Flags are matched by function (the function that builds the command, and the helpers it calls in the same file or in psfdx-shared), so this is a close estimate, not a proof.
-- **Values:** the CLI lists the allowed values for some flags (for example `--test-level`). A value is reachable when psfdx writes it literally in the arguments, accepts it through a parameter with a `[ValidateSet()]` (compared without regard to case), or takes the flag's value as free text, in which case any value can be passed. A parameter that is not a `[ValidateSet()]` is free text, even if its help names the values. Flags with no list (names, paths, numbers, query text) are checked for being passed, not for values. The CLI's recorded default counts as reachable, because leaving the flag out uses it; a default the CLI does not record in its command data does not, so such a value is listed even though omitting the flag would use it, unless the mapping accepts it (`ignoreValues`). A lookup table such as `$map = @{ 'Name' = 'CliValue' }` used as `$map[$x]` after a flag counts as exactly its values. A value that psfdx builds some other way is not followed.
+- **Values:** the CLI lists the allowed values for some flags (for example `--test-level`). A value is reachable when psfdx writes it literally in the arguments, accepts it through a parameter with a `[ValidateSet()]` (compared without regard to case), or takes the flag's value as free text, in which case any value can be passed. A parameter that is not a `[ValidateSet()]` is free text, even if its help names the values. Flags with no list (names, paths, numbers, query text) are checked for being passed, not for values. The CLI's recorded default counts as reachable only where psfdx can leave the flag out (some code writes it conditionally, or another function that runs the command does not write it); a default the CLI does not record in its command data never counts, so such a value is listed unless the mapping accepts it (`ignoreValues`). A lookup table such as `$map = @{ 'Name' = 'CliValue' }` used as `$map[$x]` after a flag counts as the values for the names a caller can pass for `$x`, followed up the calls. A value that psfdx builds some other way is not followed.
 - **Missing:** no psfdx function runs it and nobody has decided why. **Deliberately excluded:** reviewed and left out on purpose, with a reason. **Not applicable:** CLI housekeeping or interactive tooling that a PowerShell wrapper has no use for.
 - **One to many, many to one:** a cmdlet can run several commands (a bulk job and its resume), and a command can be run by several cmdlets; both are shown. A cmdlet that only calls other psfdx cmdlets is a convenience and is not counted as coverage.
 - **Scope:** the plugin set is what `sf commands` lists for this CLI: the core plugins that ship with it and the just-in-time plugins it installs on first use. Percentages are per plugin set. Plugins you install yourself are not in this report. `Beta` and `preview` commands are counted like the rest and marked.
