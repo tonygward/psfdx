@@ -405,6 +405,228 @@ function Remove-SalesforceScratchOrgs {
 
 #endregion
 
+#region Code Analyzer
+
+# Wraps `sf code-analyzer run` and `sf code-analyzer rules`. These commands have no --json flag: the machine-readable output is a file
+# written with --output-file, so each call asks for a temporary JSON file and reads it, and uses the process exit code to tell a threshold
+# failure (non-zero exit, report written) from a plugin or engine problem (no report).
+
+function Read-SalesforceCodeAnalyzerReport {
+    # Private: reads the JSON report file the CLI wrote; returns $null when it is missing or not JSON.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Path
+    )
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
+    $text = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8)
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+    try { return ($text | ConvertFrom-Json -ErrorAction Stop) } catch { return $null }
+}
+
+function New-SalesforceCodeAnalyzerReportPath {
+    # Private: a unique temporary path for the CLI's JSON report.
+    [CmdletBinding()]
+    Param()
+
+    return (Join-Path ([System.IO.Path]::GetTempPath()) ('psfdx-code-analyzer-' + [guid]::NewGuid().ToString('N') + '.json'))
+}
+
+function Get-SalesforceCodeAnalyzerFailureMessage {
+    # Private: the CLI's text output as the message, with install guidance when the code-analyzer command does not exist.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][AllowNull()] $Output
+    )
+
+    $message = (@($Output) | Out-String).Trim()
+    if ([string]::IsNullOrWhiteSpace($message)) { $message = 'The Salesforce CLI returned no output.' }
+    if ($message -match 'is not a sf command|command code-analyzer.*not found|not.*installed') {
+        $message += " Install the plugin with Install-SalesforcePlugin -Name code-analyzer (or 'sf plugins install code-analyzer'). Code Analyzer also needs Java 11 or later for its Java-based engines, and it downloads engine dependencies the first time they are used."
+    }
+    return $message
+}
+
+function Invoke-SalesforceCodeAnalyzer {
+    <#
+    .SYNOPSIS
+    Runs Salesforce Code Analyzer over a workspace and returns the findings as objects (sf code-analyzer run).
+    .DESCRIPTION
+    Returns one object with Passed, ThresholdExceeded, ViolationCount, a count per severity, Violations (one object per finding with Rule,
+    Engine, Severity, Message, File, StartLine, StartColumn, EndLine, EndColumn, Tags and Resources), RunDirectory and Versions.
+    With -SeverityThreshold the CLI fails when a finding is at or above that severity. That is a threshold failure, not an error: the findings
+    are still returned (the exit code is non-zero but the report is written) with Passed = $false and ThresholdExceeded = $true. Add -ThrowOnThreshold to turn it into an error (id
+    PsfdxCodeAnalyzerThresholdExceeded, with the result as the target object) so a CI step fails. If the plugin or an engine cannot start there is
+    no report, and the cmdlet always throws (id PsfdxCodeAnalyzerFailed) with the CLI message.
+    The plugin is installed with the Salesforce CLI or with Install-SalesforcePlugin. Engines such as PMD and the Java-based rules need Java 11 or later;
+    the CLI downloads engine dependencies on first use, so the first run can be slow and needs network access.
+    .EXAMPLE
+    Invoke-SalesforceCodeAnalyzer -Workspace force-app -RuleSelector Recommended -SeverityThreshold 2 -ThrowOnThreshold
+    .EXAMPLE
+    (Invoke-SalesforceCodeAnalyzer -Workspace . -Target force-app/main/default/classes).Violations | Group-Object Rule | Sort-Object Count -Descending
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $Workspace,
+        [Parameter(Mandatory = $false)][string[]] $Target,
+        [Parameter(Mandatory = $false)][string[]] $RuleSelector,
+        [Parameter(Mandatory = $false)][string] $ConfigFile,
+        [Parameter(Mandatory = $false)][ValidateSet('1', '2', '3', '4', '5', 'Critical', 'High', 'Moderate', 'Low', 'Info')][string] $SeverityThreshold,
+        [Parameter(Mandatory = $false)][switch] $ThrowOnThreshold
+    )
+
+    foreach ($path in @($Workspace)) {
+        if ($path -and -not (Test-Path -LiteralPath $path)) { throw "Workspace path '$path' does not exist." }
+    }
+    if ($ConfigFile -and -not (Test-Path -LiteralPath $ConfigFile -PathType Leaf)) { throw "Config file '$ConfigFile' does not exist." }
+
+    $report = New-SalesforceCodeAnalyzerReportPath
+    $arguments = @('code-analyzer', 'run')
+    foreach ($w in @($Workspace)) { if ($w) { $arguments += @('--workspace', $w) } }
+    foreach ($t in @($Target)) { if ($t) { $arguments += @('--target', $t) } }
+    foreach ($r in @($RuleSelector)) { if ($r) { $arguments += @('--rule-selector', $r) } }
+    if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
+    if ($SeverityThreshold) { $arguments += @('--severity-threshold', $SeverityThreshold) }
+    $arguments += @('--output-file', $report)
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('ThrowOnThreshold')
+
+    try {
+        $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        # Invoke-Salesforce leaves the process exit code in $global:LASTEXITCODE; without --json it does not throw on a failing exit.
+        $exitCode = $global:LASTEXITCODE
+        $data = Read-SalesforceCodeAnalyzerReport -Path $report
+        $failed = ($exitCode -ne 0)
+        if ($null -eq $data) {
+            $message = Get-SalesforceCodeAnalyzerFailureMessage -Output $output
+            if (-not $failed) { $message = "Code Analyzer finished but wrote no report. $message" }
+            $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $output
+            throw $errorRecord
+        }
+    } finally {
+        if (Test-Path -LiteralPath $report) { Remove-Item -LiteralPath $report -Force -ErrorAction SilentlyContinue }
+    }
+
+    $violations = @()
+    $reported = @()
+    if ($data.PSObject.Properties.Name -contains 'violations' -and $null -ne $data.violations) { $reported = @($data.violations) }
+    foreach ($v in $reported) {
+        $locations = @()
+        if ($v.PSObject.Properties.Name -contains 'locations' -and $null -ne $v.locations) { $locations = @($v.locations) }
+        $index = 0
+        if ($v.PSObject.Properties.Name -contains 'primaryLocationIndex' -and $null -ne $v.primaryLocationIndex) { $index = [int]$v.primaryLocationIndex }
+        $loc = $null
+        if ($index -ge 0 -and $index -lt $locations.Count) { $loc = $locations[$index] }
+        $field = {
+            param($Obj, $Name)
+            if ($null -ne $Obj -and $Obj.PSObject.Properties.Name -contains $Name) { return $Obj.$Name }
+            return $null
+        }
+        $violations += [pscustomobject]@{
+            Rule        = (& $field $v 'rule')
+            Engine      = (& $field $v 'engine')
+            Severity    = (& $field $v 'severity')
+            Message     = (& $field $v 'message')
+            File        = (& $field $loc 'file')
+            StartLine   = (& $field $loc 'startLine')
+            StartColumn = (& $field $loc 'startColumn')
+            EndLine     = (& $field $loc 'endLine')
+            EndColumn   = (& $field $loc 'endColumn')
+            Tags        = @(& $field $v 'tags')
+            Resources   = @(& $field $v 'resources')
+        }
+    }
+
+    $counts = $null
+    if ($data.PSObject.Properties.Name -contains 'violationCounts') { $counts = $data.violationCounts }
+    $countOf = {
+        param($Name)
+        if ($null -ne $counts -and $counts.PSObject.Properties.Name -contains $Name -and $null -ne $counts.$Name) { return [int]$counts.$Name }
+        return 0
+    }
+    $total = $violations.Count
+    if ($null -ne $counts -and $counts.PSObject.Properties.Name -contains 'total' -and $null -ne $counts.total) { $total = [int]$counts.total }
+    $thresholdExceeded = $failed
+    $runDir = $null
+    if ($data.PSObject.Properties.Name -contains 'runDir') { $runDir = $data.runDir }
+    $versions = $null
+    if ($data.PSObject.Properties.Name -contains 'versions') { $versions = $data.versions }
+
+    $result = [pscustomobject]@{
+        Passed            = (-not $thresholdExceeded)
+        ThresholdExceeded = $thresholdExceeded
+        ViolationCount    = $total
+        Critical          = (& $countOf 'sev1')
+        High              = (& $countOf 'sev2')
+        Moderate          = (& $countOf 'sev3')
+        Low               = (& $countOf 'sev4')
+        Info              = (& $countOf 'sev5')
+        Violations        = $violations
+        RunDirectory      = $runDir
+        Versions          = $versions
+    }
+    if ($thresholdExceeded -and $ThrowOnThreshold) {
+        $message = "Code Analyzer found $total violation(s) at or above severity threshold '$SeverityThreshold'."
+        $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerThresholdExceeded', ([System.Management.Automation.ErrorCategory]::InvalidResult), $result
+        throw $errorRecord
+    }
+    return $result
+}
+
+function Get-SalesforceCodeAnalyzerRule {
+    <#
+    .SYNOPSIS
+    Lists the Code Analyzer rules that match a selector (sf code-analyzer rules).
+    .DESCRIPTION
+    Returns one object per rule (as the CLI reports it: name, engine, severity, tags, description, resources). The CLI has no --json flag, so the rules are read from a temporary JSON report file. With no selector the CLI lists
+    its default rules. A selector such as Recommended, Security, pmd or pmd:Security narrows the list. A plugin or engine failure throws the CLI message with install guidance.
+    .EXAMPLE
+    Get-SalesforceCodeAnalyzerRule -RuleSelector Security | Select-Object name, engine, severity
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $RuleSelector,
+        [Parameter(Mandatory = $false)][string[]] $Workspace,
+        [Parameter(Mandatory = $false)][string[]] $Target,
+        [Parameter(Mandatory = $false)][string] $ConfigFile
+    )
+
+    foreach ($path in @($Workspace)) {
+        if ($path -and -not (Test-Path -LiteralPath $path)) { throw "Workspace path '$path' does not exist." }
+    }
+    if ($ConfigFile -and -not (Test-Path -LiteralPath $ConfigFile -PathType Leaf)) { throw "Config file '$ConfigFile' does not exist." }
+
+    $report = New-SalesforceCodeAnalyzerReportPath
+    $arguments = @('code-analyzer', 'rules')
+    foreach ($r in @($RuleSelector)) { if ($r) { $arguments += @('--rule-selector', $r) } }
+    foreach ($w in @($Workspace)) { if ($w) { $arguments += @('--workspace', $w) } }
+    foreach ($t in @($Target)) { if ($t) { $arguments += @('--target', $t) } }
+    if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
+    $arguments += @('--output-file', $report)
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
+    try {
+        $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        $exitCode = $global:LASTEXITCODE
+        $data = Read-SalesforceCodeAnalyzerReport -Path $report
+    } finally {
+        if (Test-Path -LiteralPath $report) { Remove-Item -LiteralPath $report -Force -ErrorAction SilentlyContinue }
+    }
+
+    if ($exitCode -ne 0 -or $null -eq $data) {
+        $message = Get-SalesforceCodeAnalyzerFailureMessage -Output $output
+        $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $output
+        throw $errorRecord
+    }
+    if ($data -is [System.Array]) { return @($data) }
+    # A report holding a single bare rule object is unrolled by PowerShell from a one-element array.
+    if ($data.PSObject.Properties.Name -contains 'name' -and $data.PSObject.Properties.Name -notcontains 'rules') { return @($data) }
+    if ($data.PSObject.Properties.Name -contains 'rules' -and $null -ne $data.rules) { return @($data.rules) }
+    return @()
+}
+
+#endregion
+
 #region Apex Testing
 
 function Test-SalesforceApex {
