@@ -58,3 +58,7 @@ Every push to `main` redeploys the site, and pull requests get a preview URL. To
 ## Changing the content
 
 Edit `site/src/index.html` and `style.css`, then run the tests. Keep the module descriptions in line with the README and the real cmdlets, and do not type a version number into the page: the release pill takes it from `VERSION` at build time. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
+
+## Deployment troubleshooting
+
+If a merge to `main` does not appear on psfdx.com, check the Cloudflare Pages `psfdx` project's deployment history and GitHub connection. Cloudflare Pages must automatically build `main` with `node site/build.mjs` and publish `site/dist`; GitHub's `ci-site.yml` validates pull requests but does not publish the site. If no deployment is created for the commit, investigate the GitHub integration rather than the site build.
