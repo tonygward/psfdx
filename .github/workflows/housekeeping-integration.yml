@@ -1,0 +1,144 @@
+name: Housekeeping - Scratch org integration smoke tests
+
+# Opt-in, expensive and ADVISORY. It proves psfdx works against a real org, which the mocked Pester suite and the `sf --help`
+# compatibility lane cannot. It runs only when the owner starts it by hand, or weekly if the repository variable
+# PSFDX_INTEGRATION_SCHEDULE is 'true'. It never runs on pull requests, and the merge gate never waits for it.
+#
+# Setup creates a one-day scratch org from a dedicated Dev Hub. The tests (tests/integration) touch only that scratch org. Teardown
+# deletes it even if setup or the tests failed. The report names the phase that failed, so an org or credential problem is not mistaken
+# for a psfdx regression. See docs/integration-testing.md for the one-off setup, the secret and the controls.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 5 * * 3'
+
+permissions:
+  contents: read
+
+# One run at a time, so two runs can't compete for the Dev Hub's scratch org allocation.
+concurrency:
+  group: psfdx-scratch-org-integration
+  cancel-in-progress: false
+
+jobs:
+  integration:
+    name: Scratch org integration
+    # Scheduled runs are off unless the owner turns them on; a manual run always goes ahead.
+    if: github.event_name == 'workflow_dispatch' || vars.PSFDX_INTEGRATION_SCHEDULE == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # The environment holds the Dev Hub secret and can require the owner's approval before this job starts.
+    environment: scratch-org-integration
+    env:
+      SF_DISABLE_TELEMETRY: 'true'
+      SF_AUTOUPDATE_DISABLE: 'true'
+      SCRATCH_ALIAS: psfdx-it-${{ github.run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install the latest stable Salesforce CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global @salesforce/cli@latest
+          echo "Salesforce CLI: $(sf --version)"
+
+      - name: Install Pester
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99 -Force -Scope CurrentUser
+
+      - name: Setup - sign in to the Dev Hub and create the scratch org
+        id: setup
+        shell: bash
+        env:
+          SF_DEVHUB_AUTH_URL: ${{ secrets.SF_DEVHUB_AUTH_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SF_DEVHUB_AUTH_URL:-}" ]; then
+            echo "::error::The SF_DEVHUB_AUTH_URL secret is not set in the scratch-org-integration environment. See docs/integration-testing.md."
+            exit 1
+          fi
+          # Mask the secret and keep it out of every command line: it goes to a private file that is deleted straight after login.
+          echo "::add-mask::${SF_DEVHUB_AUTH_URL}"
+          umask 077
+          url_file="$(mktemp)"
+          printf '%s' "${SF_DEVHUB_AUTH_URL}" > "${url_file}"
+          trap 'rm -f "${url_file}"' EXIT
+          sf org login sfdx-url --sfdx-url-file "${url_file}" --alias psfdx-it-devhub --set-default-dev-hub >/dev/null
+          rm -f "${url_file}"
+          # A short-lived, blank scratch org: one day, so it expires by itself even if teardown never runs.
+          sf org create scratch --target-dev-hub psfdx-it-devhub --edition developer --duration-days 1 \
+            --alias "${SCRATCH_ALIAS}" --wait 20 --json > "${RUNNER_TEMP}/scratch.json"
+          username="$(node -e "console.log(JSON.parse(require('fs').readFileSync(process.env.RUNNER_TEMP + '/scratch.json','utf8')).result.username)")"
+          echo "::add-mask::${username}"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Tests - run psfdx against the scratch org
+        id: tests
+        shell: pwsh
+        env:
+          PSFDX_INTEGRATION: '1'
+          PSFDX_INTEGRATION_ORG: ${{ env.SCRATCH_ALIAS }}
+        run: |
+          Import-Module Pester -MinimumVersion 5.0.0 -MaximumVersion 5.99.99
+          $config = New-PesterConfiguration
+          $config.Run.Path = './tests/integration/Psfdx.Integration.Tests.ps1'
+          $config.Run.Exit = $true
+          $config.Output.Verbosity = 'Normal'
+          $config.TestResult.Enabled = $true
+          $config.TestResult.OutputPath = Join-Path $env:RUNNER_TEMP 'integration-testResults.xml'
+          Invoke-Pester -Configuration $config
+
+      - name: Teardown - delete the scratch org
+        id: teardown
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Nothing to delete if setup never got as far as creating the org.
+          if ! sf org list --json 2>/dev/null | node -e "const j=JSON.parse(require('fs').readFileSync(0,'utf8'));const a=[...(j.result.scratchOrgs||[]),...(j.result.nonScratchOrgs||[])];process.exit(a.some(o=>o.alias===process.env.SCRATCH_ALIAS)?0:1)"; then
+            echo "No scratch org named ${SCRATCH_ALIAS} to delete."
+            exit 0
+          fi
+          sf org delete scratch --target-org "${SCRATCH_ALIAS}" --no-prompt
+          # The Dev Hub login is local to this runner and goes with it; log it out anyway.
+          sf org logout --target-org psfdx-it-devhub --no-prompt >/dev/null 2>&1 || true
+
+      - name: Write the report
+        if: always()
+        shell: pwsh
+        env:
+          SETUP: ${{ steps.setup.outcome }}
+          TESTS: ${{ steps.tests.outcome }}
+          TEARDOWN: ${{ steps.teardown.outcome }}
+        run: |
+          $sf = (& sf --version) -join ' '
+          $module = (Get-Content -LiteralPath ./VERSION -Raw).Trim()
+          $xml = Join-Path $env:RUNNER_TEMP 'integration-testResults.xml'
+          & ./tests/integration/Write-IntegrationReport.ps1 -OutputDirectory (Join-Path $env:RUNNER_TEMP 'integration-report') `
+            -SetupOutcome $env:SETUP -TestOutcome $env:TESTS -TeardownOutcome $env:TEARDOWN -TestResultsXml $xml `
+            -SfVersion $sf -PwshVersion $PSVersionTable.PSVersion.ToString() -ModuleVersion $module -CommitSha $env:GITHUB_SHA `
+            -RunUrl "$($env:GITHUB_SERVER_URL)/$($env:GITHUB_REPOSITORY)/actions/runs/$($env:GITHUB_RUN_ID)"
+          Get-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'integration-report/integration-report.md') -Raw | Add-Content -Path $env:GITHUB_STEP_SUMMARY
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-report
+          path: |
+            ${{ runner.temp }}/integration-report/integration-report.json
+            ${{ runner.temp }}/integration-report/integration-report.md
+            ${{ runner.temp }}/integration-testResults.xml
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Fail the run if setup, tests or teardown failed
+        if: always() && (steps.setup.outcome != 'success' || steps.tests.outcome != 'success' || steps.teardown.outcome != 'success')
+        shell: bash
+        run: |
+          echo "::error::Setup=${{ steps.setup.outcome }}, tests=${{ steps.tests.outcome }}, teardown=${{ steps.teardown.outcome }}. A setup failure is an org or credential problem, not a psfdx regression; see the report."
+          exit 1
