@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: new `Export-SalesforceTreeData` and `Import-SalesforceTreeData` copy related records (a parent with its children) between orgs as JSON, for example from a sandbox into a scratch org: `Export-SalesforceTreeData -Query "SELECT Id, Name, (SELECT Id, LastName FROM Contacts) FROM Account" -Plan -OutputDirectory .\data -TargetOrg source` then `Import-SalesforceTreeData -Plan .\data\Account-Contact-plan.json -TargetOrg scratch`. Import takes `-Plan` or `-File` (not both), supports `-WhatIf`, returns the created records (`RefId`, `Type`, `Id`), and throws `PsfdxTreeImportFailed` listing each rejected record. The Tree API suits test data (up to 200 records per import); use the Bulk API commands for large loads.
+
 ## 0.8.30 - 2026-11-21
 
 - Maintenance release.

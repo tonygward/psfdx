@@ -603,6 +603,153 @@ function Get-SalesforceRecordType {
 
 #endregion
 
+#region Data Trees
+
+# Wraps `sf data export tree` and `sf data import tree`: copy related records (parent and child) between orgs as JSON files.
+# Both use the SObject Tree API, which handles at most 200 records per import and is meant for test data, not bulk loads (see
+# Import-SalesforceBulkData for those).
+
+function Export-SalesforceTreeData {
+    <#
+    .SYNOPSIS
+    Exports records, with their related child records, to JSON files for Import-SalesforceTreeData (sf data export tree).
+    .DESCRIPTION
+    Each -Query is a SOQL query; a query with a subquery exports parent and children together. The queries go to the CLI unchanged, so use
+    one line and no double quotes (the Windows CLI shim rejects line breaks and double quotes in an argument).
+    Without -Plan the records are returned in Records and the CLI writes one JSON file per query. With -Plan the CLI writes one file per object and
+    a plan file that references them, which Import-SalesforceTreeData -Plan reads; Files and PlanFile hold their paths. The CLI creates
+    -OutputDirectory if it does not exist.
+    .EXAMPLE
+    Export-SalesforceTreeData -Query "SELECT Id, Name, (SELECT Id, LastName FROM Contacts) FROM Account WHERE Name LIKE 'Acme%'" -Plan -OutputDirectory .\data -TargetOrg source
+    Import-SalesforceTreeData -Plan .\data\Account-Contact-plan.json -TargetOrg scratch
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Query,
+        [Parameter(Mandatory = $false)][switch] $Plan,
+        [Parameter(Mandatory = $false)][string] $Prefix,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $queries = @($Query | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ($queries.Count -eq 0) { throw '-Query needs at least one SOQL query.' }
+    if ($Prefix -and $Prefix -notmatch '^[A-Za-z0-9_.-]+$') { throw "Prefix '$Prefix' is not valid: use letters, digits, underscore, dot and hyphen only." }
+    if ($OutputDirectory -and (Test-Path -LiteralPath $OutputDirectory -PathType Leaf)) { throw "Output directory '$OutputDirectory' is a file." }
+
+    $arguments = @('data', 'export', 'tree')
+    foreach ($item in $queries) { $arguments += @('--query', $item) }
+    if ($Plan) { $arguments += '--plan' }
+    if ($Prefix) { $arguments += @('--prefix', $Prefix) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceTreeOutput -Output $output -Command 'data export tree'
+
+    $directory = $OutputDirectory
+    if (-not $directory) { $directory = (Get-Location).ProviderPath }
+    if ($Plan) {
+        $entries = @($result)
+        $files = @()
+        $types = @()
+        foreach ($entry in $entries) {
+            if ($null -ne $entry.PSObject.Properties['sobject']) { $types += [string] $entry.sobject }
+            if ($null -ne $entry.PSObject.Properties['files']) { foreach ($f in @($entry.files)) { $files += (Join-Path -Path $directory -ChildPath ([string] $f)) } }
+        }
+        $planName = ($types -join '-') + '-plan.json'
+        if ($Prefix) { $planName = "$Prefix-$planName" }
+        $planFile = Join-Path -Path $directory -ChildPath $planName
+        if (-not (Test-Path -LiteralPath $planFile -PathType Leaf)) { $planFile = $null }
+        return [pscustomobject]@{ Plan = $true; OutputDirectory = $directory; PlanFile = $planFile; Files = $files; Records = $null; RecordCount = $null; Result = $entries }
+    }
+    $records = @()
+    if ($null -ne $result -and $null -ne $result.PSObject.Properties['records']) { $records = @($result.records) }
+    return [pscustomobject]@{ Plan = $false; OutputDirectory = $directory; PlanFile = $null; Files = @(); Records = $records; RecordCount = $records.Count; Result = $result }
+}
+
+function Import-SalesforceTreeData {
+    <#
+    .SYNOPSIS
+    Imports records and their related child records from JSON files into an org (sf data import tree).
+    .DESCRIPTION
+    Give either -Plan (a plan file from Export-SalesforceTreeData -Plan) or -File (one or more tree JSON files), not both. Asks for confirmation only when
+    $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. Returns one object per record created: RefId, Type and Id. If Salesforce
+    rejects records, nothing is returned and the cmdlet throws PsfdxTreeImportFailed, whose TargetObject lists each failed reference with its
+    StatusCode, Message and Fields. The Tree API imports at most 200 records per call.
+    .EXAMPLE
+    Import-SalesforceTreeData -Plan .\data\Account-Contact-plan.json -TargetOrg scratch
+    .EXAMPLE
+    Import-SalesforceTreeData -File .\data\accounts.json, .\data\contacts.json -TargetOrg scratch -WhatIf
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium', DefaultParameterSetName = 'Plan')]
+    Param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Plan')][string] $Plan,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Files')][string[]] $File,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('data', 'import', 'tree')
+    if ($PSCmdlet.ParameterSetName -eq 'Plan') {
+        if (-not (Test-Path -LiteralPath $Plan -PathType Leaf)) { throw "Plan file '$Plan' does not exist." }
+        $arguments += @('--plan', $Plan)
+        $what = "the plan '$Plan'"
+    } else {
+        $files = @($File | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+        if ($files.Count -eq 0) { throw '-File needs at least one file.' }
+        foreach ($item in $files) {
+            if ($item.Contains(',')) { throw "File '$item' contains a comma, which the CLI reads as a list separator." }
+            if (-not (Test-Path -LiteralPath $item -PathType Leaf)) { throw "File '$item' does not exist." }
+        }
+        $arguments += @('--files', ($files -join ','))
+        $what = "$($files.Count) file(s)"
+    }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $orgLabel = 'the default org'
+    if (-not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+    if (-not $PSCmdlet.ShouldProcess("records from $what in $orgLabel", 'Import tree data')) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceTreeOutput -Output $output -Command 'data import tree'
+    return @($result | ForEach-Object { [pscustomobject]@{ RefId = $_.refId; Type = $_.type; Id = $_.id } })
+}
+
+function ConvertFrom-SalesforceTreeOutput {
+    # Returns the result of a tree command, or throws. A rejected import comes back as an error whose data is the list of failed
+    # records; that becomes PsfdxTreeImportFailed with the list as its TargetObject. Any other failure keeps the CLI's message.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][AllowEmptyCollection()] $Output,
+        [Parameter(Mandatory = $true)][string] $Command
+    )
+    $text = [string]::Join([Environment]::NewLine, @($Output | ForEach-Object { [string] $_ })).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) { throw "sf $Command returned no output where JSON was expected." }
+    $parsed = $null
+    try { $parsed = $text | ConvertFrom-Json -ErrorAction Stop } catch {
+        $preview = $text; if ($preview.Length -gt 200) { $preview = $preview.Substring(0, 200) + '...' }
+        throw "sf $Command returned output that is not valid JSON: $preview"
+    }
+    if ($null -eq $parsed -or $parsed -is [array] -or $null -eq $parsed.PSObject.Properties['status']) { throw "sf $Command returned JSON in an unexpected shape (no status)." }
+    if ($parsed.status -eq 0) {
+        if ($null -eq $parsed.PSObject.Properties['result']) { throw "sf $Command succeeded but returned no result." }
+        return $parsed.result
+    }
+    if ($null -ne $parsed.PSObject.Properties['data'] -and $null -ne $parsed.data -and $parsed.data -is [array] -and $parsed.data.Count -gt 0) {
+        $failed = @($parsed.data | ForEach-Object {
+            [pscustomobject]@{ ReferenceId = $_.referenceId; StatusCode = $_.StatusCode; Message = $_.Message; Fields = $_.fields }
+        })
+        $summary = ($failed | ForEach-Object { "$($_.ReferenceId): $($_.StatusCode) $($_.Message)" }) -join '; '
+        if ($summary.Length -gt 400) { $summary = $summary.Substring(0, 400) + '...' }
+        $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException "sf $Command failed for $($failed.Count) record(s): $summary"), 'PsfdxTreeImportFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $failed)
+        throw $record
+    }
+    Show-SalesforceResult -Result $text | Out-Null
+    throw "sf $Command failed with status $($parsed.status)."
+}
+
+#endregion
+
 #region Bulk API 2.0
 
 # Wraps `sf data export|import|update|upsert bulk`, their `resume` commands and `sf data bulk results`. Without -WaitMinutes the CLI

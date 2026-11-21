@@ -1100,3 +1100,122 @@ Describe 'User administration commands' {
         }
     }
 }
+
+Describe 'Data tree export and import' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":[]}'
+            Mock Invoke-Salesforce { $script:Reply }
+            $script:Dir = New-Item -ItemType Directory -Path (Join-Path $TestDrive 'tree data') -Force
+            $script:PlanFile = Join-Path $script:Dir.FullName 'Account-Contact-plan.json'
+            Set-Content -LiteralPath $script:PlanFile -Value '[]'
+            $script:F1 = Join-Path $script:Dir.FullName 'accounts.json'
+            $script:F2 = Join-Path $script:Dir.FullName 'contacts.json'
+            Set-Content -LiteralPath $script:F1 -Value '{"records":[]}'
+            Set-Content -LiteralPath $script:F2 -Value '{"records":[]}'
+            $script:Imported = '{"status":0,"result":[{"refId":"AccountRef1","type":"Account","id":"001xx0000000001"},{"refId":"ContactRef1","type":"Contact","id":"003xx0000000001"}]}'
+        }
+
+        Context 'Export-SalesforceTreeData' {
+            It 'builds the exact command for two queries, a plan, a prefix and an output directory' {
+                $q1 = "SELECT Id, Name, (SELECT Id, LastName FROM Contacts) FROM Account WHERE Name LIKE 'Acme%'"
+                $q2 = 'SELECT Id FROM Lead'
+                $script:Reply = '[]'
+                $script:Reply = '{"status":0,"result":[{"sobject":"Account","saveRefs":true,"resolveRefs":false,"files":["Account.json"]},{"sobject":"Contact","saveRefs":false,"resolveRefs":true,"files":["Contact.json"]}]}'
+                Set-Content -LiteralPath (Join-Path $script:Dir.FullName 'demo-Account-Contact-plan.json') -Value '[]'
+                $res = Export-SalesforceTreeData -Query $q1, $q2 -Plan -Prefix demo -OutputDirectory $script:Dir.FullName -TargetOrg me
+                $expected = "data|export|tree|--query|$q1|--query|$q2|--plan|--prefix|demo|--output-dir|$($script:Dir.FullName)|--target-org|me|--json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+                $res.Plan | Should -BeTrue
+                $res.Files | Should -Be @((Join-Path $script:Dir.FullName 'Account.json'), (Join-Path $script:Dir.FullName 'Contact.json'))
+                $res.PlanFile | Should -Be (Join-Path $script:Dir.FullName 'demo-Account-Contact-plan.json')
+            }
+            It 'returns the exported records without a plan' {
+                $script:Reply = '{"status":0,"result":{"records":[{"attributes":{"type":"Account","referenceId":"AccountRef1"},"Name":"Acme"},{"attributes":{"type":"Account","referenceId":"AccountRef2"},"Name":"Beta"}]}}'
+                $res = Export-SalesforceTreeData -Query 'SELECT Id, Name FROM Account'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|export|tree|--query|SELECT Id, Name FROM Account|--json' }
+                $res.Plan | Should -BeFalse
+                $res.RecordCount | Should -Be 2
+                $res.Records[0].Name | Should -Be 'Acme'
+                $res.PlanFile | Should -BeNullOrEmpty
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'blank queries';       Run = { Export-SalesforceTreeData -Query @('', ' ') };                                              Message = '*empty string*' }
+                @{ Case = 'a path in the prefix'; Run = { Export-SalesforceTreeData -Query 'SELECT Id FROM Account' -Prefix '..\evil' };               Message = '*Prefix*not valid*' }
+                @{ Case = 'a file as output directory'; Run = { Export-SalesforceTreeData -Query 'SELECT Id FROM Account' -OutputDirectory $script:F1 }; Message = '*is a file*' }
+            ) {
+                { & $Run } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws the CLI message for an invalid query' {
+                $script:Reply = '{"status":1,"name":"MalformedQuery","message":"unexpected token: FORM"}'
+                { Export-SalesforceTreeData -Query 'SELECT Id FORM Account' } | Should -Throw -ExpectedMessage '*unexpected token*'
+            }
+        }
+
+        Context 'Import-SalesforceTreeData' {
+            It 'builds the exact command for a plan with a path containing spaces' {
+                $script:Reply = $script:Imported
+                $res = @(Import-SalesforceTreeData -Plan $script:PlanFile -TargetOrg scratch)
+                $expected = "data|import|tree|--plan|$script:PlanFile|--target-org|scratch|--json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+                $res.Count | Should -Be 2
+                $res[0].RefId | Should -Be 'AccountRef1'
+                $res[0].Type | Should -Be 'Account'
+                $res[1].Id | Should -Be '003xx0000000001'
+            }
+            It 'builds the exact command for files, joined as the CLI expects' {
+                $script:Reply = $script:Imported
+                Import-SalesforceTreeData -File $script:F1, $script:F2 | Out-Null
+                $expected = "data|import|tree|--files|$script:F1,$script:F2|--json"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            }
+            It 'makes no CLI call under -WhatIf' {
+                Import-SalesforceTreeData -Plan $script:PlanFile -WhatIf | Should -BeNullOrEmpty
+                Import-SalesforceTreeData -File $script:F1 -WhatIf | Should -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'does not allow -Plan and -File together, or neither' {
+                { Import-SalesforceTreeData -Plan $script:PlanFile -File $script:F1 } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'a missing plan';      Run = { Import-SalesforceTreeData -Plan (Join-Path $TestDrive 'nope.json') };                 Message = '*Plan file*does not exist*' }
+                @{ Case = 'a missing file';      Run = { Import-SalesforceTreeData -File (Join-Path $TestDrive 'nope.json') };                 Message = '*does not exist*' }
+                @{ Case = 'a comma in a path';   Run = { Import-SalesforceTreeData -File 'a,b.json' };                                         Message = '*comma*' }
+                @{ Case = 'only blank files';    Run = { Import-SalesforceTreeData -File @('', ' ') };                                         Message = '*empty string*' }
+            ) {
+                { & $Run } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws PsfdxTreeImportFailed listing each rejected record' {
+                $script:Reply = '{"status":1,"name":"Error","message":"Data Import failed","data":[{"referenceId":"ContactRef1","StatusCode":"REQUIRED_FIELD_MISSING","Message":"Required fields are missing: [LastName]","fields":["LastName"]}]}'
+                $err = $null
+                try { Import-SalesforceTreeData -Plan $script:PlanFile | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTreeImportFailed'
+                @($err.TargetObject).Count | Should -Be 1
+                $err.TargetObject[0].ReferenceId | Should -Be 'ContactRef1'
+                $err.TargetObject[0].StatusCode | Should -Be 'REQUIRED_FIELD_MISSING'
+                $err.Exception.Message | Should -BeLike '*ContactRef1*REQUIRED_FIELD_MISSING*'
+            }
+            It 'throws the CLI message for other failures, and for empty or malformed output' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
+                { Import-SalesforceTreeData -Plan $script:PlanFile -TargetOrg nobody } | Should -Throw -ExpectedMessage '*No authorization information found*'
+                $script:Reply = ''
+                { Import-SalesforceTreeData -Plan $script:PlanFile } | Should -Throw -ExpectedMessage '*no output*'
+                $script:Reply = 'not json'
+                { Import-SalesforceTreeData -Plan $script:PlanFile } | Should -Throw -ExpectedMessage '*not valid JSON*'
+            }
+        }
+
+        Context 'module surface' {
+            It 'exports both commands, keeps the helper private, and has help examples' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
+                $exports | Should -Contain 'Export-SalesforceTreeData'
+                $exports | Should -Contain 'Import-SalesforceTreeData'
+                $exports | Should -Not -Contain 'ConvertFrom-SalesforceTreeOutput'
+                foreach ($name in 'Export-SalesforceTreeData', 'Import-SalesforceTreeData') { @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0 }
+            }
+        }
+    }
+}
