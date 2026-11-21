@@ -264,7 +264,10 @@ Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Test-SalesforceApex` | Run Apex tests. |
+| `Test-SalesforceApex` | Run Apex tests and wait for the result in one call. |
+| `Start-SalesforceApexTest` | Start an Apex test run without waiting and return its `TestRunId` (`sf apex run test`). |
+| `Get-SalesforceApexTestResult` | Get a run's structured results by `-TestRunId`: summary, per-test outcome and run time, optional coverage (`sf apex get test`). |
+| `Wait-SalesforceApexTest` | Poll a run until it finishes or `-TimeoutMinutes` pass. |
 | `Get-SalesforceCodeCoverage` | Compute coverage per class/test method. |
 | `Test-SalesforceFlow` | Run Flow tests (`sf flow run test`). Asynchronous by default, returning a `TestRunId`; `-Synchronous` waits for results. Failed tests and a command that could not run are different errors. |
 | `Get-SalesforceFlowTestResult` | Get the results of a Flow test run by `-TestRunId` (`sf flow get test`). |

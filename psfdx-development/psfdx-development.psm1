@@ -839,6 +839,156 @@ function Get-SalesforceApexClass {
 
 #endregion
 
+#region Apex Test Runs
+
+# The Apex test lifecycle as separate steps, for CI and for scripts that start a run in one session and read it in another:
+#   Start-SalesforceApexTest  -> sf apex run test (asynchronous), returns the TestRunId
+#   Get-SalesforceApexTestResult -> sf apex get test, returns the structured results for a run
+#   Wait-SalesforceApexTest   -> polls Get-SalesforceApexTestResult until the run finishes or a timeout passes
+# Test-SalesforceApex is unchanged and still runs and waits in one call. For Flow tests and mixed Flow and Apex runs see
+# Test-SalesforceFlow and Test-SalesforceLogic (#191). Results and errors work as for those: a finished run is one object (TestRunId, Summary,
+# Tests, Coverage, Completed); failing tests throw PsfdxTestsFailed; a command that could not run throws PsfdxTestRunInvocationFailed.
+
+function Start-SalesforceApexTest {
+    <#
+    .SYNOPSIS
+    Starts an Apex test run in an org and returns its TestRunId without waiting (sf apex run test).
+    .DESCRIPTION
+    Name tests with -ClassName (all tests in the classes), -TestName (Class.method) or -SuiteName, one kind at a time, or give none to run
+    the local tests. Salesforce only records code coverage for a run that asked for it, so give -CodeCoverage here if you will want coverage later;
+    asking only when you fetch the results retrieves nothing new. The returned TestRunId works from any later session on any computer: pass it to
+    Get-SalesforceApexTestResult or Wait-SalesforceApexTest. To run and wait in one call use Test-SalesforceApex.
+    .EXAMPLE
+    $run = Start-SalesforceApexTest -TestLevel RunLocalTests -CodeCoverage -TargetOrg myorg; $run.TestRunId
+    .EXAMPLE
+    # Later, in another shell:
+    Wait-SalesforceApexTest -TestRunId 707xx0000000001 -TimeoutMinutes 30 -CodeCoverage -TargetOrg myorg
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $ClassName,
+        [Parameter(Mandatory = $false)][string[]] $TestName,
+        [Parameter(Mandatory = $false)][string[]] $SuiteName,
+        [Parameter(Mandatory = $false)][ValidateSet('RunLocalTests', 'RunAllTestsInOrg', 'RunSpecifiedTests')][string] $TestLevel,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverage,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $classes = @($ClassName | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    $tests = @($TestName | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    $suites = @($SuiteName | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+    if ((@($classes.Count, $tests.Count, $suites.Count) | Where-Object { $_ -gt 0 }).Count -gt 1) { throw 'Use only one of -ClassName, -TestName and -SuiteName.' }
+    if (($classes.Count + $tests.Count + $suites.Count) -gt 0 -and $TestLevel -and $TestLevel -ne 'RunSpecifiedTests') {
+        throw "Naming classes, tests or suites needs -TestLevel RunSpecifiedTests, not $TestLevel."
+    }
+
+    $arguments = @('apex', 'run', 'test')
+    foreach ($item in $classes) { $arguments += @('--class-names', $item) }
+    foreach ($item in $tests) { $arguments += @('--tests', $item) }
+    foreach ($item in $suites) { $arguments += @('--suite-names', $item) }
+    if ($TestLevel) { $arguments += @('--test-level', $TestLevel) }
+    if ($CodeCoverage) { $arguments += '--code-coverage' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += @('--result-format', 'json', '--json')
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceTestRunOutput -Output $output -ResultFormat 'json' -Plugin '@salesforce/plugin-apex' -Command 'apex run test'
+    if ($null -eq $result -or $null -eq $result.PSObject.Properties['TestRunId'] -or [string]::IsNullOrWhiteSpace([string] $result.TestRunId)) {
+        throw 'The Salesforce CLI did not return a test run ID.'
+    }
+    return [pscustomobject]@{ TestRunId = [string] $result.TestRunId; Completed = $false }
+}
+
+function Get-SalesforceApexTestResult {
+    <#
+    .SYNOPSIS
+    Gets the results of an Apex test run by its TestRunId (sf apex get test).
+    .DESCRIPTION
+    Returns one object: TestRunId, Summary (outcome, counts, times), Tests (one per test method with Outcome, RunTime, Message and StackTrace),
+    Coverage (only with -CodeCoverage, and only if the run was started with coverage) and Completed. A run that is still queued or processing returns
+    Completed = $false at once (the status is checked with a query first, because the CLI itself would wait) and does not throw;
+    use Wait-SalesforceApexTest to wait. A finished run with failing tests writes the object and then throws PsfdxTestsFailed (TargetObject is the
+    summary). Coverage is returned, never judged: there is no threshold here.
+    .EXAMPLE
+    $r = Get-SalesforceApexTestResult -TestRunId 707xx0000000001 -CodeCoverage -TargetOrg myorg; $r.Tests | Where-Object Outcome -ne 'Pass'
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $TestRunId,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverage,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverageDetailed,
+        [Parameter(Mandatory = $false)][switch] $Concise,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if ($CodeCoverageDetailed -and -not $CodeCoverage) { throw '-CodeCoverageDetailed needs -CodeCoverage.' }
+    if ($OutputDirectory -and -not (Test-Path -LiteralPath $OutputDirectory)) { throw "Output directory '$OutputDirectory' does not exist." }
+
+    # sf apex get test WAITS for a run that has not finished. Ask for the run's status first, with a query that returns at once, so a run
+    # still queued or processing comes back as Completed = $false instead of blocking the call (and any timeout built on it).
+    $statusParams = @{ Query = "SELECT Status FROM ApexTestQueueItem WHERE ParentJobId = $(ConvertTo-SalesforceSoqlLiteral -Value $TestRunId)" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $statusParams['TargetOrg'] = $TargetOrg }
+    $queueItems = @(Select-SalesforceRecords @statusParams)
+    $pending = @($queueItems | Where-Object { $_.Status -in @('Queued', 'Preparing', 'Processing', 'Holding') })
+    if ($pending.Count -gt 0) {
+        return [pscustomobject]@{ TestRunId = $TestRunId; Summary = $null; Tests = @(); Coverage = $null; Completed = $false; PendingTests = $pending.Count; TotalTests = $queueItems.Count }
+    }
+
+    $arguments = @('apex', 'get', 'test', '--test-run-id', $TestRunId)
+    if ($Concise) { $arguments += '--concise' }
+    if ($CodeCoverage) { $arguments += '--code-coverage' }
+    if ($CodeCoverageDetailed) { $arguments += '--detailed-coverage' }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += @('--result-format', 'json', '--json')
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    ConvertFrom-SalesforceTestRunOutput -Output $output -ResultFormat 'json' -Plugin '@salesforce/plugin-apex' -Command 'apex get test'
+}
+
+function Wait-SalesforceApexTest {
+    <#
+    .SYNOPSIS
+    Waits for an Apex test run to finish and returns its results.
+    .DESCRIPTION
+    Polls Get-SalesforceApexTestResult every -PollSeconds until the run is no longer queued or processing, then returns the same object. If
+    -TimeoutMinutes pass first it throws PsfdxTestRunTimeout, whose TargetObject is the TestRunId, and the run carries on in the org. Failing
+    tests and CLI errors surface exactly as for Get-SalesforceApexTestResult.
+    .EXAMPLE
+    $run = Start-SalesforceApexTest -TargetOrg myorg; Wait-SalesforceApexTest -TestRunId $run.TestRunId -TimeoutMinutes 30 -CodeCoverage -TargetOrg myorg
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^707[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $TestRunId,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 1440)][int] $TimeoutMinutes = 10,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 600)][int] $PollSeconds = 10,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverage,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverageDetailed,
+        [Parameter(Mandatory = $false)][switch] $Concise,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $getParams = @{ TestRunId = $TestRunId }
+    if ($CodeCoverage) { $getParams['CodeCoverage'] = $true }
+    if ($CodeCoverageDetailed) { $getParams['CodeCoverageDetailed'] = $true }
+    if ($Concise) { $getParams['Concise'] = $true }
+    if ($OutputDirectory) { $getParams['OutputDirectory'] = $OutputDirectory }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $getParams['TargetOrg'] = $TargetOrg }
+    foreach ($name in 'Verbose', 'Debug') { if ($PSBoundParameters.ContainsKey($name)) { $getParams[$name] = $PSBoundParameters[$name] } }
+
+    # The wait is counted in polls rather than read from the clock, so it is the same however long each CLI call takes.
+    $maxPolls = [int] [math]::Ceiling(($TimeoutMinutes * 60) / $PollSeconds)
+    for ($poll = 1; $poll -le $maxPolls; $poll++) {
+        $result = Get-SalesforceApexTestResult @getParams
+        if ($null -ne $result -and $result.PSObject.Properties['Completed'] -and $result.Completed) { return $result }
+        if ($poll -lt $maxPolls) { Start-Sleep -Seconds $PollSeconds }
+    }
+    $message = "Apex test run $TestRunId did not finish within $TimeoutMinutes minute(s). It is still running in the org; call Wait-SalesforceApexTest or Get-SalesforceApexTestResult again later."
+    $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.TimeoutException $message), 'PsfdxTestRunTimeout', [System.Management.Automation.ErrorCategory]::OperationTimeout, $TestRunId)
+    throw $record
+}
+
+#endregion
+
 #region Flow and Logic Testing
 
 # `sf flow run test` runs Flow tests; `sf logic run test` runs Flow and Apex tests together. Both start the run asynchronously by
@@ -1114,7 +1264,9 @@ function ConvertFrom-SalesforceTestRunOutput {
         if ($null -ne $result.PSObject.Properties['coverage']) { $coverage = $result.coverage }
         $runId = $null
         if ($null -ne $result.summary.PSObject.Properties['testRunId']) { $runId = [string] $result.summary.testRunId }
-        [pscustomobject]@{ TestRunId = $runId; Summary = $result.summary; Tests = $tests; Coverage = $coverage }
+        $inProgress = $result.summary.outcome -in @('Queued', 'Holding', 'Preparing', 'Processing')
+        [pscustomobject]@{ TestRunId = $runId; Summary = $result.summary; Tests = $tests; Coverage = $coverage; Completed = (-not $inProgress) }
+        if ($inProgress) { return }
         if ($result.summary.outcome -ne 'Passed') {
             $message = "Tests did not pass: outcome $($result.summary.outcome), $($result.summary.failing) failing of $($result.summary.testsRan) run."
             $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $message), 'PsfdxTestsFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $result.summary)
@@ -1124,7 +1276,7 @@ function ConvertFrom-SalesforceTestRunOutput {
     }
 
     if ($null -ne $result -and $null -ne $result.PSObject.Properties['testRunId'] -and -not [string]::IsNullOrWhiteSpace([string] $result.testRunId)) {
-        return [pscustomobject]@{ TestRunId = [string] $result.testRunId }
+        return [pscustomobject]@{ TestRunId = [string] $result.testRunId; Completed = $false }
     }
 
     $detail = ''

@@ -6,7 +6,7 @@
     "api request rest",
     "apex generate class", "apex generate trigger",
     "apex log get", "apex log list", "apex log tail",
-    "apex run", "apex run test",
+    "apex get test", "apex run", "apex run test",
     "apex trace create", "apex trace delete", "apex trace list",
     "config get", "config list", "config set", "config unset",
     "data create record", "data query", "data update record",

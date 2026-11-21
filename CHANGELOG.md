@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-development: the Apex test lifecycle in separate steps. `Start-SalesforceApexTest` starts a run and returns its `TestRunId` straight away; `Get-SalesforceApexTestResult` fetches the structured results (summary, each test's outcome and run time, optional coverage) for a run from any later session; `Wait-SalesforceApexTest` polls until the run finishes or a timeout passes (`PsfdxTestRunTimeout`). Failing tests write the results and then throw `PsfdxTestsFailed`; a command that could not run throws `PsfdxTestRunInvocationFailed`. A run that is still queued or processing returns `Completed = $false. The Flow and combined Flow/Apex test commands now also report `Completed`. `Test-SalesforceApex` is unchanged.
+
 ## 0.8.31 - 2026-11-21
 
 - psfdx: new `Export-SalesforceTreeData` and `Import-SalesforceTreeData` copy related records (a parent with its children) between orgs as JSON, for example from a sandbox into a scratch org: `Export-SalesforceTreeData -Query "SELECT Id, Name, (SELECT Id, LastName FROM Contacts) FROM Account" -Plan -OutputDirectory .\data -TargetOrg source` then `Import-SalesforceTreeData -Plan .\data\Account-Contact-plan.json -TargetOrg scratch`. Import takes `-Plan` or `-File` (not both), supports `-WhatIf`, returns the created records (`RefId`, `Type`, `Id`), and throws `PsfdxTreeImportFailed` listing each rejected record. The Tree API suits test data (up to 200 records per import); use the Bulk API commands for large loads.
