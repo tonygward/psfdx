@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { build, readConfig, applyConfig } from './build.mjs';
+import { build, readConfig, applyConfig, readReleaseVersion } from './build.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
@@ -13,6 +13,16 @@ const dist = path.join(out, 'dist');
 build({ outDir: dist, env: {} });
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(dist, 'style.css'), 'utf8');
+const js = fs.readFileSync(path.join(dist, 'script.js'), 'utf8');
+const release = readReleaseVersion();
+
+// The exported function names of every psfdx module, read from the manifests.
+const exported = new Set();
+for (const dir of fs.readdirSync(repoRoot).filter(d => /^psfdx/.test(d) && fs.existsSync(path.join(repoRoot, d, `${d}.psd1`)))) {
+  const manifest = fs.readFileSync(path.join(repoRoot, dir, `${dir}.psd1`), 'utf8');
+  const block = manifest.match(/FunctionsToExport\s*=\s*@\(([\s\S]*?)\)/);
+  for (const m of (block ? block[1] : '').matchAll(/'([^']+)'/g)) exported.add(m[1]);
+}
 
 test('the logo is the repository logo, byte for byte', () => {
   const original = fs.readFileSync(path.join(repoRoot, 'images', 'psfdx-logo.png'));
@@ -21,10 +31,10 @@ test('the logo is the repository logo, byte for byte', () => {
 });
 
 test('no placeholder is left in any built file', () => {
-  for (const name of fs.readdirSync(dist)) {
-    const text = fs.readFileSync(path.join(dist, name));
-    if (/\.(png)$/.test(name)) continue;
-    assert.doesNotMatch(text.toString('utf8'), /%[A-Z_]+_URL%/, name);
+  const walk = dir => fs.readdirSync(dir).flatMap(n => { const p = path.join(dir, n); return fs.statSync(p).isDirectory() ? walk(p) : [p]; });
+  for (const file of walk(dist)) {
+    if (/\.(png|woff2)$/.test(file)) continue;
+    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /%[A-Z_]+(_URL|_VERSION)%/, path.relative(dist, file));
   }
 });
 
@@ -38,39 +48,160 @@ test('the domain is configurable', () => {
   assert.throws(() => readConfig({ SITE_URL: 'http://insecure.example' }), /https URL/);
 });
 
-test('every local file the page refers to exists in the build', () => {
+test('every local file the page and stylesheet refer to exists in the build', () => {
   const refs = [...html.matchAll(/(?:href|src)="(\/[^"#?]*)"/g)].map(m => m[1]).filter(r => r !== '/');
-  assert.ok(refs.length >= 4);
+  assert.ok(refs.length >= 5);
   for (const ref of refs) assert.ok(fs.existsSync(path.join(dist, ref)), `${ref} is missing from the build`);
+  for (const m of css.matchAll(/url\((\/[^)]+)\)/g)) assert.ok(fs.existsSync(path.join(dist, m[1])), `${m[1]} (from the stylesheet) is missing`);
   assert.ok(fs.existsSync(path.join(dist, 'og-image.png')));
   assert.ok(fs.existsSync(path.join(dist, '_headers')));
 });
 
-test('the page has the approved copy, title, description and disclaimer', () => {
-  for (const text of [
-    'Salesforce. Meet&nbsp;PowerShell.',
-    'Powerful Salesforce tools. Familiar PowerShell commands.',
-    'A simpler, more intuitive way to work with Salesforce.',
-    'Less time remembering CLI syntax. More time getting things done.',
-    'PowerShell simplicity. Salesforce capability.',
-    'psfdx is an independent open-source project and is not affiliated with or endorsed by Salesforce.',
-    '<title>psfdx',
-    '<meta name="description"',
-    'Connect-Salesforce</span> <span class="p">-Sandbox</span> <span class="p">-SetDefault</span>',
-  ]) assert.ok(html.includes(text), text);
-  for (const area of ['Organisations &amp; Data', 'Metadata &amp; Deployments', 'Development &amp; Testing', 'Monitoring &amp; Diagnostics', 'Sandboxes &amp; Packages', 'Agentforce']) {
-    assert.ok(html.includes(area), area);
+test('the eight sections are present, in order', () => {
+  const marks = ['class="site-header"', 'class="hero"', 'class="marquee-band"', 'id="why"', 'id="modules"', 'class="closing"', 'class="site-footer"'];
+  let last = -1;
+  for (const mark of marks) {
+    const at = html.indexOf(mark);
+    assert.ok(at > last, `${mark} is missing or out of order`);
+    last = at;
   }
+  assert.ok(html.indexOf('id="console"') > html.indexOf('class="hero"') && html.indexOf('id="console"') < html.indexOf('class="marquee-band"'), 'the console sits in the hero');
 });
 
-test('accessibility basics: language, one h1, skip link, alt text, labelled landmarks', () => {
-  assert.match(html, /<html lang="en-GB">/);
+test('the header links work: Docs, Releases and the GitHub pill', () => {
+  const nav = html.match(/<nav aria-label="Main">[\s\S]*?<\/nav>/)[0];
+  assert.match(nav, /href="https:\/\/github\.com\/tonygward\/psfdx#readme">Docs</);
+  assert.match(nav, /href="https:\/\/github\.com\/tonygward\/psfdx\/releases">Releases</);
+  assert.match(nav, /class="nav-cta" href="https:\/\/github\.com\/tonygward\/psfdx">/);
+  assert.match(nav, /GitHub/);
+});
+
+test('the hero: headline, tagline, copy command, docs link and release pill', () => {
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  assert.equal(h1, 'Salesforce. Meet PowerShell.');
+  assert.match(html, /<span class="y">Meet<\/span> <span class="b">PowerShell\.<\/span>/);
+  assert.ok(html.includes('Powerful Salesforce tools. Familiar PowerShell commands. One <span class="pipe">|</span> away from anything.'));
+  assert.match(html, /class="install" data-copy="Install-Module psfdx"/);
+  assert.match(html, /<code>Install-Module psfdx<\/code>/);
+  assert.match(html, /class="button secondary" href="https:\/\/github\.com\/tonygward\/psfdx#readme">Read the docs</);
+});
+
+test('the release pill shows the version in the VERSION file, never a typed-in number', () => {
+  assert.match(html, new RegExp(`>v${release.replace(/\./g, '\\.')} — latest release<`));
+  assert.match(html, /class="release-pill" href="https:\/\/github\.com\/tonygward\/psfdx\/releases"/);
+  const source = fs.readFileSync(path.join(here, 'src', 'index.html'), 'utf8');
+  assert.doesNotMatch(source, /\b\d+\.\d+\.\d+\b/, 'the source holds only the %RELEASE_VERSION% placeholder');
+  assert.match(source, /v%RELEASE_VERSION%/);
+});
+
+test('the console shows the sample session, marked as made-up data', () => {
+  for (const text of ['Connect-Salesforce</span> <span class="param">-Sandbox</span>', 'Select-SalesforceRecords</span> <span class="param">-Query</span> <span class="str">"SELECT Id, Name FROM Account LIMIT 4"</span>', 'pwsh — psfdx', 'Sample session with made-up data. It is not a live org.']) {
+    assert.ok(html.includes(text), text);
+  }
+  assert.equal((html.match(/class="line"><span class="prompt">PS&gt;<\/span>|class="line">0{2}1xx/g) || []).length >= 4, true);
+  assert.match(html, /class="dot dot-r"/);
+  for (const colour of ['.prompt', '.cmd', '.param', '.str']) assert.ok(css.includes(colour), `${colour} syntax colour`);
+});
+
+test('the marquee lists real psfdx commands (and Export-Csv), twice, with the copy hidden from screen readers', () => {
+  const lists = [...html.matchAll(/<ul class="marquee-track[^"]*"[^>]*>([\s\S]*?)<\/ul>/g)];
+  assert.equal(lists.length, 2);
+  assert.match(lists[1][0], /aria-hidden="true"/);
+  const names = [...lists[0][1].matchAll(/<li>([^<]+)<\/li>/g)].map(m => m[1]);
+  assert.deepEqual(names, ['Connect-Salesforce', 'Select-SalesforceRecords', 'Upsert-SalesforceRecord', 'Test-SalesforceFlow', 'Test-SalesforceApex', 'Get-SalesforceAlias', 'Update-SalesforceCli', 'Export-Csv']);
+  assert.deepEqual([...lists[1][1].matchAll(/<li>([^<]+)<\/li>/g)].map(m => m[1]), names);
+  for (const name of names.filter(n => n !== 'Export-Csv')) assert.ok(exported.has(name), `${name} is not exported by any psfdx module`);
+  assert.match(css, /@keyframes marquee \{ from \{ transform: translateX\(0\); \} to \{ transform: translateX\(-50%\); \} \}/);
+  assert.match(css, /animation: marquee 32s linear infinite/);
+});
+
+test('the three feature cards and the six modules use real content', () => {
+  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'Nothing hidden', 'A simpler, more intuitive way to work with Salesforce.', 'Six modules. Zero context switching.', 'Get-Module psfdx* -ListAvailable']) {
+    assert.ok(html.includes(text), text);
+  }
+  const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
+  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-logs']);
+  for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
+  assert.equal((html.match(/class="module-row" href="https:\/\/github\.com\/tonygward\/psfdx#modules"/g) || []).length, 6, 'every module row links somewhere real');
+});
+
+test('the closing panel and footer', () => {
+  assert.ok(html.includes('PowerShell simplicity. Salesforce capability.'));
+  assert.match(html, /data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Connect-Salesforce -Sandbox"/);
+  assert.ok(html.includes('psfdx · <a href="https://github.com/tonygward/psfdx/blob/main/LICENSE">MIT licence</a>'));
+  assert.ok(html.includes('psfdx is an independent open-source project and is not affiliated with or endorsed by Salesforce.'));
+  assert.match(html, /<title>psfdx/);
+  assert.match(html, /<meta name="description"/);
+});
+
+test('the palette and type come from the design', () => {
+  for (const hex of ['#010F2B', '#012456', '#0A2150', '#0B1F44', '#FFE14D', '#4D9BFF', '#61D6D6', '#7BE38A', '#F2F4FA', '#C9D3EA', '#1D3C78', '#2A4D8F']) {
+    assert.ok(css.toLowerCase().includes(hex.toLowerCase()), hex);
+  }
+  assert.match(css, /max-width: 1240px/);
+  assert.match(css, /clamp\(20px, 4vw, 48px\)/);
+  assert.match(css, /font-family: 'Bricolage Grotesque'/);
+  assert.match(css, /font-family: 'IBM Plex Mono'/);
+  assert.match(css, /rotate\(-1\.5deg\)/);
+  assert.match(css, /translateY\(-10px\)/);
+  assert.match(css, /animation: float 6s ease-in-out infinite/);
+});
+
+test('fonts are self-hosted, so the page makes no outside requests', () => {
+  for (const f of ['BricolageGrotesque-latin.woff2', 'IBMPlexMono-400.woff2', 'IBMPlexMono-500.woff2', 'IBMPlexMono-600.woff2']) {
+    const file = path.join(dist, 'fonts', f);
+    assert.ok(fs.existsSync(file), f);
+    assert.equal(fs.readFileSync(file).subarray(0, 4).toString('latin1'), 'wOF2', `${f} is a woff2 file`);
+  }
+  assert.doesNotMatch(css, /fonts\.googleapis|fonts\.gstatic/);
+  assert.doesNotMatch(html, /fonts\.googleapis|fonts\.gstatic/);
+});
+
+test('accessibility basics: language, one h1, skip link, alt text, labelled landmarks, focus and reduced motion', () => {
+  assert.match(html, /<html lang="en-GB"/);
   assert.equal((html.match(/<h1[ >]/g) || []).length, 1);
   assert.match(html, /class="skip-link" href="#main"/);
   assert.match(html, /<main id="main">/);
   for (const img of html.match(/<img\b[^>]*>/g)) assert.match(img, /\balt="[^"]+"/, img);
   assert.match(css, /:focus-visible/);
-  assert.match(css, /prefers-reduced-motion/);
+  assert.match(html, /class="console-body" aria-hidden="true"/);
+  assert.match(html, /<p class="sr-only">Example PowerShell session\./, 'the animated console has a text alternative');
+});
+
+test('reduced motion turns off the typing, float and marquee and shows everything', () => {
+  const block = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.match(block, /\.console \{ animation: none; \}/);
+  assert.match(block, /\.marquee \{ animation: none;/);
+  assert.match(block, /\.marquee-dup \{ display: none; \}/);
+  assert.match(block, /\.js-anim \.results \{ opacity: 1;/);
+  assert.match(js, /prefers-reduced-motion: reduce/);
+  assert.match(js, /if \(!consoleEl \|\| reduceMotion\) \{ return; \}/, 'the script never starts the typing when motion is reduced');
+});
+
+test('the page does not scroll sideways', () => {
+  assert.match(css, /body \{[^}]*overflow-x: clip/);
+  assert.match(css, /\.marquee-band \{[^}]*overflow: hidden/);
+  assert.match(css, /@media \(max-width: 900px\)/);
+  assert.match(css, /@media \(max-width: 640px\)/);
+});
+
+test('copy to the clipboard: exact text, COPY then COPIED for 1.6 seconds, and a failure path', () => {
+  assert.match(js, /'COPIED'/);
+  assert.match(js, /1600/);
+  assert.match(js, /'COPY'/);
+  assert.match(js, /PRESS CTRL\+C/);
+  assert.match(js, /navigator\.clipboard\.writeText/);
+  assert.match(js, /execCommand\('copy'\)/, 'a fallback where the clipboard API is missing');
+  assert.match(js, /keydown/, 'keyboard users can copy too');
+  assert.doesNotMatch(html, /Install-Module psfdx\s*[^<&"\s]/ , 'the command is exactly Install-Module psfdx');
+});
+
+test('the console typing follows the specified timings', () => {
+  assert.match(js, /CHAR_MS = 55/);
+  assert.match(js, /FADE_MS = 250/);
+  assert.match(js, /HOLD_MS = 3300/);
+  assert.match(css, /\.js-anim \.results \{ opacity: 0; transition: opacity \.25s ease; \}/);
+  assert.match(css, /\.cursor \{[^}]*animation: blink/);
 });
 
 test('the page makes no outside requests and uses no inline script or style', () => {
@@ -82,19 +213,21 @@ test('the page makes no outside requests and uses no inline script or style', ()
   }
 });
 
-test('the content security policy allows only the site itself', () => {
+test('the content security policy allows only the site itself, including its fonts', () => {
   const headers = fs.readFileSync(path.join(dist, '_headers'), 'utf8');
   assert.match(headers, /Content-Security-Policy: default-src 'self'/);
+  assert.match(headers, /font-src 'self'/);
   assert.doesNotMatch(headers, /unsafe-inline|unsafe-eval|https?:\/\//);
 });
 
-test('claims stay accurate: no version number and no Salesforce endorsement wording', () => {
-  assert.doesNotMatch(html, /\b\d+\.\d+\.\d+\b/);
+test('claims stay accurate: only the build-time release number, and no Salesforce endorsement wording', () => {
+  const numbers = html.match(/\b\d+\.\d+\.\d+\b/g) || [];
+  for (const n of numbers) assert.equal(n, release, 'the only version on the page is the current release');
   assert.doesNotMatch(html, /official partner|certified by|endorsed by Salesforce\.(?!<)/i);
 });
 
 test('applyConfig replaces every occurrence', () => {
-  assert.equal(applyConfig('%GITHUB_URL% %GITHUB_URL%', readConfig({})), 'https://github.com/tonygward/psfdx https://github.com/tonygward/psfdx');
+  assert.equal(applyConfig('%GITHUB_URL% %GITHUB_URL% v%RELEASE_VERSION%', readConfig({})), `https://github.com/tonygward/psfdx https://github.com/tonygward/psfdx v${release}`);
 });
 
 test('cleanup', () => { fs.rmSync(out, { recursive: true, force: true }); });

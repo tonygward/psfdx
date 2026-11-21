@@ -4,12 +4,22 @@ The public one-page site for psfdx (psfdx.com). It is plain HTML, CSS and a few 
 
 ```
 site/
-  src/               the page: index.html, style.css, script.js, favicon.png, og-image.png, _headers
+  src/               the page: index.html, style.css, script.js, fonts/, favicon.png, og-image.png, _headers
   site.config.json   domain and link settings
   build.mjs          builds site/dist (needs Node 18 or later, nothing to install)
   build.test.mjs     tests: links and files exist, copy, accessibility basics, no outside requests
   Make-SiteImages.ps1  makes og-image.png and favicon.png from the original logo (Windows only, rarely needed)
 ```
+
+## Design and fonts
+
+The homepage follows the "psfdx.com Homepage Redesign" handover (21 November 2026): navy console palette, a typing terminal, a rotated command marquee, three feature cards, a six-module list and a yellow closing panel. The prototype itself is not deployed; the page is plain HTML, CSS and a small script.
+
+- **Fonts are self-hosted** in `src/fonts/` (Bricolage Grotesque and IBM Plex Mono, latin subset, both under the SIL Open Font License 1.1, downloaded from Google Fonts). The content security policy allows only this site, so no font is loaded from outside.
+- **The release pill** shows the number in the repository's `VERSION` file, put in at build time (`%RELEASE_VERSION%`). Cloudflare Pages rebuilds on every push to `main`, and every release is a push, so it follows the latest release. It is the only version number allowed on the page.
+- **The command marquee** lists real commands; a test fails if one stops being exported by a module.
+- **Motion:** with `prefers-reduced-motion` the typing, float and marquee are off and the finished console is shown.
+- **The console data is made up** and labelled as a sample.
 
 ## The logo
 
@@ -47,4 +57,4 @@ Every push to `main` redeploys the site, and pull requests get a preview URL. To
 
 ## Changing the content
 
-Edit `site/src/index.html` and `style.css`, then run the tests. Keep the capability descriptions in line with the README and the real cmdlets, and do not state version numbers on the page, because they go stale. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
+Edit `site/src/index.html` and `style.css`, then run the tests. Keep the module descriptions in line with the README and the real cmdlets, and do not type a version number into the page: the release pill takes it from `VERSION` at build time. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
