@@ -855,13 +855,14 @@ function Start-SalesforceApexTest {
     Starts an Apex test run in an org and returns its TestRunId without waiting (sf apex run test).
     .DESCRIPTION
     Name tests with -ClassName (all tests in the classes), -TestName (Class.method) or -SuiteName, one kind at a time, or give none to run
-    the local tests. The returned TestRunId works from any later session on any computer: pass it to Get-SalesforceApexTestResult or
-    Wait-SalesforceApexTest. To run and wait in one call use Test-SalesforceApex.
+    the local tests. Salesforce only records code coverage for a run that asked for it, so give -CodeCoverage here if you will want coverage later;
+    asking only when you fetch the results retrieves nothing new. The returned TestRunId works from any later session on any computer: pass it to
+    Get-SalesforceApexTestResult or Wait-SalesforceApexTest. To run and wait in one call use Test-SalesforceApex.
     .EXAMPLE
-    $run = Start-SalesforceApexTest -TestLevel RunLocalTests -TargetOrg myorg; $run.TestRunId
+    $run = Start-SalesforceApexTest -TestLevel RunLocalTests -CodeCoverage -TargetOrg myorg; $run.TestRunId
     .EXAMPLE
     # Later, in another shell:
-    Wait-SalesforceApexTest -TestRunId 707xx0000000001 -TimeoutMinutes 30 -TargetOrg myorg
+    Wait-SalesforceApexTest -TestRunId 707xx0000000001 -TimeoutMinutes 30 -CodeCoverage -TargetOrg myorg
     #>
     [CmdletBinding()]
     Param(
@@ -869,6 +870,7 @@ function Start-SalesforceApexTest {
         [Parameter(Mandatory = $false)][string[]] $TestName,
         [Parameter(Mandatory = $false)][string[]] $SuiteName,
         [Parameter(Mandatory = $false)][ValidateSet('RunLocalTests', 'RunAllTestsInOrg', 'RunSpecifiedTests')][string] $TestLevel,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverage,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $classes = @($ClassName | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
@@ -884,6 +886,7 @@ function Start-SalesforceApexTest {
     foreach ($item in $tests) { $arguments += @('--tests', $item) }
     foreach ($item in $suites) { $arguments += @('--suite-names', $item) }
     if ($TestLevel) { $arguments += @('--test-level', $TestLevel) }
+    if ($CodeCoverage) { $arguments += '--code-coverage' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += @('--result-format', 'json', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -901,7 +904,8 @@ function Get-SalesforceApexTestResult {
     Gets the results of an Apex test run by its TestRunId (sf apex get test).
     .DESCRIPTION
     Returns one object: TestRunId, Summary (outcome, counts, times), Tests (one per test method with Outcome, RunTime, Message and StackTrace),
-    Coverage (only with -CodeCoverage) and Completed. A run that is still queued or processing returns Completed = $false and does not throw;
+    Coverage (only with -CodeCoverage, and only if the run was started with coverage) and Completed. A run that is still queued or processing returns
+    Completed = $false at once (the status is checked with a query first, because the CLI itself would wait) and does not throw;
     use Wait-SalesforceApexTest to wait. A finished run with failing tests writes the object and then throws PsfdxTestsFailed (TargetObject is the
     summary). Coverage is returned, never judged: there is no threshold here.
     .EXAMPLE
@@ -917,14 +921,23 @@ function Get-SalesforceApexTestResult {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     if ($CodeCoverageDetailed -and -not $CodeCoverage) { throw '-CodeCoverageDetailed needs -CodeCoverage.' }
+    if ($OutputDirectory -and -not (Test-Path -LiteralPath $OutputDirectory)) { throw "Output directory '$OutputDirectory' does not exist." }
+
+    # sf apex get test WAITS for a run that has not finished. Ask for the run's status first, with a query that returns at once, so a run
+    # still queued or processing comes back as Completed = $false instead of blocking the call (and any timeout built on it).
+    $statusParams = @{ Query = "SELECT Status FROM ApexTestQueueItem WHERE ParentJobId = $(ConvertTo-SalesforceSoqlLiteral -Value $TestRunId)" }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $statusParams['TargetOrg'] = $TargetOrg }
+    $queueItems = @(Select-SalesforceRecords @statusParams)
+    $pending = @($queueItems | Where-Object { $_.Status -in @('Queued', 'Preparing', 'Processing', 'Holding') })
+    if ($pending.Count -gt 0) {
+        return [pscustomobject]@{ TestRunId = $TestRunId; Summary = $null; Tests = @(); Coverage = $null; Completed = $false; PendingTests = $pending.Count; TotalTests = $queueItems.Count }
+    }
+
     $arguments = @('apex', 'get', 'test', '--test-run-id', $TestRunId)
     if ($Concise) { $arguments += '--concise' }
     if ($CodeCoverage) { $arguments += '--code-coverage' }
     if ($CodeCoverageDetailed) { $arguments += '--detailed-coverage' }
-    if ($OutputDirectory) {
-        if (-not (Test-Path -LiteralPath $OutputDirectory)) { throw "Output directory '$OutputDirectory' does not exist." }
-        $arguments += @('--output-dir', $OutputDirectory)
-    }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += @('--result-format', 'json', '--json')
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters

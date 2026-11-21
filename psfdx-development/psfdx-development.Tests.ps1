@@ -915,6 +915,10 @@ Describe 'Apex test run lifecycle' {
                 $script:Replies[$i]
             }
             Mock Start-Sleep { }
+            # The run's queue items. Empty means every test has finished; a Processing item means the run is still going.
+            $script:Queue = @()
+            Mock Select-SalesforceRecords { $script:QueryParams = @{ Query = $Query; TargetOrg = $TargetOrg }; $script:QueueCalls++; @($script:Queue | Select-Object -First 100) }
+            $script:QueueCalls = 0
         }
 
         Context 'Start-SalesforceApexTest' {
@@ -933,6 +937,11 @@ Describe 'Apex test run lifecycle' {
                 Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--suite-names|Smoke|--result-format|json|--json' }
                 Start-SalesforceApexTest | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--result-format|json|--json' }
+            }
+            It 'asks for code coverage when the run starts, because it cannot be added later' {
+                $script:Replies = @($script:Queued)
+                Start-SalesforceApexTest -ClassName MyTest -TestLevel RunSpecifiedTests -CodeCoverage | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--class-names|MyTest|--test-level|RunSpecifiedTests|--code-coverage|--result-format|json|--json' }
             }
             It 'rejects <Case> without calling the CLI' -ForEach @(
                 @{ Case = 'two kinds of selection';  Run = { Start-SalesforceApexTest -ClassName A -SuiteName B };                       Message = '*only one of*' }
@@ -977,11 +986,21 @@ Describe 'Apex test run lifecycle' {
                 $err.TargetObject.failing | Should -Be 1
                 $err.Exception.Message | Should -BeLike '*1 failing of 2*'
             }
-            It 'returns Completed = false, without throwing, for a run still processing' {
-                $script:Replies = @($script:Running)
-                $res = Get-SalesforceApexTestResult -TestRunId $script:RunId
+            It 'returns Completed = false at once, without calling the blocking CLI command, for a run still processing' {
+                $script:Queue = @([pscustomobject]@{ Status = 'Completed' }, [pscustomobject]@{ Status = 'Processing' }, [pscustomobject]@{ Status = 'Queued' })
+                $res = Get-SalesforceApexTestResult -TestRunId $script:RunId -TargetOrg me
                 $res.Completed | Should -BeFalse
-                $res.Summary.outcome | Should -Be 'Processing'
+                $res.PendingTests | Should -Be 2
+                $res.TotalTests | Should -Be 3
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                Assert-MockCalled Select-SalesforceRecords -Times 1 -Exactly
+                $script:QueryParams['Query'] | Should -Be "SELECT Status FROM ApexTestQueueItem WHERE ParentJobId = '707xx0000000001'"
+                $script:QueryParams['TargetOrg'] | Should -Be 'me'
+            }
+            It 'fetches the results once every queue item has finished' {
+                $script:Queue = @([pscustomobject]@{ Status = 'Completed' }, [pscustomobject]@{ Status = 'Failed' })
+                (Get-SalesforceApexTestResult -TestRunId $script:RunId).Completed | Should -BeTrue
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
             }
             It 'throws PsfdxTestRunInvocationFailed for an unknown run and for malformed output' {
                 $script:Replies = @('{"status":1,"message":"The requested resource does not exist"}')
@@ -1006,29 +1025,33 @@ Describe 'Apex test run lifecycle' {
 
         Context 'Wait-SalesforceApexTest' {
             It 'polls until the run finishes and returns the results' {
-                $script:Replies = @($script:Running, $script:Running, $script:Passed)
+                $script:QueueSequence = @(@([pscustomobject]@{ Status = 'Processing' }), @([pscustomobject]@{ Status = 'Processing' }), @())
+                Mock Select-SalesforceRecords { $i = [math]::Min($script:QueueCalls, $script:QueueSequence.Count - 1); $script:QueueCalls++; $script:QueueSequence[$i] }
+                $script:Replies = @($script:Passed)
                 $res = Wait-SalesforceApexTest -TestRunId $script:RunId -TimeoutMinutes 5 -PollSeconds 10 -TargetOrg me
                 $res.Completed | Should -BeTrue
                 $res.Tests.Count | Should -Be 2
-                Assert-MockCalled Invoke-Salesforce -Times 3 -Exactly
+                Assert-MockCalled Select-SalesforceRecords -Times 3 -Exactly
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
                 Assert-MockCalled Start-Sleep -Times 2 -Exactly -ParameterFilter { $Seconds -eq 10 }
             }
-            It 'passes coverage options and the org to every poll' {
-                $script:Replies = @($script:Running, $script:Passed)
+            It 'passes coverage options and the org to the result fetch' {
+                $script:Replies = @($script:Passed)
                 Wait-SalesforceApexTest -TestRunId $script:RunId -CodeCoverage -TargetOrg me | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|test|--test-run-id|707xx0000000001|--code-coverage|--target-org|me|--result-format|json|--json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|test|--test-run-id|707xx0000000001|--code-coverage|--target-org|me|--result-format|json|--json' }
             }
             It 'throws PsfdxTestRunTimeout, with the run ID, when the run does not finish in time' {
-                $script:Replies = @($script:Running)
+                $script:Queue = @([pscustomobject]@{ Status = 'Processing' })
                 $err = $null
                 try { Wait-SalesforceApexTest -TestRunId $script:RunId -TimeoutMinutes 1 -PollSeconds 30 | Out-Null } catch { $err = $_ }
                 $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestRunTimeout'
                 $err.TargetObject | Should -Be $script:RunId
-                Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly
+                Assert-MockCalled Select-SalesforceRecords -Times 2 -Exactly
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
                 Assert-MockCalled Start-Sleep -Times 1 -Exactly
             }
             It 'throws PsfdxTestsFailed straight away when the finished run has failures' {
-                $script:Replies = @($script:Running, $script:Failed)
+                $script:Replies = @($script:Failed)
                 $err = $null
                 try { Wait-SalesforceApexTest -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
                 $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestsFailed'
