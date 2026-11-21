@@ -140,6 +140,12 @@ Included in the `psfdx` package.
 | `New-SalesforceRecord` | Create a record. |
 | `Set-SalesforceRecord` | Update a record. |
 | `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
+| `Export-SalesforceBulkData` | Export a SOQL query to a file with Bulk API 2.0 (`sf data export bulk`). Returns a `JobId` at once, or the row count with `-WaitMinutes`. |
+| `Import-SalesforceBulkData` | Insert the rows of a CSV with Bulk API 2.0 (`sf data import bulk`). Supports `-WhatIf`. |
+| `Update-SalesforceBulkData` | Update records from a CSV with Bulk API 2.0 (`sf data update bulk`). Supports `-WhatIf`. |
+| `Upsert-SalesforceBulkData` | Upsert records from a CSV by external ID with Bulk API 2.0 (`sf data upsert bulk`). Supports `-WhatIf`. |
+| `Resume-SalesforceBulkJob` | Resume an export, import, update or upsert job by `-JobId` in a later step. The CLI finds the org from its record of the job, so it must have been created on this computer. |
+| `Get-SalesforceBulkResult` | Get a bulk ingest job's counts and save its success, failed and unprocessed row CSVs to `-OutputDirectory` (`sf data bulk results`). Works for any job in the org. |
 | `Get-SalesforceRecordType` | List record types (optionally by object). |
 
 ### REST API

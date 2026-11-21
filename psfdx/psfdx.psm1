@@ -603,6 +603,358 @@ function Get-SalesforceRecordType {
 
 #endregion
 
+#region Bulk API 2.0
+
+# Wraps `sf data export|import|update|upsert bulk`, their `resume` commands and `sf data bulk results`. Without -WaitMinutes the CLI
+# creates the job and returns at once with a job ID; with it, the CLI polls and returns the counts. Each cmdlet returns a plain object.
+#
+# A job that finishes with failed rows, or fails or aborts, makes the CLI exit with an error. That error is rethrown as
+# PsfdxBulkJobFailed, and its TargetObject holds JobId, State and Message, so a script can fetch the row-level results with
+# Get-SalesforceBulkResult. Any other CLI error (no authorisation, a bad file, a bad flag) is thrown with the CLI's message.
+
+function Export-SalesforceBulkData {
+    <#
+    .SYNOPSIS
+    Exports the records of a SOQL query to a file with Bulk API 2.0 (sf data export bulk).
+    .DESCRIPTION
+    Give the query as -Query or -QueryFile (a file avoids line breaks, which the Windows CLI shim rejects as an argument). The query is
+    passed to the CLI unchanged. Without -WaitMinutes the job is created and its JobId returned; finish it later with
+    Resume-SalesforceBulkJob -Operation Export. With -WaitMinutes the cmdlet waits and returns TotalSize.
+    .EXAMPLE
+    Export-SalesforceBulkData -Query 'SELECT Id, Name FROM Account' -OutputFile .\accounts.csv -WaitMinutes 10 -TargetOrg myorg
+    .EXAMPLE
+    $job = Export-SalesforceBulkData -QueryFile .\big.soql -OutputFile .\big.csv -TargetOrg myorg; Resume-SalesforceBulkJob -Operation Export -JobId $job.JobId
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $OutputFile,
+        [Parameter(Mandatory = $false)][string] $Query,
+        [Parameter(Mandatory = $false)][string] $QueryFile,
+        [Parameter(Mandatory = $false)][ValidateSet('csv', 'json')][string] $ResultFormat = 'csv',
+        [Parameter(Mandatory = $false)][switch] $AllRows,
+        [Parameter(Mandatory = $false)][ValidateSet('BACKQUOTE', 'CARET', 'COMMA', 'PIPE', 'SEMICOLON', 'TAB')][string] $ColumnDelimiter,
+        [Parameter(Mandatory = $false)][ValidateSet('LF', 'CRLF')][string] $LineEnding,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $hasQuery = -not [string]::IsNullOrWhiteSpace($Query)
+    $hasQueryFile = -not [string]::IsNullOrWhiteSpace($QueryFile)
+    if ($hasQuery -eq $hasQueryFile) { throw 'Give exactly one of -Query and -QueryFile.' }
+    if ($hasQueryFile -and -not (Test-Path -LiteralPath $QueryFile -PathType Leaf)) { throw "Query file '$QueryFile' does not exist." }
+    $outputParent = Split-Path -Path $OutputFile -Parent
+    if ($outputParent -and -not (Test-Path -LiteralPath $outputParent -PathType Container)) { throw "Output directory '$outputParent' does not exist." }
+
+    $arguments = @('data', 'export', 'bulk')
+    if ($hasQuery) { $arguments += @('--query', $Query) } else { $arguments += @('--query-file', $QueryFile) }
+    $arguments += @('--output-file', $OutputFile, '--result-format', $ResultFormat)
+    if ($AllRows) { $arguments += '--all-rows' }
+    if ($ColumnDelimiter) { $arguments += @('--column-delimiter', $ColumnDelimiter) }
+    if ($LineEnding) { $arguments += @('--line-ending', $LineEnding) }
+    if ($WaitMinutes -gt 0) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data export bulk'
+    return ConvertTo-SalesforceBulkJobObject -Result $result -Operation 'Export'
+}
+
+function Import-SalesforceBulkData {
+    <#
+    .SYNOPSIS
+    Inserts the rows of a CSV file with Bulk API 2.0 (sf data import bulk).
+    .DESCRIPTION
+    Creates records. Asks for confirmation only when $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. Without
+    -WaitMinutes the job is created and its JobId returned; with it the cmdlet waits and returns the counts. A job with failed rows
+    throws PsfdxBulkJobFailed (see Get-SalesforceBulkResult for the row results).
+    .EXAMPLE
+    Import-SalesforceBulkData -File '.\new accounts.csv' -Object Account -WaitMinutes 10 -TargetOrg myorg
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $File,
+        [Parameter(Mandatory = $true)][string] $Object,
+        [Parameter(Mandatory = $false)][ValidateSet('BACKQUOTE', 'CARET', 'COMMA', 'PIPE', 'SEMICOLON', 'TAB')][string] $ColumnDelimiter,
+        [Parameter(Mandatory = $false)][ValidateSet('LF', 'CRLF')][string] $LineEnding,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Object
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "CSV file '$File' does not exist." }
+
+    $arguments = @('data', 'import', 'bulk', '--file', $File, '--sobject', $objectName)
+    if ($ColumnDelimiter) { $arguments += @('--column-delimiter', $ColumnDelimiter) }
+    if ($LineEnding) { $arguments += @('--line-ending', $LineEnding) }
+    if ($WaitMinutes -gt 0) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess((Get-SalesforceBulkTargetLabel -Object $objectName -File $File -TargetOrg $TargetOrg), 'Bulk insert')) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data import bulk'
+    return ConvertTo-SalesforceBulkJobObject -Result $result -Operation 'Import' -Object $objectName
+}
+
+function Update-SalesforceBulkData {
+    <#
+    .SYNOPSIS
+    Updates records from the rows of a CSV file with Bulk API 2.0 (sf data update bulk).
+    .DESCRIPTION
+    The CSV needs an Id column. Asks for confirmation only when $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call.
+    Results are as for Import-SalesforceBulkData.
+    .EXAMPLE
+    Update-SalesforceBulkData -File .\changes.csv -Object Contact -WaitMinutes 10 -TargetOrg myorg
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $File,
+        [Parameter(Mandatory = $true)][string] $Object,
+        [Parameter(Mandatory = $false)][ValidateSet('BACKQUOTE', 'CARET', 'COMMA', 'PIPE', 'SEMICOLON', 'TAB')][string] $ColumnDelimiter,
+        [Parameter(Mandatory = $false)][ValidateSet('LF', 'CRLF')][string] $LineEnding,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Object
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "CSV file '$File' does not exist." }
+
+    $arguments = @('data', 'update', 'bulk', '--file', $File, '--sobject', $objectName)
+    if ($ColumnDelimiter) { $arguments += @('--column-delimiter', $ColumnDelimiter) }
+    if ($LineEnding) { $arguments += @('--line-ending', $LineEnding) }
+    if ($WaitMinutes -gt 0) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess((Get-SalesforceBulkTargetLabel -Object $objectName -File $File -TargetOrg $TargetOrg), 'Bulk update')) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data update bulk'
+    return ConvertTo-SalesforceBulkJobObject -Result $result -Operation 'Update' -Object $objectName
+}
+
+function Upsert-SalesforceBulkData {
+    <#
+    .SYNOPSIS
+    Inserts or updates records from the rows of a CSV file by external ID with Bulk API 2.0 (sf data upsert bulk).
+    .DESCRIPTION
+    -ExternalIdField names the external ID field the CSV matches on, and its column must be in the file. Asks for confirmation only when
+    $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. For one record use Upsert-SalesforceRecord.
+    .EXAMPLE
+    Upsert-SalesforceBulkData -File .\accounts.csv -Object Account -ExternalIdField Ext_Id__c -WaitMinutes 10 -TargetOrg myorg
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $File,
+        [Parameter(Mandatory = $true)][string] $Object,
+        [Parameter(Mandatory = $true)][string] $ExternalIdField,
+        [Parameter(Mandatory = $false)][ValidateSet('BACKQUOTE', 'CARET', 'COMMA', 'PIPE', 'SEMICOLON', 'TAB')][string] $ColumnDelimiter,
+        [Parameter(Mandatory = $false)][ValidateSet('LF', 'CRLF')][string] $LineEnding,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Object
+    $externalIdFieldName = ConvertTo-SalesforceSoqlIdentifier -Value $ExternalIdField
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "CSV file '$File' does not exist." }
+
+    $arguments = @('data', 'upsert', 'bulk', '--file', $File, '--sobject', $objectName, '--external-id', $externalIdFieldName)
+    if ($ColumnDelimiter) { $arguments += @('--column-delimiter', $ColumnDelimiter) }
+    if ($LineEnding) { $arguments += @('--line-ending', $LineEnding) }
+    if ($WaitMinutes -gt 0) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess((Get-SalesforceBulkTargetLabel -Object $objectName -File $File -TargetOrg $TargetOrg), "Bulk upsert on $externalIdFieldName")) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data upsert bulk'
+    return ConvertTo-SalesforceBulkJobObject -Result $result -Operation 'Upsert' -Object $objectName
+}
+
+function Resume-SalesforceBulkJob {
+    <#
+    .SYNOPSIS
+    Resumes a Bulk API 2.0 job started without -WaitMinutes (sf data export|import|update|upsert resume).
+    .DESCRIPTION
+    Pass the JobId from the earlier step and the -Operation that created it. The CLI remembers jobs it created on this computer, so import,
+    update and export resumes find the org from that record; they do not take -TargetOrg (it is ignored with a warning), and a job created
+    elsewhere cannot be resumed here: use Get-SalesforceBulkResult with -TargetOrg instead. Export resumes do not take -WaitMinutes.
+    Resuming only continues the existing job, so it does not ask for confirmation. Errors are as for the cmdlet that created the job.
+    .EXAMPLE
+    Resume-SalesforceBulkJob -Operation Upsert -JobId 750xx0000000001 -WaitMinutes 10 -TargetOrg myorg
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateSet('Export', 'Import', 'Update', 'Upsert')][string] $Operation,
+        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $JobId,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $hasTargetOrg = $PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)
+    if ($hasTargetOrg -and $Operation -ne 'Upsert') { Write-Warning "-TargetOrg is ignored for a $Operation resume: the CLI finds the org from its record of the job." }
+    if ($WaitMinutes -gt 0 -and $Operation -eq 'Export') { Write-Warning '-WaitMinutes is ignored for an Export resume.' }
+
+    switch ($Operation) {
+        'Export' { $arguments = @('data', 'export', 'resume', '--job-id', $JobId); $command = 'data export resume' }
+        'Import' { $arguments = @('data', 'import', 'resume', '--job-id', $JobId); $command = 'data import resume' }
+        'Update' { $arguments = @('data', 'update', 'resume', '--job-id', $JobId); $command = 'data update resume' }
+        'Upsert' { $arguments = @('data', 'upsert', 'resume', '--job-id', $JobId); $command = 'data upsert resume' }
+    }
+    if ($WaitMinutes -gt 0 -and $Operation -ne 'Export') { $arguments += @('--wait', $WaitMinutes) }
+    if ($hasTargetOrg -and $Operation -eq 'Upsert') { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command $command
+    return ConvertTo-SalesforceBulkJobObject -Result $result -Operation $Operation -JobId $JobId
+}
+
+function Get-SalesforceBulkResult {
+    <#
+    .SYNOPSIS
+    Gets the outcome of a Bulk API 2.0 ingest job and saves its row results as CSV files (sf data bulk results).
+    .DESCRIPTION
+    The CLI writes <JobId>-success-records.csv, <JobId>-failed-records.csv and <JobId>-unprocessed-records.csv into its working directory, so
+    the cmdlet runs it in -OutputDirectory (the current directory by default) and returns the full paths of the files it wrote. Records that
+    failed do not make this cmdlet throw: check HasFailures or FailedRecords. A job that has not finished is an error. Works for any job in
+    the org, including ones this computer did not create.
+    .EXAMPLE
+    $r = Get-SalesforceBulkResult -JobId 750xx0000000001 -OutputDirectory .\bulk -TargetOrg myorg; if ($r.HasFailures) { Import-Csv $r.FailedFilePath }
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$')][string] $JobId,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $directory = (Get-Location).ProviderPath
+    if ($OutputDirectory) {
+        if (-not (Test-Path -LiteralPath $OutputDirectory -PathType Container)) { throw "Output directory '$OutputDirectory' does not exist." }
+        $directory = (Resolve-Path -LiteralPath $OutputDirectory).ProviderPath
+    }
+
+    $arguments = @('data', 'bulk', 'results', '--job-id', $JobId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Push-Location -LiteralPath $directory
+    try {
+        $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    } finally {
+        Pop-Location
+    }
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data bulk results'
+
+    $pathOf = {
+        param([string] $Name)
+        if ($null -ne $result.PSObject.Properties[$Name] -and -not [string]::IsNullOrWhiteSpace([string] $result.$Name)) { return (Join-Path -Path $directory -ChildPath ([string] $result.$Name)) }
+        return $null
+    }
+    $failed = 0
+    if ($null -ne $result.PSObject.Properties['failedRecords'] -and $null -ne $result.failedRecords) { $failed = [int] $result.failedRecords }
+    if ($failed -gt 0) { Write-Warning "$failed record(s) failed in job $JobId. See the failed records file in $directory." }
+    return [pscustomobject]@{
+        JobId               = $JobId
+        Status              = $result.status
+        Operation           = $result.operation
+        Object              = $result.object
+        ProcessedRecords    = $result.processedRecords
+        SuccessfulRecords   = $result.successfulRecords
+        FailedRecords       = $failed
+        HasFailures         = ($failed -gt 0)
+        SuccessFilePath     = & $pathOf 'successFilePath'
+        FailedFilePath      = & $pathOf 'failedFilePath'
+        UnprocessedFilePath = & $pathOf 'unprocessedFilePath'
+    }
+}
+
+function Get-SalesforceBulkTargetLabel {
+    # Names what a bulk write will touch, for the ShouldProcess prompt and -WhatIf: the object, the file and the org.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Object,
+        [Parameter(Mandatory = $true)][string] $File,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $org = 'the default org'
+    if (-not [string]::IsNullOrWhiteSpace($TargetOrg)) { $org = "org $TargetOrg" }
+    return "$Object records from '$File' in $org"
+}
+
+function ConvertFrom-SalesforceBulkOutput {
+    # Returns the result of a bulk command, or throws. A failed job (failed rows, Failed or Aborted) becomes PsfdxBulkJobFailed with the
+    # job ID, so a script can fetch the row results; any other failure is thrown as the CLI described it.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][AllowEmptyCollection()] $Output,
+        [Parameter(Mandatory = $true)][string] $Command
+    )
+    $text = [string]::Join([Environment]::NewLine, @($Output | ForEach-Object { [string] $_ })).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) { throw "sf $Command returned no output where JSON was expected." }
+    $parsed = $null
+    try { $parsed = $text | ConvertFrom-Json -ErrorAction Stop } catch {
+        $preview = $text; if ($preview.Length -gt 200) { $preview = $preview.Substring(0, 200) + '...' }
+        throw "sf $Command returned output that is not valid JSON: $preview"
+    }
+    if ($null -eq $parsed -or $parsed -is [array] -or $null -eq $parsed.PSObject.Properties['status']) {
+        throw "sf $Command returned JSON in an unexpected shape (no status)."
+    }
+    if ($parsed.status -eq 0) {
+        if ($null -eq $parsed.PSObject.Properties['result'] -or $null -eq $parsed.result) { throw "sf $Command succeeded but returned no result." }
+        return $parsed.result
+    }
+
+    $jobId = $null; $state = $null
+    if ($null -ne $parsed.PSObject.Properties['data'] -and $null -ne $parsed.data) {
+        if ($null -ne $parsed.data.PSObject.Properties['jobId']) { $jobId = [string] $parsed.data.jobId }
+        if ($null -ne $parsed.data.PSObject.Properties['state']) { $state = [string] $parsed.data.state }
+    }
+    $message = ''
+    if ($null -ne $parsed.PSObject.Properties['message'] -and $parsed.message) { $message = [string] $parsed.message }
+    if (-not $jobId -and $message -match '\b(750[A-Za-z0-9]{12}(?:[A-Za-z0-9]{3})?)\b') { $jobId = $Matches[1] }
+    if ($jobId) {
+        $full = "sf $Command reported a problem with bulk job ${jobId}: $message Get-SalesforceBulkResult -JobId $jobId lists the rows that failed.".Replace('  ', ' ')
+        $target = [pscustomobject]@{ JobId = $jobId; State = $state; Message = $message }
+        $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $full), 'PsfdxBulkJobFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $target)
+        throw $record
+    }
+    # No job ID: an ordinary CLI failure, with the same message handling as every other cmdlet.
+    Show-SalesforceResult -Result $text | Out-Null
+    throw "sf $Command failed with status $($parsed.status). $message".Trim()
+}
+
+function ConvertTo-SalesforceBulkJobObject {
+    # One shape for every bulk command. Properties the CLI did not report (an asynchronous job has no counts yet) are $null.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)] $Result,
+        [Parameter(Mandatory = $true)][string] $Operation,
+        [Parameter(Mandatory = $false)][string] $Object,
+        [Parameter(Mandatory = $false)][string] $JobId
+    )
+    $get = {
+        param([string] $Name)
+        if ($null -ne $Result.PSObject.Properties[$Name]) { return $Result.$Name }
+        return $null
+    }
+    $id = & $get 'jobId'
+    if (-not $id) { $id = $JobId }
+    $processed = & $get 'processedRecords'
+    $total = & $get 'totalSize'
+    return [pscustomobject]@{
+        JobId             = $id
+        Operation         = $Operation
+        Object            = $(if ($Object) { $Object } else { $null })
+        Completed         = (($null -ne $processed) -or ($null -ne $total))
+        ProcessedRecords  = $processed
+        SuccessfulRecords = & $get 'successfulRecords'
+        FailedRecords     = & $get 'failedRecords'
+        TotalSize         = $total
+        FilePath          = & $get 'filePath'
+    }
+}
+
+#endregion
+
 #region Salesforce REST API
 
 function Connect-SalesforceApi {
