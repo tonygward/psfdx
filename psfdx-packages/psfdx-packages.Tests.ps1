@@ -393,6 +393,20 @@ Describe 'Package job reports' {
                 $s.RequestId | Should -Be $script:InstallId
                 $s.Errors | Should -Be @('Missing dependency', 'Apex failed')
             }
+            It 'recognises the CLI''s real failed-install message and error name, with or without error details' {
+                $script:Reply = '{"status":1,"name":"packageInstallError","message":"Encountered errors installing the package! Installation errors: 
+1) Missing dependency"}'
+                $s = Get-SalesforcePackageInstallStatus -RequestId $script:InstallId
+                $s.Status | Should -Be 'ERROR'
+                $s.Errors | Should -Be @('Missing dependency')
+                $script:Reply = '{"status":1,"name":"packageInstallError","message":"Encountered errors installing the package! <empty>"}'
+                $s = Get-SalesforcePackageInstallStatus -RequestId $script:InstallId
+                $s.Status | Should -Be 'ERROR'
+                $s.Completed | Should -BeTrue
+                @($s.Errors).Count | Should -Be 0
+                $script:Reply = '{"status":1,"name":"packageInstallError","message":"Something else entirely"}'
+                (Get-SalesforcePackageInstallStatus -RequestId $script:InstallId).Status | Should -Be 'ERROR'
+            }
             It 'writes the status and then throws PsfdxPackageJobFailed with -ThrowOnFailure' {
                 $script:Reply = '{"status":0,"result":{"Id":"0Hf000000000001AAA","Status":"ERROR","Errors":{"errors":[{"message":"Missing dependency"}]}}}'
                 $err = $null

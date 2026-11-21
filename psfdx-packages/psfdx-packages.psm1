@@ -477,12 +477,15 @@ function Get-SalesforcePackageInstallStatus {
         if ($null -ne $record.PSObject.Properties['Errors'] -and $null -ne $record.Errors -and $null -ne $record.Errors.PSObject.Properties['errors']) {
             $errors = @($record.Errors.errors | ForEach-Object { if ($null -ne $_.PSObject.Properties['message']) { [string] $_.message } else { [string] $_ } })
         }
-    } elseif ($parsed.status -ne 0 -and $null -ne $parsed.PSObject.Properties['message'] -and [string] $parsed.message -match '(?i)installation errors:|package installation failed|install(ation)? (request )?failed') {
-        # A failed install makes the CLI exit with an error whose message lists the errors: report it as a status, not a lost job.
+    } elseif ($parsed.status -ne 0 -and (
+            (($null -ne $parsed.PSObject.Properties['name']) -and ([string] $parsed.name -eq 'packageInstallError')) -or
+            (($null -ne $parsed.PSObject.Properties['message']) -and ([string] $parsed.message -match '(?i)errors installing the package|installation errors:|package installation failed')))) {
+        # A failed install makes the CLI exit with an error (name packageInstallError, "Encountered errors installing the package! ...") rather than
+        # a result: report it as a status, not a lost job. The numbered errors are listed in the message, or it says <empty> when there are none.
         $status = 'ERROR'
-        $message = [string] $parsed.message
+        $message = ''
+        if ($null -ne $parsed.PSObject.Properties['message'] -and $parsed.message) { $message = [string] $parsed.message }
         $errors = @([regex]::Matches($message, '(?m)^\s*\d+\)\s*(.+)$') | ForEach-Object { $_.Groups[1].Value.Trim() })
-        if ($errors.Count -eq 0) { $errors = @($message) }
     } else {
         Show-SalesforceResult -Result $text | Out-Null
         throw "sf package install report returned no install request for $RequestId."
