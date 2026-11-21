@@ -102,6 +102,13 @@
       "match": "plugins unlink",
       "status": "not applicable",
       "reason": "Unlinks a local plugin under development, which only plugin authors do."
+    },
+    {
+      "match": "api request rest",
+      "reason": "GET is what the CLI uses when --method is left out, and psfdx leaves it out for reads; the CLI data does not record that default.",
+      "ignoreValues": [
+        "method=GET"
+      ]
     }
   ]
 }

@@ -182,11 +182,24 @@
     ]
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
+  "flagCoverage": {
+    "commandsPsfdxRuns": 99,
+    "flags": {
+      "total": 519,
+      "passed": 406
+    },
+    "requiredFlagsNotPassed": 0,
+    "flagsWithAListOfValues": 36,
+    "values": {
+      "total": 143,
+      "reachable": 121
+    }
+  },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 56,
-      "partiallyWrapped": 43,
+      "wrapped": 54,
+      "partiallyWrapped": 45,
       "missing": 156,
       "excluded": 0,
       "notApplicable": 24,
@@ -195,8 +208,8 @@
     },
     "core": {
       "commands": 214,
-      "wrapped": 53,
-      "partiallyWrapped": 39,
+      "wrapped": 51,
+      "partiallyWrapped": 41,
       "missing": 107,
       "excluded": 0,
       "notApplicable": 15,
@@ -279,7 +292,19 @@
           "psfdx": [
             "Enable-SalesforceAgent"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl create",
@@ -292,21 +317,38 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 13,
+            "passed": 0,
+            "required": 4
+          },
           "uncoveredFlags": [
-            "target-org",
-            "name",
-            "developer-name",
-            "source-type",
-            "description",
-            "index-mode",
-            "retriever-id",
-            "primary-index-field1",
-            "primary-index-field2",
             "content-fields",
             "data-category-ids",
             "data-category-names",
+            "description",
+            "developer-name",
+            "index-mode",
+            "name",
+            "primary-index-field1",
+            "primary-index-field2",
+            "retriever-id",
+            "source-type",
+            "target-org",
             "wait"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "developer-name",
+            "name",
+            "source-type",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl delete",
@@ -319,10 +361,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "library-id"
-          ]
+            "library-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl file add",
@@ -335,11 +392,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "library-id",
-            "path"
-          ]
+            "path",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "library-id",
+            "path",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl file delete",
@@ -352,11 +425,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
+            "file-id",
             "library-id",
-            "file-id"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "file-id",
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl file list",
@@ -369,13 +458,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
             "library-id",
-            "page-size",
             "offset",
-            "status"
-          ]
+            "page-size",
+            "status",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl get",
@@ -388,10 +492,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "library-id"
-          ]
+            "library-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl list",
@@ -404,10 +523,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "source-type"
-          ]
+            "source-type",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl status",
@@ -420,11 +553,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
+            "include-artifacts",
             "library-id",
-            "include-artifacts"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl update",
@@ -437,16 +585,31 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 8,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
+            "content-fields",
+            "data-category-rule",
+            "description",
             "library-id",
             "name",
-            "description",
-            "content-fields",
             "restrict-to-public-articles",
-            "data-category-rule",
-            "retriever-id"
-          ]
+            "retriever-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent adl upload",
@@ -459,12 +622,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
-            "library-id",
             "file",
+            "library-id",
+            "target-org",
             "wait"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "file",
+            "library-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent create",
@@ -477,13 +656,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "name",
             "api-name",
+            "name",
+            "preview",
             "spec",
-            "preview"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent deactivate",
@@ -498,7 +691,19 @@
           "psfdx": [
             "Disable-SalesforceAgent"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent generate agent-spec",
@@ -511,24 +716,38 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 16,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "type",
-            "role",
-            "company-name",
-            "company-description",
-            "company-website",
-            "max-topics",
             "agent-user",
+            "company-description",
+            "company-name",
+            "company-website",
             "enrich-logs",
-            "tone",
-            "spec",
-            "output-file",
+            "force-overwrite",
             "full-interview",
-            "prompt-template",
             "grounding-context",
-            "force-overwrite"
-          ]
+            "max-topics",
+            "output-file",
+            "prompt-template",
+            "role",
+            "spec",
+            "target-org",
+            "tone",
+            "type"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent generate authoring-bundle",
@@ -543,9 +762,21 @@
           "psfdx": [
             "New-SalesforceAgentAuthoringBundle"
           ],
+          "flags": {
+            "total": 7,
+            "passed": 6,
+            "required": 1
+          },
           "uncoveredFlags": [
             "force-overwrite"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent generate template",
@@ -558,12 +789,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "source-org",
-            "agent-version",
             "agent-file",
-            "output-dir"
-          ]
+            "agent-version",
+            "output-dir",
+            "source-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "agent-file",
+            "agent-version",
+            "source-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent generate test-spec",
@@ -576,12 +823,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "from-definition",
             "force-overwrite",
+            "from-definition",
             "output-file",
             "test-runner"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp asset list",
@@ -594,10 +853,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "mcp-server-id"
-          ]
+            "mcp-server-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "mcp-server-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp asset replace",
@@ -610,12 +884,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "mcp-server-id",
             "assets",
-            "assets-file"
-          ]
+            "assets-file",
+            "mcp-server-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "mcp-server-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp create",
@@ -628,18 +917,34 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 10,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
-            "name",
-            "label",
-            "description",
-            "server-url",
             "auth-type",
-            "identity-provider",
             "client-id",
             "client-secret",
-            "scope"
-          ]
+            "description",
+            "identity-provider",
+            "label",
+            "name",
+            "scope",
+            "server-url",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "server-url",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp delete",
@@ -652,11 +957,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
             "mcp-server-id",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "mcp-server-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp fetch",
@@ -669,10 +989,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "mcp-server-id"
-          ]
+            "mcp-server-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "mcp-server-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp get",
@@ -685,10 +1020,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "mcp-server-id"
-          ]
+            "mcp-server-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "mcp-server-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp list",
@@ -701,12 +1051,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
             "label",
-            "type",
-            "status"
-          ]
+            "status",
+            "target-org",
+            "type"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent mcp update",
@@ -719,18 +1083,33 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 10,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "mcp-server-id",
-            "label",
-            "description",
-            "server-url",
             "auth-type",
-            "identity-provider",
             "client-id",
             "client-secret",
-            "scope"
-          ]
+            "description",
+            "identity-provider",
+            "label",
+            "mcp-server-id",
+            "scope",
+            "server-url",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "mcp-server-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent preview",
@@ -743,16 +1122,30 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 8,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
+            "apex-debug",
             "api-name",
             "authoring-bundle",
-            "output-dir",
-            "apex-debug",
-            "use-live-actions",
             "context-variables",
-            "context-variables-json"
-          ]
+            "context-variables-json",
+            "output-dir",
+            "target-org",
+            "use-live-actions"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent preview end",
@@ -765,14 +1158,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "session-id",
+            "all",
             "api-name",
             "authoring-bundle",
-            "all",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "session-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent preview send",
@@ -785,13 +1192,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "session-id",
-            "utterance",
             "api-name",
-            "authoring-bundle"
-          ]
+            "authoring-bundle",
+            "session-id",
+            "target-org",
+            "utterance"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org",
+            "utterance"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent preview sessions",
@@ -804,7 +1226,19 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent preview start",
@@ -817,15 +1251,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
             "api-name",
             "authoring-bundle",
-            "use-live-actions",
-            "simulate-actions",
             "context-variables",
-            "context-variables-json"
-          ]
+            "context-variables-json",
+            "simulate-actions",
+            "target-org",
+            "use-live-actions"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent publish authoring-bundle",
@@ -840,11 +1288,23 @@
           "psfdx": [
             "Publish-SalesforceAgentAuthoringBundle"
           ],
+          "flags": {
+            "total": 6,
+            "passed": 3,
+            "required": 1
+          },
           "uncoveredFlags": [
+            "concise",
             "source-type",
-            "verbose",
-            "concise"
-          ]
+            "verbose"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent test create",
@@ -857,14 +1317,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "api-name",
+            "force-overwrite",
+            "preview",
             "spec",
             "target-org",
-            "preview",
-            "force-overwrite",
             "test-runner"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent test list",
@@ -879,7 +1353,19 @@
           "psfdx": [
             "Get-SalesforceAgentTests"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent test results",
@@ -894,12 +1380,24 @@
           "psfdx": [
             "Get-SalesforceAgentTestResult"
           ],
+          "flags": {
+            "total": 6,
+            "passed": 2,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "result-format",
             "output-dir",
+            "result-format",
             "test-runner",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent test resume",
@@ -912,16 +1410,30 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 8,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
             "job-id",
-            "use-most-recent",
-            "wait",
-            "result-format",
             "output-dir",
+            "result-format",
+            "target-org",
             "test-runner",
-            "verbose"
-          ]
+            "use-most-recent",
+            "verbose",
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent test run",
@@ -936,12 +1448,24 @@
           "psfdx": [
             "Start-SalesforceAgentTest"
           ],
+          "flags": {
+            "total": 7,
+            "passed": 3,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "result-format",
             "output-dir",
+            "result-format",
             "test-runner",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent test run-eval",
@@ -954,14 +1478,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "spec",
             "api-name",
-            "result-format",
             "batch-size",
-            "no-normalize"
-          ]
+            "no-normalize",
+            "result-format",
+            "spec",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "spec",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent trace delete",
@@ -974,12 +1513,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "agent",
-            "session-id",
+            "no-prompt",
             "older-than",
-            "no-prompt"
-          ]
+            "session-id"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent trace list",
@@ -992,11 +1543,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "session-id",
             "agent",
+            "session-id",
             "since"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent trace read",
@@ -1009,12 +1572,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "session-id",
-            "format",
             "dimension",
+            "format",
+            "session-id",
             "turn"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "session-id"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "agent validate authoring-bundle",
@@ -1029,7 +1606,19 @@
           "psfdx": [
             "Test-SalesforceAgentAuthoringBundle"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1060,7 +1649,19 @@
           "psfdx": [
             "Get-SalesforceAlias"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "alias set",
@@ -1075,7 +1676,19 @@
           "psfdx": [
             "Add-SalesforceAlias"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "alias unset",
@@ -1090,10 +1703,22 @@
           "psfdx": [
             "Remove-SalesforceAlias"
           ],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "all",
             "no-prompt"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1102,8 +1727,8 @@
       "label": "Apex",
       "totals": {
         "commands": 10,
-        "wrapped": 7,
-        "partiallyWrapped": 2,
+        "wrapped": 6,
+        "partiallyWrapped": 3,
         "missing": 1,
         "excluded": 0,
         "notApplicable": 0,
@@ -1122,9 +1747,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "apex get log",
@@ -1139,7 +1778,19 @@
           "psfdx": [
             "Get-SalesforceDebugLogs"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 4,
+            "passed": 4,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "apex get test",
@@ -1148,13 +1799,34 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display test results for a specific asynchronous test run.",
-          "status": "wrapped",
+          "status": "partially wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
             "Get-SalesforceApexTestResult"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "result-format",
+              "values": [
+                "human",
+                "tap",
+                "junit"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 1
+          }
         },
         {
           "id": "apex list log",
@@ -1169,7 +1841,19 @@
           "psfdx": [
             "Select-SalesforceDebugLogs"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "apex run",
@@ -1184,10 +1868,22 @@
           "psfdx": [
             "Invoke-SalesforceApex"
           ],
+          "flags": {
+            "total": 4,
+            "passed": 2,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "debug-level",
-            "category-level"
-          ]
+            "category-level",
+            "debug-level"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "apex run test",
@@ -1203,10 +1899,22 @@
             "Start-SalesforceApexTest",
             "Test-SalesforceApex"
           ],
+          "flags": {
+            "total": 13,
+            "passed": 11,
+            "required": 1
+          },
           "uncoveredFlags": [
             "poll-interval",
             "synchronous"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 2,
+            "total": 7,
+            "reachable": 7
+          }
         },
         {
           "id": "apex tail log",
@@ -1221,7 +1929,19 @@
           "psfdx": [
             "Watch-SalesforceDebugLogs"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 4,
+            "passed": 4,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "apex trace create",
@@ -1236,7 +1956,19 @@
           "psfdx": [
             "Enable-SalesforceDebugLogging"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 5,
+            "passed": 5,
+            "required": 3
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
+          }
         },
         {
           "id": "apex trace delete",
@@ -1251,7 +1983,19 @@
           "psfdx": [
             "Disable-SalesforceDebugLogging"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "apex trace list",
@@ -1266,7 +2010,19 @@
           "psfdx": [
             "Get-SalesforceDebugLogging"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1295,12 +2051,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "stream-to-file",
+            "body",
             "include",
-            "body"
-          ]
+            "stream-to-file",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "body",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "api request rest",
@@ -1317,12 +2088,36 @@
             "Get-SalesforceEventFile",
             "Upsert-SalesforceRecord"
           ],
+          "flags": {
+            "total": 7,
+            "passed": 3,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "include",
-            "header",
             "file",
+            "header",
+            "include",
             "stream-to-file"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "method",
+              "values": [
+                "POST",
+                "PUT",
+                "HEAD",
+                "DELETE",
+                "OPTIONS",
+                "TRACE"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 8,
+            "reachable": 2
+          }
         }
       ]
     },
@@ -1351,9 +2146,21 @@
           "reason": "Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "refresh-cache"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1382,14 +2189,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "name",
-            "type",
-            "picklist-values",
             "decimal-places",
             "label",
-            "output-directory"
-          ]
+            "name",
+            "output-directory",
+            "picklist-values",
+            "type"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "type"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "cmdt generate fromorg",
@@ -1402,17 +2224,33 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 9,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "dev-name",
+            "ignore-unsupported",
             "label",
             "plural-label",
-            "visibility",
+            "records-output-dir",
             "sobject",
-            "ignore-unsupported",
+            "target-org",
             "type-output-directory",
-            "records-output-dir"
-          ]
+            "visibility"
+          ],
+          "requiredFlagsNotPassed": [
+            "dev-name",
+            "sobject",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "cmdt generate object",
@@ -1425,13 +2263,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "type-name",
             "label",
+            "output-directory",
             "plural-label",
-            "visibility",
-            "output-directory"
-          ]
+            "type-name",
+            "visibility"
+          ],
+          "requiredFlagsNotPassed": [
+            "type-name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "cmdt generate record",
@@ -1444,14 +2296,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "type-name",
-            "record-name",
-            "label",
-            "protected",
             "input-directory",
-            "output-directory"
-          ]
+            "label",
+            "output-directory",
+            "protected",
+            "record-name",
+            "type-name"
+          ],
+          "requiredFlagsNotPassed": [
+            "record-name",
+            "type-name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "cmdt generate records",
@@ -1464,13 +2331,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
             "csv",
-            "type-name",
             "input-directory",
+            "name-column",
             "output-directory",
-            "name-column"
-          ]
+            "type-name"
+          ],
+          "requiredFlagsNotPassed": [
+            "csv",
+            "type-name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1499,12 +2381,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "file",
-            "language",
             "format",
+            "language",
             "output-file"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "file"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "code-analyzer config",
@@ -1517,15 +2413,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "workspace",
-            "target",
-            "rule-selector",
             "config-file",
-            "output-file",
             "include-unmodified-rules",
-            "no-suppressions"
-          ]
+            "no-suppressions",
+            "output-file",
+            "rule-selector",
+            "target",
+            "workspace"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "code-analyzer rules",
@@ -1540,9 +2448,21 @@
           "psfdx": [
             "Get-SalesforceCodeAnalyzerRule"
           ],
+          "flags": {
+            "total": 6,
+            "passed": 5,
+            "required": 0
+          },
           "uncoveredFlags": [
             "view"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "code-analyzer run",
@@ -1557,13 +2477,25 @@
           "psfdx": [
             "Invoke-SalesforceCodeAnalyzer"
           ],
+          "flags": {
+            "total": 11,
+            "passed": 6,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "target-org",
-            "view",
             "include-fixes",
             "include-suggestions",
-            "no-suppressions"
-          ]
+            "no-suppressions",
+            "target-org",
+            "view"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1592,6 +2524,11 @@
           "reason": "Lists the sf commands. psfdx reads it only to build this report.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "columns",
             "deprecated",
@@ -1600,7 +2537,14 @@
             "no-truncate",
             "sort",
             "tree"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1629,13 +2573,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "name",
-            "template-name",
-            "url-path-prefix",
             "description",
-            "target-org"
-          ]
+            "name",
+            "target-org",
+            "template-name",
+            "url-path-prefix"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "target-org",
+            "template-name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "community list template",
@@ -1648,9 +2608,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "community publish",
@@ -1663,10 +2637,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
             "name",
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1698,9 +2687,21 @@
             "Get-SalesforceTargetDevHub",
             "Get-SalesforceTargetOrg"
           ],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "config list",
@@ -1715,7 +2716,19 @@
           "psfdx": [
             "Get-SalesforceConfig"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "config set",
@@ -1731,7 +2744,19 @@
             "Set-SalesforceTargetDevHub",
             "Set-SalesforceTargetOrg"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "config unset",
@@ -1747,7 +2772,19 @@
             "Remove-SalesforceTargetDevHub",
             "Remove-SalesforceTargetOrg"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -1778,7 +2815,19 @@
           "psfdx": [
             "Get-SalesforceBulkResult"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data create file",
@@ -1791,12 +2840,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "title",
             "file",
-            "parent-id"
-          ]
+            "parent-id",
+            "target-org",
+            "title"
+          ],
+          "requiredFlagsNotPassed": [
+            "file",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data create record",
@@ -1811,9 +2875,21 @@
           "psfdx": [
             "New-SalesforceRecord"
           ],
+          "flags": {
+            "total": 5,
+            "passed": 4,
+            "required": 3
+          },
           "uncoveredFlags": [
             "skip-assignment-rules"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data delete bulk",
@@ -1826,14 +2902,30 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
+            "file",
+            "hard-delete",
+            "line-ending",
+            "sobject",
             "target-org",
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
             "file",
             "sobject",
-            "wait",
-            "line-ending",
-            "hard-delete"
-          ]
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data delete record",
@@ -1848,7 +2940,19 @@
           "psfdx": [
             "Remove-SalesforceRecord"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 5,
+            "passed": 5,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data delete resume",
@@ -1861,12 +2965,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "target-org",
             "job-id",
+            "target-org",
             "use-most-recent",
             "wait"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data export bulk",
@@ -1881,7 +2997,19 @@
           "psfdx": [
             "Export-SalesforceBulkData"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 9,
+            "passed": 9,
+            "required": 3
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 3,
+            "total": 10,
+            "reachable": 10
+          }
         },
         {
           "id": "data export resume",
@@ -1896,9 +3024,21 @@
           "psfdx": [
             "Resume-SalesforceBulkJob"
           ],
+          "flags": {
+            "total": 2,
+            "passed": 1,
+            "required": 0
+          },
           "uncoveredFlags": [
             "use-most-recent"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data export tree",
@@ -1913,7 +3053,19 @@
           "psfdx": [
             "Export-SalesforceTreeData"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 5,
+            "passed": 5,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data get record",
@@ -1928,7 +3080,19 @@
           "psfdx": [
             "Get-SalesforceRecord"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 5,
+            "passed": 5,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data import bulk",
@@ -1943,7 +3107,19 @@
           "psfdx": [
             "Import-SalesforceBulkData"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 6,
+            "passed": 6,
+            "required": 3
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 2,
+            "total": 8,
+            "reachable": 8
+          }
         },
         {
           "id": "data import resume",
@@ -1958,9 +3134,21 @@
           "psfdx": [
             "Resume-SalesforceBulkJob"
           ],
+          "flags": {
+            "total": 3,
+            "passed": 2,
+            "required": 0
+          },
           "uncoveredFlags": [
             "use-most-recent"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data import tree",
@@ -1975,7 +3163,19 @@
           "psfdx": [
             "Import-SalesforceTreeData"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data query",
@@ -1995,7 +3195,19 @@
             "Select-SalesforceEventFiles",
             "Select-SalesforceRecords"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
+          }
         },
         {
           "id": "data resume",
@@ -2008,11 +3220,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
             "batch-id",
-            "job-id"
-          ]
+            "job-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "job-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data search",
@@ -2025,12 +3252,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "query",
             "file",
-            "result-format"
-          ]
+            "query",
+            "result-format",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data update bulk",
@@ -2045,7 +3286,19 @@
           "psfdx": [
             "Update-SalesforceBulkData"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 6,
+            "passed": 6,
+            "required": 3
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 2,
+            "total": 8,
+            "reachable": 8
+          }
         },
         {
           "id": "data update record",
@@ -2060,10 +3313,22 @@
           "psfdx": [
             "Set-SalesforceRecord"
           ],
+          "flags": {
+            "total": 7,
+            "passed": 5,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "where",
-            "skip-assignment-rules"
-          ]
+            "skip-assignment-rules",
+            "where"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data update resume",
@@ -2078,9 +3343,21 @@
           "psfdx": [
             "Resume-SalesforceBulkJob"
           ],
+          "flags": {
+            "total": 3,
+            "passed": 2,
+            "required": 0
+          },
           "uncoveredFlags": [
             "use-most-recent"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "data upsert bulk",
@@ -2095,7 +3372,19 @@
           "psfdx": [
             "Upsert-SalesforceBulkData"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 4
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 2,
+            "total": 8,
+            "reachable": 8
+          }
         },
         {
           "id": "data upsert resume",
@@ -2110,9 +3399,21 @@
           "psfdx": [
             "Resume-SalesforceBulkJob"
           ],
+          "flags": {
+            "total": 4,
+            "passed": 3,
+            "required": 0
+          },
           "uncoveredFlags": [
             "use-most-recent"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -2141,11 +3442,23 @@
           "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "project-dir",
             "messages-dir",
+            "project-dir",
             "source-dir"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "dev convert messages",
@@ -2158,10 +3471,24 @@
           "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "project-dir",
+            "file-name",
+            "project-dir"
+          ],
+          "requiredFlagsNotPassed": [
             "file-name"
-          ]
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "dev convert script",
@@ -2174,9 +3501,23 @@
           "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "script"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "script"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "dev generate command",
@@ -2189,13 +3530,27 @@
           "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "name",
-            "force",
             "dry-run",
+            "force",
+            "name",
             "nuts",
             "unit"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "dev generate flag",
@@ -2208,9 +3563,21 @@
           "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "dry-run"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "dev generate plugin",
@@ -2223,9 +3590,21 @@
           "reason": "Commands for building Salesforce CLI plugins, not for working with an org.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "dry-run"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -2254,18 +3633,34 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 10,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
+            "bitbucket-project-key",
+            "bitbucket-workspace",
+            "create-repo",
+            "name",
+            "project-id",
+            "repo",
+            "repo-owner",
+            "repo-type",
+            "stage",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
             "name",
             "repo",
-            "repo-type",
-            "create-repo",
-            "repo-owner",
-            "bitbucket-workspace",
-            "bitbucket-project-key",
-            "stage",
-            "project-id"
-          ]
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline get",
@@ -2278,10 +3673,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "pipeline-id"
-          ]
+            "pipeline-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "pipeline-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline list",
@@ -2294,9 +3704,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline project add",
@@ -2309,11 +3733,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "pipeline-id",
-            "project-id"
-          ]
+            "project-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "pipeline-id",
+            "project-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline project delete",
@@ -2326,11 +3766,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "pipeline-id",
-            "project-id"
-          ]
+            "project-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "pipeline-id",
+            "project-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline stage add",
@@ -2343,12 +3799,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 4
+          },
           "uncoveredFlags": [
-            "target-org",
-            "pipeline-id",
             "name",
-            "next-stage-id"
-          ]
+            "next-stage-id",
+            "pipeline-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "next-stage-id",
+            "pipeline-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline stage delete",
@@ -2361,11 +3834,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "pipeline-id",
-            "stage-id"
-          ]
+            "stage-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "pipeline-id",
+            "stage-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline stage update",
@@ -2378,11 +3867,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
+            "name",
             "stage-id",
-            "name"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "stage-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops pipeline update",
@@ -2395,13 +3900,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "pipeline-id",
             "activate",
             "deactivate",
-            "name"
-          ]
+            "name",
+            "pipeline-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "pipeline-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops project create",
@@ -2414,11 +3934,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
+            "description",
             "name",
-            "description"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops project list",
@@ -2431,9 +3966,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops project update",
@@ -2446,13 +3995,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "project-id",
-            "name",
             "description",
-            "is-active"
-          ]
+            "is-active",
+            "name",
+            "project-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "project-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops promote",
@@ -2465,17 +4029,32 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 9,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
+            "deploy-all",
+            "force",
+            "skip-validation",
+            "stage-id",
             "target-org",
             "target-stage-id",
-            "work-item-id",
-            "stage-id",
-            "deploy-all",
             "test-level",
             "tests",
-            "skip-validation",
-            "force"
-          ]
+            "work-item-id"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org",
+            "target-stage-id"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops promotion complete",
@@ -2488,14 +4067,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
+            "deploy-all",
             "target-org",
             "target-stage-id",
-            "work-item-id",
-            "deploy-all",
             "test-level",
-            "tests"
-          ]
+            "tests",
+            "work-item-id"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org",
+            "target-stage-id"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops promotion validate",
@@ -2508,11 +4102,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
             "target-org",
             "target-stage-id",
             "work-item-id"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org",
+            "target-stage-id",
+            "work-item-id"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops request status",
@@ -2525,10 +4135,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "request-token"
-          ]
+            "request-token",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "request-token",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops review create",
@@ -2541,11 +4166,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org",
-            "work-item-name",
-            "work-item-id"
-          ]
+            "work-item-id",
+            "work-item-name"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops stage branch add",
@@ -2558,14 +4197,31 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 4
+          },
           "uncoveredFlags": [
-            "target-org",
-            "pipeline-id",
-            "stage-id",
             "branch-name",
             "create-vcs-branch",
-            "force"
-          ]
+            "force",
+            "pipeline-id",
+            "stage-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "branch-name",
+            "pipeline-id",
+            "stage-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops stage branch delete",
@@ -2578,11 +4234,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "pipeline-id",
-            "stage-id"
-          ]
+            "stage-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "pipeline-id",
+            "stage-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops stage environment add",
@@ -2595,15 +4267,33 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 5
+          },
           "uncoveredFlags": [
-            "target-org",
+            "environment-name",
+            "force",
+            "no-browser",
+            "org-type",
             "pipeline-id",
             "stage-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
             "environment-name",
             "org-type",
-            "no-browser",
-            "force"
-          ]
+            "pipeline-id",
+            "stage-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops stage environment delete",
@@ -2616,11 +4306,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
+            "environment-id",
             "pipeline-id",
-            "environment-id"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "environment-id",
+            "pipeline-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops work-item combine",
@@ -2633,12 +4339,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 4
+          },
           "uncoveredFlags": [
-            "target-org",
-            "parent-work-item-id",
             "child-work-item-id",
+            "parent-work-item-id",
+            "target-org",
             "target-stage-id"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "child-work-item-id",
+            "parent-work-item-id",
+            "target-org",
+            "target-stage-id"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops work-item create",
@@ -2651,12 +4374,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
+            "description",
             "project-id",
             "subject",
-            "description"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "project-id",
+            "subject",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops work-item list",
@@ -2669,10 +4408,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "project-id"
-          ]
+            "project-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "project-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops work-item prepare",
@@ -2685,11 +4439,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
             "target-org",
-            "work-item-id",
-            "target-stage-id"
-          ]
+            "target-stage-id",
+            "work-item-id"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org",
+            "target-stage-id",
+            "work-item-id"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "devops work-item update",
@@ -2702,14 +4472,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "work-item-name",
-            "work-item-id",
-            "subject",
             "description",
-            "status"
-          ]
+            "status",
+            "subject",
+            "target-org",
+            "work-item-id",
+            "work-item-name"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -2738,12 +4522,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "command",
-            "plugin",
+            "create-issue",
             "output-dir",
-            "create-issue"
-          ]
+            "plugin"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -2774,7 +4570,19 @@
           "psfdx": [
             "Get-SalesforceFlowTestResult"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
+          }
         },
         {
           "id": "flow run test",
@@ -2789,7 +4597,19 @@
           "psfdx": [
             "Test-SalesforceFlow"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 10,
+            "passed": 10,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 2,
+            "total": 7,
+            "reachable": 7
+          }
         }
       ]
     },
@@ -2818,12 +4638,28 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
             "file",
             "sobject",
+            "target-org",
             "wait"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "file",
+            "sobject",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "force data bulk status",
@@ -2836,11 +4672,26 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
             "batch-id",
-            "job-id"
-          ]
+            "job-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "job-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "force data bulk upsert",
@@ -2853,14 +4704,31 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 4
+          },
           "uncoveredFlags": [
+            "external-id",
+            "file",
+            "serial",
+            "sobject",
             "target-org",
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
             "external-id",
             "file",
             "sobject",
-            "wait",
-            "serial"
-          ]
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "force lightning lwc test create",
@@ -2873,10 +4741,24 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "loglevel",
+            "filepath",
+            "loglevel"
+          ],
+          "requiredFlagsNotPassed": [
             "filepath"
-          ]
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "force lightning lwc test run",
@@ -2889,11 +4771,23 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "loglevel",
             "debug",
+            "loglevel",
             "watch"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "force lightning lwc test setup",
@@ -2906,9 +4800,21 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "loglevel"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "force package push-upgrade list",
@@ -2921,13 +4827,28 @@
           "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
             "package",
             "scheduled-last-days",
+            "show-push-migrations-only",
             "status",
-            "show-push-migrations-only"
-          ]
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -2956,9 +4877,21 @@
           "reason": "Prints sf help for a person at a terminal.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "nested-commands"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -2987,9 +4920,21 @@
           "reason": "Shows CLI release notes to a person.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "version"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -3020,9 +4965,28 @@
           "psfdx": [
             "Start-SalesforceLwcDevServer"
           ],
+          "flags": {
+            "total": 4,
+            "passed": 3,
+            "required": 1
+          },
           "uncoveredFlags": [
             "device-id"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "device-type",
+              "values": [
+                "desktop"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 2
+          }
         },
         {
           "id": "lightning dev component",
@@ -3037,9 +5001,21 @@
           "psfdx": [
             "Start-SalesforceLwcDevServer"
           ],
+          "flags": {
+            "total": 3,
+            "passed": 2,
+            "required": 1
+          },
           "uncoveredFlags": [
             "client-select"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "lightning dev site",
@@ -3054,7 +5030,19 @@
           "psfdx": [
             "Start-SalesforceLwcDevServer"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -3085,7 +5073,19 @@
           "psfdx": [
             "Get-SalesforceLogicTestResult"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
+          }
         },
         {
           "id": "logic run test",
@@ -3100,7 +5100,19 @@
           "psfdx": [
             "Test-SalesforceLogic"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 13,
+            "passed": 13,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 3,
+            "total": 9,
+            "reachable": 9
+          }
         }
       ]
     },
@@ -3131,7 +5143,19 @@
           "psfdx": [
             "Grant-SalesforcePermissionSet"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org assign permsetlicense",
@@ -3146,7 +5170,19 @@
           "psfdx": [
             "Grant-SalesforcePermissionSetLicense"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org auth show-access-token",
@@ -3159,10 +5195,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org auth show-sfdx-auth-url",
@@ -3175,10 +5225,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org auth show-user-password",
@@ -3191,10 +5255,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org create agent-user",
@@ -3207,12 +5285,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
             "base-username",
             "first-name",
-            "last-name"
-          ]
+            "last-name",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org create sandbox",
@@ -3228,12 +5320,24 @@
             "Copy-SalesforceSandbox",
             "New-SalesforceSandbox"
           ],
+          "flags": {
+            "total": 13,
+            "passed": 9,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "set-default",
-            "poll-interval",
             "async",
+            "poll-interval",
+            "set-default",
             "source-id"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
+          }
         },
         {
           "id": "org create scratch",
@@ -3248,13 +5352,25 @@
           "psfdx": [
             "New-SalesforceScratchOrg"
           ],
+          "flags": {
+            "total": 19,
+            "passed": 14,
+            "required": 1
+          },
           "uncoveredFlags": [
             "alias",
+            "client-id",
             "no-ancestors",
             "no-namespace",
-            "client-id",
             "track-source"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 2,
+            "total": 10,
+            "reachable": 10
+          }
         },
         {
           "id": "org create shape",
@@ -3267,9 +5383,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org create snapshot",
@@ -3282,12 +5412,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "source-org",
+            "description",
             "name",
-            "description"
-          ]
+            "source-org",
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "source-org",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org create user",
@@ -3302,7 +5448,19 @@
           "psfdx": [
             "New-SalesforceUser"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 4,
+            "passed": 4,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org delete sandbox",
@@ -3317,7 +5475,19 @@
           "psfdx": [
             "Remove-SalesforceSandbox"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org delete scratch",
@@ -3332,7 +5502,19 @@
           "psfdx": [
             "Remove-SalesforceScratchOrg"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org delete shape",
@@ -3345,10 +5527,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org delete snapshot",
@@ -3361,11 +5557,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
+            "no-prompt",
             "snapshot",
-            "no-prompt"
-          ]
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "snapshot",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org disable tracking",
@@ -3378,9 +5589,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org display",
@@ -3393,10 +5618,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org display user",
@@ -3411,7 +5650,19 @@
           "psfdx": [
             "Get-SalesforceOrgUser"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org enable tracking",
@@ -3424,9 +5675,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org generate password",
@@ -3441,7 +5706,19 @@
           "psfdx": [
             "New-SalesforceUserPassword"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 4,
+            "passed": 4,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org get snapshot",
@@ -3454,10 +5731,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "snapshot"
-          ]
+            "snapshot",
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "snapshot",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list",
@@ -3475,7 +5767,19 @@
             "Get-SalesforceScratchOrgs",
             "Repair-SalesforceConnections"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 5,
+            "passed": 5,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list auth",
@@ -3488,7 +5792,19 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list limits",
@@ -3503,7 +5819,19 @@
           "psfdx": [
             "Get-SalesforceLimits"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list metadata",
@@ -3516,12 +5844,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "output-file",
+            "folder",
             "metadata-type",
-            "folder"
-          ]
+            "output-file",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "metadata-type",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list metadata-types",
@@ -3536,9 +5879,21 @@
           "psfdx": [
             "Describe-SalesforceMetadataTypes"
           ],
+          "flags": {
+            "total": 2,
+            "passed": 1,
+            "required": 1
+          },
           "uncoveredFlags": [
             "output-file"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list shape",
@@ -3551,7 +5906,19 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list snapshot",
@@ -3564,9 +5931,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "target-dev-hub"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list sobject record-counts",
@@ -3579,10 +5960,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "sobject",
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org list users",
@@ -3597,7 +5992,19 @@
           "psfdx": [
             "Get-SalesforceAuthenticatedUser"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org login access-token",
@@ -3610,13 +6017,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "instance-url",
-            "set-default-dev-hub",
-            "set-default",
             "alias",
-            "no-prompt"
-          ]
+            "instance-url",
+            "no-prompt",
+            "set-default",
+            "set-default-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "instance-url"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org login jwt",
@@ -3631,7 +6052,19 @@
           "psfdx": [
             "Connect-SalesforceJwt"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 3
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org login sfdx-url",
@@ -3646,9 +6079,21 @@
           "psfdx": [
             "Connect-SalesforceAuthUrl"
           ],
+          "flags": {
+            "total": 5,
+            "passed": 4,
+            "required": 0
+          },
           "uncoveredFlags": [
             "sfdx-url-stdin"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org login web",
@@ -3663,11 +6108,23 @@
           "psfdx": [
             "Connect-Salesforce"
           ],
+          "flags": {
+            "total": 9,
+            "passed": 6,
+            "required": 0
+          },
           "uncoveredFlags": [
             "client-app",
-            "username",
-            "scopes"
-          ]
+            "scopes",
+            "username"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
+          }
         },
         {
           "id": "org logout",
@@ -3682,9 +6139,21 @@
           "psfdx": [
             "Disconnect-Salesforce"
           ],
+          "flags": {
+            "total": 4,
+            "passed": 3,
+            "required": 0
+          },
           "uncoveredFlags": [
             "client-app"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org open",
@@ -3699,10 +6168,22 @@
           "psfdx": [
             "Open-Salesforce"
           ],
+          "flags": {
+            "total": 6,
+            "passed": 4,
+            "required": 1
+          },
           "uncoveredFlags": [
             "path",
             "source-file"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
+          }
         },
         {
           "id": "org open agent",
@@ -3715,15 +6196,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
             "api-name",
-            "private",
-            "browser",
-            "url-only",
             "authoring-bundle",
+            "browser",
+            "private",
+            "target-org",
+            "url-only",
             "version"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org refresh sandbox",
@@ -3736,18 +6231,32 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 10,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "no-auto-activate",
-            "wait",
-            "poll-interval",
-            "source-sandbox-name",
-            "source-id",
             "async",
-            "name",
             "definition-file",
+            "name",
+            "no-auto-activate",
+            "no-prompt",
+            "poll-interval",
+            "source-id",
+            "source-sandbox-name",
             "target-org",
-            "no-prompt"
-          ]
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org resume sandbox",
@@ -3762,10 +6271,22 @@
           "psfdx": [
             "Resume-SalesforceSandbox"
           ],
+          "flags": {
+            "total": 5,
+            "passed": 3,
+            "required": 0
+          },
           "uncoveredFlags": [
             "job-id",
             "use-most-recent"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "org resume scratch",
@@ -3780,7 +6301,19 @@
           "psfdx": [
             "Resume-SalesforceScratchOrg"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -3809,18 +6342,33 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 10,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "package",
-            "installation-key",
+            "code-coverage",
             "definition-file",
+            "installation-key",
             "installation-key-bypass",
-            "wait",
-            "seed-metadata",
-            "verbose",
+            "package",
             "patch-version",
-            "code-coverage"
-          ]
+            "seed-metadata",
+            "target-dev-hub",
+            "verbose",
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package create",
@@ -3835,7 +6383,19 @@
           "psfdx": [
             "New-SalesforcePackage"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 8,
+            "passed": 8,
+            "required": 4
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
+          }
         },
         {
           "id": "package delete",
@@ -3850,7 +6410,19 @@
           "psfdx": [
             "Remove-SalesforcePackage"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package install",
@@ -3865,11 +6437,23 @@
           "psfdx": [
             "Install-SalesforcePackageVersion"
           ],
+          "flags": {
+            "total": 9,
+            "passed": 6,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "installation-key",
             "apex-compile",
+            "installation-key",
             "upgrade-type"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
+          }
         },
         {
           "id": "package install report",
@@ -3884,7 +6468,19 @@
           "psfdx": [
             "Get-SalesforcePackageInstallStatus"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package installed list",
@@ -3899,7 +6495,19 @@
           "psfdx": [
             "Get-SalesforcePackagesInstalled"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package list",
@@ -3914,7 +6522,19 @@
           "psfdx": [
             "Get-SalesforcePackages"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package push-upgrade abort",
@@ -3927,10 +6547,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "push-request-id"
-          ]
+            "push-request-id",
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "push-request-id",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package push-upgrade list",
@@ -3943,13 +6578,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
             "package",
             "scheduled-last-days",
+            "show-push-migrations-only",
             "status",
-            "show-push-migrations-only"
-          ]
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package push-upgrade report",
@@ -3962,10 +6612,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "push-request-id"
-          ]
+            "push-request-id",
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "push-request-id",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package push-upgrade schedule",
@@ -3978,14 +6643,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
+            "migrate-to-2gp",
+            "org-file",
+            "org-list",
             "package",
             "start-time",
-            "org-list",
-            "org-file",
-            "migrate-to-2gp"
-          ]
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package uninstall",
@@ -3998,11 +6678,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
+            "package",
             "target-org",
-            "wait",
-            "package"
-          ]
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package uninstall report",
@@ -4015,10 +6710,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "request-id"
-          ]
+            "request-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "request-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package update",
@@ -4031,16 +6741,31 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 8,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "package",
-            "name",
             "description",
-            "error-notification-username",
             "enable-app-analytics",
+            "error-notification-username",
+            "name",
+            "package",
             "recommended-version-id",
-            "skip-ancestor-check"
-          ]
+            "skip-ancestor-check",
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version create",
@@ -4055,19 +6780,31 @@
           "psfdx": [
             "New-SalesforcePackageVersion"
           ],
+          "flags": {
+            "total": 23,
+            "passed": 12,
+            "required": 1
+          },
           "uncoveredFlags": [
+            "async-validation",
             "branch",
+            "generate-pkg-zip",
+            "language",
             "path",
             "post-install-script",
             "post-install-url",
             "releasenotes-url",
             "skip-ancestor-check",
-            "async-validation",
-            "generate-pkg-zip",
             "uninstall-script",
-            "version-number",
-            "language"
-          ]
+            "version-number"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version create list",
@@ -4080,13 +6817,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
             "created-last-days",
-            "status",
             "show-conversions-only",
+            "status",
+            "target-dev-hub",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version create report",
@@ -4101,7 +6852,19 @@
           "psfdx": [
             "Get-SalesforcePackageVersionCreateStatus"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 2,
+            "passed": 2,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version delete",
@@ -4116,7 +6879,19 @@
           "psfdx": [
             "Remove-SalesforcePackageVersion"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version displayancestry",
@@ -4129,12 +6904,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "package",
             "dot-code",
+            "package",
+            "target-dev-hub",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version displaydependencies",
@@ -4147,13 +6937,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "package",
-            "installation-key",
             "edge-direction",
+            "installation-key",
+            "package",
+            "target-dev-hub",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version list",
@@ -4168,11 +6973,23 @@
           "psfdx": [
             "Get-SalesforcePackageVersions"
           ],
+          "flags": {
+            "total": 10,
+            "passed": 7,
+            "required": 1
+          },
           "uncoveredFlags": [
             "created-last-days",
             "modified-last-days",
             "order-by"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version promote",
@@ -4187,7 +7004,19 @@
           "psfdx": [
             "Promote-SalesforcePackageVersion"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version report",
@@ -4200,11 +7029,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
             "package",
+            "target-dev-hub",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version retrieve",
@@ -4217,11 +7061,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
+            "output-dir",
             "package",
-            "output-dir"
-          ]
+            "target-dev-hub"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package version update",
@@ -4234,15 +7093,30 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-dev-hub",
-            "package",
-            "version-name",
-            "version-description",
             "branch",
+            "installation-key",
+            "package",
             "tag",
-            "installation-key"
-          ]
+            "target-dev-hub",
+            "version-description",
+            "version-name"
+          ],
+          "requiredFlagsNotPassed": [
+            "package",
+            "target-dev-hub"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -4271,18 +7145,34 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 10,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "target-org",
-            "package-id",
-            "name",
             "description",
-            "version",
-            "managed-released",
-            "release-notes-url",
-            "post-install-url",
             "installation-key",
+            "managed-released",
+            "name",
+            "package-id",
+            "post-install-url",
+            "release-notes-url",
+            "target-org",
+            "version",
             "wait"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "package-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package1 version create get",
@@ -4295,10 +7185,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "request-id"
-          ]
+            "request-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "request-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package1 version display",
@@ -4311,10 +7216,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "package-version-id"
-          ]
+            "package-version-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "package-version-id",
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "package1 version list",
@@ -4327,10 +7247,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "package-id"
-          ]
+            "package-id",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -4363,7 +7297,19 @@
             "Test-SalesforceAgentPlugin",
             "Test-SalesforceLightningDevPluginInstalled (internal)"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 1,
+            "passed": 1,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins add",
@@ -4376,12 +7322,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "force",
             "help",
             "silent",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins discover",
@@ -4394,7 +7352,19 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins inspect",
@@ -4407,10 +7377,22 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "help",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins install",
@@ -4426,12 +7408,24 @@
             "Install-SalesforceLwcDevServer",
             "Install-SalesforcePlugin"
           ],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "force",
             "help",
             "silent",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins link",
@@ -4444,11 +7438,23 @@
           "reason": "Links a local plugin under development, which only plugin authors do.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "help",
             "install",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins remove",
@@ -4461,10 +7467,22 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "help",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins reset",
@@ -4477,10 +7495,22 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "hard",
             "reinstall"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins trust allowlist add",
@@ -4493,9 +7523,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins trust allowlist list",
@@ -4508,7 +7552,19 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins trust allowlist remove",
@@ -4521,9 +7577,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins trust verify",
@@ -4536,10 +7606,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "npm",
             "registry"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "npm"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins uninstall",
@@ -4552,10 +7636,22 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "help",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins unlink",
@@ -4568,10 +7664,22 @@
           "reason": "Unlinks a local plugin under development, which only plugin authors do.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "help",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "plugins update",
@@ -4586,10 +7694,22 @@
           "psfdx": [
             "Update-SalesforcePlugins"
           ],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "help",
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -4618,13 +7738,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "root-dir",
-            "output-dir",
             "manifest",
+            "metadata",
             "metadata-dir",
-            "metadata"
-          ]
+            "output-dir",
+            "root-dir"
+          ],
+          "requiredFlagsNotPassed": [
+            "root-dir"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project convert source",
@@ -4637,14 +7771,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
-            "root-dir",
+            "manifest",
+            "metadata",
             "output-dir",
             "package-name",
-            "manifest",
-            "source-dir",
-            "metadata"
-          ]
+            "root-dir",
+            "source-dir"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project convert source-behavior",
@@ -4657,12 +7803,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "behavior",
             "dry-run",
             "preserve-temp-dir",
             "target-org"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "behavior"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project delete source",
@@ -4675,19 +7835,33 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 11,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
             "check-only",
-            "wait",
-            "tests",
-            "test-level",
-            "no-prompt",
-            "metadata",
-            "source-dir",
-            "track-source",
             "force-overwrite",
-            "verbose"
-          ]
+            "metadata",
+            "no-prompt",
+            "source-dir",
+            "target-org",
+            "test-level",
+            "tests",
+            "track-source",
+            "verbose",
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project delete tracking",
@@ -4700,10 +7874,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
-            "no-prompt"
-          ]
+            "no-prompt",
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy cancel",
@@ -4718,7 +7906,19 @@
           "psfdx": [
             "Stop-SalesforceDeploy"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 5,
+            "passed": 5,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy pipeline quick",
@@ -4731,15 +7931,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 7,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "async",
             "concise",
-            "verbose",
-            "wait",
             "devops-center-username",
             "job-id",
-            "use-most-recent"
-          ]
+            "use-most-recent",
+            "verbose",
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "devops-center-username"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy pipeline report",
@@ -4752,11 +7966,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "devops-center-username",
             "job-id",
             "use-most-recent"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "devops-center-username"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy pipeline resume",
@@ -4769,14 +7997,28 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
+            "concise",
             "devops-center-username",
             "job-id",
             "use-most-recent",
-            "concise",
             "verbose",
             "wait"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "devops-center-username"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy pipeline start",
@@ -4789,19 +8031,35 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 11,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
+            "async",
             "branch-name",
             "bundle-version-name",
+            "concise",
             "deploy-all",
             "devops-center-project-name",
             "devops-center-username",
-            "tests",
             "test-level",
-            "async",
-            "wait",
+            "tests",
             "verbose",
-            "concise"
-          ]
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "branch-name",
+            "devops-center-project-name",
+            "devops-center-username"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy pipeline validate",
@@ -4814,19 +8072,35 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 11,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
+            "async",
             "branch-name",
             "bundle-version-name",
+            "concise",
             "deploy-all",
             "devops-center-project-name",
             "devops-center-username",
-            "tests",
             "test-level",
-            "async",
-            "wait",
+            "tests",
             "verbose",
-            "concise"
-          ]
+            "wait"
+          ],
+          "requiredFlagsNotPassed": [
+            "branch-name",
+            "devops-center-project-name",
+            "devops-center-username"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy preview",
@@ -4841,9 +8115,21 @@
           "psfdx": [
             "Get-SalesforceDeployPreview"
           ],
+          "flags": {
+            "total": 6,
+            "passed": 5,
+            "required": 1
+          },
           "uncoveredFlags": [
             "concise"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy quick",
@@ -4858,7 +8144,19 @@
           "psfdx": [
             "Start-SalesforceQuickDeploy"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 7,
+            "passed": 7,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy report",
@@ -4873,11 +8171,23 @@
           "psfdx": [
             "Get-SalesforceDeployStatus"
           ],
+          "flags": {
+            "total": 7,
+            "passed": 4,
+            "required": 0
+          },
           "uncoveredFlags": [
             "coverage-formatters",
             "junit",
             "results-dir"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy resume",
@@ -4892,11 +8202,23 @@
           "psfdx": [
             "Resume-SalesforceDeploy"
           ],
+          "flags": {
+            "total": 8,
+            "passed": 5,
+            "required": 0
+          },
           "uncoveredFlags": [
             "coverage-formatters",
             "junit",
             "results-dir"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project deploy start",
@@ -4913,15 +8235,34 @@
             "Deploy-SalesforceMetadata",
             "Watch-SalesforceApexAction (internal)"
           ],
+          "flags": {
+            "total": 22,
+            "passed": 15,
+            "required": 1
+          },
           "uncoveredFlags": [
             "async",
-            "purge-on-delete",
-            "pre-destructive-changes",
-            "post-destructive-changes",
             "coverage-formatters",
             "junit",
+            "post-destructive-changes",
+            "pre-destructive-changes",
+            "purge-on-delete",
             "results-dir"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "test-level",
+              "values": [
+                "RunRelevantTests"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 5,
+            "reachable": 4
+          }
         },
         {
           "id": "project deploy validate",
@@ -4936,15 +8277,27 @@
           "psfdx": [
             "Test-SalesforceDeploy"
           ],
+          "flags": {
+            "total": 19,
+            "passed": 12,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "metadata",
             "coverage-formatters",
             "junit",
-            "results-dir",
-            "purge-on-delete",
+            "metadata",
+            "post-destructive-changes",
             "pre-destructive-changes",
-            "post-destructive-changes"
-          ]
+            "purge-on-delete",
+            "results-dir"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
+          }
         },
         {
           "id": "project generate manifest",
@@ -4959,14 +8312,31 @@
           "psfdx": [
             "Retrieve-SalesforceOrg"
           ],
+          "flags": {
+            "total": 8,
+            "passed": 4,
+            "required": 0
+          },
           "uncoveredFlags": [
+            "excluded-metadata",
             "metadata",
             "source-dir",
-            "name",
-            "type",
-            "include-packages",
-            "excluded-metadata"
-          ]
+            "type"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "include-packages",
+              "values": [
+                "managed"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 1
+          }
         },
         {
           "id": "project list ignored",
@@ -4979,9 +8349,21 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "source-dir"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project reset tracking",
@@ -4994,11 +8376,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "target-org",
+            "no-prompt",
             "revision",
-            "no-prompt"
-          ]
+            "target-org"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project retrieve preview",
@@ -5013,9 +8409,21 @@
           "psfdx": [
             "Get-SalesforceRetrievePreview"
           ],
+          "flags": {
+            "total": 3,
+            "passed": 2,
+            "required": 1
+          },
           "uncoveredFlags": [
             "concise"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "project retrieve start",
@@ -5033,12 +8441,24 @@
             "Retrieve-SalesforceOrg",
             "Retrieve-SalesforcePackage"
           ],
+          "flags": {
+            "total": 13,
+            "passed": 9,
+            "required": 1
+          },
           "uncoveredFlags": [
             "root-type-with-dependencies",
             "single-package",
             "source-dir",
             "zip-file-name"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5067,10 +8487,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "label",
             "object"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "label"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "schema generate platformevent",
@@ -5083,9 +8517,23 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "label"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "label"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "schema generate sobject",
@@ -5098,10 +8546,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "label",
             "use-default-features"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "label"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "schema generate tab",
@@ -5114,11 +8576,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 3
+          },
           "uncoveredFlags": [
-            "object",
             "directory",
-            "icon"
-          ]
+            "icon",
+            "object"
+          ],
+          "requiredFlagsNotPassed": [
+            "directory",
+            "icon",
+            "object"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5147,7 +8625,19 @@
           "reason": "Interactive search of the CLI command list.",
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5178,7 +8668,19 @@
           "psfdx": [
             "Describe-SalesforceObject"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 2
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "sobject list",
@@ -5193,9 +8695,21 @@
           "psfdx": [
             "Describe-SalesforceObjects"
           ],
+          "flags": {
+            "total": 2,
+            "passed": 1,
+            "required": 1
+          },
           "uncoveredFlags": [
             "sobject"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5204,8 +8718,8 @@
       "label": "Templates and generators",
       "totals": {
         "commands": 17,
-        "wrapped": 1,
-        "partiallyWrapped": 2,
+        "wrapped": 0,
+        "partiallyWrapped": 3,
         "missing": 14,
         "excluded": 0,
         "notApplicable": 0,
@@ -5224,10 +8738,24 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 2,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "output-dir",
+            "name",
+            "output-dir"
+          ],
+          "requiredFlagsNotPassed": [
             "name"
-          ]
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate apex class",
@@ -5236,13 +8764,35 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an Apex class.",
-          "status": "wrapped",
+          "status": "partially wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
             "New-SalesforceApexClass"
           ],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 3,
+            "passed": 3,
+            "required": 1
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "template",
+              "values": [
+                "ApexException",
+                "BasicUnitTest",
+                "Batchable",
+                "Queueable"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 7,
+            "reachable": 3
+          }
         },
         {
           "id": "template generate apex trigger",
@@ -5257,9 +8807,21 @@
           "psfdx": [
             "New-SalesforceApexTrigger"
           ],
+          "flags": {
+            "total": 5,
+            "passed": 4,
+            "required": 1
+          },
           "uncoveredFlags": [
             "template"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 7,
+            "reachable": 7
+          }
         },
         {
           "id": "template generate digital-experience site",
@@ -5272,14 +8834,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 6,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "target-org",
-            "name",
-            "template-name",
-            "url-path-prefix",
             "admin-email",
-            "output-dir"
-          ]
+            "name",
+            "output-dir",
+            "target-org",
+            "template-name",
+            "url-path-prefix"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "template-name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate flexipage",
@@ -5292,17 +8869,32 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 9,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
-            "name",
-            "template",
-            "output-dir",
-            "label",
             "description",
-            "sobject",
+            "detail-fields",
+            "label",
+            "name",
+            "output-dir",
             "primary-field",
             "secondary-fields",
-            "detail-fields"
-          ]
+            "sobject",
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "template"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate lightning app",
@@ -5315,11 +8907,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "template",
-            "output-dir"
-          ]
+            "output-dir",
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate lightning component",
@@ -5332,12 +8938,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "template",
             "output-dir",
+            "template",
             "type"
-          ]
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate lightning event",
@@ -5350,11 +8970,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "template",
-            "output-dir"
-          ]
+            "output-dir",
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate lightning interface",
@@ -5367,11 +9001,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "template",
-            "output-dir"
-          ]
+            "output-dir",
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate lightning test",
@@ -5384,11 +9032,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "template",
-            "output-dir"
-          ]
+            "output-dir",
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate lightning-out",
@@ -5401,17 +9063,29 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 9,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "app-name",
-            "eca-name",
-            "runtime",
-            "host-domains",
             "components",
-            "eca-contact-email",
-            "eca-callback-url",
             "definition-file",
-            "output-dir"
-          ]
+            "eca-callback-url",
+            "eca-contact-email",
+            "eca-name",
+            "host-domains",
+            "output-dir",
+            "runtime"
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate project",
@@ -5426,9 +9100,33 @@
           "psfdx": [
             "New-SalesforceProject"
           ],
+          "flags": {
+            "total": 7,
+            "passed": 6,
+            "required": 1
+          },
           "uncoveredFlags": [
             "lwc-language"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [
+            {
+              "flag": "template",
+              "values": [
+                "reactinternalapp",
+                "reactexternalapp",
+                "angularinternalapp",
+                "angularexternalapp",
+                "vueinternalapp",
+                "agent"
+              ]
+            }
+          ],
+          "values": {
+            "flagsWithAList": 1,
+            "total": 9,
+            "reachable": 3
+          }
         },
         {
           "id": "template generate static-resource",
@@ -5441,11 +9139,25 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "type",
-            "output-dir"
-          ]
+            "output-dir",
+            "type"
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate ui-bundle",
@@ -5458,12 +9170,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
-            "name",
-            "template",
             "label",
-            "output-dir"
-          ]
+            "name",
+            "output-dir",
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate ui-embedding",
@@ -5476,13 +9202,30 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 4
+          },
           "uncoveredFlags": [
             "name",
-            "src",
+            "output-dir",
             "sandbox",
-            "title",
-            "output-dir"
-          ]
+            "src",
+            "title"
+          ],
+          "requiredFlagsNotPassed": [
+            "name",
+            "sandbox",
+            "src",
+            "title"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate visualforce component",
@@ -5495,12 +9238,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 4,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
+            "label",
             "name",
-            "template",
             "output-dir",
-            "label"
-          ]
+            "template"
+          ],
+          "requiredFlagsNotPassed": [
+            "label",
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         },
         {
           "id": "template generate visualforce page",
@@ -5513,11 +9271,26 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 3,
+            "passed": 0,
+            "required": 2
+          },
           "uncoveredFlags": [
+            "label",
             "name",
-            "output-dir",
-            "label"
-          ]
+            "output-dir"
+          ],
+          "requiredFlagsNotPassed": [
+            "label",
+            "name"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5546,13 +9319,27 @@
           "reason": null,
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 1
+          },
           "uncoveredFlags": [
             "name",
-            "url",
+            "open",
             "port",
             "target-org",
-            "open"
-          ]
+            "url"
+          ],
+          "requiredFlagsNotPassed": [
+            "target-org"
+          ],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5581,13 +9368,25 @@
           "reason": "Updates the sf program itself; psfdx installs and updates it with Install-SalesforceCli and Update-SalesforceCli (npm).",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 5,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "available",
             "force",
             "interactive",
             "verbose",
             "version"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5616,9 +9415,21 @@
           "reason": "Prints the CLI version; psfdx reads it only for this report and the compatibility lane.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "verbose"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5647,9 +9458,21 @@
           "reason": "Shows CLI release notes to a person.",
           "issue": null,
           "psfdx": [],
+          "flags": {
+            "total": 1,
+            "passed": 0,
+            "required": 0
+          },
           "uncoveredFlags": [
             "version"
-          ]
+          ],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     },
@@ -5678,7 +9501,19 @@
           "reason": "Tells a person which plugin provides a command.",
           "issue": null,
           "psfdx": [],
-          "uncoveredFlags": []
+          "flags": {
+            "total": 0,
+            "passed": 0,
+            "required": 0
+          },
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
+          "valuesNotReachable": [],
+          "values": {
+            "flagsWithAList": 0,
+            "total": 0,
+            "reachable": 0
+          }
         }
       ]
     }

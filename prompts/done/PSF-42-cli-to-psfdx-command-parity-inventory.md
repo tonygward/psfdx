@@ -25,6 +25,8 @@ Generate a reproducible, command-by-command inventory comparing the latest stabl
 - An invalid mapping fails the tests; a new unmapped command only shows as missing. A test fails when the committed report is stale, on Windows PowerShell 5.1 and 7. CLAUDE.md has a checklist step to regenerate it.
 - First numbers (CLI 2.159.7): core 53 wrapped + 39 partial of 199 in scope; just-in-time 3 + 4 of 56. Which families to mark deliberately excluded is left to the owner.
 
+- Follow-up the same day: the report also covers flag values. The inventory keeps each flag's type, whether it is required or repeatable, the values the CLI lists for it and its recorded default. The scan reads the value after each flag (a literal, a `[ValidateSet()]` parameter, a lookup table, `--name=value`, or free text) and the report lists the listed values psfdx cannot pass, with totals. A mapping rule can accept a value with `ignoreValues`.
+
 ## Tests
 
 Fixture-based tests in `scripts/parity/CliParity.Tests.ps1` for inventory conversion, the source scan, classification, alias and word-order resolution, mapping validation, the Markdown output and the staleness check.

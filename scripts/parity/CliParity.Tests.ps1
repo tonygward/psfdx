@@ -21,6 +21,15 @@ BeforeAll {
         'Get-DemoViaHelper',
         'Get-DemoShared',
         'Get-DemoSingle',
+        'Get-DemoValues',
+        'Get-DemoMapped',
+        'Get-DemoHelperValues',
+        'Get-DemoOmit1',
+        'Get-DemoOmit2',
+        'Get-DemoAlways',
+        'Get-DemoMapOwner',
+        'Get-DemoMapLiteral',
+        'Get-DemoLocal',
         'Install-DemoPlugin'
     )
     PrivateData = @{ PSData = @{ Tags = @('x') } }
@@ -62,6 +71,77 @@ function Get-DemoViaHelper {
 }
 function Get-DemoHelperFlags {
     return @('--from-helper')
+}
+function Get-DemoValues {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidateSet('human', 'CSV')][string] $Format,
+        [Parameter(Mandatory = $false)][string] $Free,
+        [Parameter(Mandatory = $false)][ValidateSet('a', 'b')][string] $Level
+    )
+    $arguments = @('values', 'cmd')
+    $arguments += @('--result-format', $Format)
+    $arguments += @('--free', $Free)
+    $arguments += @('--literal', 'fixed')
+    $arguments += @('--level', $Level)
+    if ($Free) { $arguments += @('--defaulted', 'x') }
+    $arguments += @('--accepted', 'x')
+    $arguments += '--bool'
+    $arguments += '--eq=one'
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoMapped {
+    [CmdletBinding()]
+    Param([string] $Mode)
+    $modeMap = @{ 'Fast' = 'quick'; 'Slow' = 'careful' }
+    $arguments = @('mapped', 'cmd', '--mode', $modeMap[$Mode])
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoHelperValues {
+    [CmdletBinding()]
+    Param([ValidateSet('x')][string] $Choice)
+    $arguments = @('helperv', 'cmd') + (Get-DemoChoiceFlags -Choice $Choice)
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoChoiceFlags {
+    Param([string] $Choice)
+    return @('--choice', $Choice)
+}
+function Get-DemoOmit1 {
+    $arguments = @('omit', 'cmd', '--mode', 'a')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoOmit2 {
+    $arguments = @('omit', 'cmd')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoAlways {
+    $arguments = @('always', 'cmd', '--fmt', 'json')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoMapHelper {
+    Param([string] $Level)
+    $levelMap = @{ 'A' = 'alpha'; 'B' = 'beta'; 'C' = 'gamma' }
+    return @('--level2', $levelMap[$Level])
+}
+function Get-DemoMapOwner {
+    [CmdletBinding()]
+    Param([ValidateSet('A', 'B')][string] $Level)
+    $arguments = @('maprestricted', 'cmd') + (Get-DemoMapHelper -Level $Level)
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoMapLiteral {
+    [CmdletBinding()]
+    Param()
+    $arguments = @('mapliteral', 'cmd') + (Get-DemoMapHelper -Level 'C')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoLocal {
+    [CmdletBinding()]
+    Param([switch] $Quick)
+    $level = if ($Quick) { 'A' } else { 'B' }
+    $arguments = @('maplocal', 'cmd') + (Get-DemoMapHelper -Level $level)
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
 }
 function Get-DemoSingle {
     $arguments = @('single')
@@ -111,9 +191,15 @@ function Get-NestedFlags {
     }
 
     function New-ParityCommand {
-        param([string] $Id, [string[]] $Flags = @(), [string] $PluginType = 'core', [string] $State = 'ga', [string[]] $Aliases = @(), [bool] $DeprecatedAliases = $false)
+        param([string] $Id, [string[]] $Flags = @(), [string] $PluginType = 'core', [string] $State = 'ga', [string[]] $Aliases = @(), [bool] $DeprecatedAliases = $false, [hashtable] $Options = @{}, [hashtable] $Defaults = @{}, [string[]] $Required = @())
+        $flagObjects = @($Flags | ForEach-Object {
+                $entry = [ordered]@{ name = $_; type = 'option'; required = ($Required -contains $_); multiple = $false }
+                if ($Options.ContainsKey($_)) { $entry['options'] = @($Options[$_]) }
+                if ($Defaults.ContainsKey($_)) { $entry['default'] = @($Defaults[$_]) }
+                [pscustomobject]$entry
+            })
         [pscustomobject]@{ id = $Id; plugin = '@salesforce/plugin-demo'; pluginType = $PluginType; state = $State; hidden = $false; aliases = $Aliases; deprecatedAliases = $DeprecatedAliases
-            summary = "Summary of $Id."; flags = @($Flags | ForEach-Object { [pscustomobject]@{ name = $_; required = $false } }) }
+            summary = "Summary of $Id."; flags = $flagObjects }
     }
 
     function New-ParityInventoryFixture {
@@ -124,6 +210,16 @@ function Get-NestedFlags {
             (New-ParityCommand -Id 'deploy resume' -Flags @('job-id', 'use-most-recent'))
             (New-ParityCommand -Id 'helper run' -Flags @('from-helper'))
             (New-ParityCommand -Id 'single' -Flags @())
+            (New-ParityCommand -Id 'values cmd' -Flags @('result-format', 'free', 'literal', 'level', 'defaulted', 'accepted', 'bool', 'eq', 'unpassed', 'required-unpassed') -Options @{
+                    'result-format' = @('human', 'csv', 'json'); 'free' = @('p', 'q'); 'literal' = @('fixed', 'other'); 'level' = @('a', 'b', 'c')
+                    'defaulted' = @('x', 'y'); 'accepted' = @('x', 'y'); 'eq' = @('one', 'two'); 'unpassed' = @('m', 'n') } -Defaults @{ 'defaulted' = @('y') } -Required @('required-unpassed'))
+            (New-ParityCommand -Id 'omit cmd' -Flags @('mode') -Options @{ 'mode' = @('a', 'b') } -Defaults @{ 'mode' = @('b') })
+            (New-ParityCommand -Id 'always cmd' -Flags @('fmt') -Options @{ 'fmt' = @('human', 'json') } -Defaults @{ 'fmt' = @('human') })
+            (New-ParityCommand -Id 'maprestricted cmd' -Flags @('level2') -Options @{ 'level2' = @('alpha', 'beta', 'gamma') })
+            (New-ParityCommand -Id 'maplocal cmd' -Flags @('level2') -Options @{ 'level2' = @('alpha', 'beta', 'gamma') })
+            (New-ParityCommand -Id 'mapliteral cmd' -Flags @('level2') -Options @{ 'level2' = @('alpha', 'gamma') })
+            (New-ParityCommand -Id 'mapped cmd' -Flags @('mode') -Options @{ 'mode' = @('quick', 'careful', 'other') })
+            (New-ParityCommand -Id 'helperv cmd' -Flags @('choice') -Options @{ 'choice' = @('x', 'y') })
             (New-ParityCommand -Id 'shared cmd' -Flags @('shared-flag', 'nested-flag', 'json'))
             (New-ParityCommand -Id 'shared second' -Flags @('only-here'))
             (New-ParityCommand -Id 'plugins' -Flags @('core'))
@@ -159,7 +255,7 @@ Describe 'ConvertTo-ParityInventory' {
             [pscustomobject]@{ id = 'agent:activate'; pluginName = '@salesforce/plugin-agent'; pluginType = 'jit'; state = 'beta'; summary = 'Activate.'; flags = [pscustomobject]@{} }
         )
         $inventory = ConvertTo-ParityInventory -Commands $raw -CliVersion '2.0.0'
-        $inventory.schema | Should -Be 1
+        $inventory.schema | Should -Be 2
         $inventory.cliVersion | Should -Be '2.0.0'
         @($inventory.commands | ForEach-Object { $_.id }) | Should -Be @('agent activate', 'org list')
         $org = $inventory.commands | Where-Object { $_.id -eq 'org list' }
@@ -171,6 +267,30 @@ Describe 'ConvertTo-ParityInventory' {
         ($org.flags | Where-Object { $_.name -eq 'all' }).required | Should -BeTrue
         ($inventory.commands | Where-Object { $_.id -eq 'agent activate' }).state | Should -Be 'beta'
         @($inventory.plugins | ForEach-Object { $_.name }) | Should -Be @('@salesforce/plugin-agent', '@salesforce/plugin-org')
+    }
+}
+
+Describe 'ConvertTo-ParityInventory flag values' {
+    It 'keeps the type, multiplicity, allowed values and recorded default of a flag, and no list for a free-form one' {
+        $raw = @([pscustomobject]@{ id = 'x:run'; pluginName = 'p'; pluginType = 'core'; summary = 's'
+                flags = [pscustomobject]@{
+                    'level'  = [pscustomobject]@{ type = 'option'; options = @('a', 'b'); default = 'a'; multiple = $false }
+                    'events' = [pscustomobject]@{ type = 'option'; options = @('one', 'two'); default = @('one'); multiple = $true }
+                    'name'   = [pscustomobject]@{ type = 'option'; required = $true; multiple = $false }
+                    'quiet'  = [pscustomobject]@{ type = 'boolean' }
+                    'odd'    = [pscustomobject]@{ type = 'option'; options = @('p'); default = 5 }
+                } })
+        $flags = @{}
+        foreach ($flag in (ConvertTo-ParityInventory -Commands $raw -CliVersion '1.0.0').commands[0].flags) { $flags[$flag.name] = $flag }
+        @($flags['level'].options) | Should -Be @('a', 'b')
+        @($flags['level'].default) | Should -Be @('a')
+        $flags['events'].multiple | Should -BeTrue
+        @($flags['events'].default) | Should -Be @('one')
+        $flags['name'].PSObject.Properties['options'] | Should -BeNullOrEmpty
+        $flags['name'].required | Should -BeTrue
+        $flags['quiet'].type | Should -Be 'boolean'
+        $flags['odd'].PSObject.Properties['default'] | Should -BeNullOrEmpty
+        (ConvertTo-ParityInventory -Commands $raw -CliVersion '1.0.0').schema | Should -Be 2
     }
 }
 
@@ -192,6 +312,43 @@ Describe 'Get-ParityPsfdxScan' {
     It 'reads the command words of structured argv, up to the first flag or variable' {
         ($script:refs | Where-Object { $_.Function -eq 'Get-DemoOrg' }).Words -join ' ' | Should -Be 'org list'
         ($script:refs | Where-Object { $_.Function -eq 'Get-DemoThing' }).Words -join ' ' | Should -Be 'thing show'
+    }
+
+    It 'records the value written after each flag: literal, ValidateSet parameter, free-form, lookup table, inline =value' {
+        $byName = @{}
+        foreach ($f in $script:scan.Functions) { $byName[$f.Name] = $f }
+        $entry = { param($fn, $flag) @($byName[$fn].FlagValues | Where-Object { $_.Flag -eq $flag })[0] }
+        (& $entry 'Get-DemoValues' 'result-format').Mode | Should -Be 'set'
+        @((& $entry 'Get-DemoValues' 'result-format').Values) | Should -Be @('human', 'CSV')
+        (& $entry 'Get-DemoValues' 'free').Mode | Should -Be 'any'
+        (& $entry 'Get-DemoValues' 'literal').Mode | Should -Be 'literal'
+        @((& $entry 'Get-DemoValues' 'literal').Values) | Should -Be @('fixed')
+        (& $entry 'Get-DemoValues' 'bool') | Should -BeNullOrEmpty
+        @((& $entry 'Get-DemoValues' 'eq').Values) | Should -Be @('one')
+        (& $entry 'Get-DemoMapped' 'mode').Mode | Should -Be 'map'
+        @((& $entry 'Get-DemoMapped' 'mode').Map.Values | Sort-Object) | Should -Be @('careful', 'quick')
+        (& $entry 'Get-DemoMapped' 'mode').Variable | Should -Be 'Mode'
+        (& $entry 'Get-DemoOmit1' 'mode').Conditional | Should -BeFalse
+        (& $entry 'Get-DemoValues' 'defaulted').Conditional | Should -BeTrue
+        (& $entry 'Get-DemoChoiceFlags' 'choice').Variable | Should -Be 'Choice'
+        @($byName['Get-DemoValues'].ParamSets['Format']) | Should -Be @('human', 'CSV')
+    }
+
+    It 'finds the literal values of a local variable, including an if/else, and leaves out ones that are not only literals' {
+        $local = $script:scan.Functions | Where-Object { $_.Name -eq 'Get-DemoLocal' }
+        @($local.Literals['level'] | Sort-Object) | Should -Be @('A', 'B')
+        (Get-ParityLiteralValues -Ast ([System.Management.Automation.Language.Parser]::ParseInput('if ($x) { ''a'' }', [ref]$null, [ref]$null).EndBlock.Statements[0])) | Should -BeNullOrEmpty
+    }
+
+    It 'records the calls a function makes and the argument it passes for each parameter' {
+        $owner = $script:scan.Functions | Where-Object { $_.Name -eq 'Get-DemoMapOwner' }
+        $site = @($owner.CallSites | Where-Object { $_.Callee -eq 'Get-DemoMapHelper' })[0]
+        $site.Args['Level'].Mode | Should -Be 'var'
+        $site.Args['Level'].Variable | Should -Be 'Level'
+        $literal = $script:scan.Functions | Where-Object { $_.Name -eq 'Get-DemoMapLiteral' }
+        $literalSite = @($literal.CallSites | Where-Object { $_.Callee -eq 'Get-DemoMapHelper' })[0]
+        $literalSite.Args['Level'].Mode | Should -Be 'literal'
+        @($literalSite.Args['Level'].Values) | Should -Be @('C')
     }
 
     It 'reads a one-word command written as a one-element array' {
@@ -229,6 +386,7 @@ Describe 'New-ParityReport' {
             [pscustomobject]@{ match = 'deploy start'; status = 'deliberately excluded'; reason = 'Wrongly says excluded.' }
             [pscustomobject]@{ match = 'unused two'; status = 'wrapped'; reason = 'Wrongly says wrapped.' }
             [pscustomobject]@{ match = 'gone command'; status = 'missing'; reason = 'No longer in the CLI.' }
+            [pscustomobject]@{ match = 'values cmd'; reason = 'x is accepted for --accepted.'; ignoreValues = @('accepted=y') }
         )
         $script:report = New-ParityReport -Inventory (New-ParityInventoryFixture) -Scan $script:scan -Mapping (New-ParityMappingFixture -Rules $rules)
         $script:rows = @{}
@@ -254,6 +412,59 @@ Describe 'New-ParityReport' {
         $script:rows['shared cmd'].status | Should -Be 'wrapped'
         @($script:rows['shared cmd'].uncoveredFlags).Count | Should -Be 0
         @($script:rows['shared second'].uncoveredFlags) | Should -Be @('only-here')
+    }
+
+    It 'finds the values of a listed flag that psfdx cannot pass, and treats free text, defaults and accepted values as reachable' {
+        $gaps = @{}
+        foreach ($g in @($script:rows['values cmd'].valuesNotReachable)) { $gaps[$g.flag] = @($g.values) }
+        $gaps['result-format'] | Should -Be @('json')
+        $gaps['literal'] | Should -Be @('other')
+        $gaps['level'] | Should -Be @('c')
+        $gaps['eq'] | Should -Be @('two')
+        $gaps.ContainsKey('free') | Should -BeFalse
+        $gaps.ContainsKey('defaulted') | Should -BeFalse
+        $gaps.ContainsKey('accepted') | Should -BeFalse
+        $gaps.ContainsKey('unpassed') | Should -BeFalse
+        $script:rows['values cmd'].status | Should -Be 'partially wrapped'
+    }
+
+    It 'lists flags that are not passed, marks a required one, and counts flags and values' {
+        @($script:rows['values cmd'].uncoveredFlags) | Should -Be @('unpassed', 'required-unpassed')
+        @($script:rows['values cmd'].requiredFlagsNotPassed) | Should -Be @('required-unpassed')
+        $script:rows['values cmd'].flags.total | Should -Be 10
+        $script:rows['values cmd'].flags.passed | Should -Be 8
+        $script:rows['values cmd'].values.flagsWithAList | Should -Be 7
+        $script:rows['values cmd'].values.total | Should -Be 16
+        $script:rows['values cmd'].values.reachable | Should -Be 12
+    }
+
+    It 'follows a lookup table, and takes the ValidateSet of the calling parameter for a helper''s plain parameter' {
+        @($script:rows['mapped cmd'].valuesNotReachable[0].values) | Should -Be @('other')
+        @($script:rows['helperv cmd'].valuesNotReachable[0].values) | Should -Be @('y')
+        $script:rows['helperv cmd'].valuesNotReachable[0].flag | Should -Be 'choice'
+    }
+
+    It 'credits the CLI default only where psfdx can leave the flag out' {
+        # Always written (Get-DemoAlways): the default is not reachable. Left out by one of two owners (omit cmd): it is.
+        @($script:rows['always cmd'].valuesNotReachable[0].values) | Should -Be @('human')
+        @($script:rows['omit cmd'].valuesNotReachable).Count | Should -Be 0
+        @($script:rows['values cmd'].valuesNotReachable | Where-Object { $_.flag -eq 'defaulted' }).Count | Should -Be 0
+    }
+
+    It 'limits a lookup table to the inputs the callers can pass' {
+        # The helper's table has A, B and C. The owner only accepts A and B; the other passes C.
+        @($script:rows['maprestricted cmd'].valuesNotReachable[0].values) | Should -Be @('gamma')
+        @($script:rows['mapliteral cmd'].valuesNotReachable[0].values) | Should -Be @('alpha')
+        # A local variable that is only given literals ('A' or 'B') limits the key too.
+        @($script:rows['maplocal cmd'].valuesNotReachable[0].values) | Should -Be @('gamma')
+    }
+
+    It 'sums flags and values over the commands psfdx runs' {
+        $fc = $script:report.flagCoverage
+        $fc.commandsPsfdxRuns | Should -BeGreaterThan 5
+        $fc.flags.passed | Should -BeLessThan ($fc.flags.total + 1)
+        $fc.requiredFlagsNotPassed | Should -Be 1
+        $fc.values.reachable | Should -BeLessThan $fc.values.total
     }
 
     It 'classifies a command with flags left out as partially wrapped and lists them' {
@@ -316,8 +527,8 @@ Describe 'New-ParityReport' {
 
     It 'does not count a cmdlet that only calls another cmdlet as running the CLI' {
         @($script:report.psfdx.withoutADirectCliCommand) | Should -Be @('Get-DemoConvenience')
-        $script:report.psfdx.exportedFunctions | Should -Be 8
-        $script:report.psfdx.runningTheCli | Should -Be 7
+        $script:report.psfdx.exportedFunctions | Should -Be 17
+        $script:report.psfdx.runningTheCli | Should -Be 16
     }
 
     It 'warns when the mapping contradicts what psfdx does or names a command that is gone' {
@@ -384,6 +595,14 @@ Describe 'Read-ParityMapping' {
         }
     }
 
+    It 'accepts a rule that only accepts flag values or flags, and rejects one that does neither' {
+        $ok = Write-Mapping -Json ('{ ' + $script:header + ', "rules": [ { "match": "a", "reason": "r", "ignoreValues": ["method=GET"] }, { "match": "b", "ignoreFlags": ["x"] } ] }')
+        (Read-ParityMapping -Path $ok).rules.Count | Should -Be 2
+        { Read-ParityMapping -Path (Write-Mapping -Json ('{ ' + $script:header + ', "rules": [ { "match": "a" } ] }')) } | Should -Throw -ExpectedMessage '*or ignoreFlags or ignoreValues*'
+        { Read-ParityMapping -Path (Write-Mapping -Json ('{ ' + $script:header + ', "rules": [ { "match": "a", "ignoreValues": ["method=GET"] } ] }')) } | Should -Throw -ExpectedMessage '*needs a reason*'
+        { Read-ParityMapping -Path (Write-Mapping -Json ('{ ' + $script:header + ', "rules": [ { "match": "a", "reason": "r", "ignoreValues": ["GET"] } ] }')) } | Should -Throw -ExpectedMessage '*not flag=value*'
+    }
+
     It 'fails for a file that does not exist' {
         { Read-ParityMapping -Path (Join-Path $TestDrive 'nope.json') } | Should -Throw -ExpectedMessage '*does not exist*'
     }
@@ -419,6 +638,14 @@ Describe 'ConvertTo-ParityMarkdown' {
 
     It 'lists covered commands with their cmdlets and the flags not passed' {
         Test-InOrder -Text $script:markdown -Parts @('`sf deploy resume`', 'partially wrapped', '`Invoke-DemoDeploy`', '`--use-most-recent`') | Should -BeTrue
+    }
+
+    It 'shows flags and values: counts, flags not passed with required marked, and values not reachable' {
+        $script:markdown.Contains('**Flags and values.**') | Should -BeTrue
+        Test-InOrder -Text $script:markdown -Parts @('| `sf values cmd` | partially wrapped | `Get-DemoValues` | 8 of 10 |', '`--unpassed` `--required-unpassed` (required)', '`--level`: `c`') | Should -BeTrue
+        $script:markdown.Contains('| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |') | Should -BeTrue
+        $script:markdown.Contains('| Command | Plugin | Flags | Status | Why, or issue |') | Should -BeTrue
+        $script:markdown.Contains('- **Values:**') | Should -BeTrue
     }
 
     It 'has the sections that explain how to read and regenerate it' {
