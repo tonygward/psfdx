@@ -260,7 +260,8 @@ Included in the `psfdx` package.
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceScratchOrgs` | List scratch orgs. |
-| `New-SalesforceScratchOrg` | Create scratch org. |
+| `New-SalesforceScratchOrg` | Create scratch org. `-Async` returns before the org is ready. |
+| `Resume-SalesforceScratchOrg` | Resume a scratch org creation by `-JobId` (2SR...) or `-UseMostRecent`. Returns the org with `Completed`. Assign permission sets afterwards with `Grant-SalesforcePermissionSet`. |
 | `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
 | `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
 

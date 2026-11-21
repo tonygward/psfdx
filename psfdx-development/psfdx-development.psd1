@@ -50,6 +50,7 @@
         'Get-SalesforceConfig',
         'Get-SalesforceScratchOrgs',
         'New-SalesforceScratchOrg',
+        'Resume-SalesforceScratchOrg',
         'Remove-SalesforceScratchOrg',
         'Remove-SalesforceScratchOrgs',
         'New-SalesforceProject',

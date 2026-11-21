@@ -287,6 +287,7 @@ function New-SalesforceScratchOrg {
         [Parameter(Mandatory = $false)][int] $DurationDays,
         [Parameter(Mandatory = $false)][string] $DefinitionFile = 'config/project-scratch-def.json',
         [Parameter(Mandatory = $false)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][switch] $Async,
         [Parameter(Mandatory = $false)][string][ValidateSet('developer', 'enterprise', 'group', 'professional', 'partner-developer', 'partner-enterprise', 'partner-group', 'partner-professional')] $Edition,
         [Parameter(Mandatory = $false)][string] $Snapshot,
         [Parameter(Mandatory = $false)][string] $AdminEmail,
@@ -302,6 +303,7 @@ function New-SalesforceScratchOrg {
     if ($DurationDays) { $arguments += @('--duration-days', $DurationDays) }
     $arguments += @('--definition-file', $DefinitionFile)
     if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($Async) { $arguments += '--async' }
     if ($Edition) { $arguments += @('--edition', $Edition) }
     if ($Snapshot) { $arguments += @('--snapshot', $Snapshot) }
     if ($AdminEmail) { $arguments += @('--admin-email', $AdminEmail) }
@@ -314,6 +316,59 @@ function New-SalesforceScratchOrg {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     Show-SalesforceResult -Result $result
+}
+
+function Resume-SalesforceScratchOrg {
+    <#
+    .SYNOPSIS
+    Resumes a scratch org creation that was started with New-SalesforceScratchOrg -Async or that timed out (sf org resume scratch).
+    .DESCRIPTION
+    Select the creation by -JobId (the scratch org info ID, starting 2SR, reported when the creation was started) or by -UseMostRecent.
+    The CLI keeps a local record of the job, so there is no -TargetOrg; resume from the machine that started it.
+    Returns the CLI result (org ID, username, instance URL) with Completed: true once the org is ready. A creation that is still running
+    when -WaitMinutes ends (the CLI's StillInProgressError) returns Completed: false with Status InProgress, so a script can poll; a failed creation throws the CLI message.
+    Permission sets are assigned afterwards with Grant-SalesforcePermissionSet (psfdx), which asks for confirmation.
+    .EXAMPLE
+    New-SalesforceScratchOrg -Async -Name ci-1 | Out-Null
+    Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 10
+    Grant-SalesforcePermissionSet -Name MyPermSet -TargetOrg ci-1
+    .EXAMPLE
+    Resume-SalesforceScratchOrg -JobId 2SR000000000001AAA -WaitMinutes 5
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 1440)][int] $WaitMinutes
+    )
+
+    if ($JobId -and $UseMostRecent) { throw 'Specify only one of -JobId or -UseMostRecent.' }
+    if (-not $JobId -and -not $UseMostRecent) { throw 'Specify -JobId or -UseMostRecent.' }
+    if ($JobId -and $JobId -notmatch '^2SR[A-Za-z0-9]{12}([A-Za-z0-9]{3})?$') {
+        throw "Job ID '$JobId' is not a valid scratch org info ID. Expected a 15 or 18 character ID starting with 2SR."
+    }
+
+    $arguments = @('org', 'resume', 'scratch')
+    if ($JobId) { $arguments += @('--job-id', $JobId) } else { $arguments += '--use-most-recent' }
+    if ($PSBoundParameters.ContainsKey('WaitMinutes')) { $arguments += @('--wait', $WaitMinutes) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    # A creation that is still running when the wait ends is reported by the CLI as the error StillInProgressError; that is a normal pending state.
+    $body = $null
+    try { $body = ((@($result) | Out-String).Trim() | ConvertFrom-Json -ErrorAction Stop) } catch { $body = $null }
+    if ($null -ne $body -and $body.PSObject.Properties.Name -contains 'name' -and [string]$body.name -eq 'StillInProgressError') {
+        $pending = ''
+        if ($body.PSObject.Properties.Name -contains 'message') { $pending = [string]$body.message }
+        return [pscustomobject]@{ Completed = $false; Status = 'InProgress'; Message = $pending }
+    }
+    $parsed = Show-SalesforceResult -Result $result
+    if ($null -eq $parsed) { return $null }
+    $names = @($parsed.PSObject.Properties.Name)
+    $completed = ($names -contains 'username') -and -not [string]::IsNullOrWhiteSpace([string]$parsed.username)
+    if ($names -contains 'status' -and [string]$parsed.status -match '^(Creating|Waiting|Queued|New|Pending)') { $completed = $false }
+    $parsed | Add-Member -NotePropertyName Completed -NotePropertyValue $completed -Force
+    return $parsed
 }
 
 function Remove-SalesforceScratchOrg {
