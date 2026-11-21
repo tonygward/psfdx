@@ -113,6 +113,64 @@ Import-PsfdxSharedModule
 #region Authentication & Orgs
 
 function Connect-Salesforce {
+    <#
+    .SYNOPSIS
+    Logs in to an org in a web browser and saves the authorization.
+
+    .DESCRIPTION
+    Opens the login page of Salesforce in your browser. After you sign in, the Salesforce CLI stores the authorization on this computer so other psfdx cmdlets can use the org. Use -Sandbox for a sandbox, or -CustomUrl for a My Domain or other login URL.
+
+    .PARAMETER Sandbox
+    Log in through the sandbox login host. psfdx passes --instance-url https://test.salesforce.com. Use -CustomUrl instead for a different host.
+
+    .PARAMETER CustomUrl
+    URL of the instance that the org lives on. Passed to sf as --instance-url.
+
+    .PARAMETER Alias
+    Alias for the org. Passed to sf as --alias.
+
+    .PARAMETER SetDefault
+    Set the authenticated org as the default that all org-related commands run against. Adds --set-default.
+
+    .PARAMETER SetDefaultDevHub
+    Set the authenticated org as the default Dev Hub. Adds --set-default-dev-hub.
+
+    .PARAMETER Browser
+    Browser in which to open the org. Passed to sf as --browser. Valid values: chrome, edge, firefox.
+
+    .PARAMETER OAuthClientId
+    OAuth client ID (also called consumer key) of your custom connected app. Passed to sf as --client-id.
+
+    .EXAMPLE
+    Connect-Salesforce -Alias prod -SetDefault
+    Log in to production, give the org the alias prod and make it the default target org.
+
+    .EXAMPLE
+    Connect-Salesforce -Sandbox -Alias uat
+    Log in to a sandbox.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org login web (plugin @salesforce/plugin-auth)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --client-app, --scopes, --username
+    Parameter to flag: -Sandbox = --instance-url https://test.salesforce.com; -CustomUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -Browser = --browser; -OAuthClientId = --client-id.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-auth
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][switch] $Sandbox,
@@ -144,6 +202,54 @@ function Connect-Salesforce {
 }
 
 function Connect-SalesforceAuthUrl {
+    <#
+    .SYNOPSIS
+    Logs in to an org with a Salesforce DX authorization URL stored in a file.
+
+    .DESCRIPTION
+    Runs sf org login sfdx-url with the file you give. The result has the access token and auth URL removed unless you pass -IncludeToken. Keep the file safe: anyone who has it can log in as that user.
+
+    .PARAMETER SfdxUrlFile
+    Path to a file that contains the Salesforce DX authorization URL. Passed to sf as --sfdx-url-file. Required.
+
+    .PARAMETER Alias
+    Alias for the org. Passed to sf as --alias.
+
+    .PARAMETER SetDefault
+    Set the authenticated org as the default that all org-related commands run against. Adds --set-default.
+
+    .PARAMETER SetDefaultDevHub
+    Set the authenticated org as the default Dev Hub. Adds --set-default-dev-hub.
+
+    .PARAMETER IncludeToken
+    Return the CLI result as it is. Current CLI versions do not return tokens or auth URLs for this command, so this may change nothing. Without it psfdx removes accessToken, refreshToken, sfdxAuthUrl, password, clientSecret and privateKey from the result.
+
+    .EXAMPLE
+    Connect-SalesforceAuthUrl -SfdxUrlFile .\auth.txt -Alias ci -SetDefault
+    Log in from the file and make the org the default.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org login sfdx-url (plugin @salesforce/plugin-auth)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --sfdx-url-stdin
+    Parameter to flag: -SfdxUrlFile = --sfdx-url-file; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-auth
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $SfdxUrlFile,
@@ -203,6 +309,52 @@ function Remove-SalesforceSensitiveProperty {
 }
 
 function Disconnect-Salesforce {
+    <#
+    .SYNOPSIS
+    Logs out of one org, or all orgs, and removes the saved authorization.
+
+    .DESCRIPTION
+    Runs sf org logout. The authorization is removed from this computer; scratch orgs and sandboxes are not deleted. Asks for confirmation and supports -WhatIf.
+
+    .PARAMETER All
+    Log out of every org this computer is authorized for. Use it instead of -TargetOrg. Required in the All parameter set.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Passed to sf as --target-org. Required in the TargetOrg parameter set.
+
+    .PARAMETER NoPrompt
+    Don't prompt for confirmation. Adds --no-prompt.
+
+    .EXAMPLE
+    Disconnect-Salesforce -TargetOrg dev1 -WhatIf
+    Show what would happen without logging out.
+
+    .EXAMPLE
+    Disconnect-Salesforce -All -NoPrompt -Confirm:$false
+    Log out of every org without any prompt (for example in a clean-up script).
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org logout (plugin @salesforce/plugin-auth)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --client-app
+    Parameter to flag: -TargetOrg = --target-org; -NoPrompt = --no-prompt.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-auth
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(DefaultParameterSetName = 'TargetOrg', SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'All')][switch] $All,
@@ -227,6 +379,60 @@ function Disconnect-Salesforce {
 }
 
 function Connect-SalesforceJwt {
+    <#
+    .SYNOPSIS
+    Logs in to an org without a browser, using a JSON web token and a private key.
+
+    .DESCRIPTION
+    Runs sf org login jwt with the connected app's consumer key, the user name and the private key file. It is meant for CI. The key file must exist; its content is never read or printed by psfdx. The login host is https://login.salesforce.com, or https://test.salesforce.com with -Sandbox.
+
+    .PARAMETER ConsumerKey
+    OAuth client ID (also called consumer key) of your custom connected app. Passed to sf as --client-id. Required.
+
+    .PARAMETER TargetOrg
+    Username of the user logging in. Passed to sf as --username. Required.
+
+    .PARAMETER JwtKeyfile
+    Path to a file containing the private key. Passed to sf as --jwt-key-file. Required.
+
+    .PARAMETER Sandbox
+    Log in at https://test.salesforce.com. psfdx always passes --instance-url: production by default, the sandbox host with this switch.
+
+    .PARAMETER Alias
+    Alias for the org. Passed to sf as --alias.
+
+    .PARAMETER SetDefault
+    Set the authenticated org as the default that all org-related commands run against. Adds --set-default.
+
+    .PARAMETER SetDefaultDevHub
+    Set the authenticated org as the default Dev Hub. Adds --set-default-dev-hub.
+
+    .EXAMPLE
+    Connect-SalesforceJwt -ConsumerKey $key -TargetOrg ci@example.com -JwtKeyfile .\server.key -Alias ci -SetDefault
+    Log in a CI user and make it the default target org.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org login jwt (plugin @salesforce/plugin-auth)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ConsumerKey = --client-id; -TargetOrg = --username; -JwtKeyfile = --jwt-key-file; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-auth
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ConsumerKey,
@@ -257,23 +463,104 @@ function Connect-SalesforceJwt {
 }
 
 function Open-Salesforce {
+    <#
+    .SYNOPSIS
+    Opens an org in your browser, or prints its login URL.
+
+    .DESCRIPTION
+    Runs sf org open. The URL contains a session token, so treat it like a password; -UrlOnly prints it instead of opening a browser.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .PARAMETER UrlOnly
+    Display navigation URL, but don't launch browser. Adds --url-only.
+
+    .PARAMETER Browser
+    Browser where the org opens. Passed to sf as --browser. Valid values: chrome, edge, firefox.
+
+    .PARAMETER BrowserPrivateMode
+    Open the org in the browser's private (incognito) mode. A switch: adds --private, which takes no value.
+
+    .EXAMPLE
+    Open-Salesforce -TargetOrg dev1
+    Open the org in the default browser.
+
+    .EXAMPLE
+    Open-Salesforce -TargetOrg dev1 -UrlOnly
+    Print the login URL only.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org open (plugin @salesforce/plugin-org)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --path, --source-file
+    Parameter to flag: -TargetOrg = --target-org; -UrlOnly = --url-only; -Browser = --browser; -BrowserPrivateMode = --private.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UrlOnly,
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser,
-        [Parameter(Mandatory = $false)][string] $BrowserPrivateMode
+        [Parameter(Mandatory = $false)][switch] $BrowserPrivateMode
     )
     $arguments = @('org', 'open')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($Browser) { $arguments += @('--browser', $Browser) }
-    if ($BrowserPrivateMode) { $arguments += @('--private', $BrowserPrivateMode) }
+    if ($BrowserPrivateMode) { $arguments += '--private' }
     if ($UrlOnly) { $arguments += '--url-only' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
 function Get-SalesforceConnections {
+    <#
+    .SYNOPSIS
+    Lists the orgs this computer is logged in to.
+
+    .DESCRIPTION
+    Runs sf org list and returns one object per org (orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias). Scratch orgs are not included here; use Get-SalesforceScratchOrgs for those.
+
+    .PARAMETER ShowVerboseDetails
+    List more information about each org. Adds --verbose.
+
+    .EXAMPLE
+    Get-SalesforceConnections | Format-Table username, alias, connectedStatus
+    A quick overview of connected orgs.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ShowVerboseDetails = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails
@@ -303,6 +590,46 @@ function Get-SalesforceConnections {
 }
 
 function Repair-SalesforceConnections {
+    <#
+    .SYNOPSIS
+    Removes expired and deleted orgs from the list of connections.
+
+    .DESCRIPTION
+    Runs sf org list --clean, which checks every org and offers to remove the ones that no longer exist or whose scratch org has expired. Without -NoPrompt the CLI asks first. It returns the CLI's text output.
+
+    .PARAMETER NoPrompt
+    Don't prompt for confirmation. Adds --no-prompt.
+
+    .EXAMPLE
+    Repair-SalesforceConnections
+    Interactive clean-up.
+
+    .EXAMPLE
+    Repair-SalesforceConnections -NoPrompt
+    Clean up without asking.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -NoPrompt = --no-prompt.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][switch] $NoPrompt)
     $arguments = @('org', 'list', '--clean')
@@ -316,6 +643,36 @@ function Repair-SalesforceConnections {
 #region Aliases & Limits
 
 function Get-SalesforceAlias {
+    <#
+    .SYNOPSIS
+    Lists the org aliases set on this computer.
+
+    .DESCRIPTION
+    Runs sf alias list and returns the aliases, each with the value it points to. Reads local CLI configuration only; it does not contact an org.
+
+    .EXAMPLE
+    Get-SalesforceAlias
+    List every alias.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf alias list (plugin @salesforce/plugin-settings)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-settings
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param()
     $arguments = @('alias', 'list', '--json')
@@ -325,6 +682,44 @@ function Get-SalesforceAlias {
 }
 
 function Add-SalesforceAlias {
+    <#
+    .SYNOPSIS
+    Sets a local alias for an org so you can use a short name instead of its username.
+
+    .DESCRIPTION
+    Stores the alias in the Salesforce CLI configuration on this computer; nothing changes in the org. Once set, the alias works anywhere a psfdx cmdlet takes -TargetOrg.
+
+    .PARAMETER Alias
+    The alias to create, for example prod or dev1. Setting an alias that already exists replaces it. Required.
+
+    .PARAMETER TargetOrg
+    Username, or an existing alias, that the new alias should point to. Required.
+
+    .EXAMPLE
+    Add-SalesforceAlias -Alias dev1 -TargetOrg user@example.com.dev1
+    Create the alias dev1 for that username.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf alias set (plugin @salesforce/plugin-settings)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-settings
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Alias,
@@ -336,6 +731,41 @@ function Add-SalesforceAlias {
 }
 
 function Remove-SalesforceAlias {
+    <#
+    .SYNOPSIS
+    Removes one org alias from this computer.
+
+    .DESCRIPTION
+    Runs sf alias unset. Only the local alias is removed; the org is not touched.
+
+    .PARAMETER Alias
+    The alias to remove. Required.
+
+    .EXAMPLE
+    Remove-SalesforceAlias -Alias dev1
+    Remove the alias dev1.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf alias unset (plugin @salesforce/plugin-settings)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --all, --no-prompt
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-settings
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $true)][string] $Alias)
     $arguments = @('alias', 'unset', $Alias)
@@ -348,6 +778,41 @@ function Remove-SalesforceAlias {
 #region Limits & Usage
 
 function Get-SalesforceLimits {
+    <#
+    .SYNOPSIS
+    Shows the org's limits and how much of each is left.
+
+    .DESCRIPTION
+    Runs the sf limits api display command and returns one object per limit with its name, max and remaining values. Note that this is a deprecated alias of sf org list limits in current CLI versions (see the notes).
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceLimits -TargetOrg prod | Where-Object remaining -lt 1000
+    Limits that are nearly used up.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list limits (plugin @salesforce/plugin-limits)
+      Invoked as: sf limits api display - an old name (alias) of sf org list limits, deprecated, so the CLI may print a warning and remove it
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-limits
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $arguments = @('limits', 'api', 'display')
@@ -359,6 +824,31 @@ function Get-SalesforceLimits {
 }
 
 function Get-SalesforceDataStorage {
+    <#
+    .SYNOPSIS
+    Shows how much data storage an org has used.
+
+    .DESCRIPTION
+    Reads the org limits with Get-SalesforceLimits and returns the DataStorageMB entry with InUse and Usage (percentage) added. Returns nothing if the org does not report that limit.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org to check. If omitted, the Salesforce CLI uses the default target org (passed on to Get-SalesforceLimits).
+
+    .EXAMPLE
+    Get-SalesforceDataStorage -TargetOrg prod
+    Data storage used, in MB and as a percentage.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It is built on other psfdx cmdlets: Get-SalesforceLimits. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DataStorageMB"
@@ -373,6 +863,31 @@ function Get-SalesforceDataStorage {
 }
 
 function Get-SalesforceApiUsage {
+    <#
+    .SYNOPSIS
+    Shows how much of the daily API request limit an org has used.
+
+    .DESCRIPTION
+    Reads the org limits with Get-SalesforceLimits and returns the DailyApiRequests entry with a Usage percentage added (used divided by max). Returns nothing if the org does not report that limit.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org to check. If omitted, the Salesforce CLI uses the default target org (passed on to Get-SalesforceLimits).
+
+    .EXAMPLE
+    Get-SalesforceApiUsage -TargetOrg prod
+    See the API usage of the production org.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It is built on other psfdx cmdlets: Get-SalesforceLimits. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $values = Get-SalesforceLimits -TargetOrg $TargetOrg | Where-Object Name -eq "DailyApiRequests"
@@ -400,6 +915,62 @@ function Get-SalesforceUsagePercentage {
 #region Data Management
 
 function Select-SalesforceRecords {
+    <#
+    .SYNOPSIS
+    Runs a SOQL query and returns the records as objects.
+
+    .DESCRIPTION
+    Runs sf data query with --query or --file. With the default -ResultFormat json the records are returned as objects without their attributes property; an empty result returns nothing (wrap the call in @() for an empty array). With human or csv the CLI text is returned as it is. A failing query throws the CLI message. The query text is passed as one argument, so quotes and special characters need no escaping.
+
+    .PARAMETER Query
+    SOQL query to execute. Passed to sf as --query.
+
+    .PARAMETER File
+    File that contains the SOQL query. Passed to sf as --file.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .PARAMETER UseToolingApi
+    Use Tooling API so you can run queries on Tooling API objects. Adds --use-tooling-api.
+
+    .PARAMETER IncludeDeletedRows
+    Include deleted records. By default, deleted records are not returned. Adds --all-rows.
+
+    .PARAMETER ResultFormat
+    Format to display the results; the --json flag overrides this flag. Default: json. Valid values: human, json, csv.
+
+    .PARAMETER OutputFile
+    File where records are written; only CSV and JSON output formats are supported. Passed to sf as --output-file.
+
+    .EXAMPLE
+    Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account LIMIT 5' -TargetOrg dev1
+    Five accounts as objects.
+
+    .EXAMPLE
+    Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -ResultFormat csv -OutputFile .\accounts.csv -TargetOrg dev1
+    Save the result as CSV.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data query (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Query = --query; -File = --file; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api; -IncludeDeletedRows = --all-rows; -ResultFormat = --result-format; -OutputFile = --output-file.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $Query,
@@ -443,6 +1014,40 @@ function Select-SalesforceRecords {
 }
 
 function Get-SalesforceUsers {
+    <#
+    .SYNOPSIS
+    Lists users of an org, newest login first.
+
+    .DESCRIPTION
+    Queries User (Id, Name, Username, Email, IsActive, LastLoginDate) through Select-SalesforceRecords, ordered by LastLoginDate descending. Values are escaped as SOQL literals.
+
+    .PARAMETER Username
+    Return only the user with this exact user name.
+
+    .PARAMETER ActiveOnly
+    Return only active users.
+
+    .PARAMETER Limit
+    Maximum number of users to return. Default 200. Default: 200.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org to query. If omitted, the Salesforce CLI uses the default target org.
+
+    .EXAMPLE
+    Get-SalesforceUsers -ActiveOnly -Limit 20 -TargetOrg prod
+    The 20 most recently active users.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $Username,
@@ -467,10 +1072,44 @@ function New-SalesforceRecord {
     <#
     .SYNOPSIS
     Creates one record (sf data create record).
+
     .DESCRIPTION
     -FieldUpdates is the CLI's values string, for example "Name='Acme' Industry='Energy'". Supports -WhatIf and -Confirm; it does not prompt by default.
+
+    .PARAMETER Type
+    API name of the Salesforce or Tooling API object that you're inserting a record into. Passed to sf as --sobject. Required.
+
+    .PARAMETER FieldUpdates
+    Values for the flags in the form <fieldName>=<value>, separate multiple pairs with spaces. Passed to sf as --values. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .PARAMETER UseToolingApi
+    Use Tooling API so you can insert a record in a Tooling API object. Adds --use-tooling-api.
+
     .EXAMPLE
     New-SalesforceRecord -Type Account -FieldUpdates "Name='Acme'" -WhatIf
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data create record (plugin @salesforce/plugin-data)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --skip-assignment-rules
+    Parameter to flag: -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -496,11 +1135,48 @@ function Set-SalesforceRecord {
     <#
     .SYNOPSIS
     Updates one record by ID (sf data update record).
+
     .DESCRIPTION
     -Id can come from the pipeline (Id or RecordId property). -FieldUpdates is the CLI's values string, for example "Name='Acme' Active__c=true".
     Supports -WhatIf and -Confirm; it does not prompt by default.
+
+    .PARAMETER Id
+    ID of the record you're updating. Passed to sf as --record-id. Required. Alias: RecordId. Accepts input from the pipeline by property name.
+
+    .PARAMETER Type
+    API name of the Salesforce or Tooling API object that contains the record you're updating. Passed to sf as --sobject. Required.
+
+    .PARAMETER FieldUpdates
+    Fields that you're updating, in the format of <fieldName>=<value> pairs. Passed to sf as --values. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .PARAMETER UseToolingApi
+    Use Tooling API so you can update a record in a Tooling API object. Adds --use-tooling-api.
+
     .EXAMPLE
     Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name = 'Old'" | Set-SalesforceRecord -Type Account -FieldUpdates "Name='New'" -WhatIf
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data update record (plugin @salesforce/plugin-data)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --skip-assignment-rules, --where
+    Parameter to flag: -Id = --record-id; -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -530,19 +1206,58 @@ function Get-SalesforceRecord {
     <#
     .SYNOPSIS
     Gets one record, by ID or by field values (sf data get record).
+
     .DESCRIPTION
     Select the record with -Id, or with -Where, a hashtable of field values that identify exactly one record (the CLI reports an error for none
     or for several). They are alternatives: the CLI accepts only one. The record is returned as an object of its fields, without the internal
     attributes property. A value in -Where is passed to the CLI as Field='value'; because the CLI has no way to escape a quote inside a value, a
     value that contains a single quote, a double quote or a line break is refused. For anything more complex use Select-SalesforceRecords.
     A record that does not exist makes the cmdlet throw the CLI's message.
+
+    .PARAMETER Type
+    API name of the Salesforce or Tooling API object that you're retrieving a record from. Passed to sf as --sobject. Required.
+
+    .PARAMETER Id
+    ID of the record you're retrieving. Passed to sf as --record-id. Required in the ById parameter set. Alias: RecordId. Accepts input from the pipeline by property name.
+
+    .PARAMETER Where
+    List of <fieldName>=<value> pairs that identify the record you want to display. Passed to sf as --where. Required in the ByFields parameter set.
+
+    .PARAMETER UseToolingApi
+    Use Tooling API so you can retrieve a record from a Tooling API object. Adds --use-tooling-api.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Get-SalesforceRecord -Type Account -Id 001xx000003DGb2AAG -TargetOrg myorg
+
     .EXAMPLE
     Get-SalesforceRecord -Type Account -Where @{ Name = 'Acme Corporation' } -TargetOrg myorg
+
     .EXAMPLE
     Select-SalesforceRecords -Query 'SELECT Id FROM Account LIMIT 5' | Get-SalesforceRecord -Type Account
     The Id of each piped record is used (a RecordId property works too). The object type is not in a query result, so -Type is always given.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data get record (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Type = --sobject; -Id = --record-id; -Where = --where; -UseToolingApi = --use-tooling-api; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(DefaultParameterSetName = 'ById')]
     Param(
@@ -571,18 +1286,57 @@ function Remove-SalesforceRecord {
     <#
     .SYNOPSIS
     Deletes one record, by ID or by field values (sf data delete record).
+
     .DESCRIPTION
     Select the record as for Get-SalesforceRecord: -Id, or -Where (field values that identify exactly one record). Asks for confirmation by default,
     naming the object, the record and the org; -WhatIf makes no CLI call. Returns the CLI's result (the deleted record's Id). A record that does not
     exist, or a -Where that matches several, makes the cmdlet throw the CLI's message, so nothing is hidden. Scripts that run unattended need
     -Confirm:$false.
+
+    .PARAMETER Type
+    API name of the Salesforce or Tooling API object that you're deleting a record from. Passed to sf as --sobject. Required.
+
+    .PARAMETER Id
+    ID of the record you're deleting. Passed to sf as --record-id. Required in the ById parameter set. Alias: RecordId. Accepts input from the pipeline by property name.
+
+    .PARAMETER Where
+    List of <fieldName>=<value> pairs that identify the record you want to delete. Passed to sf as --where. Required in the ByFields parameter set.
+
+    .PARAMETER UseToolingApi
+    Use Tooling API so you can delete a record from a Tooling API object. Adds --use-tooling-api.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Remove-SalesforceRecord -Type Account -Id 001xx000003DGb2AAG -TargetOrg myorg -WhatIf
+
     .EXAMPLE
     Remove-SalesforceRecord -Type Account -Where @{ Name = 'Test Account 42' } -TargetOrg myorg -Confirm:$false
+
     .EXAMPLE
     Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name LIKE 'Test%'" | Remove-SalesforceRecord -Type Account -WhatIf
     Each piped record is confirmed and deleted on its own, so -WhatIf previews every delete. An empty query deletes nothing.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data delete record (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Type = --sobject; -Id = --record-id; -Where = --where; -UseToolingApi = --use-tooling-api; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'ById')]
     Param(
@@ -636,6 +1390,59 @@ function ConvertTo-SalesforceRecordSelector {
 }
 
 function Upsert-SalesforceRecord {
+    <#
+    .SYNOPSIS
+    Creates or updates one record, matched by an external ID.
+
+    .DESCRIPTION
+    The CLI has no single-record upsert command, so this sends a PATCH to /services/data/vXX.X/sobjects/<Type>/<ExternalIdField>/<value> with sf api request rest. The body is written to a temporary file that is removed afterwards. The result says whether the record was Created or Updated and gives its Id when the API returns one.
+
+    .PARAMETER Type
+    API name of the object, for example Account. Required.
+
+    .PARAMETER ExternalIdField
+    API name of the external ID field used to find the record. Required.
+
+    .PARAMETER ExternalId
+    Value of the external ID. It is URL-escaped in the request path. Required.
+
+    .PARAMETER Fields
+    Hashtable of field API names and values to set, for example @{ Name = 'Acme' }. It must not be empty. Required.
+
+    .PARAMETER ApiVersion
+    REST API version to use, for example v62.0 or 62.0. If omitted, the latest version the org supports is used.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Upsert-SalesforceRecord -Type Account -ExternalIdField Ext_Id__c -ExternalId A-100 -Fields @{ Name = 'Acme' } -TargetOrg dev1
+    Create or update the account whose Ext_Id__c is A-100.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf api request rest (plugin @salesforce/plugin-api)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
+      Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+    Also calls these psfdx cmdlets: Get-SalesforceLatestApiVersion.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-api
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     # The Salesforce CLI has no `sf data upsert record` (only `sf data upsert bulk`, a CSV job). A single-record upsert is the REST
     # call PATCH /services/data/vXX.X/sobjects/<Type>/<ExternalIdField>/<value>, which `sf api request rest` sends with the org's login.
     # Salesforce answers 201 when it created the record (body has the new Id). When it updated one, API v46.0 and later answer 200 with
@@ -721,6 +1528,34 @@ function Upsert-SalesforceRecord {
 }
 
 function Get-SalesforceRecordType {
+    <#
+    .SYNOPSIS
+    Lists record types, optionally for one object.
+
+    .DESCRIPTION
+    Queries the RecordType object (Id, SobjectType, Name, DeveloperName, IsActive) through Select-SalesforceRecords. The object name is escaped as a SOQL literal.
+
+    .PARAMETER ObjectType
+    API name of the object whose record types you want, for example Account. Without it, record types of every object are returned. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org to query. If omitted, the Salesforce CLI uses the default target org.
+
+    .EXAMPLE
+    Get-SalesforceRecordType -ObjectType Account -TargetOrg dev1
+    Record types of Account.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ObjectType,
@@ -744,15 +1579,52 @@ function Export-SalesforceTreeData {
     <#
     .SYNOPSIS
     Exports records, with their related child records, to JSON files for Import-SalesforceTreeData (sf data export tree).
+
     .DESCRIPTION
     Each -Query is a SOQL query; a query with a subquery exports parent and children together. The queries go to the CLI unchanged, so use
     one line and no double quotes (the Windows CLI shim rejects line breaks and double quotes in an argument).
     Without -Plan the records are returned in Records and the CLI writes one JSON file per query. With -Plan the CLI writes one file per object and
     a plan file that references them, which Import-SalesforceTreeData -Plan reads; Files and PlanFile hold their paths. The CLI creates
     -OutputDirectory if it does not exist.
+
+    .PARAMETER Query
+    One or more SOQL queries whose records, with the related records they select, are exported. Each query is passed as its own --query. A query with a parent-to-child subquery exports the children too. Required.
+
+    .PARAMETER Plan
+    Generate multiple sObject tree files and a plan definition file for aggregated import. Adds --plan.
+
+    .PARAMETER Prefix
+    Prefix of generated files. Passed to sf as --prefix.
+
+    .PARAMETER OutputDirectory
+    Directory in which to generate the JSON files; default is current directory. Passed to sf as --output-dir.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Export-SalesforceTreeData -Query "SELECT Id, Name, (SELECT Id, LastName FROM Contacts) FROM Account WHERE Name LIKE 'Acme%'" -Plan -OutputDirectory .\data -TargetOrg source
     Import-SalesforceTreeData -Plan .\data\Account-Contact-plan.json -TargetOrg scratch
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data export tree (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Plan = --plan; -Prefix = --prefix; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -806,15 +1678,47 @@ function Import-SalesforceTreeData {
     <#
     .SYNOPSIS
     Imports records and their related child records from JSON files into an org (sf data import tree).
+
     .DESCRIPTION
     Give either -Plan (a plan file from Export-SalesforceTreeData -Plan) or -File (one or more tree JSON files), not both. Asks for confirmation only when
     $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. Returns one object per record created: RefId, Type and Id. If Salesforce
     rejects records, nothing is returned and the cmdlet throws PsfdxTreeImportFailed, whose TargetObject lists each failed reference with its
     StatusCode, Message and Fields. The Tree API imports at most 200 records per call.
+
+    .PARAMETER Plan
+    Plan definition file to insert multiple data files. Passed to sf as --plan. Required in the Plan parameter set.
+
+    .PARAMETER File
+    Comma-separated and in-order JSON files that contain the records, in sObject tree format, that you want to insert. Passed to sf as --files. Required in the Files parameter set.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Import-SalesforceTreeData -Plan .\data\Account-Contact-plan.json -TargetOrg scratch
+
     .EXAMPLE
     Import-SalesforceTreeData -File .\data\accounts.json, .\data\contacts.json -TargetOrg scratch -WhatIf
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data import tree (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Plan = --plan; -File = --files; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium', DefaultParameterSetName = 'Plan')]
     Param(
@@ -897,14 +1801,64 @@ function Export-SalesforceBulkData {
     <#
     .SYNOPSIS
     Exports the records of a SOQL query to a file with Bulk API 2.0 (sf data export bulk).
+
     .DESCRIPTION
     Give the query as -Query or -QueryFile (a file avoids line breaks, which the Windows CLI shim rejects as an argument). The query is
     passed to the CLI unchanged. Without -WaitMinutes the job is created and its JobId returned; finish it later with
     Resume-SalesforceBulkJob -Operation Export. With -WaitMinutes the cmdlet waits and returns TotalSize.
+
+    .PARAMETER OutputFile
+    File where records are written. Passed to sf as --output-file. Required.
+
+    .PARAMETER Query
+    SOQL query to execute. Passed to sf as --query.
+
+    .PARAMETER QueryFile
+    File that contains the SOQL query. Passed to sf as --query-file.
+
+    .PARAMETER ResultFormat
+    Format to write the results. Passed to sf as --result-format. Default: csv. Valid values: csv, json.
+
+    .PARAMETER AllRows
+    Include records that have been soft-deleted due to a merge or delete. By default, deleted records are not returned. Adds --all-rows.
+
+    .PARAMETER ColumnDelimiter
+    Column delimiter to be used when writing CSV output. Default is COMMA. Passed to sf as --column-delimiter. Valid values: BACKQUOTE, CARET, COMMA, PIPE, SEMICOLON, TAB.
+
+    .PARAMETER LineEnding
+    Line ending to be used when writing CSV output. Default value on Windows is is `CRLF`; on macOS and Linux it's `LR`. Passed to sf as --line-ending. Valid values: LF, CRLF.
+
+    .PARAMETER WaitMinutes
+    Time to wait for the command to finish, in minutes. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Export-SalesforceBulkData -Query 'SELECT Id, Name FROM Account' -OutputFile .\accounts.csv -WaitMinutes 10 -TargetOrg myorg
+
     .EXAMPLE
     $job = Export-SalesforceBulkData -QueryFile .\big.soql -OutputFile .\big.csv -TargetOrg myorg; Resume-SalesforceBulkJob -Operation Export -JobId $job.JobId
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data export bulk (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -OutputFile = --output-file; -Query = --query; -QueryFile = --query-file; -ResultFormat = --result-format; -AllRows = --all-rows; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -944,12 +1898,52 @@ function Import-SalesforceBulkData {
     <#
     .SYNOPSIS
     Inserts the rows of a CSV file with Bulk API 2.0 (sf data import bulk).
+
     .DESCRIPTION
     Creates records. Asks for confirmation only when $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. Without
     -WaitMinutes the job is created and its JobId returned; with it the cmdlet waits and returns the counts. A job with failed rows
     throws PsfdxBulkJobFailed (see Get-SalesforceBulkResult for the row results).
+
+    .PARAMETER File
+    CSV file that contains the Salesforce object records you want to import. Passed to sf as --file. Required.
+
+    .PARAMETER Object
+    API name of the Salesforce object, either standard or custom, into which you're importing records. Passed to sf as --sobject. Required.
+
+    .PARAMETER ColumnDelimiter
+    Column delimiter used in the CSV file. Passed to sf as --column-delimiter. Valid values: BACKQUOTE, CARET, COMMA, PIPE, SEMICOLON, TAB.
+
+    .PARAMETER LineEnding
+    Line ending used in the CSV file. Default value on Windows is `CRLF`; on macOS and Linux it's `LF`. Passed to sf as --line-ending. Valid values: LF, CRLF.
+
+    .PARAMETER WaitMinutes
+    Time to wait for the command to finish, in minutes. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Import-SalesforceBulkData -File '.\new accounts.csv' -Object Account -WaitMinutes 10 -TargetOrg myorg
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data import bulk (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -File = --file; -Object = --sobject; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -981,11 +1975,51 @@ function Update-SalesforceBulkData {
     <#
     .SYNOPSIS
     Updates records from the rows of a CSV file with Bulk API 2.0 (sf data update bulk).
+
     .DESCRIPTION
     The CSV needs an Id column. Asks for confirmation only when $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call.
     Results are as for Import-SalesforceBulkData.
+
+    .PARAMETER File
+    CSV file that contains the Salesforce object records you want to update. Passed to sf as --file. Required.
+
+    .PARAMETER Object
+    API name of the Salesforce object, either standard or custom, which you are updating. Passed to sf as --sobject. Required.
+
+    .PARAMETER ColumnDelimiter
+    Column delimiter used in the CSV file. Passed to sf as --column-delimiter. Valid values: BACKQUOTE, CARET, COMMA, PIPE, SEMICOLON, TAB.
+
+    .PARAMETER LineEnding
+    Line ending used in the CSV file. Default value on Windows is `CRLF`; on macOS and Linux it's `LF`. Passed to sf as --line-ending. Valid values: LF, CRLF.
+
+    .PARAMETER WaitMinutes
+    Time to wait for the command to finish, in minutes. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Update-SalesforceBulkData -File .\changes.csv -Object Contact -WaitMinutes 10 -TargetOrg myorg
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data update bulk (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -File = --file; -Object = --sobject; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -1017,11 +2051,54 @@ function Upsert-SalesforceBulkData {
     <#
     .SYNOPSIS
     Inserts or updates records from the rows of a CSV file by external ID with Bulk API 2.0 (sf data upsert bulk).
+
     .DESCRIPTION
     -ExternalIdField names the external ID field the CSV matches on, and its column must be in the file. Asks for confirmation only when
     $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. For one record use Upsert-SalesforceRecord.
+
+    .PARAMETER File
+    CSV file that contains the IDs of the records to update or delete. Passed to sf as --file. Required.
+
+    .PARAMETER Object
+    API name of the Salesforce object, either standard or custom, that you want to update or delete records from. Passed to sf as --sobject. Required.
+
+    .PARAMETER ExternalIdField
+    Name of the external ID field, or the Id field. Passed to sf as --external-id. Required.
+
+    .PARAMETER ColumnDelimiter
+    Column delimiter used in the CSV file. Passed to sf as --column-delimiter. Valid values: BACKQUOTE, CARET, COMMA, PIPE, SEMICOLON, TAB.
+
+    .PARAMETER LineEnding
+    Line ending used in the CSV file. Default value on Windows is `CRLF`; on macOS and Linux it's `LF`. Passed to sf as --line-ending. Valid values: LF, CRLF.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the command to complete before displaying the results. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Upsert-SalesforceBulkData -File .\accounts.csv -Object Account -ExternalIdField Ext_Id__c -WaitMinutes 10 -TargetOrg myorg
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data upsert bulk (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -File = --file; -Object = --sobject; -ExternalIdField = --external-id; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -1055,13 +2132,53 @@ function Resume-SalesforceBulkJob {
     <#
     .SYNOPSIS
     Resumes a Bulk API 2.0 job started without -WaitMinutes (sf data export|import|update|upsert resume).
+
     .DESCRIPTION
     Pass the JobId from the earlier step and the -Operation that created it. The CLI remembers jobs it created on this computer, so import,
     update and export resumes find the org from that record; they do not take -TargetOrg (it is ignored with a warning), and a job created
     elsewhere cannot be resumed here: use Get-SalesforceBulkResult with -TargetOrg instead. Export resumes do not take -WaitMinutes.
     Resuming only continues the existing job, so it does not ask for confirmation. Errors are as for the cmdlet that created the job.
+
+    .PARAMETER Operation
+    The kind of bulk job to resume: Export, Import, Update or Upsert. It selects which command runs: sf data export, import, update or upsert resume. Required. Valid values: Export, Import, Update, Upsert.
+
+    .PARAMETER JobId
+    Job ID of the bulk export. Passed to sf as --job-id. Required.
+
+    .PARAMETER WaitMinutes
+    Time to wait for the command to finish, in minutes. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the "target-org" configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Resume-SalesforceBulkJob -Operation Upsert -JobId 750xx0000000001 -WaitMinutes 10 -TargetOrg myorg
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data export resume (plugin @salesforce/plugin-data)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
+    Command run: sf data import resume (plugin @salesforce/plugin-data)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
+    Command run: sf data update resume (plugin @salesforce/plugin-data)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
+    Command run: sf data upsert resume (plugin @salesforce/plugin-data)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
+    Parameter to flag: -JobId = --job-id; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -1093,13 +2210,44 @@ function Get-SalesforceBulkResult {
     <#
     .SYNOPSIS
     Gets the outcome of a Bulk API 2.0 ingest job and saves its row results as CSV files (sf data bulk results).
+
     .DESCRIPTION
     The CLI writes <JobId>-success-records.csv, <JobId>-failed-records.csv and <JobId>-unprocessed-records.csv into its working directory, so
     the cmdlet runs it in -OutputDirectory (the current directory by default) and returns the full paths of the files it wrote. Records that
     failed do not make this cmdlet throw: check HasFailures or FailedRecords. A job that has not finished is an error. Works for any job in
     the org, including ones this computer did not create.
+
+    .PARAMETER JobId
+    Job ID of the bulk job. Passed to sf as --job-id. Required.
+
+    .PARAMETER OutputDirectory
+    Folder the result files are written to. It is created if it does not exist. Defaults to the current folder. The cmdlet runs the CLI there and returns the full paths of the files it wrote.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     $r = Get-SalesforceBulkResult -JobId 750xx0000000001 -OutputDirectory .\bulk -TargetOrg myorg; if ($r.HasFailures) { Import-Csv $r.FailedFilePath }
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data bulk results (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -JobId = --job-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -1287,6 +2435,49 @@ function Assert-SalesforceHttpsUrl {
 }
 
 function Connect-SalesforceApi {
+    <#
+    .SYNOPSIS
+    Gets an access token for the Salesforce REST API with the username-password OAuth flow.
+
+    .DESCRIPTION
+    Does not use the Salesforce CLI. It posts the user name, the password plus security token, and the connected app client ID and secret to the org's /services/oauth2/token endpoint with Invoke-RestMethod and returns the response, which holds the access token and instance URL. The request is sent only over https. The password, token and secret are plain strings here (issue 233 tracks SecureString support), so they stay in your session history and memory.
+
+    .PARAMETER TargetOrg
+    The Salesforce user name to log in as (sent as the OAuth username). This is not an org alias. Required.
+
+    .PARAMETER Password
+    The user's password. The security token is appended to it. Required.
+
+    .PARAMETER Token
+    The user's security token, appended to the password. Required.
+
+    .PARAMETER ClientId
+    Consumer key of the connected app used for the login. Required.
+
+    .PARAMETER ClientSecret
+    Consumer secret of the connected app. Required.
+
+    .PARAMETER Sandbox
+    Use the sandbox login host https://test.salesforce.com instead of https://login.salesforce.com.
+
+    .PARAMETER CustomUrl
+    Base URL of the login host to use instead, for example a My Domain. It must be an absolute https:// URL, otherwise the cmdlet stops before sending anything.
+
+    .EXAMPLE
+    Connect-SalesforceApi -TargetOrg user@example.com -Password $pw -Token $tok -ClientId $key -ClientSecret $secret
+    Request an access token from production.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It calls the Salesforce REST API directly with Invoke-RestMethod, with no Salesforce CLI involved.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $TargetOrg,
@@ -1318,6 +2509,37 @@ function Connect-SalesforceApi {
 }
 
 function Invoke-SalesforceApi {
+    <#
+    .SYNOPSIS
+    Calls a Salesforce REST API URL with an access token.
+
+    .DESCRIPTION
+    Does not use the Salesforce CLI. It sends the request with Invoke-RestMethod and an Authorization: Bearer header, and returns the parsed response. The URL must be absolute and https, so the token is never sent over plain http. You choose the host; the cmdlet does not check that it is a Salesforce host.
+
+    .PARAMETER Url
+    Absolute https:// URL of the REST resource. Required.
+
+    .PARAMETER AccessToken
+    Access token to send as the bearer token, for example from Connect-SalesforceApi. Required.
+
+    .PARAMETER Method
+    HTTP method: GET (default), POST, PATCH or DELETE. Default: "GET". Valid values: GET, POST, PATCH, DELETE.
+
+    .EXAMPLE
+    Invoke-SalesforceApi -Url https://example.my.salesforce.com/services/data -AccessToken $token
+    List the API versions of an org.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It calls the Salesforce REST API directly with Invoke-RestMethod, with no Salesforce CLI involved.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Url,
@@ -1330,6 +2552,41 @@ function Invoke-SalesforceApi {
 }
 
 function Get-SalesforceApiVersions {
+    <#
+    .SYNOPSIS
+    Lists the REST API versions the org supports.
+
+    .DESCRIPTION
+    Sends a GET request to /services/data with sf api request rest and returns the list of versions as objects (label, url, version).
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceApiVersions -TargetOrg dev1 | Select-Object -Last 1
+    The newest API version of the org.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf api request rest (plugin @salesforce/plugin-api)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
+      Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-api
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -1342,6 +2599,31 @@ function Get-SalesforceApiVersions {
 }
 
 function Get-SalesforceLatestApiVersion {
+    <#
+    .SYNOPSIS
+    Returns the newest REST API version the org supports, such as v62.0.
+
+    .DESCRIPTION
+    Calls Get-SalesforceApiVersions and returns the highest version prefixed with v. Returns nothing if the org reports no versions.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org to ask. If omitted, the Salesforce CLI uses the default target org (passed on to Get-SalesforceApiVersions).
+
+    .EXAMPLE
+    Get-SalesforceLatestApiVersion -TargetOrg dev1
+    For example v62.0.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It is built on other psfdx cmdlets: Get-SalesforceApiVersions. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -1374,10 +2656,35 @@ function Get-SalesforceAuthenticatedUser {
     <#
     .SYNOPSIS
     Lists the users of an org that the Salesforce CLI has authorised on this computer (sf org list users).
+
     .DESCRIPTION
     Tokens are removed from the result. To search all users in the org, use Get-SalesforceUsers.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Get-SalesforceAuthenticatedUser -TargetOrg myscratch
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list users (plugin @salesforce/plugin-user)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-user
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -1396,12 +2703,37 @@ function Get-SalesforceOrgUser {
     <#
     .SYNOPSIS
     Shows the user the CLI is signed in as in an org (sf org display user).
+
     .DESCRIPTION
     The access token and password are never returned: current Salesforce CLI versions replace both with a redaction message in this command, so
     there is nothing real to return. HasPassword says whether the CLI holds a password for the user. To set a known password, use
     New-SalesforceUserPassword.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Get-SalesforceOrgUser -TargetOrg myscratch
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org display user (plugin @salesforce/plugin-user)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-user
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -1423,15 +2755,53 @@ function New-SalesforceUser {
     <#
     .SYNOPSIS
     Creates a user in an org and authorises it in the CLI (sf org create user).
+
     .DESCRIPTION
     Give the user's fields in a definition file (-DefinitionFile), in -Field, or both; fields in -Field override the file. Asks for confirmation
     only when $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. Field values go to the CLI as separate arguments, so quotes
     and spaces need no escaping, but a value with a double quote or a line break is rejected by the Windows CLI shim. Needs the Manage Users
     permission. The CLI creates users for scratch orgs and sandboxes it can sign in to.
+
+    .PARAMETER DefinitionFile
+    File path to a user definition file for customizing the new user. Passed to sf as --definition-file.
+
+    .PARAMETER Field
+    Hashtable of user field values, for example @{ username = 'qa1@example.org'; profileName = 'Standard User' }. Each key=value is passed to the CLI as a separate argument, and a value here overrides the same field in -DefinitionFile.
+
+    .PARAMETER SetAlias
+    Set an alias for the created username to reference in other CLI commands. Passed to sf as --set-alias.
+
+    .PARAMETER SetUniqueUsername
+    Force the username, if specified in the definition file or at the command line, to be unique by appending the org ID. Adds --set-unique-username.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     New-SalesforceUser -Field @{ username = 'qa1@example.org'; profileName = 'Standard User'; lastName = 'QA' } -SetAlias qa1 -TargetOrg myscratch
+
     .EXAMPLE
     New-SalesforceUser -DefinitionFile .\config\user-def.json -SetUniqueUsername -TargetOrg myscratch -WhatIf
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org create user (plugin @salesforce/plugin-user)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DefinitionFile = --definition-file; -SetAlias = --set-alias; -SetUniqueUsername = --set-unique-username; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-user
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -1474,13 +2844,47 @@ function New-SalesforceUserPassword {
     <#
     .SYNOPSIS
     Generates a new password for a user and returns it as a SecureString (sf org generate password).
+
     .DESCRIPTION
     This changes the user's password, so it asks for confirmation by default; -WhatIf makes no CLI call. The password is returned only as a
     SecureString in Password, and is never written to -Verbose, -Debug or error output by this cmdlet. Length is 20 to 1000 and complexity 3 to
     5 (higher is stronger), as the CLI allows. One user at a time (-OnBehalfOf takes a single username or alias). Needs the Manage Users and
     Reset User Passwords and Unlock Users permissions.
+
+    .PARAMETER OnBehalfOf
+    Comma-separated list of usernames or aliases to assign the password to; must have been created locally with the "org create user" command. Passed to sf as --on-behalf-of.
+
+    .PARAMETER Length
+    Number of characters in the generated password; valid values are between 20 and 1000. Default value is 20. Passed to sf as --length. Default: 20. Range: 20 to 1000.
+
+    .PARAMETER Complexity
+    Level of password complexity or strength; the higher the value, the stronger the password. Passed to sf as --complexity. Default: 5. Range: 3 to 5.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     $p = New-SalesforceUserPassword -OnBehalfOf qa1 -TargetOrg myscratch -Confirm:$false; $p.Username
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org generate password (plugin @salesforce/plugin-user)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -OnBehalfOf = --on-behalf-of; -Length = --length; -Complexity = --complexity; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-user
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
@@ -1517,13 +2921,44 @@ function Grant-SalesforcePermissionSet {
     <#
     .SYNOPSIS
     Assigns permission sets to users (sf org assign permset).
+
     .DESCRIPTION
     Without -OnBehalfOf the permission sets go to the target org's own user. Returns one object per user and permission set with Status
     Assigned or AlreadyAssigned; assigning a set the user already has is not an error, so a script can run again safely. Failures (a missing
     set, no permission) are returned with Status Failed and the cmdlet then throws PsfdxPermissionAssignmentFailed, whose TargetObject lists
     them. Asks for confirmation by default; -WhatIf makes no CLI call. Needs the Assign Permission Sets permission.
+
+    .PARAMETER Name
+    Passed on to Test-SalesforceAssignmentNames -Name. Required.
+
+    .PARAMETER OnBehalfOf
+    Passed on to Test-SalesforceAssignmentNames -OnBehalfOf.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Grant-SalesforcePermissionSet -Name Sales_Admin, Reports_User -OnBehalfOf qa1, qa2 -TargetOrg myscratch -Confirm:$false
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org assign permset (plugin @salesforce/plugin-user)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-user
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
@@ -1552,10 +2987,43 @@ function Grant-SalesforcePermissionSetLicense {
     <#
     .SYNOPSIS
     Assigns permission set licenses to users (sf org assign permsetlicense).
+
     .DESCRIPTION
     Results, idempotency, failures and confirmation work as for Grant-SalesforcePermissionSet. The org must have the licence available.
+
+    Supports -WhatIf and -Confirm and asks for confirmation by default.
+
+    .PARAMETER Name
+    Passed on to Test-SalesforceAssignmentNames -Name. Required.
+
+    .PARAMETER OnBehalfOf
+    Passed on to Test-SalesforceAssignmentNames -OnBehalfOf.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Grant-SalesforcePermissionSetLicense -Name SalesforceCPQ_Admin -OnBehalfOf qa1 -TargetOrg myscratch -Confirm:$false
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org assign permsetlicense (plugin @salesforce/plugin-user)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-user
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
@@ -1666,6 +3134,30 @@ function Test-SalesforceIsMacOS {
 }
 
 function Install-SalesforceCli {
+    <#
+    .SYNOPSIS
+    Installs the Salesforce CLI globally with npm.
+
+    .DESCRIPTION
+    Runs npm install --global @salesforce/cli. This downloads and runs code from the npm registry. Node.js and npm must already be installed. Asks nothing by default, supports -WhatIf and -Confirm.
+
+    .EXAMPLE
+    Install-SalesforceCli -WhatIf
+    Show what would be installed.
+
+    .NOTES
+    Installs or updates software on this computer.
+
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -1677,6 +3169,30 @@ function Install-SalesforceCli {
 }
 
 function Update-SalesforceCli {
+    <#
+    .SYNOPSIS
+    Updates the Salesforce CLI installed with npm.
+
+    .DESCRIPTION
+    Runs npm update --global @salesforce/cli. It downloads and runs code from the npm registry. Supports -WhatIf and -Confirm.
+
+    .EXAMPLE
+    Update-SalesforceCli -WhatIf
+    Show what would be updated.
+
+    .NOTES
+    Installs or updates software on this computer.
+
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -1690,12 +3206,36 @@ function Install-SalesforcePlugin {
     <#
     .SYNOPSIS
     Installs a Salesforce CLI plugin (sf plugins install).
+
     .DESCRIPTION
     A plugin is code that runs with your permissions, so install only plugins you trust: the CLI may ask you to confirm one that is not on its
     allow list. -Name is an npm package name (optionally scoped and with a version, such as @salesforce/plugin-agent@latest) or a GitHub URL. A
     value that starts with a dash or contains spaces or control characters is refused, so it cannot be read as a CLI option. Supports -WhatIf and -Confirm.
+
+    .PARAMETER Name
+    The plugin to install: an npm package name such as @salesforce/plugin-agent, optionally with a version, or a GitHub URL. A value that starts with a dash or contains spaces or control characters is refused, so it cannot be read as a CLI option. Required.
+
     .EXAMPLE
     Install-SalesforcePlugin -Name @salesforce/plugin-agent -WhatIf
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins install (plugin @oclif/plugin-plugins)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --force, --help, --silent, --verbose
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -1713,6 +3253,40 @@ function Install-SalesforcePlugin {
 }
 
 function Get-SalesforcePlugins {
+    <#
+    .SYNOPSIS
+    Lists the Salesforce CLI plugins that are installed.
+
+    .DESCRIPTION
+    Runs sf plugins and returns the CLI's own text output, one plugin per line. Add -IncludeCore to include the plugins that ship with the CLI.
+
+    .PARAMETER IncludeCore
+    Also list the plugins that ship with the Salesforce CLI. Adds --core.
+
+    .EXAMPLE
+    Get-SalesforcePlugins -IncludeCore
+    Every plugin, including the bundled ones.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins (plugin @oclif/plugin-plugins)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -IncludeCore = --core.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][switch] $IncludeCore
@@ -1724,6 +3298,38 @@ function Get-SalesforcePlugins {
 }
 
 function Update-SalesforcePlugins {
+    <#
+    .SYNOPSIS
+    Updates the installed Salesforce CLI plugins.
+
+    .DESCRIPTION
+    Runs sf plugins update. Supports -WhatIf and -Confirm.
+
+    .EXAMPLE
+    Update-SalesforcePlugins -WhatIf
+    Show what would be updated.
+
+    .NOTES
+    Installs or updates software on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins update (plugin @oclif/plugin-plugins)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --help, --verbose
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param()
     $arguments = @('plugins', 'update')
@@ -1739,6 +3345,31 @@ function Update-SalesforcePlugins {
 #region Utilities
 
 function Get-SalesforceDateTime {
+    <#
+    .SYNOPSIS
+    Formats a date and time as a SOQL datetime literal.
+
+    .DESCRIPTION
+    Returns the value in UTC as 2026-11-18T11:00:00Z, ready to use in a SOQL WHERE clause. With no value it uses the current time. A local or unspecified time is converted to UTC first. It is a thin wrapper over ConvertTo-SalesforceSoqlDateTime.
+
+    .PARAMETER Datetime
+    The moment to format. Defaults to now. A local or unspecified kind is read as local time and converted to UTC.
+
+    .EXAMPLE
+    Get-SalesforceDateTime (Get-Date).AddDays(-1)
+    Yesterday, as a literal for a CreatedDate filter.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It works locally in PowerShell and .NET.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][datetime] $Datetime)
     if ($null -eq $Datetime) { $Datetime = Get-Date }

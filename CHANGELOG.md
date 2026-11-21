@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- All modules: every exported command now has complete help, shown by `Get-Help <command> -Full`, `-Examples` and `-Parameter *`: a synopsis, a description, one entry for every parameter (with its default, valid values and the CLI flag it feeds), examples and links. The notes have a "Salesforce CLI mapping" section that names the exact `sf` command or commands the cmdlet runs, the old name or word order it is run by when that differs from the current command, the flags and values it cannot pass, and says when a cmdlet does not run `sf` at all. The helpers that `psfdx-shared` exports are labelled as internal, and `Test-SalesforceApexTestReference` says it only reads a local file. A test checks all of this, and the Gallery install check now checks the help of the published package.
+- psfdx: Breaking: `Open-Salesforce -BrowserPrivateMode` is now a switch. It was a string written as `--private <value>`, but the CLI's `--private` takes no value, so any use of it failed. Use `-BrowserPrivateMode` with no value.
+
 ## 0.8.39 - 2026-11-21
 
 - psfdx: Breaking: `Connect-SalesforceApi -CustomUrl` and `Invoke-SalesforceApi -Url` now accept only an absolute https:// URL. They send a password, client secret or access token, which must not travel over plain http. Before this, an http URL was used as given.

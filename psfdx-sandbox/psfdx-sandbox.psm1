@@ -113,6 +113,39 @@ Import-PsfdxSharedModule
 #region Sandbox Management
 
 function Get-SalesforceSandboxes {
+    <#
+    .SYNOPSIS
+    Lists the sandboxes this computer is logged in to.
+
+    .DESCRIPTION
+    Runs sf org list and returns the connected orgs that are sandboxes. With -Name, only those whose sandbox name, user name or alias equals it. It reads the local list of orgs; there is no -TargetOrg.
+
+    .PARAMETER Name
+    Keep only sandboxes whose sandbox name, user name or alias equals this value. The filter runs in PowerShell.
+
+    .EXAMPLE
+    Get-SalesforceSandboxes
+    Every sandbox this computer knows about.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $Name
@@ -139,6 +172,63 @@ function Get-SalesforceSandboxes {
 }
 
 function New-SalesforceSandbox {
+    <#
+    .SYNOPSIS
+    Creates a sandbox from production.
+
+    .DESCRIPTION
+    Runs sf org create sandbox. A sandbox uses a license of your production org. The CLI waits only when you give -WaitMinutes; otherwise finish with Resume-SalesforceSandbox.
+
+    .PARAMETER SandboxName
+    Name of the sandbox org. Passed to sf as --name. Required.
+
+    .PARAMETER Alias
+    Alias for the sandbox org. Passed to sf as --alias.
+
+    .PARAMETER DefinitionFile
+    Path to a sandbox definition file. Passed to sf as --definition-file.
+
+    .PARAMETER LicenseType
+    Type of sandbox license. Passed to sf as --license-type. Default: Developer. Valid values: Developer, Developer_Pro, Partial, Full.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the sandbox org to be ready. Passed to sf as --wait.
+
+    .PARAMETER NoPrompt
+    Don't prompt for confirmation about the sandbox configuration. Adds --no-prompt.
+
+    .PARAMETER NoTrackSource
+    Do not use source tracking for this sandbox. Adds --no-track-source.
+
+    .PARAMETER TargetOrg
+    Username or alias of the production org that contains the sandbox license. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceSandbox -SandboxName dev2 -LicenseType Developer -TargetOrg prod
+    Create a developer sandbox.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org create sandbox (plugin @salesforce/plugin-org)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async, --poll-interval, --set-default, --source-id
+    Parameter to flag: -SandboxName = --name; -Alias = --alias; -DefinitionFile = --definition-file; -LicenseType = --license-type; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -NoTrackSource = --no-track-source; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $SandboxName,
@@ -167,6 +257,48 @@ function New-SalesforceSandbox {
 }
 
 function Resume-SalesforceSandbox {
+    <#
+    .SYNOPSIS
+    Checks a sandbox creation and logs in to it when it is ready.
+
+    .DESCRIPTION
+    Runs sf org resume sandbox for the sandbox name. Use it after New-SalesforceSandbox returned without waiting.
+
+    .PARAMETER SandboxName
+    Name of the sandbox org. Passed to sf as --name. Required.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the sandbox org to be ready. Passed to sf as --wait.
+
+    .PARAMETER TargetOrg
+    Username or alias of the production org that contains the sandbox license. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Resume-SalesforceSandbox -SandboxName dev2 -WaitMinutes 30 -TargetOrg prod
+    Wait up to 30 minutes.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org resume sandbox (plugin @salesforce/plugin-org)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --job-id, --use-most-recent
+    Parameter to flag: -SandboxName = --name; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $SandboxName,
@@ -184,6 +316,60 @@ function Resume-SalesforceSandbox {
 }
 
 function Copy-SalesforceSandbox {
+    <#
+    .SYNOPSIS
+    Creates a sandbox as a copy of another sandbox.
+
+    .DESCRIPTION
+    Runs sf org create sandbox with --source-sandbox-name, which clones an existing sandbox. The CLI waits only when you give -WaitMinutes.
+
+    .PARAMETER SourceSandboxName
+    Name of the sandbox org to clone. Passed to sf as --source-sandbox-name. Required.
+
+    .PARAMETER CloneSandboxName
+    Name of the sandbox org. Passed to sf as --name. Required.
+
+    .PARAMETER LicenseType
+    Type of sandbox license. Passed to sf as --license-type.
+
+    .PARAMETER Alias
+    Alias for the sandbox org. Passed to sf as --alias.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the sandbox org to be ready. Passed to sf as --wait.
+
+    .PARAMETER NoPrompt
+    Don't prompt for confirmation about the sandbox configuration. Adds --no-prompt.
+
+    .PARAMETER TargetOrg
+    Username or alias of the production org that contains the sandbox license. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Copy-SalesforceSandbox -SourceSandboxName dev1 -CloneSandboxName dev2 -TargetOrg prod
+    Clone dev1 as dev2.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org create sandbox (plugin @salesforce/plugin-org)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async, --poll-interval, --set-default, --source-id
+    Parameter to flag: -SourceSandboxName = --source-sandbox-name; -CloneSandboxName = --name; -LicenseType = --license-type; -Alias = --alias; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $SourceSandboxName,
@@ -209,6 +395,45 @@ function Copy-SalesforceSandbox {
 }
 
 function Remove-SalesforceSandbox {
+    <#
+    .SYNOPSIS
+    Deletes a sandbox.
+
+    .DESCRIPTION
+    Runs sf org delete sandbox. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt also turns off the CLI's own question.
+
+    .PARAMETER NoPrompt
+    Don't prompt the user to confirm the deletion. Adds --no-prompt.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Remove-SalesforceSandbox -TargetOrg dev2 -WhatIf
+    Preview the delete.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org delete sandbox (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
@@ -229,6 +454,43 @@ function Remove-SalesforceSandbox {
 }
 
 function Get-SalesforceSandboxRefreshStatus {
+    <#
+    .SYNOPSIS
+    Shows when a sandbox was last refreshed and its refresh state.
+
+    .DESCRIPTION
+    Runs sf data query on the Tooling API objects SandboxInfo and SandboxProcess (two queries) for the sandbox name, and combines them. The name is escaped as a SOQL literal.
+
+    .PARAMETER Name
+    Name of the sandbox. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceSandboxRefreshStatus -Name dev1 -TargetOrg prod
+    The refresh status of dev1.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data query (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,

@@ -113,6 +113,36 @@ Import-PsfdxSharedModule
 #region Plugin availability
 
 function Test-SalesforceAgentPlugin {
+    <#
+    .SYNOPSIS
+    Checks whether the Salesforce CLI agent plugin is installed.
+
+    .DESCRIPTION
+    Runs sf plugins --core --json and returns $true when @salesforce/plugin-agent is listed, otherwise $false. The other agent cmdlets run this check first.
+
+    .EXAMPLE
+    if (-not (Test-SalesforceAgentPlugin)) { Install-SalesforcePlugin -Name @salesforce/plugin-agent }
+    Install the plugin when it is missing.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins (plugin @oclif/plugin-plugins)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param()
 
@@ -152,6 +182,40 @@ function Assert-SalesforceAgentApiName {
 #region Agent tests
 
 function Get-SalesforceAgentTests {
+    <#
+    .SYNOPSIS
+    Lists the agent tests available in an org.
+
+    .DESCRIPTION
+    Runs sf agent test list and returns the test definitions as objects (an empty array when there are none). Needs the @salesforce/plugin-agent plugin.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceAgentTests -TargetOrg dev1
+    Agent tests in the org.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent test list (plugin @salesforce/plugin-agent)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string] $TargetOrg
@@ -170,6 +234,48 @@ function Get-SalesforceAgentTests {
 }
 
 function Start-SalesforceAgentTest {
+    <#
+    .SYNOPSIS
+    Starts an Agentforce agent test and optionally waits for it.
+
+    .DESCRIPTION
+    Runs sf agent test run for the test API name. Without -WaitMinutes the run is started and the job ID is returned; fetch the outcome later with Get-SalesforceAgentTestResult. Needs the @salesforce/plugin-agent plugin.
+
+    .PARAMETER ApiName
+    API name of the agent test to run; corresponds to the name of the AiEvaluationDefinition metadata component that implements the agent test. Passed to sf as --api-name. Required.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the command to complete and display results to the terminal window. Passed to sf as --wait. Range: 1 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Start-SalesforceAgentTest -ApiName Service_Agent_Test -WaitMinutes 10 -TargetOrg dev1
+    Run the test and wait up to ten minutes.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent test run (plugin @salesforce/plugin-agent)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --output-dir, --result-format, --test-runner, --verbose
+    Parameter to flag: -ApiName = --api-name; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ApiName,
@@ -190,6 +296,43 @@ function Start-SalesforceAgentTest {
 }
 
 function Get-SalesforceAgentTestResult {
+    <#
+    .SYNOPSIS
+    Gets the results of an Agentforce agent test run.
+
+    .DESCRIPTION
+    Runs sf agent test results for a job ID returned by Start-SalesforceAgentTest. Needs the @salesforce/plugin-agent plugin.
+
+    .PARAMETER JobId
+    Job ID of the completed agent test run. Passed to sf as --job-id. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceAgentTestResult -JobId 4KBxx0000000001 -TargetOrg dev1
+    Results of that run.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent test results (plugin @salesforce/plugin-agent)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --output-dir, --result-format, --test-runner, --verbose
+    Parameter to flag: -JobId = --job-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $JobId,
@@ -214,6 +357,48 @@ function Get-SalesforceAgentTestResult {
 #region Agent activation
 
 function Enable-SalesforceAgent {
+    <#
+    .SYNOPSIS
+    Activates an Agentforce agent in an org.
+
+    .DESCRIPTION
+    Runs sf agent activate for the agent API name and, optionally, a version. Activating makes the agent available to users. Needs the @salesforce/plugin-agent plugin. Asks for confirmation and supports -WhatIf.
+
+    .PARAMETER ApiName
+    API name of the agent to activate; if not specified, the command provides a list that you choose from. Passed to sf as --api-name. Required.
+
+    .PARAMETER Version
+    Version number of the agent to activate; if not specified, the command provides a list that you choose from. Passed to sf as --version. Range: 1 to 9999.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Enable-SalesforceAgent -ApiName Service_Agent -Version 2 -TargetOrg dev1 -WhatIf
+    Preview activating version 2.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent activate (plugin @salesforce/plugin-agent)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ApiName = --api-name; -Version = --version; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true)][string] $ApiName,
@@ -238,6 +423,45 @@ function Enable-SalesforceAgent {
 }
 
 function Disable-SalesforceAgent {
+    <#
+    .SYNOPSIS
+    Deactivates an Agentforce agent in an org.
+
+    .DESCRIPTION
+    Runs sf agent deactivate for the agent API name. The plugin @salesforce/plugin-agent must be installed; the cmdlet stops with install guidance if it is not. Asks for confirmation and supports -WhatIf.
+
+    .PARAMETER ApiName
+    API name of the agent to deactivate; if not specified, the command provides a list that you choose from. Passed to sf as --api-name. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Disable-SalesforceAgent -ApiName Service_Agent -TargetOrg dev1 -WhatIf
+    Show what would be deactivated.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent deactivate (plugin @salesforce/plugin-agent)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ApiName = --api-name; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
         [Parameter(Mandatory = $true)][string] $ApiName,
@@ -311,16 +535,57 @@ function New-SalesforceAgentAuthoringBundle {
     <#
     .SYNOPSIS
     Generates an authoring bundle (Agent Script) for an agent (sf agent generate authoring-bundle).
+
     .DESCRIPTION
     Writes files into the project, so it asks for confirmation and supports -WhatIf. The CLI requires -Name (the agent label) and either -Spec
     (an agent spec file made by the agent plugin) or -NoSpec to generate a blank bundle; both are checked before the CLI is called. -OutputDir is where the bundle goes (the CLI default is the project's authoring bundle folder). Returns the CLI result, which includes
     the paths written. Needs the @salesforce/plugin-agent plugin, a recent version, and Agentforce enabled in the org.
+
+    .PARAMETER Name
+    Name (label) of the authoring bundle; if not specified, you're prompted for the name. Passed to sf as --name. Required.
+
+    .PARAMETER ApiName
+    API name of the new authoring bundle; if not specified, the API name is derived from the authoring bundle name (label); the API name can't exist in the org. Passed to sf as --api-name.
+
+    .PARAMETER Spec
+    Path to the agent spec YAML file. If you don't specify the flag, the command provides a list that you can choose from. Use the --no-spec flag to skip using an agent spec entirely.
+
+    .PARAMETER NoSpec
+    Skip prompting for an agent spec and use the default Agent Script boilerplate in the generated authoring bundle. Adds --no-spec.
+
+    .PARAMETER OutputDir
+    Directory where the authoring bundle files are generated. Passed to sf as --output-dir.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -ApiName Service_Agent -Spec specs/agentSpec.yaml -TargetOrg my-org
+
     .EXAMPLE
     New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -ApiName Service_Agent -NoSpec -Confirm:$false | Out-Null
     Test-SalesforceAgentAuthoringBundle -ApiName Service_Agent
     Publish-SalesforceAgentAuthoringBundle -ApiName Service_Agent -Confirm:$false
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent generate authoring-bundle (plugin @salesforce/plugin-agent)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --force-overwrite
+    Parameter to flag: -Name = --name; -ApiName = --api-name; -Spec = --spec; -NoSpec = --no-spec; -OutputDir = --output-dir; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
@@ -361,12 +626,43 @@ function Test-SalesforceAgentAuthoringBundle {
     <#
     .SYNOPSIS
     Validates an authoring bundle and returns the diagnostics as objects (sf agent validate authoring-bundle).
+
     .DESCRIPTION
     Read-only. Returns Valid, ApiName and Diagnostics (Message, Line, Column, Severity). Invalid Agent Script is returned as Valid = $false with
     its diagnostics, not thrown, so a script can print or filter them; add -ThrowOnInvalid to fail a CI step (error id PsfdxAgentValidationFailed,
     with the result as the target object). Failures that are not validation problems, such as an unknown org, always throw.
+
+    .PARAMETER ApiName
+    API name of the authoring bundle you want to validate; if not specified, the command provides a list that you can choose from. Passed to sf as --api-name. Required.
+
+    .PARAMETER ThrowOnInvalid
+    Throw an error (id PsfdxAgentValidationFailed, with the result as its target object) when the bundle is not valid, instead of returning Valid = $false with its diagnostics. Meant for CI.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     $v = Test-SalesforceAgentAuthoringBundle -ApiName Service_Agent -TargetOrg my-org; $v.Diagnostics | Format-Table Line, Message
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent validate authoring-bundle (plugin @salesforce/plugin-agent)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ApiName = --api-name; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
     Param(
@@ -411,11 +707,42 @@ function Publish-SalesforceAgentAuthoringBundle {
     <#
     .SYNOPSIS
     Publishes an authoring bundle to the org as an agent (sf agent publish authoring-bundle).
+
     .DESCRIPTION
     Changes the org, so it asks for confirmation and supports -WhatIf. Returns the CLI result (the published agent). By default the CLI retrieves
     the published agent metadata afterwards; -SkipRetrieve turns that off. Validate first with Test-SalesforceAgentAuthoringBundle.
+
+    .PARAMETER ApiName
+    API name of the authoring bundle you want to publish; if not specified, the command provides a list that you can choose from. Passed to sf as --api-name. Required.
+
+    .PARAMETER SkipRetrieve
+    Don't retrieve the metadata associated with the agent to your DX project. Adds --skip-retrieve.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
     .EXAMPLE
     Publish-SalesforceAgentAuthoringBundle -ApiName Service_Agent -TargetOrg my-org
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf agent publish authoring-bundle (plugin @salesforce/plugin-agent)
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --concise, --source-type, --verbose
+    Parameter to flag: -ApiName = --api-name; -SkipRetrieve = --skip-retrieve; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-agent
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(

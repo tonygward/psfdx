@@ -1,4 +1,29 @@
 function Get-PsfdxCommonParameterSplat {
+    <#
+    .SYNOPSIS
+    Internal helper: picks the common parameters out of $PSBoundParameters so a cmdlet can forward them to Invoke-Salesforce.
+
+    .DESCRIPTION
+    Shared helper used by every psfdx cmdlet. It returns a hashtable holding the common parameters the caller was given (such as Verbose and Debug, and WhatIf and Confirm) so they can be splatted into Invoke-Salesforce, which makes -Verbose show the sf command. It is public only because the modules import it from psfdx-shared; it may change without notice. It does not run sf.
+
+    .PARAMETER BoundParameters
+    The caller's $PSBoundParameters. Required.
+
+    .EXAMPLE
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Inside a cmdlet.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It works locally in PowerShell and .NET.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][System.Collections.IDictionary] $BoundParameters
@@ -214,6 +239,37 @@ function ConvertTo-PsfdxDisplayCommand {
     return ($parts -join ' ')
 }
 function Invoke-Salesforce {
+    <#
+    .SYNOPSIS
+    Internal helper: runs the sf executable (or another program) with an argument array.
+
+    .DESCRIPTION
+    Shared helper that every psfdx cmdlet uses to run a program. It runs -FilePath directly with the -Arguments array (never through Invoke-Expression or a shell), so ; | & and $(...) in a value are plain text. With -Verbose it prints the command with secret option values masked. In JSON mode a failed process without a JSON body throws; a failed process with a JSON body is returned so Show-SalesforceResult can report its message. The older -Command string form is still accepted. The executable is found on the PATH at run time. Public because the modules import it from psfdx-shared; it may change without notice.
+
+    .PARAMETER Command
+    Legacy form: one command string that is split into the program and its arguments. Do not use it in new code. Required in the Command parameter set.
+
+    .PARAMETER FilePath
+    The program to run, usually sf. It is looked up on the PATH. Required in the Arguments parameter set.
+
+    .PARAMETER Arguments
+    The arguments, one array element each, exactly as the program should receive them. On Windows, a .cmd shim (sf, npm, yarn) refuses an argument with a double quote or line break, or bare shell metacharacters, and a command line over about 7800 characters. Belongs to the Arguments parameter set. Default: @().
+
+    .EXAMPLE
+    Invoke-Salesforce -FilePath sf -Arguments @('org', 'list', '--json')
+    Run sf org list and return its output.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It works locally in PowerShell and .NET.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     # Deliberately does not declare SupportsShouldProcess: callers pipe the return value
     # straight into Show-SalesforceResult, whose -Result parameter is Mandatory, so
     # suppressing the call would make every cmdlet fail on a null argument instead of
