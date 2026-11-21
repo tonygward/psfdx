@@ -657,8 +657,11 @@ function Export-SalesforceTreeData {
             if ($null -ne $entry.PSObject.Properties['sobject']) { $types += [string] $entry.sobject }
             if ($null -ne $entry.PSObject.Properties['files']) { foreach ($f in @($entry.files)) { $files += (Join-Path -Path $directory -ChildPath ([string] $f)) } }
         }
-        $planName = ($types -join '-') + '-plan.json'
-        if ($Prefix) { $planName = "$Prefix-$planName" }
+        # The CLI names the plan file plan.json (no prefix) for several queries, and after the object types (with the prefix) for one.
+        if ($queries.Count -gt 1) { $planName = 'plan.json' } else {
+            $planName = ($types -join '-') + '-plan.json'
+            if ($Prefix) { $planName = "$Prefix-$planName" }
+        }
         $planFile = Join-Path -Path $directory -ChildPath $planName
         if (-not (Test-Path -LiteralPath $planFile -PathType Leaf)) { $planFile = $null }
         return [pscustomobject]@{ Plan = $true; OutputDirectory = $directory; PlanFile = $planFile; Files = $files; Records = $null; RecordCount = $null; Result = $entries }

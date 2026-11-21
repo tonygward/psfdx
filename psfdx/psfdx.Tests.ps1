@@ -1122,13 +1122,23 @@ Describe 'Data tree export and import' {
                 $q2 = 'SELECT Id FROM Lead'
                 $script:Reply = '[]'
                 $script:Reply = '{"status":0,"result":[{"sobject":"Account","saveRefs":true,"resolveRefs":false,"files":["Account.json"]},{"sobject":"Contact","saveRefs":false,"resolveRefs":true,"files":["Contact.json"]}]}'
-                Set-Content -LiteralPath (Join-Path $script:Dir.FullName 'demo-Account-Contact-plan.json') -Value '[]'
+                Set-Content -LiteralPath (Join-Path $script:Dir.FullName 'plan.json') -Value '[]'
                 $res = Export-SalesforceTreeData -Query $q1, $q2 -Plan -Prefix demo -OutputDirectory $script:Dir.FullName -TargetOrg me
                 $expected = "data|export|tree|--query|$q1|--query|$q2|--plan|--prefix|demo|--output-dir|$($script:Dir.FullName)|--target-org|me|--json"
                 Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
                 $res.Plan | Should -BeTrue
                 $res.Files | Should -Be @((Join-Path $script:Dir.FullName 'Account.json'), (Join-Path $script:Dir.FullName 'Contact.json'))
+                $res.PlanFile | Should -Be (Join-Path $script:Dir.FullName 'plan.json')
+            }
+            It 'names the plan file after the object types, with the prefix, for a single query' {
+                $script:Reply = '{"status":0,"result":[{"sobject":"Account","saveRefs":true,"resolveRefs":false,"files":["demo-Account.json"]},{"sobject":"Contact","saveRefs":false,"resolveRefs":true,"files":["demo-Contact.json"]}]}'
+                Set-Content -LiteralPath (Join-Path $script:Dir.FullName 'demo-Account-Contact-plan.json') -Value '[]'
+                $res = Export-SalesforceTreeData -Query 'SELECT Id, (SELECT Id FROM Contacts) FROM Account' -Plan -Prefix demo -OutputDirectory $script:Dir.FullName
                 $res.PlanFile | Should -Be (Join-Path $script:Dir.FullName 'demo-Account-Contact-plan.json')
+            }
+            It 'returns no PlanFile when the plan file is not where expected' {
+                $script:Reply = '{"status":0,"result":[{"sobject":"Account","files":["Account.json"]}]}'
+                (Export-SalesforceTreeData -Query 'SELECT Id FROM Account' -Plan -OutputDirectory $script:Dir.FullName).PlanFile | Should -BeNullOrEmpty
             }
             It 'returns the exported records without a plan' {
                 $script:Reply = '{"status":0,"result":{"records":[{"attributes":{"type":"Account","referenceId":"AccountRef1"},"Name":"Acme"},{"attributes":{"type":"Account","referenceId":"AccountRef2"},"Name":"Beta"}]}}'
