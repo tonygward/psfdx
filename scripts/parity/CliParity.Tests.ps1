@@ -19,6 +19,8 @@ BeforeAll {
         'Invoke-DemoDeploy',
         'Get-DemoConvenience',
         'Get-DemoViaHelper',
+        'Get-DemoShared',
+        'Get-DemoSingle',
         'Install-DemoPlugin'
     )
     PrivateData = @{ PSData = @{ Tags = @('x') } }
@@ -61,6 +63,20 @@ function Get-DemoViaHelper {
 function Get-DemoHelperFlags {
     return @('--from-helper')
 }
+function Get-DemoSingle {
+    $arguments = @('single')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments
+}
+function Get-DemoShared {
+    [CmdletBinding()]
+    Param()
+    $sharedOne = Get-SharedFlags
+    $other = @('shared', 'cmd')
+    $other += $sharedOne
+    $second = @('shared', 'second')
+    Invoke-Salesforce -FilePath 'sf' -Arguments $other
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $second @commonParams
+}
 function Install-DemoPlugin {
     [CmdletBinding()]
     Param()
@@ -70,6 +86,18 @@ function Install-DemoPlugin {
     $arguments = @('limits', 'api', 'display')
     $arguments = @('lightning', 'dev')
     $arguments = @('gone', 'command')
+}
+'@
+        $shared = Join-Path $Path 'psfdx-shared'
+        New-Item -ItemType Directory -Path $shared -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $shared 'psfdx-shared.psd1') -Encoding utf8 -Value "@{ ModuleVersion = '1.0.0'; FunctionsToExport = @('Get-SharedFlags') }"
+        Set-Content -LiteralPath (Join-Path $shared 'Helpers.ps1') -Encoding utf8 -Value @'
+function Get-SharedFlags {
+    $x = Get-NestedFlags
+    return @('--shared-flag') + $x
+}
+function Get-NestedFlags {
+    return @('--nested-flag')
 }
 '@
         Set-Content -LiteralPath (Join-Path $module 'psfdx-demo.Tests.ps1') -Encoding utf8 -Value "`$arguments = @('should', 'be', 'ignored')"
@@ -95,6 +123,9 @@ function Install-DemoPlugin {
             (New-ParityCommand -Id 'deploy start' -Flags @('wait', 'json'))
             (New-ParityCommand -Id 'deploy resume' -Flags @('job-id', 'use-most-recent'))
             (New-ParityCommand -Id 'helper run' -Flags @('from-helper'))
+            (New-ParityCommand -Id 'single' -Flags @())
+            (New-ParityCommand -Id 'shared cmd' -Flags @('shared-flag', 'nested-flag', 'json'))
+            (New-ParityCommand -Id 'shared second' -Flags @('only-here'))
             (New-ParityCommand -Id 'plugins' -Flags @('core'))
             (New-ParityCommand -Id 'apex list log' -Flags @('target-org') -Aliases @())
             (New-ParityCommand -Id 'org list limits' -Flags @('target-org') -Aliases @('limits api display') -DeprecatedAliases $true)
@@ -163,6 +194,10 @@ Describe 'Get-ParityPsfdxScan' {
         ($script:refs | Where-Object { $_.Function -eq 'Get-DemoThing' }).Words -join ' ' | Should -Be 'thing show'
     }
 
+    It 'reads a one-word command written as a one-element array' {
+        ($script:refs | Where-Object { $_.Function -eq 'Get-DemoSingle' }).Words -join ' ' | Should -Be 'single'
+    }
+
     It 'reads several commands from one function and an inline Invoke-Salesforce call' {
         @($script:refs | Where-Object { $_.Function -eq 'Invoke-DemoDeploy' } | ForEach-Object { $_.Words -join ' ' } | Sort-Object) | Should -Be @('deploy resume', 'deploy start')
         @($script:refs | Where-Object { $_.Function -eq 'Install-DemoPlugin' } | ForEach-Object { $_.Words -join ' ' }) | Should -Contain 'plugins'
@@ -208,6 +243,17 @@ Describe 'New-ParityReport' {
 
     It 'counts flags built by a helper that the owner calls' {
         $script:rows['helper run'].status | Should -Be 'wrapped'
+    }
+
+    It 'follows a variable other than $arguments that is passed to Invoke-Salesforce' {
+        @($script:rows['shared cmd'].psfdx) | Should -Be @('Get-DemoShared')
+        @($script:rows['shared second'].psfdx) | Should -Be @('Get-DemoShared')
+    }
+
+    It 'counts flags built by a helper in psfdx-shared, through the helper''s own calls' {
+        $script:rows['shared cmd'].status | Should -Be 'wrapped'
+        @($script:rows['shared cmd'].uncoveredFlags).Count | Should -Be 0
+        @($script:rows['shared second'].uncoveredFlags) | Should -Be @('only-here')
     }
 
     It 'classifies a command with flags left out as partially wrapped and lists them' {
@@ -270,8 +316,8 @@ Describe 'New-ParityReport' {
 
     It 'does not count a cmdlet that only calls another cmdlet as running the CLI' {
         @($script:report.psfdx.withoutADirectCliCommand) | Should -Be @('Get-DemoConvenience')
-        $script:report.psfdx.exportedFunctions | Should -Be 6
-        $script:report.psfdx.runningTheCli | Should -Be 5
+        $script:report.psfdx.exportedFunctions | Should -Be 8
+        $script:report.psfdx.runningTheCli | Should -Be 7
     }
 
     It 'warns when the mapping contradicts what psfdx does or names a command that is gone' {

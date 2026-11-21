@@ -76,6 +76,24 @@ function ConvertTo-ParityInventory {
     }
 }
 
+function Get-ParityArrayElements {
+    # The elements of the first array written in an expression: @('a', 'b'), a bare 'a', 'b', and a one-element @('a') (which is not an ArrayLiteralAst).
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)] $Expression
+    )
+
+    $outer = $Expression.Find({ param($n) ($n -is [System.Management.Automation.Language.ArrayExpressionAst]) -or ($n -is [System.Management.Automation.Language.ArrayLiteralAst]) }, $true)
+    if ($null -eq $outer) { return $null }
+    if ($outer -is [System.Management.Automation.Language.ArrayLiteralAst]) { return @($outer.Elements) }
+    $statement = $outer.SubExpression.Statements | Select-Object -First 1
+    if ($statement -isnot [System.Management.Automation.Language.PipelineAst]) { return $null }
+    $inner = $statement.PipelineElements | Select-Object -First 1
+    if ($inner -isnot [System.Management.Automation.Language.CommandExpressionAst]) { return $null }
+    if ($inner.Expression -is [System.Management.Automation.Language.ArrayLiteralAst]) { return @($inner.Expression.Elements) }
+    return @($inner.Expression)
+}
+
 function Get-ParityPsfdxScan {
     # Reads every psfdx module under $Root (manifests and sources, not tests) and returns the functions each one defines,
     # whether it is exported, and the `sf` commands and flags each function builds.
@@ -109,7 +127,7 @@ function Get-ParityPsfdxScan {
             $definedHere = @($definitions | ForEach-Object { $_.Name })
             foreach ($definition in $definitions) {
                 $calls = @($definition.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true) |
-                        ForEach-Object { $_.GetCommandName() } | Where-Object { $_ -and ($definedHere -contains $_) -and ($_ -ne $definition.Name) } | Sort-Object -Unique)
+                        ForEach-Object { $_.GetCommandName() } | Where-Object { $_ -and ($_ -match '^[A-Za-z]+-[A-Za-z0-9]+\z') -and ($_ -ne $definition.Name) } | Sort-Object -Unique)
                 $flags = New-Object System.Collections.Generic.SortedSet[string] ([System.StringComparer]::Ordinal)
                 $strings = $definition.Body.FindAll({ param($n) $n -is [System.Management.Automation.Language.StringConstantExpressionAst] }, $true)
                 foreach ($s in $strings) {
@@ -124,31 +142,39 @@ function Get-ParityPsfdxScan {
                         Flags    = @($flags)
                     })
 
-                # Structured argv: `$arguments = @('package', 'list')` and `Invoke-Salesforce -FilePath 'sf' -Arguments @('plugins', ...)`.
+                # Structured argv: an array of words passed to `Invoke-Salesforce -FilePath 'sf' -Arguments ...`, inline or through a variable.
                 $arrays = New-Object System.Collections.Generic.List[object]
-                $assignments = $definition.Body.FindAll({ param($n)
-                        ($n -is [System.Management.Automation.Language.AssignmentStatementAst]) -and ($n.Operator -eq 'Equals') -and
-                        ($n.Left -is [System.Management.Automation.Language.VariableExpressionAst]) -and ($n.Left.VariablePath.UserPath -eq 'arguments') }, $true)
-                foreach ($assignment in $assignments) {
-                    $array = $assignment.Right.Find({ param($n) $n -is [System.Management.Automation.Language.ArrayLiteralAst] }, $true)
-                    if ($array) { $arrays.Add($array) }
-                }
+                $variableNames = New-Object System.Collections.Generic.List[string]
+                $variableNames.Add('arguments')
                 $invocations = $definition.Body.FindAll({ param($n) ($n -is [System.Management.Automation.Language.CommandAst]) -and ($n.GetCommandName() -eq 'Invoke-Salesforce') }, $true)
                 foreach ($invocation in $invocations) {
                     $elements = @($invocation.CommandElements)
-                    $filePath = $null; $argumentArray = $null
+                    $filePath = $null; $argumentValue = $null
                     for ($i = 0; $i -lt $elements.Count; $i++) {
                         if ($elements[$i] -isnot [System.Management.Automation.Language.CommandParameterAst]) { continue }
                         $next = $null
                         if ($elements[$i].Argument) { $next = $elements[$i].Argument } elseif (($i + 1) -lt $elements.Count) { $next = $elements[$i + 1] }
                         if ($elements[$i].ParameterName -eq 'FilePath' -and $next -is [System.Management.Automation.Language.StringConstantExpressionAst]) { $filePath = $next.Value }
-                        if ($elements[$i].ParameterName -eq 'Arguments' -and $next) { $argumentArray = $next.Find({ param($n) $n -is [System.Management.Automation.Language.ArrayLiteralAst] }, $true) }
+                        if ($elements[$i].ParameterName -eq 'Arguments' -and $next) { $argumentValue = $next }
                     }
-                    if ($filePath -eq 'sf' -and $argumentArray) { $arrays.Add($argumentArray) }
+                    if ($filePath -ne 'sf' -or -not $argumentValue) { continue }
+                    $inline = Get-ParityArrayElements -Expression $argumentValue
+                    if ($null -ne $inline) { $arrays.Add($inline) }
+                    foreach ($variable in @($argumentValue.FindAll({ param($n) $n -is [System.Management.Automation.Language.VariableExpressionAst] }, $true))) {
+                        if (-not $variableNames.Contains($variable.VariablePath.UserPath)) { $variableNames.Add($variable.VariablePath.UserPath) }
+                    }
+                }
+                $names = $variableNames.ToArray()
+                $assignments = $definition.Body.FindAll({ param($n)
+                        ($n -is [System.Management.Automation.Language.AssignmentStatementAst]) -and ($n.Operator -eq 'Equals') -and
+                        ($n.Left -is [System.Management.Automation.Language.VariableExpressionAst]) -and ($names -contains $n.Left.VariablePath.UserPath) }, $true)
+                foreach ($assignment in $assignments) {
+                    $elements = Get-ParityArrayElements -Expression $assignment.Right
+                    if ($null -ne $elements) { $arrays.Add($elements) }
                 }
                 foreach ($array in $arrays) {
                     $words = New-Object System.Collections.Generic.List[string]
-                    foreach ($element in $array.Elements) {
+                    foreach ($element in $array) {
                         if ($element -isnot [System.Management.Automation.Language.StringConstantExpressionAst]) { break }
                         if ($element.Value -like '-*') { break }
                         $words.Add($element.Value)
@@ -326,11 +352,18 @@ function New-ParityReport {
         foreach ($owner in $owners) {
             if (-not $functionByName.ContainsKey($owner)) { continue }
             foreach ($flag in $functionByName[$owner].Flags) { [void]$covered.Add($flag) }
-            # Flags built by a helper in the same file that the owner calls count too.
-            foreach ($called in $functionByName[$owner].Calls) {
-                if ($functionByName.ContainsKey($called) -and $functionByName[$called].File -eq $functionByName[$owner].File) {
-                    foreach ($flag in $functionByName[$called].Flags) { [void]$covered.Add($flag) }
-                }
+            # Flags built by helpers the owner calls count too: helpers in the same file, and anything in psfdx-shared, followed through their own calls.
+            $seen = @{}
+            $pending = New-Object System.Collections.Generic.Queue[string]
+            foreach ($called in $functionByName[$owner].Calls) { $pending.Enqueue($called) }
+            while ($pending.Count -gt 0) {
+                $called = $pending.Dequeue()
+                if ($seen.ContainsKey($called) -or -not $functionByName.ContainsKey($called)) { continue }
+                $helper = $functionByName[$called]
+                if ($helper.File -ne $functionByName[$owner].File -and $helper.Module -ne 'psfdx-shared') { continue }
+                $seen[$called] = $true
+                foreach ($flag in $helper.Flags) { [void]$covered.Add($flag) }
+                foreach ($next in $helper.Calls) { $pending.Enqueue($next) }
             }
         }
         $cliFlags = @($command.flags | ForEach-Object { $_.name } | Where-Object { $ignored -notcontains $_ -and $ruleIgnored -notcontains $_ })
@@ -405,7 +438,8 @@ function New-ParityReport {
     # Exported cmdlets that never run `sf` themselves (they call other psfdx cmdlets) are conveniences, not extra CLI coverage.
     $direct = @{}
     foreach ($key in $usage.Keys) { foreach ($owner in $usage[$key]) { $direct[$owner] = $true } }
-    $exportedFunctions = @($Scan.Functions | Where-Object { $_.Exported })
+    # psfdx-shared exports internal helpers (Invoke-Salesforce and friends), not cmdlets a user runs, so they are not counted here.
+    $exportedFunctions = @($Scan.Functions | Where-Object { $_.Exported -and $_.Module -ne 'psfdx-shared' })
     $runs = @{}
     foreach ($f in $exportedFunctions) {
         if ($direct.ContainsKey($f.Name)) { $runs[$f.Name] = $true; continue }
@@ -497,7 +531,7 @@ function ConvertTo-ParityMarkdown {
         [void]$sb.Append("| $($pair[0]) | $($t.commands) | $($t.wrapped) | $($t.partiallyWrapped) | $($t.missing) | $($t.excluded) | $($t.notApplicable) | $(& $pct $t) of $($t.inScope) |" + $nl)
     }
     [void]$sb.Append($nl + '"Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.' + $nl + $nl)
-    [void]$sb.Append("psfdx exports **$($Report.psfdx.exportedFunctions)** cmdlets; **$($Report.psfdx.runningTheCli)** of them run an `sf` command themselves. The other **$($Report.psfdx.withoutADirectCliCommand.Count)** are conveniences built on those (or are local helpers) and add no CLI coverage of their own." + $nl + $nl)
+    [void]$sb.Append("psfdx exports **$($Report.psfdx.exportedFunctions)** cmdlets; **$($Report.psfdx.runningTheCli)** of them run an `sf` command themselves. The other **$($Report.psfdx.withoutADirectCliCommand.Count)** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own." + $nl + $nl)
 
     [void]$sb.Append('## By capability' + $nl + $nl)
     [void]$sb.Append('| Capability | Commands | Wrapped | Partially wrapped | Missing | Excluded | Not applicable | Covered of in scope |' + $nl)

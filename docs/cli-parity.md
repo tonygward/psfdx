@@ -16,7 +16,7 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **157** cmdlets; **112** of them run an sf command themselves. The other **45** are conveniences built on those (or are local helpers) and add no CLI coverage of their own.
+psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
 ## By capability
 
@@ -456,7 +456,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags not passed" lists th
 | `sf data import bulk` | wrapped | `Import-SalesforceBulkData` |  |
 | `sf data import resume` | partially wrapped | `Resume-SalesforceBulkJob` | `--use-most-recent` |
 | `sf data import tree` | wrapped | `Import-SalesforceTreeData` |  |
-| `sf data query` | wrapped | `Export-SalesforceEventFiles`, `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Select-SalesforceEventFiles`, `Select-SalesforceRecords` |  |
+| `sf data query` | wrapped | `Export-SalesforceEventFiles`, `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Get-SalesforceSandboxRefreshStatus`, `Select-SalesforceEventFiles`, `Select-SalesforceRecords` |  |
 | `sf data update bulk` | wrapped | `Update-SalesforceBulkData` |  |
 | `sf data update record` | partially wrapped | `Set-SalesforceRecord` | `--where` `--skip-assignment-rules` |
 | `sf data update resume` | partially wrapped | `Resume-SalesforceBulkJob` | `--use-most-recent` |
@@ -520,7 +520,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags not passed" lists th
 | `sf package install report` | wrapped | `Get-SalesforcePackageInstallStatus` |  |
 | `sf package installed list` | wrapped | `Get-SalesforcePackagesInstalled` |  |
 | `sf package list` | wrapped | `Get-SalesforcePackages` |  |
-| `sf package version create` | partially wrapped | `New-SalesforcePackageVersion` | `--branch` `--path` `--post-install-script` `--post-install-url` `--releasenotes-url` `--skip-ancestor-check` `--async-validation` `--generate-pkg-zip` `--uninstall-script` `--version-number` `--language` `--verbose` |
+| `sf package version create` | partially wrapped | `New-SalesforcePackageVersion` | `--branch` `--path` `--post-install-script` `--post-install-url` `--releasenotes-url` `--skip-ancestor-check` `--async-validation` `--generate-pkg-zip` `--uninstall-script` `--version-number` `--language` |
 | `sf package version create report` | wrapped | `Get-SalesforcePackageVersionCreateStatus` |  |
 | `sf package version delete` | wrapped | `Remove-SalesforcePackageVersion` |  |
 | `sf package version list` | partially wrapped | `Get-SalesforcePackageVersions` | `--created-last-days` `--modified-last-days` `--order-by` |
@@ -530,7 +530,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags not passed" lists th
 
 | Command | Status | psfdx cmdlets | Flags not passed |
 | :--- | :--- | :--- | :--- |
-| `sf plugins` | wrapped | `Test-SalesforceAgentPlugin`, Test-SalesforceLightningDevPluginInstalled (internal) |  |
+| `sf plugins` | wrapped | `Get-SalesforcePlugins`, `Test-SalesforceAgentPlugin`, Test-SalesforceLightningDevPluginInstalled (internal) |  |
 | `sf plugins install` | partially wrapped | `Install-SalesforceLwcDevServer`, `Install-SalesforcePlugin` | `--force` `--help` `--silent` `--verbose` |
 | `sf plugins update` | partially wrapped | `Update-SalesforcePlugins` | `--help` `--verbose` |
 
@@ -543,8 +543,8 @@ Commands psfdx runs, with the cmdlets that run them. "Flags not passed" lists th
 | `sf project deploy quick` | wrapped | `Start-SalesforceQuickDeploy` |  |
 | `sf project deploy report` | partially wrapped | `Get-SalesforceDeployStatus` | `--coverage-formatters` `--junit` `--results-dir` |
 | `sf project deploy resume` | partially wrapped | `Resume-SalesforceDeploy` | `--coverage-formatters` `--junit` `--results-dir` |
-| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | `--async` `--tests` `--test-level` `--purge-on-delete` `--pre-destructive-changes` `--post-destructive-changes` `--coverage-formatters` `--junit` `--results-dir` |
-| `sf project deploy validate` | partially wrapped | `Test-SalesforceDeploy` | `--metadata` `--tests` `--test-level` `--coverage-formatters` `--junit` `--results-dir` `--purge-on-delete` `--pre-destructive-changes` `--post-destructive-changes` |
+| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | `--async` `--purge-on-delete` `--pre-destructive-changes` `--post-destructive-changes` `--coverage-formatters` `--junit` `--results-dir` |
+| `sf project deploy validate` | partially wrapped | `Test-SalesforceDeploy` | `--metadata` `--coverage-formatters` `--junit` `--results-dir` `--purge-on-delete` `--pre-destructive-changes` `--post-destructive-changes` |
 | `sf project generate manifest` | partially wrapped | `Retrieve-SalesforceOrg` | `--metadata` `--source-dir` `--name` `--type` `--include-packages` `--excluded-metadata` |
 | `sf project retrieve preview` | partially wrapped | `Get-SalesforceRetrievePreview` | `--concise` |
 | `sf project retrieve start` | partially wrapped | `Retrieve-SalesforceComponent`, `Retrieve-SalesforceMetadata`, `Retrieve-SalesforceOrg`, `Retrieve-SalesforcePackage` | `--root-type-with-dependencies` `--single-package` `--source-dir` `--zip-file-name` |
