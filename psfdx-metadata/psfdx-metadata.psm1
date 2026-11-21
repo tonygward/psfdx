@@ -915,7 +915,7 @@ function Get-SalesforceDeployPreview {
     Read-only: nothing is deployed, retrieved or deleted. Returns one object with ToDeploy, ToRetrieve, ToDelete, Conflicts and Ignored,
     plus HasChanges, HasConflicts and Summary. With no changes the lists are empty and Summary is 'No changes'.
     Source tracking is required: scratch orgs and tracked sandboxes work; other orgs return the CLI error with guidance.
-    Narrow the preview with -SourceDir, -Manifest or -Metadata (any combination the CLI accepts).
+    Narrow the preview with -SourceDir, -Manifest (one package.xml; the CLI accepts only one) or -Metadata (any combination the CLI accepts).
     .EXAMPLE
     Get-SalesforceDeployPreview -TargetOrg my-sandbox
     .EXAMPLE
@@ -924,21 +924,19 @@ function Get-SalesforceDeployPreview {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][string[]] $SourceDir,
-        [Parameter(Mandatory = $false)][string[]] $Manifest,
+        [Parameter(Mandatory = $false)][string] $Manifest,
         [Parameter(Mandatory = $false)][string[]] $Metadata,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    foreach ($file in @($Manifest)) {
-        if ($file -and -not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Manifest file '$file' does not exist." }
-    }
+    if ($Manifest -and -not (Test-Path -LiteralPath $Manifest -PathType Leaf)) { throw "Manifest file '$Manifest' does not exist." }
     foreach ($dir in @($SourceDir)) {
         if ($dir -and -not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
     }
     $arguments = @('project', 'deploy', 'preview')
     foreach ($d in @($SourceDir)) { if ($d) { $arguments += @('--source-dir', $d) } }
-    foreach ($m in @($Manifest)) { if ($m) { $arguments += @('--manifest', $m) } }
+    if ($Manifest) { $arguments += @('--manifest', $Manifest) }
     foreach ($m in @($Metadata)) { if ($m) { $arguments += @('--metadata', $m) } }
     if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
