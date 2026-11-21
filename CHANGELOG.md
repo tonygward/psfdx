@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.32 - 2026-11-21
+
 - psfdx-development: the Apex test lifecycle in separate steps. `Start-SalesforceApexTest` starts a run and returns its `TestRunId` straight away; `Get-SalesforceApexTestResult` fetches the structured results (summary, each test's outcome and run time, optional coverage) for a run from any later session; `Wait-SalesforceApexTest` polls until the run finishes or a timeout passes (`PsfdxTestRunTimeout`). Failing tests write the results and then throw `PsfdxTestsFailed`; a command that could not run throws `PsfdxTestRunInvocationFailed`. A run that is still queued or processing returns `Completed = $false. The Flow and combined Flow/Apex test commands now also report `Completed`. `Test-SalesforceApex` is unchanged.
 
 ## 0.8.31 - 2026-11-21
