@@ -26,6 +26,8 @@
         'Start-SalesforceQuickDeploy',
         'Get-SalesforceDeployStatus',
         'Resume-SalesforceDeploy',
+        'Get-SalesforceDeployPreview',
+        'Get-SalesforceRetrievePreview',
         'Stop-SalesforceDeploy',
         'Describe-SalesforceObjects',
         'Describe-SalesforceObject',

@@ -31,8 +31,9 @@
     "plugins", "plugins install", "plugins update",
     "project deploy cancel", "project deploy quick", "project deploy report",
     "project deploy resume", "project deploy start", "project deploy validate",
+    "project deploy preview",
     "project generate", "project generate manifest",
-    "project retrieve start",
+    "project retrieve preview", "project retrieve start",
     "sobject describe", "sobject list"
   ],
   "removedCommands": [

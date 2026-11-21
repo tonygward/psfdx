@@ -683,3 +683,69 @@ Describe 'Build-SalesforceQuery identifier regression' {
         }
     }
 }
+
+Describe 'Deploy and retrieve preview' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":{"toDeploy":[{"type":"ApexClass","fullName":"Foo","projectRelativePath":"force-app/Foo.cls"}],"toRetrieve":[],"toDelete":[{"type":"ApexClass","fullName":"Old"}],"conflicts":[{"type":"ApexClass","fullName":"Bar","conflict":true}],"ignored":[{"fullName":"x.txt"}]}}'
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+        It 'builds the exact deploy preview command and returns the lists' {
+            $dir = Join-Path $TestDrive 'my classes'; New-Item -ItemType Directory -Path $dir | Out-Null
+            $p = Get-SalesforceDeployPreview -SourceDir $dir -Metadata 'ApexClass:Foo' -IgnoreConflicts -TargetOrg me
+            $expected = "project|deploy|preview|--source-dir|$dir|--metadata|ApexClass:Foo|--ignore-conflicts|--target-org|me|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            $p.Operation | Should -Be 'Deploy'
+            $p.ToDeploy.Count | Should -Be 1
+            $p.ToDelete.Count | Should -Be 1
+            $p.Conflicts[0].fullName | Should -Be 'Bar'
+            $p.Ignored.Count | Should -Be 1
+            $p.HasChanges | Should -BeTrue
+            $p.HasConflicts | Should -BeTrue
+            $p.Summary | Should -Be '1 to deploy, 0 to retrieve, 1 to delete, 1 conflict(s)'
+        }
+        It 'accepts a manifest and builds the plain command with no options' {
+            $m = Join-Path $TestDrive 'package.xml'; Set-Content -Path $m -Value '<Package/>'
+            Get-SalesforceDeployPreview -Manifest $m | Out-Null
+            $expected = "project|deploy|preview|--manifest|$m|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            Get-SalesforceDeployPreview | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|preview|--json' }
+        }
+        It 'rejects missing paths without calling the CLI' {
+            { Get-SalesforceDeployPreview -Manifest (Join-Path $TestDrive 'nope.xml') } | Should -Throw -ExpectedMessage '*does not exist*'
+            { Get-SalesforceDeployPreview -SourceDir (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'builds the exact retrieve preview command' {
+            $script:Reply = '{"status":0,"result":{"toRetrieve":[{"type":"CustomObject","fullName":"Acme__c"}],"toDeploy":[],"toDelete":[],"conflicts":[],"ignored":[]}}'
+            $p = Get-SalesforceRetrievePreview -IgnoreConflicts -TargetOrg me
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|preview|--ignore-conflicts|--target-org|me|--json' }
+            $p.Operation | Should -Be 'Retrieve'
+            $p.ToRetrieve.Count | Should -Be 1
+            $p.HasConflicts | Should -BeFalse
+        }
+        It 'returns empty lists and a clear summary when there are no changes, including a missing property' {
+            $script:Reply = '{"status":0,"result":{"toDeploy":[],"toRetrieve":[],"toDelete":[],"conflicts":[],"ignored":[]}}'
+            $p = Get-SalesforceDeployPreview
+            $p.HasChanges | Should -BeFalse
+            $p.Summary | Should -Be 'No changes'
+            @($p.ToDeploy).Count | Should -Be 0
+            $script:Reply = '{"status":0,"result":{}}'
+            (Get-SalesforceRetrievePreview).Summary | Should -Be 'No changes'
+        }
+        It 'surfaces CLI errors, adding guidance for orgs without source tracking' {
+            $script:Reply = '{"status":1,"name":"NoSourceTracking","message":"This org does not have source tracking enabled."}'
+            { Get-SalesforceDeployPreview } | Should -Throw -ExpectedMessage '*source tracking*Deploy-SalesforceMetadata*'
+            $script:Reply = '{"status":1,"name":"Other","message":"Something else failed."}'
+            { Get-SalesforceRetrievePreview } | Should -Throw -ExpectedMessage 'Something else failed.'
+        }
+        It 'is exported, has examples, and keeps helpers private' {
+            $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-metadata).ModuleBase 'psfdx-metadata.psd1')).FunctionsToExport
+            $exports | Should -Contain 'Get-SalesforceDeployPreview'
+            $exports | Should -Contain 'Get-SalesforceRetrievePreview'
+            $exports | Should -Not -Contain 'ConvertTo-SalesforcePreviewObject'
+            foreach ($n in 'Get-SalesforceDeployPreview', 'Get-SalesforceRetrievePreview') { @((Get-Help $n -Examples).examples.example).Count | Should -BeGreaterThan 0 }
+        }
+    }
+}
