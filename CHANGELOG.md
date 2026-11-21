@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.33 - 2026-11-21
+
 - psfdx: new `Get-SalesforceRecord` and `Remove-SalesforceRecord` complete single-record create, read, update and delete. Select the record with `-Id`, or with `-Where` (a hashtable of field values that identify exactly one record); the two are alternatives. Get returns the record without the internal `attributes` property. Remove asks for confirmation, naming the object, record and org, supports `-WhatIf`, and returns the CLI result; a missing record or a `-Where` that matches several throws the CLI message. Unattended scripts need `-Confirm:$false`.
 
 - psfdx-packages: new `Get-SalesforcePackageVersionCreateStatus` and `Get-SalesforcePackageInstallStatus` let a later CI step recover the outcome of a package build or install. They return the status, IDs and error messages as an object, with `Completed` and `Succeeded`, and `-ThrowOnFailure` for CI. Capture the create request `Id` (08c...) from `New-SalesforcePackageVersion`, and the install request `Id` (0Hf...) from `Install-SalesforcePackageVersion -AsObject`. `-AsObject` is new; without it `Install-SalesforcePackageVersion` behaves as before.
