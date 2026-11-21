@@ -896,3 +896,172 @@ Describe 'Flow and logic test commands' {
         }
     }
 }
+
+Describe 'Apex test run lifecycle' {
+    InModuleScope 'psfdx-development' {
+        BeforeAll {
+            $script:RunId = '707xx0000000001'
+            $script:Queued = '{"status":0,"result":{"testRunId":"707xx0000000001AAA"}}'
+            $script:Passed = '{"status":0,"result":{"summary":{"outcome":"Passed","testsRan":2,"passing":2,"failing":0,"skipped":0,"testRunId":"707xx0000000001AAA","testTotalTime":"120 ms"},"tests":[{"FullName":"MyTest.a","Outcome":"Pass","RunTime":40},{"FullName":"MyTest.b","Outcome":"Pass","RunTime":80}]}}'
+            $script:Failed = '{"status":100,"result":{"summary":{"outcome":"Failed","testsRan":2,"passing":1,"failing":1,"skipped":0,"testRunId":"707xx0000000001AAA"},"tests":[{"FullName":"MyTest.a","Outcome":"Pass","RunTime":40},{"FullName":"MyTest.b","Outcome":"Fail","RunTime":80,"Message":"System.AssertException: expected 1","StackTrace":"Class.MyTest.b: line 9"}]}}'
+            $script:Running = '{"status":0,"result":{"summary":{"outcome":"Processing","testsRan":1,"passing":1,"failing":0,"skipped":0,"testRunId":"707xx0000000001AAA"},"tests":[{"FullName":"MyTest.a","Outcome":"Pass","RunTime":40}]}}'
+        }
+        BeforeEach {
+            $script:Replies = @($script:Passed)
+            $script:Calls = 0
+            Mock Invoke-Salesforce {
+                $i = [math]::Min($script:Calls, $script:Replies.Count - 1)
+                $script:Calls++
+                $script:Replies[$i]
+            }
+            Mock Start-Sleep { }
+        }
+
+        Context 'Start-SalesforceApexTest' {
+            It 'builds the exact command for classes and returns the run ID without waiting' {
+                $script:Replies = @($script:Queued)
+                $res = Start-SalesforceApexTest -ClassName MyTest, OtherTest -TestLevel RunSpecifiedTests -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--class-names|MyTest|--class-names|OtherTest|--test-level|RunSpecifiedTests|--target-org|me|--result-format|json|--json' }
+                $res.TestRunId | Should -Be '707xx0000000001AAA'
+                $res.Completed | Should -BeFalse
+            }
+            It 'builds the command for specific tests, a suite, and the local tests' {
+                $script:Replies = @($script:Queued)
+                Start-SalesforceApexTest -TestName 'MyTest.a' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--tests|MyTest.a|--result-format|json|--json' }
+                Start-SalesforceApexTest -SuiteName Smoke | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--suite-names|Smoke|--result-format|json|--json' }
+                Start-SalesforceApexTest | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--result-format|json|--json' }
+            }
+            It 'rejects <Case> without calling the CLI' -ForEach @(
+                @{ Case = 'two kinds of selection';  Run = { Start-SalesforceApexTest -ClassName A -SuiteName B };                       Message = '*only one of*' }
+                @{ Case = 'a class at another level'; Run = { Start-SalesforceApexTest -ClassName A -TestLevel RunLocalTests };          Message = '*needs -TestLevel RunSpecifiedTests*' }
+                @{ Case = 'an unknown level';         Run = { Start-SalesforceApexTest -TestLevel RunEverything };                       Message = '*RunEverything*' }
+            ) {
+                { & $Run } | Should -Throw -ExpectedMessage $Message
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'fails when the CLI returns no run ID, or an error' {
+                $script:Replies = @('{"status":0,"result":{}}')
+                { Start-SalesforceApexTest } | Should -Throw
+                $script:Calls = 0
+                $script:Replies = @('{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}')
+                $err = $null
+                try { Start-SalesforceApexTest -TargetOrg nobody } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestRunInvocationFailed'
+            }
+        }
+
+        Context 'Get-SalesforceApexTestResult' {
+            It 'builds the exact command and returns per-test outcome and run time' {
+                $res = Get-SalesforceApexTestResult -TestRunId $script:RunId -CodeCoverage -CodeCoverageDetailed -Concise -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|test|--test-run-id|707xx0000000001|--concise|--code-coverage|--detailed-coverage|--target-org|me|--result-format|json|--json' }
+                $res.Completed | Should -BeTrue
+                $res.Summary.outcome | Should -Be 'Passed'
+                $res.Tests.Count | Should -Be 2
+                $res.Tests[1].RunTime | Should -Be 80
+                $res.Tests[0].Outcome | Should -Be 'Pass'
+            }
+            It 'returns coverage when the CLI reports it' {
+                $script:Replies = @('{"status":0,"result":{"summary":{"outcome":"Passed","testsRan":1,"failing":0,"testRunId":"707xx0000000001AAA","testRunCoverage":"85%"},"tests":[],"coverage":{"coverage":[{"name":"MyClass","coveredPercent":85}]}}}')
+                $res = Get-SalesforceApexTestResult -TestRunId $script:RunId -CodeCoverage
+                $res.Coverage.coverage[0].name | Should -Be 'MyClass'
+                $res.Summary.testRunCoverage | Should -Be '85%'
+            }
+            It 'writes the results and then throws PsfdxTestsFailed for failing tests, with message and stack trace available' {
+                $script:Replies = @($script:Failed)
+                $err = $null
+                try { Get-SalesforceApexTestResult -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestsFailed'
+                $err.TargetObject.failing | Should -Be 1
+                $err.Exception.Message | Should -BeLike '*1 failing of 2*'
+            }
+            It 'returns Completed = false, without throwing, for a run still processing' {
+                $script:Replies = @($script:Running)
+                $res = Get-SalesforceApexTestResult -TestRunId $script:RunId
+                $res.Completed | Should -BeFalse
+                $res.Summary.outcome | Should -Be 'Processing'
+            }
+            It 'throws PsfdxTestRunInvocationFailed for an unknown run and for malformed output' {
+                $script:Replies = @('{"status":1,"message":"The requested resource does not exist"}')
+                $err = $null
+                try { Get-SalesforceApexTestResult -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestRunInvocationFailed'
+                $script:Calls = 0
+                $script:Replies = @('not json')
+                { Get-SalesforceApexTestResult -TestRunId $script:RunId } | Should -Throw -ExpectedMessage '*not valid JSON*'
+                $script:Calls = 0
+                $script:Replies = @('{"status":0,"result":{"unexpected":true}}')
+                { Get-SalesforceApexTestResult -TestRunId $script:RunId } | Should -Throw
+            }
+            It 'rejects a malformed run ID, missing output directory and detailed coverage alone without calling the CLI' {
+                { Get-SalesforceApexTestResult -TestRunId '001xx0000000001' } | Should -Throw
+                { Get-SalesforceApexTestResult -TestRunId '707xx0000000001; calc' } | Should -Throw
+                { Get-SalesforceApexTestResult -TestRunId $script:RunId -OutputDirectory (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Get-SalesforceApexTestResult -TestRunId $script:RunId -CodeCoverageDetailed } | Should -Throw -ExpectedMessage '*needs -CodeCoverage*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Wait-SalesforceApexTest' {
+            It 'polls until the run finishes and returns the results' {
+                $script:Replies = @($script:Running, $script:Running, $script:Passed)
+                $res = Wait-SalesforceApexTest -TestRunId $script:RunId -TimeoutMinutes 5 -PollSeconds 10 -TargetOrg me
+                $res.Completed | Should -BeTrue
+                $res.Tests.Count | Should -Be 2
+                Assert-MockCalled Invoke-Salesforce -Times 3 -Exactly
+                Assert-MockCalled Start-Sleep -Times 2 -Exactly -ParameterFilter { $Seconds -eq 10 }
+            }
+            It 'passes coverage options and the org to every poll' {
+                $script:Replies = @($script:Running, $script:Passed)
+                Wait-SalesforceApexTest -TestRunId $script:RunId -CodeCoverage -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|test|--test-run-id|707xx0000000001|--code-coverage|--target-org|me|--result-format|json|--json' }
+            }
+            It 'throws PsfdxTestRunTimeout, with the run ID, when the run does not finish in time' {
+                $script:Replies = @($script:Running)
+                $err = $null
+                try { Wait-SalesforceApexTest -TestRunId $script:RunId -TimeoutMinutes 1 -PollSeconds 30 | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestRunTimeout'
+                $err.TargetObject | Should -Be $script:RunId
+                Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly
+                Assert-MockCalled Start-Sleep -Times 1 -Exactly
+            }
+            It 'throws PsfdxTestsFailed straight away when the finished run has failures' {
+                $script:Replies = @($script:Running, $script:Failed)
+                $err = $null
+                try { Wait-SalesforceApexTest -TestRunId $script:RunId | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxTestsFailed'
+            }
+            It 'rejects out-of-range waits and a malformed run ID without calling the CLI' {
+                { Wait-SalesforceApexTest -TestRunId $script:RunId -TimeoutMinutes 0 } | Should -Throw
+                { Wait-SalesforceApexTest -TestRunId $script:RunId -PollSeconds 0 } | Should -Throw
+                { Wait-SalesforceApexTest -TestRunId 'abc' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'compatibility and surface' {
+            It 'leaves Test-SalesforceApex as it was' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"summary":{"outcome":"Passed","testsRan":1,"failing":0},"tests":[{"FullName":"A.b","Outcome":"Pass"}]}}' }
+                $res = @(Test-SalesforceApex -ClassName MyTest -TargetOrg me)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--tests|MyTest|--wait|10|--target-org|me|--result-format|json' }
+                $res[0].FullName | Should -Be 'A.b'
+                Mock Invoke-Salesforce { '{"status":100,"result":{"summary":{"outcome":"Failed","failing":2,"testsRan":3},"tests":[]}}' }
+                { Test-SalesforceApex -ClassName MyTest } | Should -Throw -ExpectedMessage '2 Tests Failed'
+            }
+            It 'exports the three commands and has help examples, including the start-now-read-later one' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-development).ModuleBase 'psfdx-development.psd1')).FunctionsToExport
+                foreach ($name in 'Start-SalesforceApexTest', 'Get-SalesforceApexTestResult', 'Wait-SalesforceApexTest') {
+                    $exports | Should -Contain $name
+                    @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0
+                }
+                ((Get-Help Start-SalesforceApexTest -Examples | Out-String)) | Should -BeLike '*Later, in another shell*'
+            }
+            It 'tells Flow users where the Flow commands are' {
+                (Get-Help Get-SalesforceApexTestResult).description.Text -join ' ' | Should -Not -BeNullOrEmpty
+                (Get-Content -LiteralPath (Join-Path (Get-Module -Name psfdx-development).ModuleBase 'psfdx-development.psm1') -Raw) | Should -BeLike '*Test-SalesforceFlow and Test-SalesforceLogic (#191)*'
+            }
+        }
+    }
+}
