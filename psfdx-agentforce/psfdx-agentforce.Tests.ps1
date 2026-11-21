@@ -198,18 +198,28 @@ Describe 'Agent authoring bundles' {
                 Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
                 $out.ok | Should -BeTrue
             }
+            It 'adds --no-spec for a blank bundle' {
+                New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -NoSpec -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'agent|generate|authoring-bundle|--name|Service Agent|--no-spec|--json' }
+            }
+            It 'requires a spec or -NoSpec, and not both, before calling the CLI' {
+                { New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -Confirm:$false } | Should -Throw -ExpectedMessage '*-Spec*-NoSpec*'
+                $spec = Join-Path $TestDrive 's.yaml'; Set-Content -Path $spec -Value 'x'
+                { New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -Spec $spec -NoSpec -Confirm:$false } | Should -Throw -ExpectedMessage '*only one of*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
             It 'writes nothing under -WhatIf' {
-                New-SalesforceAgentAuthoringBundle -ApiName Service_Agent -WhatIf | Out-Null
+                New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -NoSpec -WhatIf | Out-Null
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'agent|generate*' }
             }
             It 'rejects a bad API name and a missing spec without calling the CLI' {
-                { New-SalesforceAgentAuthoringBundle -ApiName 'bad name' -Confirm:$false } | Should -Throw -ExpectedMessage '*not a valid API name*'
-                { New-SalesforceAgentAuthoringBundle -Spec (Join-Path $TestDrive 'nope.yaml') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                { New-SalesforceAgentAuthoringBundle -Name 'X' -NoSpec -ApiName 'bad name' -Confirm:$false } | Should -Throw -ExpectedMessage '*not a valid API name*'
+                { New-SalesforceAgentAuthoringBundle -Name 'X' -Spec (Join-Path $TestDrive 'nope.yaml') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
             }
             It 'stops with install guidance when the plugin is missing' {
                 Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
-                { New-SalesforceAgentAuthoringBundle -ApiName Service_Agent -Confirm:$false } | Should -Throw -ExpectedMessage '*plugin-agent*not installed*'
+                { New-SalesforceAgentAuthoringBundle -Name 'X' -NoSpec -Confirm:$false } | Should -Throw -ExpectedMessage '*plugin-agent*not installed*'
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly -ParameterFilter { ($Arguments -join '|') -like 'agent*' }
             }
         }

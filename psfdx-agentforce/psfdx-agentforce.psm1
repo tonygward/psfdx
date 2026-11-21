@@ -312,42 +312,45 @@ function New-SalesforceAgentAuthoringBundle {
     .SYNOPSIS
     Generates an authoring bundle (Agent Script) for an agent (sf agent generate authoring-bundle).
     .DESCRIPTION
-    Writes files into the project, so it asks for confirmation and supports -WhatIf. -Spec is an agent spec file made by the agent plugin;
-    -OutputDir is where the bundle goes (the CLI default is the project's authoring bundle folder). Returns the CLI result, which includes
+    Writes files into the project, so it asks for confirmation and supports -WhatIf. The CLI requires -Name (the agent label) and either -Spec
+    (an agent spec file made by the agent plugin) or -NoSpec to generate a blank bundle; both are checked before the CLI is called. -OutputDir is where the bundle goes (the CLI default is the project's authoring bundle folder). Returns the CLI result, which includes
     the paths written. Needs the @salesforce/plugin-agent plugin, a recent version, and Agentforce enabled in the org.
     .EXAMPLE
     New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -ApiName Service_Agent -Spec specs/agentSpec.yaml -TargetOrg my-org
     .EXAMPLE
-    New-SalesforceAgentAuthoringBundle -ApiName Service_Agent -Confirm:$false | Out-Null
+    New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -ApiName Service_Agent -NoSpec -Confirm:$false | Out-Null
     Test-SalesforceAgentAuthoringBundle -ApiName Service_Agent
     Publish-SalesforceAgentAuthoringBundle -ApiName Service_Agent -Confirm:$false
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
-        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ApiName,
         [Parameter(Mandatory = $false)][string] $Spec,
+        [Parameter(Mandatory = $false)][switch] $NoSpec,
         [Parameter(Mandatory = $false)][string] $OutputDir,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
     if ($ApiName) { Assert-SalesforceAgentApiName -Value $ApiName -What 'Authoring bundle' }
+    if ($Spec -and $NoSpec) { throw 'Specify only one of -Spec or -NoSpec.' }
+    if (-not $Spec -and -not $NoSpec) { throw 'Specify -Spec (an agent spec file) or -NoSpec to generate a blank bundle.' }
     if ($Spec -and -not (Test-Path -LiteralPath $Spec -PathType Leaf)) { throw "Spec file '$Spec' does not exist." }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
 
     $arguments = @('agent', 'generate', 'authoring-bundle')
-    if ($Name) { $arguments += @('--name', $Name) }
+    $arguments += @('--name', $Name)
     if ($ApiName) { $arguments += @('--api-name', $ApiName) }
     if ($Spec) { $arguments += @('--spec', $Spec) }
+    if ($NoSpec) { $arguments += '--no-spec' }
     if ($OutputDir) { $arguments += @('--output-dir', $OutputDir) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
 
-    $target = $ApiName
-    if (-not $target) { $target = $Name }
-    if (-not $target) { $target = 'new authoring bundle' }
+    $target = $Name
+    if ($ApiName) { $target = $ApiName }
     if ($PSCmdlet.ShouldProcess($target, 'Generate authoring bundle files')) {
         $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
