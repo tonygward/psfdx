@@ -1,6 +1,7 @@
 {
   "knownCommands": [
     "agent activate", "agent deactivate",
+    "agent generate authoring-bundle", "agent publish authoring-bundle", "agent validate authoring-bundle",
     "agent test list", "agent test results", "agent test run",
     "alias list", "alias set", "alias unset",
     "api request rest",
