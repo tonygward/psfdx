@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.38 - 2026-11-21
+
 - psfdx, psfdx-packages: records, package versions and trace flags now work in pipelines. `Remove-`, `Get-` and `Set-SalesforceRecord` take the ID from piped records, `Remove-` and `Promote-SalesforcePackageVersion` take the version from `Get-SalesforcePackageVersions`, and `Disable-SalesforceDebugLogging` already took trace flags. Each piped object is confirmed and honours `-WhatIf` on its own. `New-SalesforceRecord` and `Set-SalesforceRecord` now support `-WhatIf` and `-Confirm` (they still do not prompt by default). Existing calls work unchanged. The README has a new Pipelines section on empty results, single versus many results and errors.
 
 ## 0.8.37 - 2026-11-21
