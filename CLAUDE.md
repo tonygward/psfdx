@@ -22,6 +22,7 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `.github/workflows/` | CI, gate, release and housekeeping pipelines ([docs/pipelines.md](docs/pipelines.md)) |
 | `scripts/release/` | Version bump, release zip, Gallery bundle, and the shared "does this change ship / need tests" rule (`changes.mjs`) |
 | `scripts/matrix/` | The merge gate and prompt archiving |
+| `scripts/parity/` | The Salesforce CLI to psfdx parity report generator ([docs/cli-parity.md](docs/cli-parity.md)) |
 | `site/` | The public website (psfdx.com): static HTML and CSS, built by `site/build.mjs`, deployed by Cloudflare Pages ([site/README.md](site/README.md)). Not part of the product; it never releases |
 | `tools/matrix/` | Matrix, the Node orchestrator that runs board work |
 | `tools/matrix-linux/` | The container, proxy and launcher Matrix runs in |
@@ -100,6 +101,7 @@ Manifests declare `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Des
 4. Add or update its row in the module's table in `README.md`.
 5. Add an entry under `## Unreleased` in `CHANGELOG.md`, prefixed with the module name (`- psfdx-logs: ...`). Mark renames and moves as `Breaking:`.
 6. A new module also needs adding to `modules.ps1`.
+7. If it runs a new `sf` command, or passes a flag no cmdlet passed before, regenerate the parity report with `./scripts/parity/New-CliParityReport.ps1` and commit `docs/cli-parity.md` and `docs/cli-parity.json`. A test fails if you forget.
 
 ## How work runs
 

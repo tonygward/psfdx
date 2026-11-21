@@ -100,6 +100,14 @@ Get-SalesforcePackageVersions -PackageName MyPkg | Remove-SalesforcePackageVersi
 - **One result or many.** PowerShell unrolls a single result into the object itself, so wrap a call in `@(...)` when you need a stable array (`@(Select-SalesforceRecords ...).Count`).
 - **Errors.** A failure reported by the Salesforce CLI throws, with the CLI's message, and stops the pipeline. A piped record whose ID is not a valid Salesforce ID is reported as an error for that record and skipped; use `-ErrorAction Stop` to stop instead. No result data is discarded or turned into text.
 
+## Salesforce CLI coverage
+
+How much of the Salesforce CLI does psfdx wrap? [docs/cli-parity.md](docs/cli-parity.md) answers it command by command. It compares the latest stable `sf` with the commands the modules actually run, not with cmdlet counts, and shows for every command whether psfdx wraps it, wraps part of it (and which flags are missing), has not covered it, or leaves it out on purpose.
+
+- **Read it per plugin set.** The report is for the core plugins that ship with the CLI and, separately, the just-in-time plugins it installs on first use. A percentage means "of the commands in that set that apply to a PowerShell wrapper", never of the whole CLI.
+- **Missing is not a promise.** A gap with no reason has simply not been decided. A reviewed gap carries a reason or an issue link. The reviewed classifications are in [docs/cli-parity-mapping.json](docs/cli-parity-mapping.json); everything else is read from the code.
+- **Regenerate it** with `./scripts/parity/New-CliParityReport.ps1` (offline, no CLI, org or credentials needed) after you add a cmdlet that runs `sf`. A test fails if the committed report is out of date. To compare against a newer CLI, install it and run `./scripts/parity/New-CliInventorySnapshot.ps1` first. The machine-readable twin is [docs/cli-parity.json](docs/cli-parity.json).
+
 ## Licence
 
 psfdx is released under the MIT licence. See [LICENSE](LICENSE).

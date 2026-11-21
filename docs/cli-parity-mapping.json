@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
+  "capabilities": {
+    "agent": "Agentforce agents",
+    "alias": "Aliases",
+    "apex": "Apex",
+    "api": "REST API requests",
+    "autocomplete": "Shell autocomplete",
+    "cmdt": "Custom metadata types",
+    "code-analyzer": "Code Analyzer",
+    "commands": "CLI command list",
+    "community": "Experience Cloud sites",
+    "config": "CLI configuration",
+    "data": "Data and records",
+    "dev": "CLI plugin development",
+    "devops": "DevOps Center",
+    "doctor": "CLI diagnostics",
+    "flow": "Flow",
+    "force": "Legacy force commands",
+    "help": "CLI help",
+    "info": "CLI information",
+    "lightning": "Lightning development",
+    "logic": "Logic tests",
+    "org": "Orgs, users and sandboxes",
+    "package": "Packages (second generation)",
+    "package1": "Packages (first generation)",
+    "plugins": "CLI plugins",
+    "project": "Project, deploy and retrieve",
+    "schema": "Schema",
+    "search": "CLI search",
+    "sobject": "Objects",
+    "template": "Templates and generators",
+    "ui-bundle": "UI bundles",
+    "update": "CLI update",
+    "version": "CLI version",
+    "whatsnew": "CLI release notes",
+    "which": "CLI command lookup"
+  },
+  "rules": [
+    {
+      "match": "autocomplete",
+      "status": "not applicable",
+      "reason": "Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it."
+    },
+    {
+      "match": "commands",
+      "status": "not applicable",
+      "reason": "Lists the sf commands. psfdx reads it only to build this report."
+    },
+    {
+      "match": "help",
+      "status": "not applicable",
+      "reason": "Prints sf help for a person at a terminal."
+    },
+    {
+      "match": "version",
+      "status": "not applicable",
+      "reason": "Prints the CLI version; psfdx reads it only for this report and the compatibility lane."
+    },
+    {
+      "match": "whatsnew",
+      "status": "not applicable",
+      "reason": "Shows CLI release notes to a person."
+    },
+    {
+      "match": "info *",
+      "status": "not applicable",
+      "reason": "Shows CLI release notes to a person."
+    },
+    {
+      "match": "which",
+      "status": "not applicable",
+      "reason": "Tells a person which plugin provides a command."
+    },
+    {
+      "match": "search",
+      "status": "not applicable",
+      "reason": "Interactive search of the CLI command list."
+    },
+    {
+      "match": "update",
+      "status": "not applicable",
+      "reason": "Updates the sf program itself; psfdx installs and updates it with Install-SalesforceCli and Update-SalesforceCli (npm)."
+    },
+    {
+      "match": "force *",
+      "status": "not applicable",
+      "reason": "Legacy sfdx-style commands kept for old scripts. psfdx wraps the current command that does the same job (see docs/cli-compatibility.md)."
+    },
+    {
+      "match": "dev *",
+      "status": "not applicable",
+      "reason": "Commands for building Salesforce CLI plugins, not for working with an org."
+    },
+    {
+      "match": "plugins link",
+      "status": "not applicable",
+      "reason": "Links a local plugin under development, which only plugin authors do."
+    },
+    {
+      "match": "plugins unlink",
+      "status": "not applicable",
+      "reason": "Unlinks a local plugin under development, which only plugin authors do."
+    }
+  ]
+}
