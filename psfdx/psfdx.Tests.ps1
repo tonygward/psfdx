@@ -536,7 +536,7 @@ Describe 'SOQL query regression' {
                 @{ Name = 'backslash';    Value = 'a\b@example.com';        Literal = "'a\\b@example.com'" }
                 @{ Name = 'trailing \';   Value = 'end\';                   Literal = "'end\\'" }
                 @{ Name = 'injection';    Value = "x' OR Name != '";        Literal = "'x\' OR Name != \''" }
-                @{ Name = 'unicode';      Value = 'Zo├½ µùÑµ£¼Þ¬×@example.com';   Literal = "'Zo├½ µùÑµ£¼Þ¬×@example.com'" }
+                @{ Name = 'unicode';      Value = 'Zoë 日本語@example.com';   Literal = "'Zoë 日本語@example.com'" }
                 @{ Name = 'percent';      Value = '50%_off';                Literal = "'50%_off'" }
                 @{ Name = 'spaces';       Value = 'a b  c';                 Literal = "'a b  c'" }
                 @{ Name = 'shell chars';  Value = 'a&b|c;$(x)';             Literal = "'a&b|c;`$(x)'" }
