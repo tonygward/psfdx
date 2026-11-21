@@ -62,3 +62,5 @@ Edit `site/src/index.html` and `style.css`, then run the tests. Keep the module 
 ## Deployment troubleshooting
 
 If a merge to `main` does not appear on psfdx.com, check the Cloudflare Pages `psfdx` project's deployment history and GitHub connection. Cloudflare Pages must automatically build `main` with `node site/build.mjs` and publish `site/dist`; GitHub's `ci-site.yml` validates pull requests but does not publish the site. If no deployment is created for the commit, investigate the GitHub integration rather than the site build. After reconnecting the repository, verify that a subsequent push creates a new production deployment.
+
+<!-- Deployment trigger verified after granting the Cloudflare GitHub App access to psfdx on 2026-11-21. -->
