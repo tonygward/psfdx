@@ -407,21 +407,9 @@ function Remove-SalesforceScratchOrgs {
 
 #region Code Analyzer
 
-# Wraps `sf code-analyzer run` and `sf code-analyzer rules`. The findings are not in the CLI's JSON stdout; they are written to an output
-# file, so each call asks for a temporary JSON file and reads it. A failing exit is either a threshold failure (the report exists) or a
-# plugin or engine problem (no report), and the two are reported differently.
-
-function Read-SalesforceCodeAnalyzerJson {
-    # Private: parses CLI output (text or lines) as JSON; returns $null when it is not JSON.
-    [CmdletBinding()]
-    Param(
-        [Parameter(Mandatory = $false)][AllowNull()] $Output
-    )
-
-    $text = (@($Output) | Out-String).Trim()
-    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
-    try { return ($text | ConvertFrom-Json -ErrorAction Stop) } catch { return $null }
-}
+# Wraps `sf code-analyzer run` and `sf code-analyzer rules`. These commands have no --json flag: the machine-readable output is a file
+# written with --output-file, so each call asks for a temporary JSON file and reads it, and uses the process exit code to tell a threshold
+# failure (non-zero exit, report written) from a plugin or engine problem (no report).
 
 function Read-SalesforceCodeAnalyzerReport {
     # Private: reads the JSON report file the CLI wrote; returns $null when it is missing or not JSON.
@@ -445,16 +433,13 @@ function New-SalesforceCodeAnalyzerReportPath {
 }
 
 function Get-SalesforceCodeAnalyzerFailureMessage {
-    # Private: the CLI's message, with install guidance when the code-analyzer command does not exist.
+    # Private: the CLI's text output as the message, with install guidance when the code-analyzer command does not exist.
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][AllowNull()] $Parsed,
         [Parameter(Mandatory = $false)][AllowNull()] $Output
     )
 
-    $message = $null
-    if ($null -ne $Parsed -and $Parsed.PSObject.Properties.Name -contains 'message') { $message = [string]$Parsed.message }
-    if ([string]::IsNullOrWhiteSpace($message)) { $message = (@($Output) | Out-String).Trim() }
+    $message = (@($Output) | Out-String).Trim()
     if ([string]::IsNullOrWhiteSpace($message)) { $message = 'The Salesforce CLI returned no output.' }
     if ($message -match 'is not a sf command|command code-analyzer.*not found|not.*installed') {
         $message += " Install the plugin with Install-SalesforcePlugin -Name code-analyzer (or 'sf plugins install code-analyzer'). Code Analyzer also needs Java 11 or later for its Java-based engines, and it downloads engine dependencies the first time they are used."
@@ -470,7 +455,7 @@ function Invoke-SalesforceCodeAnalyzer {
     Returns one object with Passed, ThresholdExceeded, ViolationCount, a count per severity, Violations (one object per finding with Rule,
     Engine, Severity, Message, File, StartLine, StartColumn, EndLine, EndColumn, Tags and Resources), RunDirectory and Versions.
     With -SeverityThreshold the CLI fails when a finding is at or above that severity. That is a threshold failure, not an error: the findings
-    are still returned with Passed = $false and ThresholdExceeded = $true. Add -ThrowOnThreshold to turn it into an error (id
+    are still returned (the exit code is non-zero but the report is written) with Passed = $false and ThresholdExceeded = $true. Add -ThrowOnThreshold to turn it into an error (id
     PsfdxCodeAnalyzerThresholdExceeded, with the result as the target object) so a CI step fails. If the plugin or an engine cannot start there is
     no report, and the cmdlet always throws (id PsfdxCodeAnalyzerFailed) with the CLI message.
     The plugin is installed with the Salesforce CLI or with Install-SalesforcePlugin. Engines such as PMD and the Java-based rules need Java 11 or later;
@@ -502,19 +487,20 @@ function Invoke-SalesforceCodeAnalyzer {
     foreach ($r in @($RuleSelector)) { if ($r) { $arguments += @('--rule-selector', $r) } }
     if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
     if ($SeverityThreshold) { $arguments += @('--severity-threshold', $SeverityThreshold) }
-    $arguments += @('--output-file', $report, '--json')
+    $arguments += @('--output-file', $report)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('ThrowOnThreshold')
 
     try {
         $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-        $parsed = Read-SalesforceCodeAnalyzerJson -Output $output
+        # Invoke-Salesforce leaves the process exit code in $global:LASTEXITCODE; without --json it does not throw on a failing exit.
+        $exitCode = $global:LASTEXITCODE
         $data = Read-SalesforceCodeAnalyzerReport -Path $report
-        $failed = ($null -eq $parsed) -or ($parsed.PSObject.Properties.Name -contains 'status' -and [int]$parsed.status -ne 0)
+        $failed = ($exitCode -ne 0)
         if ($null -eq $data) {
-            $message = Get-SalesforceCodeAnalyzerFailureMessage -Parsed $parsed -Output $output
+            $message = Get-SalesforceCodeAnalyzerFailureMessage -Output $output
             if (-not $failed) { $message = "Code Analyzer finished but wrote no report. $message" }
-            $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $parsed
+            $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $output
             throw $errorRecord
         }
     } finally {
@@ -592,7 +578,7 @@ function Get-SalesforceCodeAnalyzerRule {
     .SYNOPSIS
     Lists the Code Analyzer rules that match a selector (sf code-analyzer rules).
     .DESCRIPTION
-    Returns one object per rule (as the CLI reports it: name, engine, severity, tags, description, resources). With no selector the CLI lists
+    Returns one object per rule (as the CLI reports it: name, engine, severity, tags, description, resources). The CLI has no --json flag, so the rules are read from a temporary JSON report file. With no selector the CLI lists
     its default rules. A selector such as Recommended, Security, pmd or pmd:Security narrows the list. A plugin or engine failure throws the CLI message with install guidance.
     .EXAMPLE
     Get-SalesforceCodeAnalyzerRule -RuleSelector Security | Select-Object name, engine, severity
@@ -616,29 +602,26 @@ function Get-SalesforceCodeAnalyzerRule {
     foreach ($w in @($Workspace)) { if ($w) { $arguments += @('--workspace', $w) } }
     foreach ($t in @($Target)) { if ($t) { $arguments += @('--target', $t) } }
     if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
-    $arguments += @('--output-file', $report, '--json')
+    $arguments += @('--output-file', $report)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
     try {
         $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
-        $parsed = Read-SalesforceCodeAnalyzerJson -Output $output
+        $exitCode = $global:LASTEXITCODE
         $data = Read-SalesforceCodeAnalyzerReport -Path $report
     } finally {
         if (Test-Path -LiteralPath $report) { Remove-Item -LiteralPath $report -Force -ErrorAction SilentlyContinue }
     }
 
-    $failed = ($null -eq $parsed) -or ($parsed.PSObject.Properties.Name -contains 'status' -and [int]$parsed.status -ne 0)
-    if ($failed) {
-        $message = Get-SalesforceCodeAnalyzerFailureMessage -Parsed $parsed -Output $output
-        $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $parsed
+    if ($exitCode -ne 0 -or $null -eq $data) {
+        $message = Get-SalesforceCodeAnalyzerFailureMessage -Output $output
+        $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $output
         throw $errorRecord
     }
-    # The rules come from the report file; fall back to the CLI's own result if it wrote none.
-    $source = $data
-    if ($null -eq $source -and $parsed.PSObject.Properties.Name -contains 'result') { $source = $parsed.result }
-    if ($null -eq $source) { return @() }
-    if ($source -is [System.Array]) { return @($source) }
-    if ($source.PSObject.Properties.Name -contains 'rules' -and $null -ne $source.rules) { return @($source.rules) }
+    if ($data -is [System.Array]) { return @($data) }
+    # A report holding a single bare rule object is unrolled by PowerShell from a one-element array.
+    if ($data.PSObject.Properties.Name -contains 'name' -and $data.PSObject.Properties.Name -notcontains 'rules') { return @($data) }
+    if ($data.PSObject.Properties.Name -contains 'rules' -and $null -ne $data.rules) { return @($data.rules) }
     return @()
 }
 

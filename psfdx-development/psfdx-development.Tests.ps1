@@ -1138,9 +1138,11 @@ Describe 'Code Analyzer' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
             $script:Report = '{"runDir":"/work/","violationCounts":{"total":2,"sev1":0,"sev2":1,"sev3":1,"sev4":0,"sev5":0},"versions":{"code-analyzer":"5.0.0"},"violations":[{"rule":"ApexCRUDViolation","engine":"pmd","severity":2,"tags":["Security"],"primaryLocationIndex":1,"locations":[{"file":"a.cls","startLine":1},{"file":"force-app/My Class.cls","startLine":10,"startColumn":5,"endLine":10,"endColumn":9}],"message":"Validate CRUD","resources":["https://example.com/r"]},{"rule":"no-unused-vars","engine":"eslint","severity":3,"tags":[],"primaryLocationIndex":0,"locations":[{"file":"b.js","startLine":3}],"message":"Unused"}]}'
-            $script:Stdout = '{"status":0,"result":{"runDir":"/work/"}}'
+            $script:Stdout = 'Results written'
+            $script:Exit = 0
             $script:WriteReport = $true
             Mock Invoke-Salesforce {
+                $global:LASTEXITCODE = $script:Exit
                 if ($script:WriteReport) {
                     $i = [array]::IndexOf($Arguments, '--output-file')
                     if ($i -ge 0) { Set-Content -LiteralPath $Arguments[$i + 1] -Value $script:Report -Encoding UTF8 }
@@ -1155,8 +1157,8 @@ Describe 'Code Analyzer' {
                 $r = Invoke-SalesforceCodeAnalyzer -Workspace $ws -Target 'force-app/**/*.cls' -RuleSelector 'Recommended', 'Security' -SeverityThreshold 3
                 Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter {
                     $a = $Arguments
-                    $a.Count -eq 15 -and ($a[0..9] -join '|') -eq "code-analyzer|run|--workspace|$ws|--target|force-app/**/*.cls|--rule-selector|Recommended|--rule-selector|Security" -and
-                    ($a[10..11] -join '|') -eq '--severity-threshold|3' -and $a[12] -eq '--output-file' -and $a[13] -like '*psfdx-code-analyzer-*.json' -and $a[14] -eq '--json'
+                    $a.Count -eq 14 -and ($a[0..9] -join '|') -eq "code-analyzer|run|--workspace|$ws|--target|force-app/**/*.cls|--rule-selector|Recommended|--rule-selector|Security" -and
+                    ($a[10..11] -join '|') -eq '--severity-threshold|3' -and $a[12] -eq '--output-file' -and $a[13] -like '*psfdx-code-analyzer-*.json'
                 }
                 $r.Passed | Should -BeTrue
                 $r.ThresholdExceeded | Should -BeFalse
@@ -1174,7 +1176,7 @@ Describe 'Code Analyzer' {
             }
             It 'builds the minimal command' {
                 Invoke-SalesforceCodeAnalyzer | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Arguments.Count -eq 5 -and ($Arguments[0..2] -join '|') -eq 'code-analyzer|run|--output-file' -and $Arguments[4] -eq '--json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Arguments.Count -eq 4 -and ($Arguments[0..2] -join '|') -eq 'code-analyzer|run|--output-file' }
             }
             It 'removes the temporary report afterwards' {
                 $script:Seen = $null
@@ -1184,14 +1186,14 @@ Describe 'Code Analyzer' {
                 Test-Path -LiteralPath $script:Seen | Should -BeFalse
             }
             It 'returns a threshold failure as a result, not an error' {
-                $script:Stdout = '{"status":1,"name":"ThresholdExceeded","message":"Violations at or above the threshold."}'
+                $script:Exit = 1; $script:Stdout = 'Violations at or above the threshold.'
                 $r = Invoke-SalesforceCodeAnalyzer -SeverityThreshold 2
                 $r.Passed | Should -BeFalse
                 $r.ThresholdExceeded | Should -BeTrue
                 $r.Violations.Count | Should -Be 2
             }
             It 'throws a distinct error carrying the result when -ThrowOnThreshold is set' {
-                $script:Stdout = '{"status":1,"name":"ThresholdExceeded","message":"Violations at or above the threshold."}'
+                $script:Exit = 1; $script:Stdout = 'Violations at or above the threshold.'
                 $err = $null
                 try { Invoke-SalesforceCodeAnalyzer -SeverityThreshold 2 -ThrowOnThreshold } catch { $err = $_ }
                 $err.FullyQualifiedErrorId | Should -Be 'PsfdxCodeAnalyzerThresholdExceeded'
@@ -1199,7 +1201,7 @@ Describe 'Code Analyzer' {
             }
             It 'treats a failure with no report as a startup failure, not a threshold failure' {
                 $script:WriteReport = $false
-                $script:Stdout = '{"status":1,"name":"EngineStartupError","message":"The pmd engine could not start: Java was not found."}'
+                $script:Exit = 1; $script:Stdout = 'The pmd engine could not start: Java was not found.'
                 $err = $null
                 try { Invoke-SalesforceCodeAnalyzer -SeverityThreshold 2 } catch { $err = $_ }
                 $err.FullyQualifiedErrorId | Should -Be 'PsfdxCodeAnalyzerFailed'
@@ -1207,7 +1209,7 @@ Describe 'Code Analyzer' {
             }
             It 'gives install guidance when the plugin is missing, even with non-JSON output' {
                 $script:WriteReport = $false
-                $script:Stdout = ' >   Error: code-analyzer is not a sf command.'
+                $script:Exit = 2; $script:Stdout = ' >   Error: code-analyzer is not a sf command.'
                 { Invoke-SalesforceCodeAnalyzer } | Should -Throw -ExpectedMessage '*Install-SalesforcePlugin -Name code-analyzer*'
             }
             It 'rejects bad inputs without calling the CLI' {
@@ -1224,24 +1226,28 @@ Describe 'Code Analyzer' {
             }
             It 'builds the exact command and returns one object per rule' {
                 $rules = Get-SalesforceCodeAnalyzerRule -RuleSelector 'pmd:Security' -Workspace $TestDrive
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments[0..4] -join '|') -eq "code-analyzer|rules|--rule-selector|pmd:Security|--workspace" -and $Arguments[5] -eq $TestDrive.ToString() -and $Arguments[6] -eq '--output-file' -and $Arguments[8] -eq '--json' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments[0..4] -join '|') -eq "code-analyzer|rules|--rule-selector|pmd:Security|--workspace" -and $Arguments[5] -eq $TestDrive.ToString() -and $Arguments[6] -eq '--output-file' -and $Arguments.Count -eq 8 }
                 $rules.Count | Should -Be 2
                 $rules[0].name | Should -Be 'ApexCRUDViolation'
                 $rules[1].engine | Should -Be 'eslint'
             }
-            It 'falls back to the CLI result when no report file is written, and returns nothing for no rules' {
-                $script:WriteReport = $false
-                $script:Stdout = '{"status":0,"result":[{"name":"r1","engine":"pmd"}]}'
-                @(Get-SalesforceCodeAnalyzerRule).Count | Should -Be 1
-                $script:Stdout = '{"status":0,"result":{"rules":[]}}'
+            It 'returns nothing for an empty rule list and also reads a bare array report' {
+                $script:Report = '{"runDir":"/w/","rules":[]}'
                 @(Get-SalesforceCodeAnalyzerRule).Count | Should -Be 0
+                $script:Report = '[{"name":"r1","engine":"pmd"}]'
+                @(Get-SalesforceCodeAnalyzerRule).Count | Should -Be 1
             }
-            It 'throws the CLI message for an engine failure and guides when the plugin is missing' {
+            It 'throws the CLI output for an engine failure and guides when the plugin is missing' {
                 $script:WriteReport = $false
-                $script:Stdout = '{"status":1,"name":"Err","message":"Config file is invalid."}'
+                $script:Exit = 1; $script:Stdout = 'Config file is invalid.'
                 { Get-SalesforceCodeAnalyzerRule } | Should -Throw -ExpectedMessage '*Config file is invalid*'
-                $script:Stdout = 'Error: code-analyzer is not a sf command.'
+                $script:Exit = 2; $script:Stdout = 'Error: code-analyzer is not a sf command.'
                 { Get-SalesforceCodeAnalyzerRule } | Should -Throw -ExpectedMessage '*sf plugins install code-analyzer*'
+            }
+            It 'throws when the CLI exits cleanly but writes no report' {
+                $script:WriteReport = $false
+                $script:Stdout = ''
+                { Get-SalesforceCodeAnalyzerRule } | Should -Throw -ExpectedMessage '*no output*'
             }
         }
 
