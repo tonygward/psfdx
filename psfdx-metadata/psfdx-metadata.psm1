@@ -846,6 +846,133 @@ function Stop-SalesforceDeploy {
 
 #endregion
 
+#region Deploy and retrieve preview
+
+function ConvertTo-SalesforcePreviewObject {
+    # Private: turns the result of `sf project deploy|retrieve preview` into one object with the lists the CLI reports.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][AllowNull()] $Result,
+        [Parameter(Mandatory = $true)][ValidateSet('Deploy', 'Retrieve')][string] $Operation
+    )
+
+    $names = @()
+    if ($null -ne $Result) { $names = @($Result.PSObject.Properties.Name) }
+    $get = {
+        param($Name)
+        if ($names -contains $Name -and $null -ne $Result.$Name) { return @($Result.$Name) }
+        return @()
+    }
+    $toDeploy = @(& $get 'toDeploy')
+    $toRetrieve = @(& $get 'toRetrieve')
+    $toDelete = @(& $get 'toDelete')
+    $conflicts = @(& $get 'conflicts')
+    $ignored = @(& $get 'ignored')
+    $changeCount = $toDeploy.Count + $toRetrieve.Count + $toDelete.Count
+    $summary = 'No changes'
+    if ($changeCount -gt 0 -or $conflicts.Count -gt 0) {
+        $summary = "$($toDeploy.Count) to deploy, $($toRetrieve.Count) to retrieve, $($toDelete.Count) to delete, $($conflicts.Count) conflict(s)"
+    }
+    return [pscustomobject]@{
+        Operation    = $Operation
+        HasChanges   = ($changeCount -gt 0)
+        HasConflicts = ($conflicts.Count -gt 0)
+        Summary      = $summary
+        ToDeploy     = $toDeploy
+        ToRetrieve   = $toRetrieve
+        ToDelete     = $toDelete
+        Conflicts    = $conflicts
+        Ignored      = $ignored
+    }
+}
+
+function Get-SalesforcePreviewResult {
+    # Private: runs a preview command and adds guidance when the org has no source tracking.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Arguments,
+        [Parameter(Mandatory = $true)][ValidateSet('Deploy', 'Retrieve')][string] $Operation,
+        [Parameter(Mandatory = $false)][hashtable] $CommonParams = @{}
+    )
+
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $Arguments @CommonParams
+    try {
+        $parsed = Show-SalesforceResult -Result $result
+    } catch {
+        if ($_.Exception.Message -match 'track') {
+            throw "$($_.Exception.Message) The preview commands need an org with source tracking (a scratch org or a tracked sandbox). Use Deploy-SalesforceMetadata or Retrieve-SalesforceMetadata directly for other orgs."
+        }
+        throw
+    }
+    return ConvertTo-SalesforcePreviewObject -Result $parsed -Operation $Operation
+}
+
+function Get-SalesforceDeployPreview {
+    <#
+    .SYNOPSIS
+    Shows what a deploy would send, and what conflicts with the org, without deploying (sf project deploy preview).
+    .DESCRIPTION
+    Read-only: nothing is deployed, retrieved or deleted. Returns one object with ToDeploy, ToRetrieve, ToDelete, Conflicts and Ignored,
+    plus HasChanges, HasConflicts and Summary. With no changes the lists are empty and Summary is 'No changes'.
+    Source tracking is required: scratch orgs and tracked sandboxes work; other orgs return the CLI error with guidance.
+    Narrow the preview with -SourceDir, -Manifest or -Metadata (any combination the CLI accepts).
+    .EXAMPLE
+    Get-SalesforceDeployPreview -TargetOrg my-sandbox
+    .EXAMPLE
+    $p = Get-SalesforceDeployPreview -SourceDir force-app/main/default/classes; if ($p.HasConflicts) { $p.Conflicts }
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $SourceDir,
+        [Parameter(Mandatory = $false)][string[]] $Manifest,
+        [Parameter(Mandatory = $false)][string[]] $Metadata,
+        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    foreach ($file in @($Manifest)) {
+        if ($file -and -not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Manifest file '$file' does not exist." }
+    }
+    foreach ($dir in @($SourceDir)) {
+        if ($dir -and -not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
+    }
+    $arguments = @('project', 'deploy', 'preview')
+    foreach ($d in @($SourceDir)) { if ($d) { $arguments += @('--source-dir', $d) } }
+    foreach ($m in @($Manifest)) { if ($m) { $arguments += @('--manifest', $m) } }
+    foreach ($m in @($Metadata)) { if ($m) { $arguments += @('--metadata', $m) } }
+    if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    return Get-SalesforcePreviewResult -Arguments $arguments -Operation 'Deploy' -CommonParams $commonParams
+}
+
+function Get-SalesforceRetrievePreview {
+    <#
+    .SYNOPSIS
+    Shows what a retrieve would bring down, and what conflicts with local files, without retrieving (sf project retrieve preview).
+    .DESCRIPTION
+    Read-only: nothing is retrieved or changed. Returns the same object as Get-SalesforceDeployPreview. The CLI command takes no selection
+    flags, so it previews the org's tracked changes. Source tracking is required (see Get-SalesforceDeployPreview).
+    .EXAMPLE
+    Get-SalesforceRetrievePreview -TargetOrg my-scratch
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $arguments = @('project', 'retrieve', 'preview')
+    if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    return Get-SalesforcePreviewResult -Arguments $arguments -Operation 'Retrieve' -CommonParams $commonParams
+}
+
+#endregion
+
 #region Describe
 
 function Describe-SalesforceObjects {
