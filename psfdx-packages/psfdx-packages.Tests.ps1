@@ -283,3 +283,161 @@ Describe 'Package deletion safety' {
         }
     }
 }
+
+Describe 'Package job reports' {
+    InModuleScope 'psfdx-packages' {
+        BeforeAll {
+            $script:CreateId = '08c000000000001'
+            $script:InstallId = '0Hf000000000001'
+            $script:Queued = '{"status":0,"result":[{"Id":"08c000000000001AAA","Status":"Queued","Package2Id":"0Ho000000000001AAA","Package2VersionId":null,"SubscriberPackageVersionId":null,"Tag":"ci","Branch":"main","CreatedDate":"2026-11-21T10:00:00.000+0000","Error":[]}]}'
+            $script:Success = '{"status":0,"result":[{"Id":"08c000000000001AAA","Status":"Success","Package2Id":"0Ho000000000001AAA","Package2VersionId":"05i000000000001AAA","SubscriberPackageVersionId":"04t000000000001AAA","Tag":"ci","Branch":"main","CreatedDate":"2026-11-21T10:00:00.000+0000","Error":[]}]}'
+            $script:Failed = '{"status":0,"result":[{"Id":"08c000000000001AAA","Status":"Error","Package2Id":"0Ho000000000001AAA","Package2VersionId":null,"SubscriberPackageVersionId":null,"Error":["Apex test failed: MyTest.a","Code coverage 60% is below 75%"]}]}'
+        }
+        BeforeEach {
+            $script:Reply = $script:Success
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+
+        Context 'Get-SalesforcePackageVersionCreateStatus' {
+            It 'builds the exact command with the Dev Hub and maps the IDs of a successful job' {
+                $s = Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId -TargetDevHub devhub
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|create|report|--package-create-request-id|08c000000000001|--target-dev-hub|devhub|--json' }
+                $s.Status | Should -Be 'Success'
+                $s.Completed | Should -BeTrue
+                $s.Succeeded | Should -BeTrue
+                $s.RequestId | Should -Be '08c000000000001AAA'
+                $s.PackageId | Should -Be '0Ho000000000001AAA'
+                $s.PackageVersionId | Should -Be '05i000000000001AAA'
+                $s.SubscriberPackageVersionId | Should -Be '04t000000000001AAA'
+                $s.Tag | Should -Be 'ci'
+                @($s.Errors).Count | Should -Be 0
+            }
+            It 'does not add --target-dev-hub when none is given' {
+                Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|create|report|--package-create-request-id|08c000000000001|--json' }
+            }
+            It 'reports a queued job as not completed' {
+                $script:Reply = $script:Queued
+                $s = Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId
+                $s.Status | Should -Be 'Queued'
+                $s.Completed | Should -BeFalse
+                $s.Succeeded | Should -BeFalse
+                $s.SubscriberPackageVersionId | Should -BeNullOrEmpty
+            }
+            It 'treats an in-between status as still running' {
+                $script:Reply = $script:Queued.Replace('"Queued"', '"VerifyingFeaturesAndSettings"')
+                (Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId).Completed | Should -BeFalse
+            }
+            It 'returns a failed job with its error messages, without throwing' {
+                $script:Reply = $script:Failed
+                $s = Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId
+                $s.Status | Should -Be 'Error'
+                $s.Completed | Should -BeTrue
+                $s.Succeeded | Should -BeFalse
+                $s.Errors | Should -Be @('Apex test failed: MyTest.a', 'Code coverage 60% is below 75%')
+            }
+            It 'writes the status and then throws PsfdxPackageJobFailed with -ThrowOnFailure' {
+                $script:Reply = $script:Failed
+                $err = $null
+                try { Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId -ThrowOnFailure | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxPackageJobFailed'
+                $err.Exception.Message | Should -BeLike '*failed*Apex test failed*'
+                $err.TargetObject.Status | Should -Be 'Error'
+                $script:Reply = $script:Success
+                { Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId -ThrowOnFailure | Out-Null } | Should -Not -Throw
+            }
+            It 'rejects a bad request ID without calling the CLI, including an install request ID' {
+                { Get-SalesforcePackageVersionCreateStatus -RequestId '0Hf000000000001' } | Should -Throw
+                { Get-SalesforcePackageVersionCreateStatus -RequestId 'abc' } | Should -Throw
+                { Get-SalesforcePackageVersionCreateStatus -RequestId '08c000000000001; calc' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws the CLI message for CLI errors, and for empty results' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nodevhub."}'
+                { Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId -TargetDevHub nodevhub } | Should -Throw -ExpectedMessage '*No authorization information found*'
+                $script:Reply = '{"status":0,"result":[]}'
+                { Get-SalesforcePackageVersionCreateStatus -RequestId $script:CreateId } | Should -Throw -ExpectedMessage '*returned no status*'
+            }
+        }
+
+        Context 'Get-SalesforcePackageInstallStatus' {
+            It 'builds the exact command with the target org and maps a successful install' {
+                $script:Reply = '{"status":0,"result":{"Id":"0Hf000000000001AAA","Status":"SUCCESS","SubscriberPackageVersionKey":"04t000000000001AAA","Errors":null}}'
+                $s = Get-SalesforcePackageInstallStatus -RequestId $script:InstallId -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|install|report|--request-id|0Hf000000000001|--target-org|me|--json' }
+                $s.Status | Should -Be 'SUCCESS'
+                $s.Succeeded | Should -BeTrue
+                $s.Completed | Should -BeTrue
+                $s.SubscriberPackageVersionKey | Should -Be '04t000000000001AAA'
+                $s.RequestId | Should -Be '0Hf000000000001AAA'
+            }
+            It 'reports an install still in progress as not completed' {
+                $script:Reply = '{"status":0,"result":{"Id":"0Hf000000000001AAA","Status":"IN_PROGRESS","SubscriberPackageVersionKey":"04t000000000001AAA"}}'
+                $s = Get-SalesforcePackageInstallStatus -RequestId $script:InstallId
+                $s.Completed | Should -BeFalse
+                $s.Succeeded | Should -BeFalse
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|install|report|--request-id|0Hf000000000001|--json' }
+            }
+            It 'returns errors listed in the result of a failed install' {
+                $script:Reply = '{"status":0,"result":{"Id":"0Hf000000000001AAA","Status":"ERROR","SubscriberPackageVersionKey":"04t000000000001AAA","Errors":{"errors":[{"message":"Missing dependency"},{"message":"Apex failed"}]}}}'
+                $s = Get-SalesforcePackageInstallStatus -RequestId $script:InstallId
+                $s.Status | Should -Be 'ERROR'
+                $s.Completed | Should -BeTrue
+                $s.Errors | Should -Be @('Missing dependency', 'Apex failed')
+            }
+            It 'turns the CLI''s failed-install error into an ERROR status with its numbered errors' {
+                $script:Reply = '{"status":1,"name":"packageInstallError","message":"Package installation failed. Installation errors: \n1) Missing dependency\n2) Apex failed"}'
+                $s = Get-SalesforcePackageInstallStatus -RequestId $script:InstallId -TargetOrg me
+                $s.Status | Should -Be 'ERROR'
+                $s.Completed | Should -BeTrue
+                $s.RequestId | Should -Be $script:InstallId
+                $s.Errors | Should -Be @('Missing dependency', 'Apex failed')
+            }
+            It 'writes the status and then throws PsfdxPackageJobFailed with -ThrowOnFailure' {
+                $script:Reply = '{"status":0,"result":{"Id":"0Hf000000000001AAA","Status":"ERROR","Errors":{"errors":[{"message":"Missing dependency"}]}}}'
+                $err = $null
+                try { Get-SalesforcePackageInstallStatus -RequestId $script:InstallId -ThrowOnFailure | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxPackageJobFailed'
+                $err.Exception.Message | Should -BeLike '*Missing dependency*'
+            }
+            It 'throws the CLI message for errors that are not an install failure' {
+                $script:Reply = '{"status":1,"name":"NamedOrgNotFoundError","message":"No authorization information found for nobody."}'
+                { Get-SalesforcePackageInstallStatus -RequestId $script:InstallId -TargetOrg nobody } | Should -Throw -ExpectedMessage '*No authorization information found*'
+                $script:Reply = ''
+                { Get-SalesforcePackageInstallStatus -RequestId $script:InstallId } | Should -Throw -ExpectedMessage '*no output*'
+                $script:Reply = 'not json'
+                { Get-SalesforcePackageInstallStatus -RequestId $script:InstallId } | Should -Throw -ExpectedMessage '*not valid JSON*'
+            }
+            It 'rejects a bad request ID without calling the CLI, including a create request ID' {
+                { Get-SalesforcePackageInstallStatus -RequestId '08c000000000001' } | Should -Throw
+                { Get-SalesforcePackageInstallStatus -RequestId 'x' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Install-SalesforcePackageVersion -AsObject' {
+            It 'returns the install request when asked, so its Id can be reported later' {
+                $script:Reply = '{"status":0,"result":{"Id":"0Hf000000000001AAA","Status":"IN_PROGRESS","SubscriberPackageVersionKey":"04t000000000001AAA"}}'
+                $req = Install-SalesforcePackageVersion -PackageVersionId '04t000000000001' -TargetOrg me -NoPrompt -WaitMinutes 0 -AsObject
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|install|--package|04t000000000001|--target-org|me|--no-prompt|--security-type|AdminsOnly|--json' }
+                $req.Id | Should -Be '0Hf000000000001AAA'
+            }
+            It 'still returns the CLI output unchanged, with no --json, without -AsObject' {
+                $script:Reply = 'Successfully installed package'
+                Install-SalesforcePackageVersion -PackageVersionId '04t000000000001' -TargetOrg me -WaitMinutes 5 | Should -Be 'Successfully installed package'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|install|--package|04t000000000001|--target-org|me|--security-type|AdminsOnly|--wait|5|--publish-wait|5' }
+            }
+        }
+
+        Context 'module surface' {
+            It 'exports the two new commands and has help that says which ID to capture' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-packages).ModuleBase 'psfdx-packages.psd1')).FunctionsToExport
+                $exports | Should -Contain 'Get-SalesforcePackageVersionCreateStatus'
+                $exports | Should -Contain 'Get-SalesforcePackageInstallStatus'
+                (Get-Help Get-SalesforcePackageVersionCreateStatus -Full | Out-String) | Should -BeLike '*08c*New-SalesforcePackageVersion*'
+                (Get-Help Get-SalesforcePackageInstallStatus -Full | Out-String) | Should -BeLike '*0Hf*Install-SalesforcePackageVersion*-AsObject*'
+                foreach ($name in 'Get-SalesforcePackageVersionCreateStatus', 'Get-SalesforcePackageInstallStatus') { @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0 }
+            }
+        }
+    }
+}

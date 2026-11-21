@@ -1229,3 +1229,86 @@ Describe 'Data tree export and import' {
         }
     }
 }
+
+Describe 'Single-record get and delete' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":{"attributes":{"type":"Account","url":"/services/data/v62.0/sobjects/Account/001xx000003DGb2AAG"},"Id":"001xx000003DGb2AAG","Name":"Acme Corporation"}}'
+            Mock Invoke-Salesforce { $script:Reply }
+            $script:RecordId = '001xx000003DGb2AAG'
+        }
+
+        Context 'Get-SalesforceRecord' {
+            It 'builds the exact command for an ID and returns the record without attributes' {
+                $rec = Get-SalesforceRecord -Type Account -Id $script:RecordId -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|get|record|--sobject|Account|--record-id|001xx000003DGb2AAG|--target-org|me|--json' }
+                $rec.Id | Should -Be $script:RecordId
+                $rec.Name | Should -Be 'Acme Corporation'
+                $rec.PSObject.Properties.Name | Should -Not -Contain 'attributes'
+            }
+            It 'builds the exact command for field values and the Tooling API' {
+                Get-SalesforceRecord -Type ApexClass -Where ([ordered]@{ Name = 'My Class'; ApiVersion = '62.0' }) -UseToolingApi | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|get|record|--sobject|ApexClass|--where|Name='My Class' ApiVersion='62.0'|--use-tooling-api|--json" }
+            }
+            It 'does not allow -Id and -Where together, and rejects bad input without calling the CLI' {
+                { Get-SalesforceRecord -Type Account -Id $script:RecordId -Where @{ Name = 'x' } } | Should -Throw
+                { Get-SalesforceRecord -Type Account -Id 'short' } | Should -Throw
+                { Get-SalesforceRecord -Type 'Account; DROP' -Id $script:RecordId } | Should -Throw -ExpectedMessage '*not a valid Salesforce*'
+                { Get-SalesforceRecord -Type Account -Where @{} } | Should -Throw -ExpectedMessage '*at least one field*'
+                { Get-SalesforceRecord -Type Account -Where @{ 'Bad Field' = 'x' } } | Should -Throw -ExpectedMessage '*not a valid Salesforce*'
+                { Get-SalesforceRecord -Type Account -Where @{ Name = "O'Brien" } } | Should -Throw -ExpectedMessage '*quote or control character*'
+                { Get-SalesforceRecord -Type Account -Where @{ Name = "a`nb" } } | Should -Throw -ExpectedMessage '*quote or control character*'
+                { Get-SalesforceRecord -Type Account -Where @{ Name = '' } } | Should -Throw -ExpectedMessage '*empty*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws the CLI message when the record is not found, or when several match' {
+                $script:Reply = '{"status":1,"name":"SingleRecordQuery_NoRecords","message":"No record found for Account with id 001xx000003DGb9AAG"}'
+                { Get-SalesforceRecord -Type Account -Id '001xx000003DGb9AAG' } | Should -Throw -ExpectedMessage '*No record found*'
+                $script:Reply = '{"status":1,"name":"MultipleRecordsFound","message":"The query returned more than one record."}'
+                { Get-SalesforceRecord -Type Account -Where @{ Name = 'Acme' } } | Should -Throw -ExpectedMessage '*more than one record*'
+            }
+        }
+
+        Context 'Remove-SalesforceRecord' {
+            It 'builds the exact command and returns the CLI result' {
+                $script:Reply = '{"status":0,"result":{"id":"001xx000003DGb2AAG"}}'
+                $res = Remove-SalesforceRecord -Type Account -Id $script:RecordId -TargetOrg me -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|delete|record|--sobject|Account|--record-id|001xx000003DGb2AAG|--target-org|me|--json' }
+                $res.id | Should -Be $script:RecordId
+            }
+            It 'builds the exact command for field values' {
+                $script:Reply = '{"status":0,"result":{"id":"001xx000003DGb2AAG"}}'
+                Remove-SalesforceRecord -Type Account -Where @{ Name = 'Test Account 42' } -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|delete|record|--sobject|Account|--where|Name='Test Account 42'|--json" }
+            }
+            It 'makes zero CLI calls under -WhatIf, for an ID and for field values' {
+                Remove-SalesforceRecord -Type Account -Id $script:RecordId -TargetOrg me -WhatIf | Should -BeNullOrEmpty
+                Remove-SalesforceRecord -Type Account -Where @{ Name = 'x' } -WhatIf | Should -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'asks by default (ConfirmImpact High); the confirmation names the object, record and org (shown in the What if lines of this run)' {
+                (Get-Command Remove-SalesforceRecord).ScriptBlock.Attributes.ConfirmImpact | Should -Contain 'High'
+            }
+            It 'surfaces a not-found error and does not hide it' {
+                $script:Reply = '{"status":1,"name":"NOT_FOUND","message":"entity is deleted or does not exist"}'
+                { Remove-SalesforceRecord -Type Account -Id $script:RecordId -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+            }
+            It 'rejects conflicting or invalid selectors without calling the CLI' {
+                { Remove-SalesforceRecord -Type Account -Id $script:RecordId -Where @{ Name = 'x' } -Confirm:$false } | Should -Throw
+                { Remove-SalesforceRecord -Type Account -Id 'bad' -Confirm:$false } | Should -Throw
+                { Remove-SalesforceRecord -Type Account -Where @{ Name = "it's" } -Confirm:$false } | Should -Throw -ExpectedMessage '*quote or control character*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'module surface' {
+            It 'exports both, keeps the selector helper private, and has help examples' {
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
+                $exports | Should -Contain 'Get-SalesforceRecord'
+                $exports | Should -Contain 'Remove-SalesforceRecord'
+                $exports | Should -Not -Contain 'ConvertTo-SalesforceRecordSelector'
+                foreach ($name in 'Get-SalesforceRecord', 'Remove-SalesforceRecord') { @((Get-Help $name -Examples).examples.example).Count | Should -BeGreaterThan 0 }
+            }
+        }
+    }
+}

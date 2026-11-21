@@ -504,6 +504,105 @@ function Set-SalesforceRecord {
     return Show-SalesforceResult -Result $result
 }
 
+function Get-SalesforceRecord {
+    <#
+    .SYNOPSIS
+    Gets one record, by ID or by field values (sf data get record).
+    .DESCRIPTION
+    Select the record with -Id, or with -Where, a hashtable of field values that identify exactly one record (the CLI reports an error for none
+    or for several). They are alternatives: the CLI accepts only one. The record is returned as an object of its fields, without the internal
+    attributes property. A value in -Where is passed to the CLI as Field='value'; because the CLI has no way to escape a quote inside a value, a
+    value that contains a single quote, a double quote or a line break is refused. For anything more complex use Select-SalesforceRecords.
+    A record that does not exist makes the cmdlet throw the CLI's message.
+    .EXAMPLE
+    Get-SalesforceRecord -Type Account -Id 001xx000003DGb2AAG -TargetOrg myorg
+    .EXAMPLE
+    Get-SalesforceRecord -Type Account -Where @{ Name = 'Acme Corporation' } -TargetOrg myorg
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'ById')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Type,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
+    $arguments = @('data', 'get', 'record', '--sobject', $objectName)
+    if ($PSCmdlet.ParameterSetName -eq 'ById') { $arguments += @('--record-id', $Id) } else { $arguments += @('--where', (ConvertTo-SalesforceRecordSelector -Where $Where)) }
+    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $record = Show-SalesforceResult -Result $result
+    if ($null -eq $record) { throw "The Salesforce CLI returned no record for $objectName." }
+    return ($record | Select-Object -Property * -ExcludeProperty attributes)
+}
+
+function Remove-SalesforceRecord {
+    <#
+    .SYNOPSIS
+    Deletes one record, by ID or by field values (sf data delete record).
+    .DESCRIPTION
+    Select the record as for Get-SalesforceRecord: -Id, or -Where (field values that identify exactly one record). Asks for confirmation by default,
+    naming the object, the record and the org; -WhatIf makes no CLI call. Returns the CLI's result (the deleted record's Id). A record that does not
+    exist, or a -Where that matches several, makes the cmdlet throw the CLI's message, so nothing is hidden. Scripts that run unattended need
+    -Confirm:$false.
+    .EXAMPLE
+    Remove-SalesforceRecord -Type Account -Id 001xx000003DGb2AAG -TargetOrg myorg -WhatIf
+    .EXAMPLE
+    Remove-SalesforceRecord -Type Account -Where @{ Name = 'Test Account 42' } -TargetOrg myorg -Confirm:$false
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'ById')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Type,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById')][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Type
+    $arguments = @('data', 'delete', 'record', '--sobject', $objectName)
+    if ($PSCmdlet.ParameterSetName -eq 'ById') {
+        $arguments += @('--record-id', $Id)
+        $what = "$objectName $Id"
+    } else {
+        $selector = ConvertTo-SalesforceRecordSelector -Where $Where
+        $arguments += @('--where', $selector)
+        $what = "$objectName where $selector"
+    }
+    if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $orgLabel = 'the default org'
+    if (-not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+    if (-not $PSCmdlet.ShouldProcess("$what in $orgLabel", 'Delete record')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function ConvertTo-SalesforceRecordSelector {
+    # Builds the value of --where: space-separated Field='value' pairs. Field names are validated, and a value that the CLI could not
+    # read back safely (a quote of either kind, or a control character) is refused rather than guessed at.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][System.Collections.IDictionary] $Where
+    )
+    if ($Where.Count -eq 0) { throw '-Where needs at least one field and value.' }
+    $pairs = @()
+    foreach ($key in $Where.Keys) {
+        $field = ConvertTo-SalesforceSoqlIdentifier -Value ([string] $key)
+        $value = [string] $Where[$key]
+        if ([string]::IsNullOrEmpty($value)) { throw "The -Where value for '$field' is empty." }
+        if ($value -match "['`"\x00-\x1F\x7F]") { throw "The -Where value for '$field' contains a quote or control character, which the CLI cannot take safely. Use -Id, or Select-SalesforceRecords." }
+        $pairs += "$field='$value'"
+    }
+    return ($pairs -join ' ')
+}
+
 function Upsert-SalesforceRecord {
     # The Salesforce CLI has no `sf data upsert record` (only `sf data upsert bulk`, a CSV job). A single-record upsert is the REST
     # call PATCH /services/data/vXX.X/sobjects/<Type>/<ExternalIdField>/<value>, which `sf api request rest` sends with the org's login.

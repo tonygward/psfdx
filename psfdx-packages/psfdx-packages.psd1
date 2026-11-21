@@ -23,7 +23,9 @@
         'New-SalesforcePackageVersion',
         'Promote-SalesforcePackageVersion',
         'Remove-SalesforcePackageVersion',
-        'Install-SalesforcePackageVersion'
+        'Install-SalesforcePackageVersion',
+        'Get-SalesforcePackageVersionCreateStatus',
+        'Get-SalesforcePackageInstallStatus'
     )
     CmdletsToExport       = @()
     VariablesToExport     = @()
