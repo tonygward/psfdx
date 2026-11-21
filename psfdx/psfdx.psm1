@@ -842,7 +842,7 @@ function Get-SalesforceBulkResult {
     } finally {
         Pop-Location
     }
-    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data bulk results'
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data bulk results' -AllowFailedRecords
 
     $pathOf = {
         param([string] $Name)
@@ -886,7 +886,8 @@ function ConvertFrom-SalesforceBulkOutput {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][AllowNull()][AllowEmptyString()][AllowEmptyCollection()] $Output,
-        [Parameter(Mandatory = $true)][string] $Command
+        [Parameter(Mandatory = $true)][string] $Command,
+        [Parameter(Mandatory = $false)][switch] $AllowFailedRecords
     )
     $text = [string]::Join([Environment]::NewLine, @($Output | ForEach-Object { [string] $_ })).Trim()
     if ([string]::IsNullOrWhiteSpace($text)) { throw "sf $Command returned no output where JSON was expected." }
@@ -898,8 +899,39 @@ function ConvertFrom-SalesforceBulkOutput {
     if ($null -eq $parsed -or $parsed -is [array] -or $null -eq $parsed.PSObject.Properties['status']) {
         throw "sf $Command returned JSON in an unexpected shape (no status)."
     }
+    # Upsert and its resume return { jobInfo, records } instead of the flat counts, and the CLI can send that with a failing status when rows failed.
+    $hasResult = ($null -ne $parsed.PSObject.Properties['result']) -and ($null -ne $parsed.result)
+    if ($hasResult -and $null -ne $parsed.result.PSObject.Properties['jobInfo'] -and $null -ne $parsed.result.jobInfo) {
+        $info = $parsed.result.jobInfo
+        $state = $null; if ($null -ne $info.PSObject.Properties['state']) { $state = [string] $info.state }
+        $flat = [ordered]@{ jobId = [string] $info.id; state = $state }
+        if ($state -eq 'JobComplete') {
+            $processed = 0; if ($null -ne $info.PSObject.Properties['numberRecordsProcessed'] -and $null -ne $info.numberRecordsProcessed) { $processed = [int] $info.numberRecordsProcessed }
+            $failedRows = 0; if ($null -ne $info.PSObject.Properties['numberRecordsFailed'] -and $null -ne $info.numberRecordsFailed) { $failedRows = [int] $info.numberRecordsFailed }
+            $flat['processedRecords'] = $processed
+            $flat['failedRecords'] = $failedRows
+            $flat['successfulRecords'] = $processed - $failedRows
+        }
+        if (-not $AllowFailedRecords) {
+            $message = ''
+            if ($state -eq 'Failed' -or $state -eq 'Aborted') {
+                if ($null -ne $info.PSObject.Properties['errorMessage'] -and $info.errorMessage) { $message = [string] $info.errorMessage }
+                $message = "The job is $state. $message".Trim()
+            } elseif ($flat.Contains('failedRecords') -and $flat['failedRecords'] -gt 0) {
+                $message = "Job finished being processed but $($flat['failedRecords']) records failed to process."
+            }
+            if ($message) {
+                $full = "sf $Command reported a problem with bulk job $($flat['jobId']): $message Get-SalesforceBulkResult -JobId $($flat['jobId']) lists the rows that failed."
+                $target = [pscustomobject]@{ JobId = $flat['jobId']; State = $state; Message = $message }
+                $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $full), 'PsfdxBulkJobFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $target)
+                throw $record
+            }
+        }
+        return [pscustomobject] $flat
+    }
+
     if ($parsed.status -eq 0) {
-        if ($null -eq $parsed.PSObject.Properties['result'] -or $null -eq $parsed.result) { throw "sf $Command succeeded but returned no result." }
+        if (-not $hasResult) { throw "sf $Command succeeded but returned no result." }
         return $parsed.result
     }
 
@@ -940,11 +972,13 @@ function ConvertTo-SalesforceBulkJobObject {
     if (-not $id) { $id = $JobId }
     $processed = & $get 'processedRecords'
     $total = & $get 'totalSize'
+    $state = & $get 'state'
     return [pscustomobject]@{
         JobId             = $id
         Operation         = $Operation
         Object            = $(if ($Object) { $Object } else { $null })
         Completed         = (($null -ne $processed) -or ($null -ne $total))
+        State             = $state
         ProcessedRecords  = $processed
         SuccessfulRecords = & $get 'successfulRecords'
         FailedRecords     = & $get 'failedRecords'

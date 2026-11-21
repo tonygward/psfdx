@@ -734,6 +734,59 @@ Describe 'Bulk API 2.0 commands' {
             }
         }
 
+        Context 'upsert results use the { jobInfo, records } shape' {
+            BeforeAll {
+                $script:UpsertAsync = '{"status":0,"result":{"jobInfo":{"id":"750xx0000000003AAA","state":"UploadComplete","operation":"upsert","object":"Account","numberRecordsProcessed":0,"numberRecordsFailed":0},"records":{"successfulResults":[],"failedResults":[],"unprocessedRecords":[]}}}'
+                $script:UpsertDone = '{"status":0,"result":{"jobInfo":{"id":"750xx0000000003AAA","state":"JobComplete","operation":"upsert","object":"Account","numberRecordsProcessed":10,"numberRecordsFailed":0},"records":{"successfulResults":[],"failedResults":[],"unprocessedRecords":[]}}}'
+                $script:UpsertPartialOk = '{"status":0,"result":{"jobInfo":{"id":"750xx0000000003AAA","state":"JobComplete","operation":"upsert","object":"Account","numberRecordsProcessed":10,"numberRecordsFailed":3},"records":{"successfulResults":[],"failedResults":[{"sf__Id":"","sf__Error":"bad"}],"unprocessedRecords":[]}}}'
+                $script:UpsertPartialStatus1 = $script:UpsertPartialOk.Replace('"status":0', '"status":1')
+            }
+            It 'returns the JobId of a newly submitted upsert, with no counts yet' {
+                $script:Reply = $script:UpsertAsync
+                $res = Upsert-SalesforceBulkData -File $script:Csv -Object Account -ExternalIdField E__c
+                $res.JobId | Should -Be '750xx0000000003AAA'
+                $res.State | Should -Be 'UploadComplete'
+                $res.Completed | Should -BeFalse
+                $res.ProcessedRecords | Should -BeNullOrEmpty
+                $res.Operation | Should -Be 'Upsert'
+            }
+            It 'returns the counts of a completed upsert' {
+                $script:Reply = $script:UpsertDone
+                $res = Upsert-SalesforceBulkData -File $script:Csv -Object Account -ExternalIdField E__c -WaitMinutes 5
+                $res.Completed | Should -BeTrue
+                $res.ProcessedRecords | Should -Be 10
+                $res.SuccessfulRecords | Should -Be 10
+                $res.FailedRecords | Should -Be 0
+                $res.State | Should -Be 'JobComplete'
+            }
+            It 'throws PsfdxBulkJobFailed when an upsert finishes with failed rows, whether the CLI reports success or not' -ForEach @(
+                @{ Name = 'status 0'; Json = 'UpsertPartialOk' }
+                @{ Name = 'status 1'; Json = 'UpsertPartialStatus1' }
+            ) {
+                $script:Reply = Get-Variable -Scope Script -Name $Json -ValueOnly
+                $err = $null
+                try { Upsert-SalesforceBulkData -File $script:Csv -Object Account -ExternalIdField E__c -WaitMinutes 5 | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxBulkJobFailed'
+                $err.TargetObject.JobId | Should -Be '750xx0000000003AAA'
+                $err.TargetObject.State | Should -Be 'JobComplete'
+                $err.Exception.Message | Should -BeLike '*3 records failed*'
+            }
+            It 'applies the same check to an upsert resume' {
+                $script:Reply = $script:UpsertPartialOk
+                $err = $null
+                try { Resume-SalesforceBulkJob -Operation Upsert -JobId $script:JobId -WaitMinutes 5 | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxBulkJobFailed'
+                $script:Reply = $script:UpsertDone
+                (Resume-SalesforceBulkJob -Operation Upsert -JobId $script:JobId -WaitMinutes 5).ProcessedRecords | Should -Be 10
+            }
+            It 'throws for a Failed or Aborted upsert job, with the job error message' {
+                $script:Reply = '{"status":0,"result":{"jobInfo":{"id":"750xx0000000003AAA","state":"Failed","errorMessage":"InvalidBatch : Field name not found"},"records":{}}}'
+                $err = $null
+                try { Upsert-SalesforceBulkData -File $script:Csv -Object Account -ExternalIdField E__c -WaitMinutes 5 | Out-Null } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxBulkJobFailed'
+                $err.Exception.Message | Should -BeLike '*The job is Failed*Field name not found*'
+            }
+        }
         Context 'Export-SalesforceBulkData' {
             It 'builds the exact command for a query, waiting' {
                 $script:Reply = '{"status":0,"result":{"totalSize":5,"filePath":"out.csv"}}'
