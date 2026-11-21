@@ -14,19 +14,30 @@ BeforeAll {
     New-Item -ItemType Directory -Path $script:package | Out-Null
     & $script:build -OutputFolder (Join-Path $script:package 'psfdx') | Out-Null
     $script:pwsh = (Get-Process -Id $PID).Path
+    # Runs a child process and returns its output and exit code. Pester sets $ErrorActionPreference to Stop, and Windows PowerShell 5.1 then turns a line
+    # the child writes to stderr (which `throw` does) into a terminating error, so the preference is relaxed for the call.
+    function Invoke-ChildCheck {
+        param([string] $Exe, [string[]] $Arguments)
+        $saved = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $text = & $Exe @Arguments 2>&1 | Out-String
+            return [pscustomobject]@{ Output = $text; ExitCode = $LASTEXITCODE }
+        } finally { $ErrorActionPreference = $saved }
+    }
 }
 
 Describe 'Test-PsfdxHelp on the built package' {
     It 'passes in PowerShell 7 or the current host' {
-        $output = & $script:pwsh -NoProfile -NonInteractive -File $script:check -Quick -ModulePath $script:package 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0 -Because $output
-        $output | Should -BeLike '*help of all*psfdx commands is complete*'
+        $run = Invoke-ChildCheck -Exe $script:pwsh -Arguments @('-NoProfile', '-NonInteractive', '-File', $script:check, '-Quick', '-ModulePath', $script:package)
+        $run.ExitCode | Should -Be 0 -Because $run.Output
+        $run.Output | Should -BeLike '*help of all*psfdx commands is complete*'
     }
 
     It 'passes in Windows PowerShell 5.1' -Skip:(-not $script:hasPowerShell) {
-        $output = & powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $script:check -Quick -ModulePath $script:package 2>&1 | Out-String
-        $LASTEXITCODE | Should -Be 0 -Because $output
-        $output | Should -BeLike '*help of all*psfdx commands is complete*'
+        $run = Invoke-ChildCheck -Exe 'powershell' -Arguments @('-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', $script:check, '-Quick', '-ModulePath', $script:package)
+        $run.ExitCode | Should -Be 0 -Because $run.Output
+        $run.Output | Should -BeLike '*help of all*psfdx commands is complete*'
     }
 
     It 'fails, naming the command, when a command has no help' {
@@ -40,8 +51,8 @@ Describe 'Test-PsfdxHelp on the built package' {
         $helpStart = $text.IndexOf('<#', $start)
         $helpEnd = $text.IndexOf('#>', $helpStart) + 2
         [System.IO.File]::WriteAllText($file, $text.Remove($helpStart, $helpEnd - $helpStart))
-        $output = & $script:pwsh -NoProfile -NonInteractive -File $script:check -Quick -ModulePath $broken 2>&1 | Out-String
-        $LASTEXITCODE | Should -Not -Be 0
-        $output | Should -BeLike '*Debug-SalesforceJest*'
+        $run = Invoke-ChildCheck -Exe $script:pwsh -Arguments @('-NoProfile', '-NonInteractive', '-File', $script:check, '-Quick', '-ModulePath', $broken)
+        $run.ExitCode | Should -Not -Be 0
+        $run.Output | Should -BeLike '*Debug-SalesforceJest*'
     }
 }
