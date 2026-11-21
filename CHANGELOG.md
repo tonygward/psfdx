@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.8.30 - 2026-11-21
+
+- Maintenance release.
+
 ## 0.8.29 - 2026-11-21
 
 - psfdx: Bulk API 2.0 commands. `Export-SalesforceBulkData`, `Import-SalesforceBulkData`, `Update-SalesforceBulkData` and `Upsert-SalesforceBulkData` wrap `sf data export|import|update|upsert bulk`; `Resume-SalesforceBulkJob` resumes a job by `-JobId` in a later step; `Get-SalesforceBulkResult` returns a job's counts and saves its success, failed and unprocessed rows as CSV files. Without `-WaitMinutes` a command creates the job and returns its `JobId`. A job with failed rows throws an error with the id `PsfdxBulkJobFailed` whose target holds the `JobId`. The three write commands support `-WhatIf` and name the object, file and org. The CLI remembers jobs it created on this computer, so `Resume-SalesforceBulkJob` cannot resume a job created elsewhere; use `Get-SalesforceBulkResult -TargetOrg` for that.
