@@ -101,7 +101,8 @@ Manifests declare `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Des
 4. Add or update its row in the module's table in `README.md`.
 5. Add an entry under `## Unreleased` in `CHANGELOG.md`, prefixed with the module name (`- psfdx-logs: ...`). Mark renames and moves as `Breaking:`.
 6. A new module also needs adding to `modules.ps1`.
-7. If it runs a new `sf` command, or passes a flag no cmdlet passed before, regenerate the parity report with `./scripts/parity/New-CliParityReport.ps1` and commit `docs/cli-parity.md` and `docs/cli-parity.json`. A test fails if you forget.
+7. Write its help (see `.claude/rules/cmdlets.md`): `tests/Help.Tests.ps1` fails for a missing synopsis, description, parameter, example, or "Salesforce CLI mapping" note, or a mapping that does not name the `sf` command the parity report says it runs.
+8. If it runs a new `sf` command, or passes a flag no cmdlet passed before, regenerate the parity report with `./scripts/parity/New-CliParityReport.ps1` and commit `docs/cli-parity.md` and `docs/cli-parity.json`. A test fails if you forget.
 
 ## How work runs
 

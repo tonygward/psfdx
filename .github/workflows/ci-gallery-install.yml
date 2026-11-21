@@ -1,7 +1,8 @@
 name: CI - Gallery install check
 
 # After CD - Publish to PowerShell Gallery has published a version, install psfdx from the Gallery into a temporary module path on
-# both PowerShell editions, import it, and check that the exported commands match the module manifests in the repository.
+# both PowerShell editions, import it, check that the exported commands match the module manifests in the repository, and check that
+# the help of every installed command works (scripts/release/Test-PsfdxHelp.ps1).
 # With "publish": false in scripts/release/gallery.json nothing was published, so this skips (with a notice).
 on:
   workflow_run:
@@ -79,3 +80,8 @@ jobs:
           $extra = @($installed | Where-Object { $_ -notin $expected })
           if ($missing.Count -or $extra.Count) { throw "The installed commands differ from the manifests. Missing: $($missing -join ', '). Extra: $($extra -join ', ')" }
           Write-Host "psfdx $version installed from the Gallery on PowerShell $($PSVersionTable.PSVersion) and exposes $($installed.Count) commands, as the manifests say."
+
+          # The help must work from the installed package: Get-Help -Full, -Examples and -Parameter * for every command (issue 240).
+          $helpOutput = & $shellPath -NoProfile -NonInteractive -File ./scripts/release/Test-PsfdxHelp.ps1 -ModulePath $temp -Version $version 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) { throw "The help of the installed package is incomplete:`n$helpOutput" }
+          Write-Host ($helpOutput.Trim())

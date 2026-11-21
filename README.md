@@ -25,6 +25,16 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 Get-Command -Module psfdx
 ```
 
+Every command has full help:
+
+```
+Get-Help Deploy-SalesforceMetadata -Full          # synopsis, every parameter, examples, notes
+Get-Help Deploy-SalesforceMetadata -Examples
+Get-Help Deploy-SalesforceMetadata -Parameter *
+```
+
+The notes of each command have a **Salesforce CLI mapping** section. It names the exact `sf` command or commands the cmdlet runs, how its parameters map to flags, the flags and values it cannot pass, and says plainly when a cmdlet does not run `sf` at all (it calls the REST API, runs npm, or is built from other psfdx cmdlets). The help is checked against the [CLI parity report](docs/cli-parity.md); [docs/help-audit.md](docs/help-audit.md) records the cross-check.
+
 ## 4. Update psfdx
 
 ```

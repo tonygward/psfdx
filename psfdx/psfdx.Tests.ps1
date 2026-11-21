@@ -1477,3 +1477,18 @@ Describe 'ID parameters reject a trailing line break (issue 112)' {
         }
     }
 }
+
+Describe 'Open-Salesforce private mode' {
+    InModuleScope 'psfdx' {
+        BeforeEach { Mock Invoke-Salesforce { 'https://example.my.salesforce.com' } }
+        It 'passes --private as a flag with no value' {
+            Open-Salesforce -TargetOrg me -BrowserPrivateMode -UrlOnly | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|open|--target-org|me|--private|--url-only' }
+        }
+        It 'leaves --private out by default, and BrowserPrivateMode is a switch' {
+            Open-Salesforce -TargetOrg me | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|open|--target-org|me' }
+            (Get-Command Open-Salesforce).Parameters['BrowserPrivateMode'].SwitchParameter | Should -BeTrue
+        }
+    }
+}

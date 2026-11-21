@@ -1,5 +1,10 @@
 function ConvertTo-SalesforceSoqlLiteral {
-    <# Turns a value into a quoted SOQL string literal that is safe to place in a generated query.
+    <#
+    .SYNOPSIS
+     Turns a value into a quoted SOQL string literal that is safe to place in a generated query.
+
+    .DESCRIPTION
+     Turns a value into a quoted SOQL string literal that is safe to place in a generated query.
 
        SOQL escapes a string with a backslash, not by doubling the quote: O'Brien is 'O\'Brien'.
        Backslash, apostrophe and double quote are escaped. Line breaks, tabs, backspace and form feed
@@ -11,7 +16,29 @@ function ConvertTo-SalesforceSoqlLiteral {
 
        The result is also safe inside the double-quoted --query "..." argument that psfdx builds: a double
        quote or a backtick gets the command-line escape that ConvertTo-PsfdxArgumentList understands.
-       Caller-authored queries passed to Select-SalesforceRecords -Query are not touched by this. #>
+       Caller-authored queries passed to Select-SalesforceRecords -Query are not touched by this. 
+
+    .PARAMETER Value
+    The text to turn into a quoted SOQL string. Quotes and backslashes are escaped; control characters other than line breaks and tabs are refused. Accepts pipeline input. Required. Accepts input from the pipeline.
+
+    .PARAMETER Like
+    Also escape % and _ so they match themselves inside a LIKE pattern.
+
+    .EXAMPLE
+    ConvertTo-SalesforceSoqlLiteral -Value my-org
+    Runs ConvertTo-SalesforceSoqlLiteral with its required parameters.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It works locally in PowerShell and .NET.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)][AllowEmptyString()][AllowNull()][string] $Value,
@@ -49,9 +76,33 @@ function ConvertTo-SalesforceSoqlLiteral {
 }
 
 function ConvertTo-SalesforceSoqlIdentifier {
-    <# Checks that a value is a plain Salesforce object or field API name (letters, digits and underscores, starting
+    <#
+    .SYNOPSIS
+     Checks that a value is a plain Salesforce object or field API name (letters, digits and underscores, starting    with a letter, with optional dots for relationships) and returns it.
+
+    .DESCRIPTION
+     Checks that a value is a plain Salesforce object or field API name (letters, digits and underscores, starting
        with a letter, with optional dots for relationships) and returns it. Identifiers cannot be quoted in SOQL, so
-       anything else is refused instead of being placed in the query. #>
+       anything else is refused instead of being placed in the query. 
+
+    .PARAMETER Value
+    An object or field API name (letters, digits and underscores, with optional dots for relationships). Anything else makes the cmdlet throw. Accepts pipeline input. Required. Accepts input from the pipeline.
+
+    .EXAMPLE
+    ConvertTo-SalesforceSoqlIdentifier -Value my-org
+    Runs ConvertTo-SalesforceSoqlIdentifier with its required parameters.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It works locally in PowerShell and .NET.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)][AllowEmptyString()][AllowNull()][string] $Value
@@ -65,7 +116,12 @@ function ConvertTo-SalesforceSoqlIdentifier {
 }
 
 function ConvertTo-SalesforceSoqlDateTime {
-    <# Formats a DateTime as a SOQL datetime literal in UTC, for example 2026-11-18T11:00:00Z. It is not quoted.
+    <#
+    .SYNOPSIS
+     Formats a DateTime as a SOQL datetime literal in UTC, for example 2026-11-18T11:00:00Z.
+
+    .DESCRIPTION
+     Formats a DateTime as a SOQL datetime literal in UTC, for example 2026-11-18T11:00:00Z. It is not quoted.
 
        The value is converted to UTC before the Z is written, so the literal is the same instant whatever the
        machine's time zone:
@@ -76,7 +132,29 @@ function ConvertTo-SalesforceSoqlDateTime {
        -TimeZone names the zone to read a Local or Unspecified value in instead of the machine's. A time that does
        not exist in that zone (the hour skipped when the clocks go forward) is refused. A time that happens twice
        (the hour repeated when the clocks go back) is read as standard time, as .NET does.
-       Fractions of a second are dropped, as the old 's' format did. 's' is culture-invariant. #>
+       Fractions of a second are dropped, as the old 's' format did. 's' is culture-invariant. 
+
+    .PARAMETER Value
+    The date and time to format. A Local or Unspecified kind is read as local time and converted to UTC. Accepts pipeline input. Required. Accepts input from the pipeline.
+
+    .PARAMETER TimeZone
+    Time zone to read an unspecified value in, for example Europe/London, instead of the computer's zone.
+
+    .EXAMPLE
+    ConvertTo-SalesforceSoqlDateTime -Value my-org
+    Runs ConvertTo-SalesforceSoqlDateTime with its required parameters.
+
+    .NOTES
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It works locally in PowerShell and .NET.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)][datetime] $Value,
