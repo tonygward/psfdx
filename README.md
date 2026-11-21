@@ -262,6 +262,9 @@ Included in the `psfdx` package.
 | `Get-SalesforceScratchOrgs` | List scratch orgs. |
 | `New-SalesforceScratchOrg` | Create scratch org. `-Async` returns before the org is ready. |
 | `Resume-SalesforceScratchOrg` | Resume a scratch org creation by `-JobId` (2SR...) or `-UseMostRecent`. Returns the org with `Completed`. Assign permission sets afterwards with `Grant-SalesforcePermissionSet`. |
+| `New-SalesforceScratchOrg` | Create scratch org. |
+| `Invoke-SalesforceCodeAnalyzer` | Run Code Analyzer (`sf code-analyzer run`) over `-Workspace` and `-Target` with `-RuleSelector`, `-ConfigFile` and `-SeverityThreshold`. Returns findings as objects. A threshold failure is returned (`ThresholdExceeded`) rather than thrown, unless `-ThrowOnThreshold`; a plugin or engine failure always throws. |
+| `Get-SalesforceCodeAnalyzerRule` | List the rules a selector matches (`sf code-analyzer rules`). |
 | `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
 | `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
 

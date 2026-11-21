@@ -51,6 +51,8 @@
         'Get-SalesforceScratchOrgs',
         'New-SalesforceScratchOrg',
         'Resume-SalesforceScratchOrg',
+        'Invoke-SalesforceCodeAnalyzer',
+        'Get-SalesforceCodeAnalyzerRule',
         'Remove-SalesforceScratchOrg',
         'Remove-SalesforceScratchOrgs',
         'New-SalesforceProject',

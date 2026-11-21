@@ -2,15 +2,15 @@
 
 ## Unreleased
 
+- psfdx-development: new `Invoke-SalesforceCodeAnalyzer` and `Get-SalesforceCodeAnalyzerRule` wrap `sf code-analyzer run` and `sf code-analyzer rules`. The run returns each finding as an object (rule, engine, severity, message, file and position). A run that fails your `-SeverityThreshold` still returns its findings with `ThresholdExceeded`, and `-ThrowOnThreshold` turns that into an error for CI; a missing plugin or an engine that cannot start always throws, with install guidance (Java 11 or later for the Java-based engines).
+
 ## 0.8.35 - 2026-11-21
 
-- Maintenance release.
+- psfdx-development: new `Resume-SalesforceScratchOrg` picks up a scratch org creation that was started with `-Async` or timed out, by `-JobId` or `-UseMostRecent`, and returns the org with a `Completed` flag. `New-SalesforceScratchOrg` gained `-Async`. To give the new org access, follow with `Grant-SalesforcePermissionSet` from psfdx, which already wraps `sf org assign permset`.
 
 ## 0.8.34 - 2026-11-21
 
 - psfdx-metadata: new `Get-SalesforceDeployPreview` and `Get-SalesforceRetrievePreview` show what a deploy or retrieve would change, and any conflicts, before you run it. They are read-only and return the changes, deletes, conflicts and ignored files as lists, with `HasChanges` and `HasConflicts`. They need an org with source tracking; for other orgs they return the CLI error with guidance.
-
-- psfdx-development: new `Resume-SalesforceScratchOrg` picks up a scratch org creation that was started with `-Async` or timed out, by `-JobId` or `-UseMostRecent`, and returns the org with a `Completed` flag. `New-SalesforceScratchOrg` gained `-Async`. To give the new org access, follow with `Grant-SalesforcePermissionSet` from psfdx, which already wraps `sf org assign permset`.
 
 ## 0.8.33 - 2026-11-21
 

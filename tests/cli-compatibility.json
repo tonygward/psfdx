@@ -19,6 +19,7 @@
     "org assign permset", "org assign permsetlicense", "org create user",
     "org display user", "org generate password", "org list users",
     "limits api display",
+    "code-analyzer rules", "code-analyzer run",
     "org create sandbox", "org create scratch",
     "org delete sandbox", "org delete scratch",
     "org list", "org list metadata-types",
