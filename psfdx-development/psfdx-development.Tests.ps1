@@ -1105,9 +1105,12 @@ Describe 'Resume-SalesforceScratchOrg' {
             Resume-SalesforceScratchOrg -UseMostRecent | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|scratch|--use-most-recent|--json' }
         }
-        It 'reports a creation that is still queued as not completed' {
-            $script:Reply = '{"status":0,"result":{"scratchOrgInfo":{"Id":"2SR000000000001AAA"},"status":"Creating"}}'
-            (Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 1).Completed | Should -BeFalse
+        It 'returns a still-running creation as not completed instead of throwing' {
+            $script:Reply = '{"status":1,"name":"StillInProgressError","message":"The scratch org is still being created."}'
+            $r = Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 1
+            $r.Completed | Should -BeFalse
+            $r.Status | Should -Be 'InProgress'
+            $r.Message | Should -BeLike '*still being created*'
         }
         It 'throws the CLI message for a failed creation' {
             $script:Reply = '{"status":1,"name":"ScratchOrgCreationError","message":"The scratch org creation failed."}'

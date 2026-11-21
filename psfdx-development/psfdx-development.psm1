@@ -325,8 +325,8 @@ function Resume-SalesforceScratchOrg {
     .DESCRIPTION
     Select the creation by -JobId (the scratch org info ID, starting 2SR, reported when the creation was started) or by -UseMostRecent.
     The CLI keeps a local record of the job, so there is no -TargetOrg; resume from the machine that started it.
-    Returns the CLI result (org ID, username, instance URL) with Completed: true once the org is ready. A creation that is still queued
-    after -WaitMinutes returns Completed: false when the CLI reports it that way, and a failed creation throws the CLI message.
+    Returns the CLI result (org ID, username, instance URL) with Completed: true once the org is ready. A creation that is still running
+    when -WaitMinutes ends (the CLI's StillInProgressError) returns Completed: false with Status InProgress, so a script can poll; a failed creation throws the CLI message.
     Permission sets are assigned afterwards with Grant-SalesforcePermissionSet (psfdx), which asks for confirmation.
     .EXAMPLE
     New-SalesforceScratchOrg -Async -Name ci-1 | Out-Null
@@ -354,6 +354,14 @@ function Resume-SalesforceScratchOrg {
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    # A creation that is still running when the wait ends is reported by the CLI as the error StillInProgressError; that is a normal pending state.
+    $body = $null
+    try { $body = ((@($result) | Out-String).Trim() | ConvertFrom-Json -ErrorAction Stop) } catch { $body = $null }
+    if ($null -ne $body -and $body.PSObject.Properties.Name -contains 'name' -and [string]$body.name -eq 'StillInProgressError') {
+        $pending = ''
+        if ($body.PSObject.Properties.Name -contains 'message') { $pending = [string]$body.message }
+        return [pscustomobject]@{ Completed = $false; Status = 'InProgress'; Message = $pending }
+    }
     $parsed = Show-SalesforceResult -Result $result
     if ($null -eq $parsed) { return $null }
     $names = @($parsed.PSObject.Properties.Name)
