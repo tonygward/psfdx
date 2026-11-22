@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 122 | 13 | 61 | 3 | 15 | 68.9% of 196 |
-| Just-in-time plugins (installed on first use) | 65 | 24 | 2 | 30 | 0 | 9 | 46.4% of 56 |
-| Both | 279 | 146 | 15 | 91 | 3 | 24 | 63.9% of 252 |
+| Core plugins (bundled with the CLI) | 214 | 139 | 10 | 47 | 3 | 15 | 76.0% of 196 |
+| Just-in-time plugins (installed on first use) | 65 | 26 | 0 | 30 | 0 | 9 | 46.4% of 56 |
+| Both | 279 | 165 | 10 | 77 | 3 | 24 | 69.4% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **207** cmdlets; **176** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **221** cmdlets; **190** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **161** commands psfdx runs, it passes **748 of 778** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **62** have a list of allowed values in the CLI, and psfdx can pass **255 of 272** of those values.
+**Flags and values.** Across the **175** commands psfdx runs, it passes **813 of 839** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **76** have a list of allowed values in the CLI, and psfdx can pass **302 of 308** of those values.
 
 ## By capability
 
@@ -42,7 +42,7 @@ psfdx exports **207** cmdlets; **176** of them run an sf command themselves. The
 | Legacy force commands (sf force) | 7 | 0 | 0 | 0 | 0 | 7 | n/a of 0 |
 | CLI help (sf help) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | CLI information (sf info) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
-| Lightning development (sf lightning) | 3 | 1 | 2 | 0 | 0 | 0 | 100.0% of 3 |
+| Lightning development (sf lightning) | 3 | 3 | 0 | 0 | 0 | 0 | 100.0% of 3 |
 | Logic tests (sf logic) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
 | Orgs, users and sandboxes (sf org) | 40 | 35 | 0 | 2 | 3 | 0 | 94.6% of 37 |
 | Packages (second generation) (sf package) | 25 | 25 | 0 | 0 | 0 | 0 | 100.0% of 25 |
@@ -52,7 +52,7 @@ psfdx exports **207** cmdlets; **176** of them run an sf command themselves. The
 | Schema (sf schema) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI search (sf search) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Objects (sf sobject) | 2 | 1 | 1 | 0 | 0 | 0 | 100.0% of 2 |
-| Templates and generators (sf template) | 17 | 0 | 3 | 14 | 0 | 0 | 17.6% of 17 |
+| Templates and generators (sf template) | 17 | 17 | 0 | 0 | 0 | 0 | 100.0% of 17 |
 | UI bundles (sf ui-bundle) | 1 | 0 | 0 | 1 | 0 | 0 | 0.0% of 1 |
 | CLI update (sf update) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | CLI version (sf version) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
@@ -232,25 +232,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | :--- | :--- | :--- | :--- | :--- |
 | `sf search` | @oclif/plugin-search | 0 | not applicable | Interactive search of the CLI command list. |
 
-### Templates and generators (`sf template`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf template generate analytics template` | @salesforce/plugin-templates | 2 (1 required) | missing |  |
-| `sf template generate digital-experience site` (preview) | @salesforce/plugin-templates | 6 (2 required) | missing |  |
-| `sf template generate flexipage` (beta) | @salesforce/plugin-templates | 9 (2 required) | missing |  |
-| `sf template generate lightning app` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
-| `sf template generate lightning component` | @salesforce/plugin-templates | 4 (1 required) | missing |  |
-| `sf template generate lightning event` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
-| `sf template generate lightning interface` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
-| `sf template generate lightning test` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
-| `sf template generate lightning-out` | @salesforce/plugin-templates | 9 | missing |  |
-| `sf template generate static-resource` | @salesforce/plugin-templates | 3 (1 required) | missing |  |
-| `sf template generate ui-bundle` | @salesforce/plugin-templates | 4 (1 required) | missing |  |
-| `sf template generate ui-embedding` | @salesforce/plugin-templates | 5 (4 required) | missing |  |
-| `sf template generate visualforce component` | @salesforce/plugin-templates | 4 (2 required) | missing |  |
-| `sf template generate visualforce page` | @salesforce/plugin-templates | 3 (2 required) | missing |  |
-
 ### UI bundles (`sf ui-bundle`)
 
 | Command | Plugin | Flags | Status | Why, or issue |
@@ -392,8 +373,8 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
-| `sf lightning dev app` | partially wrapped | `Start-SalesforceLwcDevServer` | 3 of 4 | `--device-id` | `--device-type`: `desktop` |
-| `sf lightning dev component` | partially wrapped | `Start-SalesforceLwcDevServer` | 2 of 3 | `--client-select` |  |
+| `sf lightning dev app` | wrapped | `Start-SalesforceLwcDevServer` | 4 of 4 |  |  |
+| `sf lightning dev component` | wrapped | `Start-SalesforceLwcDevServer` | 3 of 3 |  |  |
 | `sf lightning dev site` | wrapped | `Start-SalesforceLwcDevServer` | 2 of 2 |  |  |
 
 ### Logic tests (`sf logic`)
@@ -537,9 +518,23 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
-| `sf template generate apex class` | partially wrapped | `New-SalesforceApexClass` | 3 of 3 |  | `--template`: `ApexException`, `BasicUnitTest`, `Batchable`, `Queueable` |
-| `sf template generate apex trigger` | partially wrapped | `New-SalesforceApexTrigger` | 4 of 5 | `--template` |  |
-| `sf template generate project` | partially wrapped | `New-SalesforceProject` | 6 of 7 | `--lwc-language` | `--template`: `reactinternalapp`, `reactexternalapp`, `angularinternalapp`, `angularexternalapp`, `vueinternalapp`, `agent` |
+| `sf template generate analytics template` | wrapped | `New-SalesforceAnalyticsTemplate` | 2 of 2 |  |  |
+| `sf template generate apex class` | wrapped | `New-SalesforceApexClass` | 3 of 3 |  |  |
+| `sf template generate apex trigger` | wrapped | `New-SalesforceApexTrigger` | 5 of 5 |  |  |
+| `sf template generate digital-experience site` | wrapped | `New-SalesforceExperienceSite` | 6 of 6 |  |  |
+| `sf template generate flexipage` | wrapped | `New-SalesforceFlexiPage` | 9 of 9 |  |  |
+| `sf template generate lightning app` | wrapped | `New-SalesforceLightningApp` | 3 of 3 |  |  |
+| `sf template generate lightning component` | wrapped | `New-SalesforceLightningComponent` | 4 of 4 |  |  |
+| `sf template generate lightning event` | wrapped | `New-SalesforceLightningEvent` | 3 of 3 |  |  |
+| `sf template generate lightning interface` | wrapped | `New-SalesforceLightningInterface` | 3 of 3 |  |  |
+| `sf template generate lightning test` | wrapped | `New-SalesforceLightningTest` | 3 of 3 |  |  |
+| `sf template generate lightning-out` | wrapped | `New-SalesforceLightningOutApp` | 9 of 9 |  |  |
+| `sf template generate project` | wrapped | `New-SalesforceProject` | 7 of 7 |  |  |
+| `sf template generate static-resource` | wrapped | `New-SalesforceStaticResource` | 3 of 3 |  |  |
+| `sf template generate ui-bundle` | wrapped | `New-SalesforceUiBundle` | 4 of 4 |  |  |
+| `sf template generate ui-embedding` | wrapped | `New-SalesforceUiEmbedding` | 5 of 5 |  |  |
+| `sf template generate visualforce component` | wrapped | `New-SalesforceVisualforceComponent` | 4 of 4 |  |  |
+| `sf template generate visualforce page` | wrapped | `New-SalesforceVisualforcePage` | 3 of 3 |  |  |
 
 ## Flags left out of the per-command view
 
@@ -547,9 +542,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 145 | 151 |
-| `--flags-dir` | 0 | 158 |
-| `--api-version` | 1 | 108 |
+| `--json` | 159 | 165 |
+| `--flags-dir` | 0 | 172 |
+| `--api-version` | 1 | 120 |
 
 ## How to read this
 

@@ -1634,3 +1634,264 @@ Describe 'psfdx-development Apex and Code Analyzer parity (issue 253)' {
         }
     }
 }
+
+Describe 'psfdx-development template generators (issue 254)' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"outputDir":"C:\\p\\out","created":["out/X/X.js"],"rawOutput":"create out/X/X.js"}}' }
+            # A folder of its own for each test: $TestDrive is shared by the tests of a block, so files from one must not show up in the next.
+            $script:out = Join-Path $TestDrive ('out-' + [guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $script:out -Force | Out-Null
+        }
+
+        Context 'each generator builds its command and returns the CLI result' {
+            It '<Cmdlet> runs sf <Expected>' -ForEach @(
+                @{ Cmdlet = 'New-SalesforceLightningApp'; Splat = @{ Name = 'MyApp'; Template = 'DefaultLightningApp' }; Expected = 'template|generate|lightning|app|--name|MyApp|--template|DefaultLightningApp' }
+                @{ Cmdlet = 'New-SalesforceLightningEvent'; Splat = @{ Name = 'MyEvt'; Template = 'DefaultLightningEvt' }; Expected = 'template|generate|lightning|event|--name|MyEvt|--template|DefaultLightningEvt' }
+                @{ Cmdlet = 'New-SalesforceLightningInterface'; Splat = @{ Name = 'MyIntf'; Template = 'DefaultLightningIntf' }; Expected = 'template|generate|lightning|interface|--name|MyIntf|--template|DefaultLightningIntf' }
+                @{ Cmdlet = 'New-SalesforceLightningTest'; Splat = @{ Name = 'MyTest'; Template = 'DefaultLightningTest' }; Expected = 'template|generate|lightning|test|--name|MyTest|--template|DefaultLightningTest' }
+                @{ Cmdlet = 'New-SalesforceLightningComponent'; Splat = @{ Name = 'card'; Type = 'lwc'; Template = 'typescript' }; Expected = 'template|generate|lightning|component|--name|card|--type|lwc|--template|typescript' }
+                @{ Cmdlet = 'New-SalesforceVisualforcePage'; Splat = @{ Name = 'MyPage'; Label = 'My Page' }; Expected = 'template|generate|visualforce|page|--name|MyPage|--label|My Page' }
+                @{ Cmdlet = 'New-SalesforceVisualforceComponent'; Splat = @{ Name = 'MyComp'; Label = 'My Comp'; Template = 'DefaultVFComponent' }; Expected = 'template|generate|visualforce|component|--name|MyComp|--label|My Comp|--template|DefaultVFComponent' }
+                @{ Cmdlet = 'New-SalesforceStaticResource'; Splat = @{ Name = 'Logos'; Type = 'text/plain' }; Expected = 'template|generate|static-resource|--name|Logos|--type|text/plain' }
+                @{ Cmdlet = 'New-SalesforceAnalyticsTemplate'; Splat = @{ Name = 'Dash' }; Expected = 'template|generate|analytics|template|--name|Dash' }
+                @{ Cmdlet = 'New-SalesforceUiBundle'; Splat = @{ Name = 'Store'; Label = 'My Store'; Template = 'reactbasic' }; Expected = 'template|generate|ui-bundle|--name|Store|--label|My Store|--template|reactbasic' }
+            ) {
+                $r = & $Cmdlet @Splat -OutputDirectory $script:out
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq ($Expected + "|--output-dir|$($script:out)|--json") }
+                $r.created | Should -Contain 'out/X/X.js'
+                $r.outputDir | Should -Be 'C:\p\out'
+            }
+            It '<Cmdlet> needs only the name (and label) and leaves the CLI defaults alone' -ForEach @(
+                @{ Cmdlet = 'New-SalesforceLightningApp'; Splat = @{ Name = 'A' }; Expected = 'template|generate|lightning|app|--name|A|--json' }
+                @{ Cmdlet = 'New-SalesforceVisualforcePage'; Splat = @{ Name = 'P'; Label = 'L' }; Expected = 'template|generate|visualforce|page|--name|P|--label|L|--json' }
+                @{ Cmdlet = 'New-SalesforceStaticResource'; Splat = @{ Name = 'R' }; Expected = 'template|generate|static-resource|--name|R|--json' }
+                @{ Cmdlet = 'New-SalesforceLightningComponent'; Splat = @{ Name = 'c' }; Expected = 'template|generate|lightning|component|--name|c|--json' }
+            ) {
+                & $Cmdlet @Splat | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $Expected }
+            }
+        }
+
+        Context 'overwrite protection' {
+            It 'stops when the target already exists, names it, and does not run sf' {
+                New-Item -ItemType Directory -Path (Join-Path $script:out 'card') | Out-Null
+                { New-SalesforceLightningComponent -Name card -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*card*Use -Force*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'goes ahead with -Force' {
+                New-Item -ItemType Directory -Path (Join-Path $script:out 'card') | Out-Null
+                New-SalesforceLightningComponent -Name card -OutputDirectory $script:out -Force | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'checks the exact files each generator creates' -ForEach @(
+                @{ Cmdlet = 'New-SalesforceVisualforcePage'; Splat = @{ Name = 'P'; Label = 'L' }; Existing = 'P.page' }
+                @{ Cmdlet = 'New-SalesforceVisualforcePage'; Splat = @{ Name = 'P'; Label = 'L' }; Existing = 'P.page-meta.xml' }
+                @{ Cmdlet = 'New-SalesforceVisualforceComponent'; Splat = @{ Name = 'C'; Label = 'L' }; Existing = 'C.component' }
+                @{ Cmdlet = 'New-SalesforceStaticResource'; Splat = @{ Name = 'R' }; Existing = 'R.resource-meta.xml' }
+                @{ Cmdlet = 'New-SalesforceLightningTest'; Splat = @{ Name = 'T' }; Existing = 'T.resource' }
+                @{ Cmdlet = 'New-SalesforceAnalyticsTemplate'; Splat = @{ Name = 'A' }; Existing = 'A' }
+                @{ Cmdlet = 'New-SalesforceLightningApp'; Splat = @{ Name = 'A' }; Existing = 'A' }
+            ) {
+                Set-Content -LiteralPath (Join-Path $script:out $Existing) -Value 'mine'
+                { & $Cmdlet @Splat -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'checks the flexipages and uiBundles subfolders the CLI adds' {
+                New-Item -ItemType Directory -Path (Join-Path $script:out 'flexipages') | Out-Null
+                Set-Content -LiteralPath (Join-Path $script:out 'flexipages/Home.flexipage-meta.xml') -Value 'mine'
+                { New-SalesforceFlexiPage -Name Home -Template HomePage -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*'
+                New-Item -ItemType Directory -Path (Join-Path $script:out 'uiBundles/Store') -Force | Out-Null
+                { New-SalesforceUiBundle -Name Store -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'checks the current folder when no output folder is given' {
+                Push-Location -LiteralPath $script:out
+                try {
+                    New-Item -ItemType Directory -Path 'Here' | Out-Null
+                    { New-SalesforceLightningApp -Name Here } | Should -Throw -ExpectedMessage '*already exists*'
+                } finally { Pop-Location }
+            }
+            It 'does not stop for a different name in the same folder' {
+                New-Item -ItemType Directory -Path (Join-Path $script:out 'other') | Out-Null
+                New-SalesforceLightningApp -Name fresh -OutputDirectory $script:out | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+        }
+
+        Context 'names and values are checked before sf runs' {
+            It 'rejects names that are not API names, including a trailing line break' {
+                foreach ($cmdlet in 'New-SalesforceLightningApp', 'New-SalesforceLightningComponent', 'New-SalesforceStaticResource', 'New-SalesforceUiBundle') {
+                    foreach ($bad in 'my app', 'a;b', '1app', "app`n", '') { { & $cmdlet -Name $bad } | Should -Throw }
+                }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'accepts every documented template and rejects others' {
+                foreach ($t in 'default', 'analyticsDashboard', 'analyticsDashboardWithStep', 'typescript') { { New-SalesforceLightningComponent -Name n$($t.Length) -Template $t -OutputDirectory $script:out } | Should -Not -Throw }
+                { New-SalesforceLightningComponent -Name x -Template fancy } | Should -Throw
+                { New-SalesforceLightningComponent -Name x -Type vue } | Should -Throw
+                { New-SalesforceUiBundle -Name x -Template svelte } | Should -Throw
+            }
+            It 'checks the static resource type and requires visualforce labels' {
+                foreach ($bad in 'zip', 'application/zip; rm', "text/plain`n", 'a b/c') { { New-SalesforceStaticResource -Name R -Type $bad } | Should -Throw }
+                # A missing mandatory parameter would make PowerShell prompt, so check the declaration instead of calling without it.
+                foreach ($cmdlet in 'New-SalesforceVisualforcePage', 'New-SalesforceVisualforceComponent') {
+                    (Get-Command $cmdlet).Parameters['Label'].Attributes.Where({ $_ -is [System.Management.Automation.ParameterAttribute] })[0].Mandatory | Should -BeTrue
+                }
+                { New-SalesforceVisualforcePage -Name P -Label '' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws the CLI message, for example for a wrong parent folder' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Lightning bundles must have a parent folder named ''aura''."}' }
+                { New-SalesforceLightningApp -Name Nope -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*parent folder named ''aura''*'
+            }
+        }
+
+        Context 'New-SalesforceUiEmbedding' {
+            It 'passes each sandbox permission as its own flag' {
+                New-SalesforceUiEmbedding -Name status -Src https://status.example.com -Title 'Status page' -Sandbox allow-scripts, allow-forms -OutputDirectory $script:out | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "template|generate|ui-embedding|--name|status|--src|https://status.example.com|--title|Status page|--sandbox|allow-scripts|--sandbox|allow-forms|--output-dir|$($script:out)|--json" }
+            }
+            It 'needs an https URL, a title and a valid sandbox value' {
+                foreach ($bad in 'http://status.example.com', 'status.example.com', 'ftp://x', 'javascript:alert(1)') { { New-SalesforceUiEmbedding -Name s -Src $bad -Title T -Sandbox allow-scripts } | Should -Throw -ExpectedMessage '*https*' }
+                { New-SalesforceUiEmbedding -Name s -Src https://x.example.com -Title T -Sandbox allow-everything } | Should -Throw
+                { New-SalesforceUiEmbedding -Name s -Src https://x.example.com -Title '' -Sandbox allow-scripts } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'New-SalesforceFlexiPage' {
+            It 'passes a record page with every option, one flag per field' {
+                New-SalesforceFlexiPage -Name Acct -Template RecordPage -SObject Account -Label 'Acct page' -Description 'For accounts' -PrimaryField Name -SecondaryFields Industry, Phone -DetailFields Name, Type -OutputDirectory $script:out | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "template|generate|flexipage|--name|Acct|--template|RecordPage|--sobject|Account|--label|Acct page|--description|For accounts|--primary-field|Name|--secondary-fields|Industry|--secondary-fields|Phone|--detail-fields|Name|--detail-fields|Type|--output-dir|$($script:out)|--json" }
+            }
+            It 'needs -SObject for a record page, and keeps record-page options off other pages' {
+                { New-SalesforceFlexiPage -Name A -Template RecordPage } | Should -Throw -ExpectedMessage '*needs -SObject*'
+                { New-SalesforceFlexiPage -Name A -Template HomePage -PrimaryField Name } | Should -Throw -ExpectedMessage '*only for a RecordPage*'
+                { New-SalesforceFlexiPage -Name A -Template AppPage -DetailFields Name } | Should -Throw -ExpectedMessage '*only for a RecordPage*'
+                { New-SalesforceFlexiPage -Name A -Template HomePage -OutputDirectory $script:out } | Should -Not -Throw
+                { New-SalesforceFlexiPage -Name A -Template Other } | Should -Throw
+            }
+            It 'allows at most 11 secondary fields' {
+                { New-SalesforceFlexiPage -Name B -Template RecordPage -SObject Account -SecondaryFields (1..12 | ForEach-Object { "F$_" }) } | Should -Throw -ExpectedMessage '*at most 11*'
+                { New-SalesforceFlexiPage -Name B -Template RecordPage -SObject Account -SecondaryFields (1..11 | ForEach-Object { "F$_" }) -OutputDirectory $script:out } | Should -Not -Throw
+            }
+        }
+
+        Context 'New-SalesforceLightningOutApp' {
+            It 'passes every option' {
+                $def = Join-Path $TestDrive 'lo.json'; Set-Content -LiteralPath $def -Value '{}'
+                New-SalesforceLightningOutApp -AppName Widget -Components c/cart, c/list -DefinitionFile $def -EcaName WEca -EcaContactEmail a@b.com -EcaCallbackUrl https://x.example.com/cb -HostDomains https://x.example.com, https://y.example.com -Runtime CLWR -OutputDirectory $script:out | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "template|generate|lightning-out|--app-name|Widget|--components|c/cart|--components|c/list|--definition-file|$def|--eca-name|WEca|--eca-contact-email|a@b.com|--eca-callback-url|https://x.example.com/cb|--host-domains|https://x.example.com|--host-domains|https://y.example.com|--runtime|CLWR|--output-dir|$($script:out)|--json" }
+            }
+            It 'names the missing required values before running sf, unless a definition file is given' {
+                { New-SalesforceLightningOutApp -AppName A } | Should -Throw -ExpectedMessage '*-EcaName, -Runtime, -HostDomains, -EcaContactEmail, -EcaCallbackUrl*'
+                { New-SalesforceLightningOutApp -AppName A -EcaName E -Runtime LWR_CORE } | Should -Throw -ExpectedMessage '*-HostDomains, -EcaContactEmail, -EcaCallbackUrl*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                $def = Join-Path $TestDrive 'lo.json'; Set-Content -LiteralPath $def -Value '{}'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -OutputDirectory $script:out } | Should -Not -Throw
+            }
+            It 'checks the definition file, the callback URL and the runtime' {
+                { New-SalesforceLightningOutApp -DefinitionFile (Join-Path $TestDrive 'nope.json') } | Should -Throw -ExpectedMessage '*does not exist*'
+                $def = Join-Path $TestDrive 'lo2.json'; Set-Content -LiteralPath $def -Value '{}'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -EcaCallbackUrl http://x.example.com/cb } | Should -Throw -ExpectedMessage '*https*'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -Runtime OTHER } | Should -Throw
+            }
+            It 'checks for the app file the CLI writes, whether the name is a parameter or comes from the definition file' {
+                $apps = Join-Path $script:out 'lightningOutApps'
+                New-Item -ItemType Directory -Path $apps | Out-Null
+                Set-Content -LiteralPath (Join-Path $apps 'Widget.lightningOutApp-meta.xml') -Value 'mine'
+                $def = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def -Value '{ "appName": "Widget", "runtime": "LWR_CORE" }'
+                { New-SalesforceLightningOutApp -AppName Widget -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*Widget.lightningOutApp-meta.xml*'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*Widget.lightningOutApp-meta.xml*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                New-SalesforceLightningOutApp -AppName Widget -DefinitionFile $def -OutputDirectory $script:out -Force | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'also checks the External Client App file, from a parameter or the definition file' {
+                $ecas = Join-Path $script:out 'externalClientApps'
+                New-Item -ItemType Directory -Path $ecas | Out-Null
+                Set-Content -LiteralPath (Join-Path $ecas 'WidgetEca.eca-meta.xml') -Value 'mine'
+                $def = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def -Value '{ "appName": "Fresh", "eca": { "name": "WidgetEca" } }'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*WidgetEca.eca-meta.xml*'
+                $def2 = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def2 -Value '{ "appName": "Fresh" }'
+                { New-SalesforceLightningOutApp -DefinitionFile $def2 -EcaName WidgetEca -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*WidgetEca.eca-meta.xml*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'a definition file it cannot read does not stop generation, and a parameter overrides the file name' {
+                $bad = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $bad -Value 'not json'
+                { New-SalesforceLightningOutApp -DefinitionFile $bad -OutputDirectory $script:out } | Should -Not -Throw
+                $apps = Join-Path $script:out 'lightningOutApps'
+                New-Item -ItemType Directory -Path $apps | Out-Null
+                Set-Content -LiteralPath (Join-Path $apps 'FromFile.lightningOutApp-meta.xml') -Value 'mine'
+                $def = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def -Value '{ "appName": "FromFile" }'
+                { New-SalesforceLightningOutApp -AppName Other -DefinitionFile $def -OutputDirectory $script:out } | Should -Not -Throw
+            }
+        }
+
+        Context 'New-SalesforceExperienceSite (preview)' {
+            It 'passes every option, including the org' {
+                New-SalesforceExperienceSite -Name 'Partner Portal' -TemplateName 'Build Your Own (LWR)' -AdminEmail a@b.com -UrlPathPrefix partners -OutputDirectory $script:out -TargetOrg dev1 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "template|generate|digital-experience|site|--name|Partner Portal|--template-name|Build Your Own (LWR)|--admin-email|a@b.com|--url-path-prefix|partners|--output-dir|$($script:out)|--target-org|dev1|--json" }
+            }
+            It 'checks the template and the URL prefix' {
+                { New-SalesforceExperienceSite -Name S -TemplateName 'Other' } | Should -Throw
+                foreach ($bad in 'my-site', 'a b', "site`n", 'a/b') { { New-SalesforceExperienceSite -Name S -TemplateName 'Build Your Own (LWR)' -UrlPathPrefix $bad } | Should -Throw }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'partially wrapped generators' {
+            It 'New-SalesforceApexTrigger passes -Template' {
+                New-SalesforceApexTrigger -Name AccTrigger -SObject Account -Template ApexTrigger | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'template|generate|apex|trigger|--name|AccTrigger|--event|before insert|--sobject|Account|--template|ApexTrigger' }
+            }
+            It 'New-SalesforceApexClass reaches every template' {
+                foreach ($t in 'DefaultApexClass', 'ApexUnitTest', 'InboundEmailService', 'ApexException', 'BasicUnitTest', 'Batchable', 'Queueable') {
+                    { New-SalesforceApexClass -Name C -Template $t } | Should -Not -Throw
+                }
+                { New-SalesforceApexClass -Name C -Template Other } | Should -Throw
+            }
+            It 'New-SalesforceProject passes -LwcLanguage and every template' {
+                New-SalesforceProject -Name p -LwcLanguage typescript | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'template|generate|project|--name|p|--lwc-language|typescript|--template|standard|--json' }
+                foreach ($t in 'standard', 'empty', 'analytics', 'reactinternalapp', 'reactexternalapp', 'angularinternalapp', 'angularexternalapp', 'vueinternalapp', 'agent') { { New-SalesforceProject -Name p -Template $t } | Should -Not -Throw }
+                { New-SalesforceProject -Name p -LwcLanguage python } | Should -Throw
+            }
+        }
+
+        Context 'Start-SalesforceLwcDevServer new options' {
+            BeforeEach {
+                Mock Test-SalesforceLightningDevPluginInstalled { $true }
+                Mock Invoke-Salesforce { }
+            }
+            It 'passes -DeviceId for an app, and desktop as a device type' {
+                Start-SalesforceLwcDevServer -Mode App -Name Sales -DeviceType ios -DeviceId 8A1B -TargetOrg dev1
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|app|--name|Sales|--device-type|ios|--device-id|8A1B|--target-org|dev1' }
+                Start-SalesforceLwcDevServer -Mode App -DeviceType desktop
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|app|--device-type|desktop' }
+            }
+            It 'passes -ClientSelect for a component' {
+                Start-SalesforceLwcDevServer -Mode Component -ClientSelect -TargetOrg dev1
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'lightning|dev|component|--client-select|--target-org|dev1' }
+            }
+            It 'keeps each option to the mode it belongs to' {
+                { Start-SalesforceLwcDevServer -Mode Component -DeviceId 8A1B } | Should -Throw -ExpectedMessage '*only supported with -Mode App*'
+                { Start-SalesforceLwcDevServer -Mode App -ClientSelect } | Should -Throw -ExpectedMessage '*only supported with -Mode Component*'
+                { Start-SalesforceLwcDevServer -Mode App -DeviceType desktop -DeviceId 8A1B } | Should -Throw -ExpectedMessage '*mobile device*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        It 'exports the new generators and keeps the guard private' {
+            $exports = (Get-Module psfdx-development).ExportedFunctions.Keys
+            foreach ($n in 'New-SalesforceLightningApp', 'New-SalesforceLightningComponent', 'New-SalesforceLightningEvent', 'New-SalesforceLightningInterface', 'New-SalesforceLightningTest', 'New-SalesforceLightningOutApp', 'New-SalesforceFlexiPage', 'New-SalesforceVisualforceComponent', 'New-SalesforceVisualforcePage', 'New-SalesforceStaticResource', 'New-SalesforceAnalyticsTemplate', 'New-SalesforceUiBundle', 'New-SalesforceUiEmbedding', 'New-SalesforceExperienceSite') { $exports | Should -Contain $n }
+            $exports | Should -Not -Contain 'Assert-SalesforceGeneratedPathFree'
+        }
+    }
+}

@@ -343,7 +343,7 @@ Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `New-SalesforceProject` | Create a new Salesforce project. |
+| `New-SalesforceProject` | Create a new Salesforce project (all templates, `-LwcLanguage`). |
 | `Set-SalesforceTargetOrg` | Set default Target Org (project or global). |
 | `Get-SalesforceTargetOrg` | Get default Target Org (project or global). |
 | `Remove-SalesforceTargetOrg` | Unset default Target Org (project or global). |
@@ -407,12 +407,32 @@ Included in the `psfdx` package.
 | `New-SalesforceApexClass` | Generate an Apex class from a template. |
 | `New-SalesforceApexTrigger` | Generate an Apex trigger from a template. |
 
+### Template generators
+
+These write source files into the current Salesforce DX project and need no org (the Experience site one can take `-TargetOrg`). Each returns the CLI result: `outputDir`, `created` (the files it wrote) and `rawOutput`.
+
+The CLI replaces a generated file that differs from the template **without asking**, which loses your edits. So each generator below stops when its target already exists and needs `-Force` to go ahead. (`New-SalesforceApexClass` and `New-SalesforceApexTrigger` above predate this and do not check.)
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforceLightningComponent` | Lightning web or Aura component (`-Type lwc` or `aura`, `-Template`). The output folder must be named `lwc` or `aura`. |
+| `New-SalesforceLightningApp` / `-Event` / `-Interface` | Aura app, event or interface. The output folder must be named `aura`. |
+| `New-SalesforceLightningTest` | Lightning test static resource. |
+| `New-SalesforceLightningOutApp` | Lightning Out 2.0 app with its External Client App; needs the ECA values or a `-DefinitionFile`. |
+| `New-SalesforceUiEmbedding` | LWC that embeds a page with `lightning-ui-embedding` (`-Src` must be https, `-Sandbox` permissions). |
+| `New-SalesforceUiBundle` | UI bundle for a React, Angular or Vue experience. |
+| `New-SalesforceFlexiPage` | FlexiPage: record, app or home page. Beta. |
+| `New-SalesforceVisualforcePage` / `New-SalesforceVisualforceComponent` | Visualforce page or component (`-Label` is required). |
+| `New-SalesforceStaticResource` | Static resource (`-Type`, default `application/zip`). |
+| `New-SalesforceAnalyticsTemplate` | CRM Analytics template. The output folder must be named `waveTemplates`. |
+| `New-SalesforceExperienceSite` | Files of an Experience Cloud site (LWR). Preview. |
+
 ### LWC Dev Server
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Install-SalesforceLwcDevServer` | Install the `@salesforce/plugin-lightning-dev` CLI plugin. |
-| `Start-SalesforceLwcDevServer` | Start Lightning dev (`sf lightning dev app`, `component` or `site` via `-Mode`; optional `-Name`, `-DeviceType`, `-TargetOrg`). Fails with install guidance if the plugin is missing. |
+| `Start-SalesforceLwcDevServer` | Start Lightning dev (`sf lightning dev app`, `component` or `site` via `-Mode`; optional `-Name`, `-DeviceType` desktop, ios or android, `-DeviceId`, `-ClientSelect`, `-TargetOrg`). Fails with install guidance if the plugin is missing. |
 
 ### LWC/Jest Testing
 

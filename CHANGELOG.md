@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- psfdx-development: every `sf template generate` command is now covered, with 14 new generators: `New-SalesforceLightningComponent`, `New-SalesforceLightningApp`, `New-SalesforceLightningEvent`, `New-SalesforceLightningInterface`, `New-SalesforceLightningTest`, `New-SalesforceLightningOutApp`, `New-SalesforceUiEmbedding`, `New-SalesforceUiBundle`, `New-SalesforceFlexiPage` (beta), `New-SalesforceVisualforcePage`, `New-SalesforceVisualforceComponent`, `New-SalesforceStaticResource`, `New-SalesforceAnalyticsTemplate` and `New-SalesforceExperienceSite` (preview). They return the files they created. Because the Salesforce CLI replaces a generated file that differs from the template without asking, each stops when its target already exists and needs `-Force` to go ahead. `New-SalesforceApexClass` and `New-SalesforceApexTrigger` still do not check.
+- psfdx-development: `New-SalesforceProject` gains `-LwcLanguage` and every template the CLI offers, `New-SalesforceApexClass` reaches all its templates, `New-SalesforceApexTrigger` gains `-Template`, and `Start-SalesforceLwcDevServer` gains `-DeviceId`, `-ClientSelect` and the `desktop` device type.
+
 ## 0.8.49 - 2026-11-22
 
 - psfdx-development: every `sf apex` and `sf code-analyzer` command is now covered. New cmdlets: `Get-SalesforceApexCompileStatus` (classes and triggers that do not compile cleanly), `Get-SalesforceCodeAnalyzerConfig` (the current configuration as YAML, optionally saved to a file) and `Get-SalesforceCodeAnalyzerAst` (the syntax tree PMD builds for a file; needs Java).
