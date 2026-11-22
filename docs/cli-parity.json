@@ -183,38 +183,38 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 175,
+    "commandsPsfdxRuns": 210,
     "flags": {
-      "total": 839,
-      "passed": 813
+      "total": 1018,
+      "passed": 1004
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 76,
+    "flagsWithAListOfValues": 100,
     "values": {
-      "total": 308,
-      "reachable": 302
+      "total": 373,
+      "reachable": 367
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 165,
-      "partiallyWrapped": 10,
-      "missing": 77,
+      "wrapped": 204,
+      "partiallyWrapped": 6,
+      "missing": 42,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "69.4"
+      "coveredPercent": "83.3"
     },
     "core": {
       "commands": 214,
-      "wrapped": 139,
-      "partiallyWrapped": 10,
-      "missing": 47,
+      "wrapped": 178,
+      "partiallyWrapped": 6,
+      "missing": 12,
       "excluded": 3,
       "notApplicable": 15,
       "inScope": 196,
-      "coveredPercent": "76.0"
+      "coveredPercent": "93.9"
     },
     "jit": {
       "commands": 65,
@@ -228,8 +228,8 @@
     }
   },
   "psfdx": {
-    "exportedFunctions": 221,
-    "runningTheCli": 190,
+    "exportedFunctions": 256,
+    "runningTheCli": 225,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -270,13 +270,13 @@
       "label": "Agentforce agents",
       "totals": {
         "commands": 41,
-        "wrapped": 4,
-        "partiallyWrapped": 4,
-        "missing": 33,
+        "wrapped": 41,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 41,
-        "coveredPercent": "19.5"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -313,41 +313,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAgentDataLibrary"
+          ],
           "flags": {
             "total": 13,
-            "passed": 0,
+            "passed": 13,
             "required": 4
           },
-          "uncoveredFlags": [
-            "content-fields",
-            "data-category-ids",
-            "data-category-names",
-            "description",
-            "developer-name",
-            "index-mode",
-            "name",
-            "primary-index-field1",
-            "primary-index-field2",
-            "retriever-id",
-            "source-type",
-            "target-org",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "developer-name",
-            "name",
-            "source-type",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 5,
+            "reachable": 5
           }
         },
         {
@@ -357,23 +340,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Delete an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceAgentDataLibrary"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "library-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -388,25 +367,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Add files to an existing Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Add-SalesforceAgentDataLibraryFile"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "library-id",
-            "path",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "library-id",
-            "path",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -421,25 +394,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Delete a file from an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceAgentDataLibraryFile"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "file-id",
-            "library-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "file-id",
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -454,31 +421,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List files in an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAgentDataLibraryFiles"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "library-id",
-            "offset",
-            "page-size",
-            "status",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -488,23 +448,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Get details of an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAgentDataLibrary"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "library-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -519,27 +475,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List Agentforce Data Libraries in an org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAgentDataLibraries"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "source-type",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -549,24 +502,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Get indexing status of an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAgentDataLibraryStatus"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "include-artifacts",
-            "library-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -581,29 +529,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Update an Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Update-SalesforceAgentDataLibrary"
+          ],
           "flags": {
             "total": 8,
-            "passed": 0,
+            "passed": 8,
             "required": 2
           },
-          "uncoveredFlags": [
-            "content-fields",
-            "data-category-rule",
-            "description",
-            "library-id",
-            "name",
-            "restrict-to-public-articles",
-            "retriever-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -618,26 +556,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Upload a file to an SFDRIVE Agentforce Data Library.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Send-SalesforceAgentDataLibraryFile"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 3
           },
-          "uncoveredFlags": [
-            "file",
-            "library-id",
-            "target-org",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "file",
-            "library-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -652,25 +583,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create an agent in your org using a local agent spec file.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAgent"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "api-name",
-            "name",
-            "preview",
-            "spec",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -712,41 +637,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an agent spec, which is a YAML file that captures what an agent can do.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAgentSpec"
+          ],
           "flags": {
             "total": 16,
-            "passed": 0,
+            "passed": 16,
             "required": 1
           },
-          "uncoveredFlags": [
-            "agent-user",
-            "company-description",
-            "company-name",
-            "company-website",
-            "enrich-logs",
-            "force-overwrite",
-            "full-interview",
-            "grounding-context",
-            "max-topics",
-            "output-file",
-            "prompt-template",
-            "role",
-            "spec",
-            "target-org",
-            "tone",
-            "type"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 3,
+            "total": 7,
+            "reachable": 7
           }
         },
         {
@@ -756,7 +664,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an authoring bundle from an existing agent spec YAML file.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -764,12 +672,10 @@
           ],
           "flags": {
             "total": 7,
-            "passed": 6,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "force-overwrite"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -785,26 +691,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an agent template from an existing agent in your DX project so you can then package the template in a second-generation managed package.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAgentTemplate"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 3
           },
-          "uncoveredFlags": [
-            "agent-file",
-            "agent-version",
-            "output-dir",
-            "source-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "agent-file",
-            "agent-version",
-            "source-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -819,27 +718,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an agent test spec, which is a YAML file that lists the test cases for testing a specific agent.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAgentTestSpec"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "force-overwrite",
-            "from-definition",
-            "output-file",
-            "test-runner"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -849,23 +745,19 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "List the assets (tools, prompts, and resources) for an MCP server in the catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceMcpAssets"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "mcp-server-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "mcp-server-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -880,25 +772,19 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Replace the asset set of an MCP server in the API Catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Set-SalesforceMcpAssets"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 2
           },
-          "uncoveredFlags": [
-            "assets",
-            "assets-file",
-            "mcp-server-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "mcp-server-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -913,37 +799,24 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Create an MCP server in the API Catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceMcpServer"
+          ],
           "flags": {
             "total": 10,
-            "passed": 0,
+            "passed": 10,
             "required": 3
           },
-          "uncoveredFlags": [
-            "auth-type",
-            "client-id",
-            "client-secret",
-            "description",
-            "identity-provider",
-            "label",
-            "name",
-            "scope",
-            "server-url",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "server-url",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -953,24 +826,19 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Delete an MCP server from the API Catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceMcpServer"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "mcp-server-id",
-            "no-prompt",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "mcp-server-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -985,23 +853,19 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Fetch the live assets (tools, prompts, resources) advertised by an MCP server.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceMcpServerLiveAssets"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "mcp-server-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "mcp-server-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1016,23 +880,19 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Get a single MCP server registered in the API Catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceMcpServer"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "mcp-server-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "mcp-server-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1047,29 +907,24 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "List the MCP servers registered in the API Catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceMcpServers"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "label",
-            "status",
-            "target-org",
-            "type"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -1079,36 +934,24 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Update an MCP server registered in the API Catalog.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Update-SalesforceMcpServer"
+          ],
           "flags": {
             "total": 10,
-            "passed": 0,
+            "passed": 10,
             "required": 2
           },
-          "uncoveredFlags": [
-            "auth-type",
-            "client-id",
-            "client-secret",
-            "description",
-            "identity-provider",
-            "label",
-            "mcp-server-id",
-            "scope",
-            "server-url",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "mcp-server-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -1118,28 +961,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Interact with an agent to preview how it responds to your statements, questions, and commands (utterances).",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Invoke-SalesforceAgentPreview"
+          ],
           "flags": {
             "total": 8,
-            "passed": 0,
+            "passed": 8,
             "required": 1
           },
-          "uncoveredFlags": [
-            "apex-debug",
-            "api-name",
-            "authoring-bundle",
-            "context-variables",
-            "context-variables-json",
-            "output-dir",
-            "target-org",
-            "use-live-actions"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1154,26 +988,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "End an existing programmatic agent preview session and get trace location.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Stop-SalesforceAgentPreview"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "all",
-            "api-name",
-            "authoring-bundle",
-            "no-prompt",
-            "session-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1188,26 +1015,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Send a message to an existing agent preview session.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Send-SalesforceAgentPreviewMessage"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "api-name",
-            "authoring-bundle",
-            "session-id",
-            "target-org",
-            "utterance"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org",
-            "utterance"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1222,10 +1042,12 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List all known programmatic agent preview sessions.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAgentPreviewSessions"
+          ],
           "flags": {
             "total": 0,
             "passed": 0,
@@ -1247,27 +1069,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Start a programmatic agent preview session.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Start-SalesforceAgentPreview"
+          ],
           "flags": {
             "total": 7,
-            "passed": 0,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "api-name",
-            "authoring-bundle",
-            "context-variables",
-            "context-variables-json",
-            "simulate-actions",
-            "target-org",
-            "use-live-actions"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1282,7 +1096,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Publish an authoring bundle to your org, which results in a new agent or a new version of an existing agent.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1290,20 +1104,16 @@
           ],
           "flags": {
             "total": 6,
-            "passed": 3,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "concise",
-            "source-type",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -1313,31 +1123,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create an agent test in your org using a local test spec YAML file.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAgentTest"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "api-name",
-            "force-overwrite",
-            "preview",
-            "spec",
-            "target-org",
-            "test-runner"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -1374,7 +1177,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Get the results of a completed agent test run.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1382,21 +1185,16 @@
           ],
           "flags": {
             "total": 6,
-            "passed": 2,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "output-dir",
-            "result-format",
-            "test-runner",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -1406,33 +1204,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume an agent test that you previously started in your org so you can view the test results.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Resume-SalesforceAgentTest"
+          ],
           "flags": {
             "total": 8,
-            "passed": 0,
+            "passed": 8,
             "required": 1
           },
-          "uncoveredFlags": [
-            "job-id",
-            "output-dir",
-            "result-format",
-            "target-org",
-            "test-runner",
-            "use-most-recent",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -1442,7 +1231,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Start an agent test in your org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1450,21 +1239,16 @@
           ],
           "flags": {
             "total": 7,
-            "passed": 3,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "output-dir",
-            "result-format",
-            "test-runner",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -1474,32 +1258,24 @@
           "pluginType": "core",
           "state": "beta",
           "summary": "Run rich evaluation tests against an Agentforce agent.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Start-SalesforceAgentEvaluation"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "api-name",
-            "batch-size",
-            "no-normalize",
-            "result-format",
-            "spec",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "spec",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -1509,21 +1285,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Delete trace files from an agent preview session.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceAgentTrace"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "agent",
-            "no-prompt",
-            "older-than",
-            "session-id"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -1539,20 +1312,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List the available trace files that were recorded during all agent preview sessions.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAgentTraces"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 0
           },
-          "uncoveredFlags": [
-            "agent",
-            "session-id",
-            "since"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -1568,29 +1339,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Read trace files from an agent preview session.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Read-SalesforceAgentTrace"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "dimension",
-            "format",
-            "session-id",
-            "turn"
-          ],
-          "requiredFlagsNotPassed": [
-            "session-id"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 7,
+            "reachable": 7
           }
         },
         {
@@ -4992,13 +4758,13 @@
       "label": "Orgs, users and sandboxes",
       "totals": {
         "commands": 40,
-        "wrapped": 35,
+        "wrapped": 37,
         "partiallyWrapped": 0,
-        "missing": 2,
+        "missing": 0,
         "excluded": 3,
         "notApplicable": 0,
         "inScope": 37,
-        "coveredPercent": "94.6"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -5152,24 +4918,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create the default Salesforce user that is used to run an agent.",
-          "status": "missing",
-          "reason": "An Agentforce command; it is built with the other agent commands in PSF-61.",
-          "issue": 255,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceAgentUser"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "base-username",
-            "first-name",
-            "last-name",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5998,32 +5759,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Open an agent in your org's Agentforce Builder UI in a browser.",
-          "status": "missing",
-          "reason": "An Agentforce command; it is built with the other agent commands in PSF-61.",
-          "issue": 255,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Open-SalesforceAgent"
+          ],
           "flags": {
             "total": 7,
-            "passed": 0,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "api-name",
-            "authoring-bundle",
-            "browser",
-            "private",
-            "target-org",
-            "url-only",
-            "version"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -8926,18 +8679,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 159,
-        "commandsPsfdxRunsThatHaveIt": 165
+        "psfdxFunctionsPassingIt": 191,
+        "commandsPsfdxRunsThatHaveIt": 198
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 172
+        "commandsPsfdxRunsThatHaveIt": 207
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 120
+        "commandsPsfdxRunsThatHaveIt": 150
       }
     ]
   },

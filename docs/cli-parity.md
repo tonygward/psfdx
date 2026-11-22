@@ -10,21 +10,21 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 139 | 10 | 47 | 3 | 15 | 76.0% of 196 |
+| Core plugins (bundled with the CLI) | 214 | 178 | 6 | 12 | 3 | 15 | 93.9% of 196 |
 | Just-in-time plugins (installed on first use) | 65 | 26 | 0 | 30 | 0 | 9 | 46.4% of 56 |
-| Both | 279 | 165 | 10 | 77 | 3 | 24 | 69.4% of 252 |
+| Both | 279 | 204 | 6 | 42 | 3 | 24 | 83.3% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **221** cmdlets; **190** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **256** cmdlets; **225** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **175** commands psfdx runs, it passes **813 of 839** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **76** have a list of allowed values in the CLI, and psfdx can pass **302 of 308** of those values.
+**Flags and values.** Across the **210** commands psfdx runs, it passes **1004 of 1018** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **100** have a list of allowed values in the CLI, and psfdx can pass **367 of 373** of those values.
 
 ## By capability
 
 | Capability | Commands | Wrapped | Partially wrapped | Missing | Excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Agentforce agents (sf agent) | 41 | 4 | 4 | 33 | 0 | 0 | 19.5% of 41 |
+| Agentforce agents (sf agent) | 41 | 41 | 0 | 0 | 0 | 0 | 100.0% of 41 |
 | Aliases (sf alias) | 3 | 2 | 1 | 0 | 0 | 0 | 100.0% of 3 |
 | Apex (sf apex) | 10 | 10 | 0 | 0 | 0 | 0 | 100.0% of 10 |
 | REST API requests (sf api) | 2 | 0 | 1 | 1 | 0 | 0 | 50.0% of 2 |
@@ -44,7 +44,7 @@ psfdx exports **221** cmdlets; **190** of them run an sf command themselves. The
 | CLI information (sf info) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Lightning development (sf lightning) | 3 | 3 | 0 | 0 | 0 | 0 | 100.0% of 3 |
 | Logic tests (sf logic) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
-| Orgs, users and sandboxes (sf org) | 40 | 35 | 0 | 2 | 3 | 0 | 94.6% of 37 |
+| Orgs, users and sandboxes (sf org) | 40 | 37 | 0 | 0 | 3 | 0 | 100.0% of 37 |
 | Packages (second generation) (sf package) | 25 | 25 | 0 | 0 | 0 | 0 | 100.0% of 25 |
 | Packages (first generation) (sf package1) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI plugins (sf plugins) | 15 | 1 | 2 | 10 | 0 | 2 | 23.1% of 13 |
@@ -62,44 +62,6 @@ psfdx exports **221** cmdlets; **190** of them run an sf command themselves. The
 ## Not covered
 
 Commands psfdx does not run, grouped by capability. A reason or an issue link means the gap was reviewed; no reason means it has not been decided.
-
-### Agentforce agents (`sf agent`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf agent adl create` | @salesforce/plugin-agent | 13 (4 required) | missing |  |
-| `sf agent adl delete` | @salesforce/plugin-agent | 2 (2 required) | missing |  |
-| `sf agent adl file add` | @salesforce/plugin-agent | 3 (3 required) | missing |  |
-| `sf agent adl file delete` | @salesforce/plugin-agent | 3 (3 required) | missing |  |
-| `sf agent adl file list` | @salesforce/plugin-agent | 5 (2 required) | missing |  |
-| `sf agent adl get` | @salesforce/plugin-agent | 2 (2 required) | missing |  |
-| `sf agent adl list` | @salesforce/plugin-agent | 2 (1 required) | missing |  |
-| `sf agent adl status` | @salesforce/plugin-agent | 3 (2 required) | missing |  |
-| `sf agent adl update` | @salesforce/plugin-agent | 8 (2 required) | missing |  |
-| `sf agent adl upload` | @salesforce/plugin-agent | 4 (3 required) | missing |  |
-| `sf agent create` | @salesforce/plugin-agent | 5 (1 required) | missing |  |
-| `sf agent generate agent-spec` | @salesforce/plugin-agent | 16 (1 required) | missing |  |
-| `sf agent generate template` | @salesforce/plugin-agent | 4 (3 required) | missing |  |
-| `sf agent generate test-spec` | @salesforce/plugin-agent | 4 | missing |  |
-| `sf agent mcp asset list` (preview) | @salesforce/plugin-agent | 2 (2 required) | missing |  |
-| `sf agent mcp asset replace` (preview) | @salesforce/plugin-agent | 4 (2 required) | missing |  |
-| `sf agent mcp create` (preview) | @salesforce/plugin-agent | 10 (3 required) | missing |  |
-| `sf agent mcp delete` (preview) | @salesforce/plugin-agent | 3 (2 required) | missing |  |
-| `sf agent mcp fetch` (preview) | @salesforce/plugin-agent | 2 (2 required) | missing |  |
-| `sf agent mcp get` (preview) | @salesforce/plugin-agent | 2 (2 required) | missing |  |
-| `sf agent mcp list` (preview) | @salesforce/plugin-agent | 4 (1 required) | missing |  |
-| `sf agent mcp update` (preview) | @salesforce/plugin-agent | 10 (2 required) | missing |  |
-| `sf agent preview` | @salesforce/plugin-agent | 8 (1 required) | missing |  |
-| `sf agent preview end` | @salesforce/plugin-agent | 6 (1 required) | missing |  |
-| `sf agent preview send` | @salesforce/plugin-agent | 5 (2 required) | missing |  |
-| `sf agent preview sessions` | @salesforce/plugin-agent | 0 | missing |  |
-| `sf agent preview start` | @salesforce/plugin-agent | 7 (1 required) | missing |  |
-| `sf agent test create` | @salesforce/plugin-agent | 6 (1 required) | missing |  |
-| `sf agent test resume` | @salesforce/plugin-agent | 8 (1 required) | missing |  |
-| `sf agent test run-eval` (beta) | @salesforce/plugin-agent | 6 (2 required) | missing |  |
-| `sf agent trace delete` | @salesforce/plugin-agent | 4 | missing |  |
-| `sf agent trace list` | @salesforce/plugin-agent | 3 | missing |  |
-| `sf agent trace read` | @salesforce/plugin-agent | 4 (1 required) | missing |  |
 
 ### REST API requests (`sf api`)
 
@@ -206,8 +168,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | `sf org auth show-access-token` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints a live access token. psfdx keeps tokens out of its output; use Connect-SalesforceAccessToken to log in with a token you already have, or Open-Salesforce -UrlOnly for a login link. |
 | `sf org auth show-sfdx-auth-url` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints the Salesforce DX authorization URL, which holds a refresh token that gives anyone full access as that user. psfdx removes it from every result, including Get-SalesforceOrgDetails, unless -IncludeToken is given. |
 | `sf org auth show-user-password` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints a user's password. psfdx generates one with New-SalesforceUserPassword and never reads it back from the CLI. |
-| `sf org create agent-user` | @salesforce/plugin-org | 4 (1 required) | missing | An Agentforce command; it is built with the other agent commands in PSF-61. [#255](https://github.com/tonygward/psfdx/issues/255) |
-| `sf org open agent` | @salesforce/plugin-org | 7 (1 required) | missing | An Agentforce command; it is built with the other agent commands in PSF-61. [#255](https://github.com/tonygward/psfdx/issues/255) |
 
 ### CLI plugins (`sf plugins`)
 
@@ -271,12 +231,45 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf agent activate` | wrapped | `Enable-SalesforceAgent` | 3 of 3 |  |  |
+| `sf agent adl create` | wrapped | `New-SalesforceAgentDataLibrary` | 13 of 13 |  |  |
+| `sf agent adl delete` | wrapped | `Remove-SalesforceAgentDataLibrary` | 2 of 2 |  |  |
+| `sf agent adl file add` | wrapped | `Add-SalesforceAgentDataLibraryFile` | 3 of 3 |  |  |
+| `sf agent adl file delete` | wrapped | `Remove-SalesforceAgentDataLibraryFile` | 3 of 3 |  |  |
+| `sf agent adl file list` | wrapped | `Get-SalesforceAgentDataLibraryFiles` | 5 of 5 |  |  |
+| `sf agent adl get` | wrapped | `Get-SalesforceAgentDataLibrary` | 2 of 2 |  |  |
+| `sf agent adl list` | wrapped | `Get-SalesforceAgentDataLibraries` | 2 of 2 |  |  |
+| `sf agent adl status` | wrapped | `Get-SalesforceAgentDataLibraryStatus` | 3 of 3 |  |  |
+| `sf agent adl update` | wrapped | `Update-SalesforceAgentDataLibrary` | 8 of 8 |  |  |
+| `sf agent adl upload` | wrapped | `Send-SalesforceAgentDataLibraryFile` | 4 of 4 |  |  |
+| `sf agent create` | wrapped | `New-SalesforceAgent` | 5 of 5 |  |  |
 | `sf agent deactivate` | wrapped | `Disable-SalesforceAgent` | 2 of 2 |  |  |
-| `sf agent generate authoring-bundle` | partially wrapped | `New-SalesforceAgentAuthoringBundle` | 6 of 7 | `--force-overwrite` |  |
-| `sf agent publish authoring-bundle` | partially wrapped | `Publish-SalesforceAgentAuthoringBundle` | 3 of 6 | `--concise` `--source-type` `--verbose` |  |
+| `sf agent generate agent-spec` | wrapped | `New-SalesforceAgentSpec` | 16 of 16 |  |  |
+| `sf agent generate authoring-bundle` | wrapped | `New-SalesforceAgentAuthoringBundle` | 7 of 7 |  |  |
+| `sf agent generate template` | wrapped | `New-SalesforceAgentTemplate` | 4 of 4 |  |  |
+| `sf agent generate test-spec` | wrapped | `New-SalesforceAgentTestSpec` | 4 of 4 |  |  |
+| `sf agent mcp asset list` | wrapped | `Get-SalesforceMcpAssets` | 2 of 2 |  |  |
+| `sf agent mcp asset replace` | wrapped | `Set-SalesforceMcpAssets` | 4 of 4 |  |  |
+| `sf agent mcp create` | wrapped | `New-SalesforceMcpServer` | 10 of 10 |  |  |
+| `sf agent mcp delete` | wrapped | `Remove-SalesforceMcpServer` | 3 of 3 |  |  |
+| `sf agent mcp fetch` | wrapped | `Get-SalesforceMcpServerLiveAssets` | 2 of 2 |  |  |
+| `sf agent mcp get` | wrapped | `Get-SalesforceMcpServer` | 2 of 2 |  |  |
+| `sf agent mcp list` | wrapped | `Get-SalesforceMcpServers` | 4 of 4 |  |  |
+| `sf agent mcp update` | wrapped | `Update-SalesforceMcpServer` | 10 of 10 |  |  |
+| `sf agent preview` | wrapped | `Invoke-SalesforceAgentPreview` | 8 of 8 |  |  |
+| `sf agent preview end` | wrapped | `Stop-SalesforceAgentPreview` | 6 of 6 |  |  |
+| `sf agent preview send` | wrapped | `Send-SalesforceAgentPreviewMessage` | 5 of 5 |  |  |
+| `sf agent preview sessions` | wrapped | `Get-SalesforceAgentPreviewSessions` | 0 of 0 |  |  |
+| `sf agent preview start` | wrapped | `Start-SalesforceAgentPreview` | 7 of 7 |  |  |
+| `sf agent publish authoring-bundle` | wrapped | `Publish-SalesforceAgentAuthoringBundle` | 6 of 6 |  |  |
+| `sf agent test create` | wrapped | `New-SalesforceAgentTest` | 6 of 6 |  |  |
 | `sf agent test list` | wrapped | `Get-SalesforceAgentTests` | 1 of 1 |  |  |
-| `sf agent test results` | partially wrapped | `Get-SalesforceAgentTestResult` | 2 of 6 | `--output-dir` `--result-format` `--test-runner` `--verbose` |  |
-| `sf agent test run` | partially wrapped | `Start-SalesforceAgentTest` | 3 of 7 | `--output-dir` `--result-format` `--test-runner` `--verbose` |  |
+| `sf agent test results` | wrapped | `Get-SalesforceAgentTestResult` | 6 of 6 |  |  |
+| `sf agent test resume` | wrapped | `Resume-SalesforceAgentTest` | 8 of 8 |  |  |
+| `sf agent test run` | wrapped | `Start-SalesforceAgentTest` | 7 of 7 |  |  |
+| `sf agent test run-eval` | wrapped | `Start-SalesforceAgentEvaluation` | 6 of 6 |  |  |
+| `sf agent trace delete` | wrapped | `Remove-SalesforceAgentTrace` | 4 of 4 |  |  |
+| `sf agent trace list` | wrapped | `Get-SalesforceAgentTraces` | 3 of 3 |  |  |
+| `sf agent trace read` | wrapped | `Read-SalesforceAgentTrace` | 4 of 4 |  |  |
 | `sf agent validate authoring-bundle` | wrapped | `Test-SalesforceAgentAuthoringBundle` | 2 of 2 |  |  |
 
 ### Aliases (`sf alias`)
@@ -390,6 +383,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf org assign permset` | wrapped | `Grant-SalesforcePermissionSet` | 3 of 3 |  |  |
 | `sf org assign permsetlicense` | wrapped | `Grant-SalesforcePermissionSetLicense` | 3 of 3 |  |  |
+| `sf org create agent-user` | wrapped | `New-SalesforceAgentUser` | 4 of 4 |  |  |
 | `sf org create sandbox` | wrapped | `Copy-SalesforceSandbox`, `New-SalesforceSandbox` | 13 of 13 |  |  |
 | `sf org create scratch` | wrapped | `New-SalesforceScratchOrg` | 18 of 18 |  |  |
 | `sf org create shape` | wrapped | `New-SalesforceOrgShape` | 1 of 1 |  |  |
@@ -420,6 +414,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf org login web` | wrapped | `Connect-Salesforce` | 9 of 9 |  |  |
 | `sf org logout` | wrapped | `Disconnect-Salesforce` | 4 of 4 |  |  |
 | `sf org open` | wrapped | `Open-Salesforce` | 6 of 6 |  |  |
+| `sf org open agent` | wrapped | `Open-SalesforceAgent` | 7 of 7 |  |  |
 | `sf org refresh sandbox` | wrapped | `Update-SalesforceSandbox` | 10 of 10 |  |  |
 | `sf org resume sandbox` | wrapped | `Resume-SalesforceSandbox` | 5 of 5 |  |  |
 | `sf org resume scratch` | wrapped | `Resume-SalesforceScratchOrg` | 3 of 3 |  |  |
@@ -542,9 +537,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 159 | 165 |
-| `--flags-dir` | 0 | 172 |
-| `--api-version` | 1 | 120 |
+| `--json` | 191 | 198 |
+| `--flags-dir` | 0 | 207 |
+| `--api-version` | 1 | 150 |
 
 ## How to read this
 
