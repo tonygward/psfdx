@@ -132,7 +132,7 @@
     },
     {
       "match": "org create scratch",
-      "reason": "The CLI lists --track-source only as the negatable flag --no-track-source (source tracking is on by default in a scratch org); -NoTrackSource passes it.",
+      "reason": "--track-source switches on what a scratch org does by default; the CLI lists it as the negatable --[no-]track-source, and -NoTrackSource passes --no-track-source to turn it off.",
       "ignoreFlags": [
         "track-source"
       ]

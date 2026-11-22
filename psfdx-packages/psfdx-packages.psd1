@@ -25,7 +25,25 @@
         'Remove-SalesforcePackageVersion',
         'Install-SalesforcePackageVersion',
         'Get-SalesforcePackageVersionCreateStatus',
-        'Get-SalesforcePackageInstallStatus'
+        'Get-SalesforcePackageInstallStatus',
+        'Convert-SalesforcePackage',
+        'Update-SalesforcePackage',
+        'Uninstall-SalesforcePackage',
+        'Get-SalesforcePackageVersion',
+        'Update-SalesforcePackageVersion',
+        'Retrieve-SalesforcePackageVersion',
+        'Get-SalesforcePackageVersionAncestry',
+        'Get-SalesforcePackageVersionDependencies',
+        'Get-SalesforcePackageVersionCreateRequests',
+        'Get-SalesforcePackageUninstallStatus',
+        'New-SalesforcePushUpgrade',
+        'Get-SalesforcePushUpgrades',
+        'Get-SalesforcePushUpgrade',
+        'Stop-SalesforcePushUpgrade',
+        'New-SalesforceFirstGenPackageVersion',
+        'Get-SalesforceFirstGenPackageVersionCreateStatus',
+        'Get-SalesforceFirstGenPackageVersion',
+        'Get-SalesforceFirstGenPackageVersions'
     )
     CmdletsToExport       = @()
     VariablesToExport     = @()

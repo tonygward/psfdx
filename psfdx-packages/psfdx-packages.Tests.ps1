@@ -519,3 +519,215 @@ Describe 'Security regressions: package confirmation (issue 112)' {
         }
     }
 }
+
+Describe 'psfdx-packages sf package parity (issue 250)' {
+    InModuleScope 'psfdx-packages' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+            $script:VerId = '04txx0000000001AAA'
+        }
+
+        Context 'missing flags on existing cmdlets' {
+            It 'Install-SalesforcePackageVersion passes -ApexCompile, -InstallationKey and -UpgradeType' {
+                Install-SalesforcePackageVersion -PackageVersionId $script:VerId -TargetOrg me -ApexCompile package -InstallationKey 'k 1' -UpgradeType DeprecateOnly -WaitMinutes 0 -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|install|--package|$($script:VerId)|--apex-compile|package|--installation-key|k 1|--upgrade-type|DeprecateOnly|--target-org|me|--security-type|AdminsOnly" }
+            }
+            It 'Install-SalesforcePackageVersion rejects values the CLI does not know' {
+                { Install-SalesforcePackageVersion -PackageVersionId $script:VerId -ApexCompile some -Confirm:$false } | Should -Throw
+                { Install-SalesforcePackageVersion -PackageVersionId $script:VerId -UpgradeType Purge -Confirm:$false } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'New-SalesforcePackageVersion passes every new option' {
+                $dir = Join-Path $TestDrive 'pkg dir'
+                New-Item -ItemType Directory -Path $dir | Out-Null
+                New-SalesforcePackageVersion -PackageId 0Hoxx0000000001AAA -Path $dir -Branch main -VersionNumber '1.4.0.NEXT' -Language en_US -PostInstallScript Post -UninstallScript Un -PostInstallUrl https://a.example/post -ReleaseNotesUrl https://a.example/notes -SkipAncestorCheck -AsyncValidation -GeneratePackageZip -ExtendedDetails -InstallationKeyBypass -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|version|create|--package|0Hoxx0000000001AAA|--path|$dir|--branch|main|--version-number|1.4.0.NEXT|--language|en_US|--post-install-script|Post|--uninstall-script|Un|--post-install-url|https://a.example/post|--releasenotes-url|https://a.example/notes|--skip-ancestor-check|--async-validation|--generate-pkg-zip|--verbose|--definition-file|config/project-scratch-def.json|--installation-key-bypass|--target-dev-hub|hub|--json" }
+            }
+            It 'New-SalesforcePackageVersion accepts -Path without a package, and checks it exists' {
+                $dir = Join-Path $TestDrive 'src'
+                New-Item -ItemType Directory -Path $dir | Out-Null
+                New-SalesforcePackageVersion -Path $dir | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -like "package|version|create|--path|$dir|*" -and ($Arguments -notcontains '--package') }
+                { New-SalesforcePackageVersion -Path (Join-Path $TestDrive 'missing') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { New-SalesforcePackageVersion } | Should -Throw -ExpectedMessage '*PackageId*'
+            }
+            It 'Get-SalesforcePackageVersions passes the date and order options' {
+                Get-SalesforcePackageVersions -PackageId 0Hoxx0000000001AAA -CreatedLastDays 0 -ModifiedLastDays 7 -OrderBy 'CreatedDate,PatchVersion' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|list|--created-last-days|0|--modified-last-days|7|--order-by|CreatedDate,PatchVersion|--packages|0Hoxx0000000001AAA|--json' }
+            }
+            It 'Get-SalesforcePackageVersions leaves the new options out by default' {
+                Get-SalesforcePackageVersions -PackageId 0Hoxx0000000001AAA | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|list|--packages|0Hoxx0000000001AAA|--json' }
+            }
+        }
+
+        Context 'Convert-SalesforcePackage' {
+            It 'builds the command and asks first' {
+                $seed = Join-Path $TestDrive 'seed'; New-Item -ItemType Directory -Path $seed | Out-Null
+                $def = Join-Path $TestDrive 'def.json'; Set-Content -LiteralPath $def -Value '{}'
+                Convert-SalesforcePackage -Package 033xx0000000001AAA -DefinitionFile $def -InstallationKey 'k' -CodeCoverage -PatchVersion 3 -SeedMetadata $seed -ExtendedDetails -WaitMinutes 30 -TargetDevHub hub -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|convert|--package|033xx0000000001AAA|--definition-file|$def|--installation-key|k|--code-coverage|--patch-version|3|--seed-metadata|$seed|--verbose|--wait|30|--target-dev-hub|hub|--json" }
+                Convert-SalesforcePackage -Package 033xx0000000001AAA -InstallationKeyBypass -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'validates its input before running sf' {
+                { Convert-SalesforcePackage -Package 033xx0000000001AAA -InstallationKey k -InstallationKeyBypass -Confirm:$false } | Should -Throw -ExpectedMessage '*not both*'
+                { Convert-SalesforcePackage -Package 0Hoxx0000000001AAA -Confirm:$false } | Should -Throw
+                { Convert-SalesforcePackage -Package 033xx0000000001AAA -SeedMetadata (Join-Path $TestDrive 'nope') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Convert-SalesforcePackage -Package 033xx0000000001AAA -DefinitionFile (Join-Path $TestDrive 'nope.json') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Update-SalesforcePackage' {
+            It 'passes only what is given, and honours -WhatIf' {
+                Update-SalesforcePackage -Package MyPkg -Name 'New name' -Description 'A "quoted" one' -ErrorNotificationUsername a@b.com -EnableAppAnalytics -RecommendedVersionId $script:VerId -SkipAncestorCheck -TargetDevHub hub -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|update|--package|MyPkg|--name|New name|--description|A `"quoted`" one|--error-notification-username|a@b.com|--enable-app-analytics|--recommended-version-id|$($script:VerId)|--skip-ancestor-check|--target-dev-hub|hub|--json" }
+                Update-SalesforcePackage -Package MyPkg -Description 'x' -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'rejects a recommended version that is not a 04t ID' {
+                { Update-SalesforcePackage -Package MyPkg -RecommendedVersionId 0Hoxx0000000001AAA -Confirm:$false } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Uninstall-SalesforcePackage and its report' {
+            It 'is high impact: -WhatIf makes no call, and -NoPrompt does not turn -WhatIf off' {
+                Uninstall-SalesforcePackage -Package $script:VerId -WhatIf | Out-Null
+                Uninstall-SalesforcePackage -Package $script:VerId -NoPrompt -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                (Get-Command Uninstall-SalesforcePackage).ScriptBlock.Attributes.Where({ $_ -is [System.Management.Automation.CmdletBindingAttribute] })[0].ConfirmImpact | Should -Be 'High'
+            }
+            It 'builds the command' {
+                Uninstall-SalesforcePackage -Package $script:VerId -WaitMinutes 10 -NoPrompt -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|uninstall|--package|$($script:VerId)|--wait|10|--target-org|me|--json" }
+            }
+            It 'reports the status of an uninstall request, and rejects a bad ID' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"Id":"06yxx0000000001AAA","Status":"Success"}}' }
+                (Get-SalesforcePackageUninstallStatus -RequestId 06yxx0000000001AAA -TargetOrg me).Status | Should -Be 'Success'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|uninstall|report|--request-id|06yxx0000000001AAA|--target-org|me|--json' }
+                { Get-SalesforcePackageUninstallStatus -RequestId "06yxx0000000001AAA`n" } | Should -Throw
+                { Get-SalesforcePackageUninstallStatus -RequestId 'x; calc' } | Should -Throw
+            }
+            It 'throws the CLI message when the uninstall fails' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"The package is in use."}' }
+                { Uninstall-SalesforcePackage -Package $script:VerId -Confirm:$false } | Should -Throw -ExpectedMessage '*in use*'
+            }
+        }
+
+        Context 'package version read and update cmdlets' {
+            It 'Get-SalesforcePackageVersion reads one version' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"Id":"05i000000000001","Version":"1.2.0.3"}]}' }
+                (Get-SalesforcePackageVersion -PackageVersionId $script:VerId -ExtendedDetails -TargetDevHub hub) | Should -Not -BeNullOrEmpty
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|version|report|--package|$($script:VerId)|--verbose|--target-dev-hub|hub|--json" }
+            }
+            It 'Update-SalesforcePackageVersion passes the changes and honours -WhatIf' {
+                Update-SalesforcePackageVersion -PackageVersionId $script:VerId -Branch main -InstallationKey k -Tag t1 -Description 'new desc' -Name 'New name' -TargetDevHub hub -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|version|update|--package|$($script:VerId)|--branch|main|--installation-key|k|--tag|t1|--version-description|new desc|--version-name|New name|--target-dev-hub|hub|--json" }
+                Update-SalesforcePackageVersion -PackageVersionId $script:VerId -Tag t2 -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'Retrieve-SalesforcePackageVersion passes the output folder' {
+                Retrieve-SalesforcePackageVersion -PackageVersionId $script:VerId -OutputDir 'out dir' -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|version|retrieve|--package|$($script:VerId)|--output-dir|out dir|--target-dev-hub|hub|--json" }
+            }
+            It 'ancestry and dependencies pass their options' {
+                Get-SalesforcePackageVersionAncestry -Package MyPkg -DotCode -ExtendedDetails -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|displayancestry|--package|MyPkg|--dot-code|--verbose|--target-dev-hub|hub|--json' }
+                Get-SalesforcePackageVersionDependencies -PackageVersionId $script:VerId -EdgeDirection root-last -InstallationKey k -ExtendedDetails -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|version|displaydependencies|--package|$($script:VerId)|--edge-direction|root-last|--installation-key|k|--verbose|--target-dev-hub|hub|--json" }
+                { Get-SalesforcePackageVersionDependencies -PackageVersionId $script:VerId -EdgeDirection sideways } | Should -Throw
+            }
+            It 'Get-SalesforcePackageVersionCreateRequests passes the filters' {
+                Get-SalesforcePackageVersionCreateRequests -CreatedLastDays 0 -ConversionsOnly -Status Error -ExtendedDetails -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|version|create|list|--created-last-days|0|--show-conversions-only|--status|Error|--verbose|--target-dev-hub|hub|--json' }
+                { Get-SalesforcePackageVersionCreateRequests -Status Done } | Should -Throw
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"No package version found."}' }
+                { Get-SalesforcePackageVersion -PackageVersionId $script:VerId } | Should -Throw -ExpectedMessage '*No package version*'
+            }
+        }
+
+        Context 'push upgrades' {
+            It 'schedules a push upgrade for a list of orgs, in UTC' {
+                $start = [datetime]::SpecifyKind([datetime]'2026-12-01 02:30:00', [System.DateTimeKind]::Utc)
+                New-SalesforcePushUpgrade -Package $script:VerId -OrgList 00Dxx0000000001AAA, 00Dxx0000000002AAA -StartTime $start -MigrateTo2gp -TargetDevHub hub -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|push-upgrade|schedule|--package|$($script:VerId)|--org-list|00Dxx0000000001AAA,00Dxx0000000002AAA|--start-time|2026-12-01T02:30:00|--migrate-to-2gp|--target-dev-hub|hub|--json" }
+            }
+            It 'writes the start time with the invariant culture whatever the machine culture' {
+                $old = [System.Threading.Thread]::CurrentThread.CurrentCulture
+                try {
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('ar-SA')
+                    $start = [datetime]::SpecifyKind([datetime]::new(2026, 12, 1, 2, 30, 0), [System.DateTimeKind]::Utc)
+                    New-SalesforcePushUpgrade -Package $script:VerId -OrgList 00Dxx0000000001AAA -StartTime $start -Confirm:$false | Out-Null
+                } finally { [System.Threading.Thread]::CurrentThread.CurrentCulture = $old }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -like '*|--start-time|2026-12-01T02:30:00|*' }
+            }
+            It 'reads the orgs from a file, and needs exactly one source' {
+                $file = Join-Path $TestDrive 'orgs.csv'; Set-Content -LiteralPath $file -Value "00Dxx0000000001AAA"
+                New-SalesforcePushUpgrade -Package $script:VerId -OrgFile $file -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package|push-upgrade|schedule|--package|$($script:VerId)|--org-file|$file|--json" }
+                { New-SalesforcePushUpgrade -Package $script:VerId -Confirm:$false } | Should -Throw -ExpectedMessage '*-OrgList or -OrgFile*'
+                { New-SalesforcePushUpgrade -Package $script:VerId -OrgList 00Dxx0000000001AAA -OrgFile $file -Confirm:$false } | Should -Throw -ExpectedMessage '*not both*'
+                { New-SalesforcePushUpgrade -Package $script:VerId -OrgFile (Join-Path $TestDrive 'nope.csv') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                { New-SalesforcePushUpgrade -Package $script:VerId -OrgList 'not-an-org' -Confirm:$false } | Should -Throw
+            }
+            It 'asks first, and -WhatIf names the time and makes no call' {
+                New-SalesforcePushUpgrade -Package $script:VerId -OrgList 00Dxx0000000001AAA -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                (Get-Command New-SalesforcePushUpgrade).ScriptBlock.Attributes.Where({ $_ -is [System.Management.Automation.CmdletBindingAttribute] })[0].ConfirmImpact | Should -Be 'High'
+            }
+            It 'lists and reports requests' {
+                Get-SalesforcePushUpgrades -Package MyPkg -ScheduledLastDays 7 -ShowMigrationsOnly -Status 'In Progress' -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|push-upgrade|list|--package|MyPkg|--scheduled-last-days|7|--show-push-migrations-only|--status|In Progress|--target-dev-hub|hub|--json' }
+                Get-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|push-upgrade|report|--push-request-id|0DVxx0000000001AAA|--target-dev-hub|hub|--json' }
+                { Get-SalesforcePushUpgrades -Package MyPkg -Status Done } | Should -Throw
+                { Get-SalesforcePushUpgrade -PushRequestId "0DVxx0000000001AAA`n" } | Should -Throw
+            }
+            It 'Stop-SalesforcePushUpgrade confirms first and does not let -NoPrompt override -WhatIf' {
+                Stop-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -WhatIf | Out-Null
+                Stop-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -NoPrompt -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                Stop-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -NoPrompt -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package|push-upgrade|abort|--push-request-id|0DVxx0000000001AAA|--target-dev-hub|hub|--json' }
+            }
+            It 'throws the CLI message when the request cannot be aborted' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Only Created or Pending requests can be aborted."}' }
+                { Stop-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -Confirm:$false } | Should -Throw -ExpectedMessage '*can be aborted*'
+            }
+        }
+
+        Context 'first-generation (package1) cmdlets' {
+            It 'uploads a version' {
+                New-SalesforceFirstGenPackageVersion -PackageId 033xx0000000001AAA -Name 'Spring release' -Description 'D' -Version 2.1 -InstallationKey k -ManagedReleased -PostInstallUrl https://a.example/p -ReleaseNotesUrl https://a.example/r -WaitMinutes 20 -TargetOrg pack -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package1|version|create|--package-id|033xx0000000001AAA|--name|Spring release|--description|D|--version|2.1|--installation-key|k|--managed-released|--post-install-url|https://a.example/p|--release-notes-url|https://a.example/r|--wait|20|--target-org|pack|--json' }
+                New-SalesforceFirstGenPackageVersion -PackageId 033xx0000000001AAA -Name x -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'reads the upload status, one version and the list' {
+                Get-SalesforceFirstGenPackageVersionCreateStatus -RequestId 0HD000000000001 -TargetOrg pack | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package1|version|create|get|--request-id|0HD000000000001|--target-org|pack|--json' }
+                Get-SalesforceFirstGenPackageVersion -PackageVersionId $script:VerId -TargetOrg pack | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "package1|version|display|--package-version-id|$($script:VerId)|--target-org|pack|--json" }
+                Get-SalesforceFirstGenPackageVersions -PackageId 033xx0000000001AAA -TargetOrg pack | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package1|version|list|--package-id|033xx0000000001AAA|--target-org|pack|--json' }
+                Get-SalesforceFirstGenPackageVersions | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'package1|version|list|--json' }
+            }
+            It 'rejects IDs of the wrong kind before running sf' {
+                { New-SalesforceFirstGenPackageVersion -PackageId 0Hoxx0000000001AAA -Name x -Confirm:$false } | Should -Throw
+                { Get-SalesforceFirstGenPackageVersion -PackageVersionId 033xx0000000001AAA } | Should -Throw
+                { Get-SalesforceFirstGenPackageVersions -PackageId "033xx0000000001AAA`n" } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        It 'exports the new cmdlets' {
+            $exports = (Get-Module psfdx-packages).ExportedFunctions.Keys
+            foreach ($n in 'Convert-SalesforcePackage', 'Update-SalesforcePackage', 'Uninstall-SalesforcePackage', 'Get-SalesforcePackageVersion', 'Update-SalesforcePackageVersion', 'Retrieve-SalesforcePackageVersion', 'Get-SalesforcePackageVersionAncestry', 'Get-SalesforcePackageVersionDependencies', 'Get-SalesforcePackageVersionCreateRequests', 'Get-SalesforcePackageUninstallStatus', 'New-SalesforcePushUpgrade', 'Get-SalesforcePushUpgrades', 'Get-SalesforcePushUpgrade', 'Stop-SalesforcePushUpgrade', 'New-SalesforceFirstGenPackageVersion', 'Get-SalesforceFirstGenPackageVersionCreateStatus', 'Get-SalesforceFirstGenPackageVersion', 'Get-SalesforceFirstGenPackageVersions') { $exports | Should -Contain $n }
+        }
+    }
+}

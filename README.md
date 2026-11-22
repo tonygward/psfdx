@@ -491,18 +491,48 @@ Included in the `psfdx` package.
 | `New-SalesforcePackage` | Create a package (managed/unlocked, org-dependent, path, description, no-namespace). |
 | `Remove-SalesforcePackage` | Delete a package by name (asks for confirmation, supports `-WhatIf`). |
 | `Get-SalesforcePackagesInstalled` | List installed packages in a target org (supports API version override). |
+| `Update-SalesforcePackage` | Change a package's name, description, error notification user or recommended version (`sf package update`; supports `-WhatIf`). |
+| `Convert-SalesforcePackage` | Convert a released first-generation managed package into a second-generation one (`sf package convert`; supports `-WhatIf`). |
+| `Uninstall-SalesforcePackage` | Uninstall a second-generation package version from an org (asks for confirmation, supports `-WhatIf`). Follow with `Get-SalesforcePackageUninstallStatus`. |
 
 ### Package Versions
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Get-SalesforcePackageVersions` | List versions (filters: released/concise/verbose). |
-| `New-SalesforcePackageVersion` | Create a new package version (coverage, tag, def file, waits, key). |
+| `Get-SalesforcePackageVersions` | List versions (filters: released/concise/verbose, `-CreatedLastDays`, `-ModifiedLastDays`, `-OrderBy`). |
+| `Get-SalesforcePackageVersion` | Show the details of one version (`sf package version report`). |
+| `New-SalesforcePackageVersion` | Create a new package version (coverage, tag, def file, waits, key, `-Path`, `-Branch`, `-VersionNumber`, scripts, URLs, `-AsyncValidation` and more). |
+| `Update-SalesforcePackageVersion` | Change a version's branch, tag, name, description or installation key (supports `-WhatIf`). |
+| `Retrieve-SalesforcePackageVersion` | Download the metadata of a 2GP managed or unlocked version into `-OutputDir`. |
+| `Get-SalesforcePackageVersionAncestry` | Show the ancestry tree of a 2GP managed package, or DOT code with `-DotCode`. |
+| `Get-SalesforcePackageVersionDependencies` | Show the dependency graph of a version (`-EdgeDirection`). |
+| `Get-SalesforcePackageVersionCreateRequests` | List version creation requests, filtered by `-Status`, `-CreatedLastDays` or `-ConversionsOnly`. |
 | `Promote-SalesforcePackageVersion` | Promote a version (optional no-prompt). |
 | `Remove-SalesforcePackageVersion` | Delete a version (optional no-prompt; asks for confirmation, supports `-WhatIf`). |
-| `Install-SalesforcePackageVersion` | Install a version to a target org (waits/publish-wait, no-prompt). `-AsObject` returns the install request, whose `Id` (0Hf...) goes to `Get-SalesforcePackageInstallStatus`. |
+| `Install-SalesforcePackageVersion` | Install a version to a target org (waits/publish-wait, no-prompt, `-InstallationKey`, `-ApexCompile`, `-UpgradeType`). `-AsObject` returns the install request, whose `Id` (0Hf...) goes to `Get-SalesforcePackageInstallStatus`. |
 | `Get-SalesforcePackageVersionCreateStatus` | Get a package version create request's status, IDs and errors by the `Id` (08c...) that `New-SalesforcePackageVersion` returned (`sf package version create report`). |
 | `Get-SalesforcePackageInstallStatus` | Get a package install request's status and errors by its `-RequestId` (`sf package install report`). |
+| `Get-SalesforcePackageUninstallStatus` | Get the status of an uninstall request by its `-RequestId` (`sf package uninstall report`). |
+
+### Push Upgrades
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforcePushUpgrade` | Schedule a push upgrade of a package version to subscriber orgs, by `-OrgList` or `-OrgFile`, optionally at `-StartTime` (asks for confirmation, supports `-WhatIf`). |
+| `Get-SalesforcePushUpgrades` | List a package's push upgrade requests, filtered by `-Status` or `-ScheduledLastDays`. |
+| `Get-SalesforcePushUpgrade` | Show one push upgrade request. |
+| `Stop-SalesforcePushUpgrade` | Abort a push upgrade that is Created or Pending (asks for confirmation, supports `-WhatIf`). |
+
+### First-generation packages
+
+These run the `sf package1` commands, which work on first-generation (1GP) packages. See [docs/cli-compatibility.md](docs/cli-compatibility.md#first-generation-package1-commands).
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforceFirstGenPackageVersion` | Upload a 1GP version (beta, or `-ManagedReleased`) from the packaging org (supports `-WhatIf`). |
+| `Get-SalesforceFirstGenPackageVersionCreateStatus` | Show the status of a 1GP upload request. |
+| `Get-SalesforceFirstGenPackageVersion` | Show one 1GP package version. |
+| `Get-SalesforceFirstGenPackageVersions` | List 1GP package versions, of one package or of the org. |
 
 ### psfdx-shared
 

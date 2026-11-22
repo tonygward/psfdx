@@ -156,6 +156,11 @@ COMMANDS
             Get-CliHelpKind -Text $script:TopicHelp | Should -Be 'topic'
         }
 
+        It 'reads a negatable flag, listed as --[no-]name, as both --name and --no-name' {
+            $text = "FLAGS`n  -t, --[no-]track-source        Use source tracking.`n      --[no-]enable-app-analytics  Enable analytics.`n      --all-rows`n"
+            (Get-CliHelpFlags -Text $text) -join ',' | Should -Be '--all-rows,--enable-app-analytics,--no-enable-app-analytics,--no-track-source,--track-source'
+        }
+
         It 'passes when every command responds and every flag is listed' {
             $help = @([pscustomobject]@{ Command = 'sf data query'; ExitCode = 0; Text = $script:QueryHelp })
             $result = Test-CliAgainstHelp -Scan $script:OneFunction -Help $help

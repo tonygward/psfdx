@@ -4,7 +4,7 @@
 function Get-CliCommandWords {
     param([string] $Text)
     # 'sf org create sandbox --name x' -> 'org create sandbox'. Stops at the first flag or variable.
-    if ($Text -notmatch '^\s*sf((?:\s+[a-z][a-z-]*)*)') { return $null }
+    if ($Text -notmatch '^\s*sf((?:\s+[a-z][a-z0-9-]*)*)') { return $null }
     return (($Matches[1] -split '\s+' | Where-Object { $_ }) -join ' ')
 }
 
@@ -149,6 +149,11 @@ function Get-CliHelpFlags {
     param([string] $Text)
     $found = New-Object System.Collections.Generic.List[string]
     foreach ($m in [regex]::Matches($Text, '(?m)^\s+(?:-[A-Za-z],\s+)?(--[a-z][a-z0-9-]*)')) { $found.Add($m.Groups[1].Value) }
+    # A negatable flag is listed as '--[no-]track-source'. Both '--track-source' and '--no-track-source' are valid.
+    foreach ($m in [regex]::Matches($Text, '(?m)^\s+(?:-[A-Za-z],\s+)?--\[no-\]([a-z][a-z0-9-]*)')) {
+        $found.Add('--' + $m.Groups[1].Value)
+        $found.Add('--no-' + $m.Groups[1].Value)
+    }
     return @($found | Sort-Object -Unique)
 }
 

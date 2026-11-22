@@ -411,6 +411,257 @@ function Get-SalesforcePackagesInstalled {
     return @($packages)
 }
 
+function Convert-SalesforcePackage {
+    <#
+    .SYNOPSIS
+    Converts a first-generation managed package into a second-generation managed package.
+
+    .DESCRIPTION
+    Runs sf package convert. The first-generation package must be managed and released (it has a released version). The conversion creates a second-generation package and a first package version in the Dev Hub; it can take a long time, so give -WaitMinutes or follow up with Get-SalesforcePackageVersionCreateStatus. Supports -WhatIf and -Confirm; it does not prompt by default.
+
+    .PARAMETER Package
+    ID of the first-generation managed package to convert (starts with 033). Passed to sf as --package. Required.
+
+    .PARAMETER DefinitionFile
+    Path to a scratch org definition file used to validate the converted package version. The file must exist. Passed to sf as --definition-file.
+
+    .PARAMETER InstallationKey
+    Installation key for the converted package version, a password that subscribers give when they install it. Give -InstallationKey or -InstallationKeyBypass, not both. Passed to sf as --installation-key.
+
+    .PARAMETER InstallationKeyBypass
+    Do not protect the converted package version with an installation key. Adds --installation-key-bypass.
+
+    .PARAMETER CodeCoverage
+    Calculate and store the code coverage of the converted package version. Adds --code-coverage.
+
+    .PARAMETER PatchVersion
+    Patch version number to give the converted package version. Passed to sf as --patch-version.
+
+    .PARAMETER SeedMetadata
+    Folder of metadata to include in the converted package version, which is not part of the first-generation package. The folder must exist. Passed to sf as --seed-metadata.
+
+    .PARAMETER ExtendedDetails
+    Show extended details of the conversion. Adds --verbose.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the conversion to finish. Passed to sf as --wait.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Convert-SalesforcePackage -Package 033xx0000000001AAA -InstallationKeyBypass -WaitMinutes 30 -TargetDevHub devhub
+    Convert the package and wait up to 30 minutes.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package convert (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Package = --package; -DefinitionFile = --definition-file; -InstallationKey = --installation-key; -InstallationKeyBypass = --installation-key-bypass; -CodeCoverage = --code-coverage; -PatchVersion = --patch-version; -SeedMetadata = --seed-metadata; -ExtendedDetails = --verbose; -WaitMinutes = --wait; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^033[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $Package,
+        [Parameter(Mandatory = $false)][string] $DefinitionFile,
+        [Parameter(Mandatory = $false)][string] $InstallationKey,
+        [Parameter(Mandatory = $false)][switch] $InstallationKeyBypass,
+        [Parameter(Mandatory = $false)][switch] $CodeCoverage,
+        [Parameter(Mandatory = $false)][string] $PatchVersion,
+        [Parameter(Mandatory = $false)][string] $SeedMetadata,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    if ($InstallationKey -and $InstallationKeyBypass) { throw 'Give -InstallationKey or -InstallationKeyBypass, not both.' }
+    if ($DefinitionFile -and -not (Test-Path -LiteralPath $DefinitionFile -PathType Leaf)) { throw "Definition file '$DefinitionFile' does not exist." }
+    if ($SeedMetadata -and -not (Test-Path -LiteralPath $SeedMetadata -PathType Container)) { throw "Seed metadata folder '$SeedMetadata' does not exist." }
+    $arguments = @('package', 'convert', '--package', $Package)
+    if ($DefinitionFile) { $arguments += @('--definition-file', $DefinitionFile) }
+    if ($InstallationKey) { $arguments += @('--installation-key', $InstallationKey) }
+    if ($InstallationKeyBypass) { $arguments += '--installation-key-bypass' }
+    if ($CodeCoverage) { $arguments += '--code-coverage' }
+    if ($PatchVersion) { $arguments += @('--patch-version', $PatchVersion) }
+    if ($SeedMetadata) { $arguments += @('--seed-metadata', $SeedMetadata) }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess("first-generation package $Package", 'Convert to a second-generation package')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Update-SalesforcePackage {
+    <#
+    .SYNOPSIS
+    Changes the details of a package in the Dev Hub.
+
+    .DESCRIPTION
+    Runs sf package update. Only the properties you give are changed. Supports -WhatIf and -Confirm; it does not prompt by default.
+
+    .PARAMETER Package
+    ID (starts with 0Ho) or alias of the package to update. Passed to sf as --package. Required.
+
+    .PARAMETER Name
+    New name of the package. Passed to sf as --name.
+
+    .PARAMETER Description
+    New description of the package. Passed to sf as --description.
+
+    .PARAMETER ErrorNotificationUsername
+    User name of the person who gets emails when a package error happens, such as a failed subscriber install. Passed to sf as --error-notification-username.
+
+    .PARAMETER EnableAppAnalytics
+    Turn on AppExchange App Analytics for the managed package. Adds --enable-app-analytics.
+
+    .PARAMETER RecommendedVersionId
+    ID of the package version to recommend to subscribers, starting with 04t. Passed to sf as --recommended-version-id.
+
+    .PARAMETER SkipAncestorCheck
+    Do not check that the recommended version has the right ancestor. Adds --skip-ancestor-check.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Update-SalesforcePackage -Package MyPkg -Description 'Core features' -TargetDevHub devhub -WhatIf
+    Preview the change without making it.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package update (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Package = --package; -Name = --name; -Description = --description; -ErrorNotificationUsername = --error-notification-username; -EnableAppAnalytics = --enable-app-analytics; -RecommendedVersionId = --recommended-version-id; -SkipAncestorCheck = --skip-ancestor-check; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Package,
+        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $ErrorNotificationUsername,
+        [Parameter(Mandatory = $false)][switch] $EnableAppAnalytics,
+        [Parameter(Mandatory = $false)][ValidatePattern('^04t[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $RecommendedVersionId,
+        [Parameter(Mandatory = $false)][switch] $SkipAncestorCheck,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'update', '--package', $Package)
+    if ($Name) { $arguments += @('--name', $Name) }
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($ErrorNotificationUsername) { $arguments += @('--error-notification-username', $ErrorNotificationUsername) }
+    if ($EnableAppAnalytics) { $arguments += '--enable-app-analytics' }
+    if ($RecommendedVersionId) { $arguments += @('--recommended-version-id', $RecommendedVersionId) }
+    if ($SkipAncestorCheck) { $arguments += '--skip-ancestor-check' }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess($Package, 'Update package')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Uninstall-SalesforcePackage {
+    <#
+    .SYNOPSIS
+    Uninstalls a second-generation package from an org.
+
+    .DESCRIPTION
+    Runs sf package uninstall. The package version and its components are removed from the org, which can delete data stored in the package's custom objects. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. Without -WaitMinutes the request is made and returned; follow it with Get-SalesforcePackageUninstallStatus.
+
+    .PARAMETER Package
+    ID (starts with 04t) or alias of the package version to uninstall. Passed to sf as --package. Required.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the uninstall to finish. Passed to sf as --wait.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Uninstall-SalesforcePackage -Package 04txx0000000001AAA -WaitMinutes 10 -TargetOrg dev1 -WhatIf
+    Preview the uninstall without starting it.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package uninstall (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Package = --package; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Package,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package', 'uninstall', '--package', $Package)
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    # -NoPrompt is the caller's decision not to be asked; it does not turn off -WhatIf.
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    $orgLabel = 'the default org'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+    if (-not $PSCmdlet.ShouldProcess("$Package in $orgLabel", 'Uninstall package')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
 #endregion
 
 #region Package Versions
@@ -444,6 +695,15 @@ function Get-SalesforcePackageVersions {
     .PARAMETER Branch
     Branch in your source control system used to filter the results; only package versions based on the specified branch are listed. Passed to sf as --branch.
 
+    .PARAMETER CreatedLastDays
+    Only versions created in the last this many days. 0 means today. Passed to sf as --created-last-days.
+
+    .PARAMETER ModifiedLastDays
+    Only versions modified in the last this many days. 0 means today. Passed to sf as --modified-last-days.
+
+    .PARAMETER OrderBy
+    Package version fields to order the list by, separated by commas, for example PatchVersion,MajorVersion. Passed to sf as --order-by.
+
     .PARAMETER TargetDevHub
     Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
 
@@ -451,12 +711,16 @@ function Get-SalesforcePackageVersions {
     Get-SalesforcePackageVersions -PackageName MyPackage -Released -TargetDevHub devhub
     Released versions of one package.
 
+    .EXAMPLE
+    Get-SalesforcePackageVersions -PackageName MyPackage -CreatedLastDays 30 -OrderBy CreatedDate -TargetDevHub devhub
+    Versions made in the last 30 days.
+
     .NOTES
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf package version list (plugin @salesforce/plugin-packaging)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --created-last-days, --modified-last-days, --order-by
-    Parameter to flag: -PackageId = --packages; -Released = --released; -Concise = --concise; -ExtendedDetails = --verbose; -ConversionsOnly = --show-conversions-only; -Branch = --branch; -TargetDevHub = --target-dev-hub.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageId = --packages; -Released = --released; -Concise = --concise; -ExtendedDetails = --verbose; -ConversionsOnly = --show-conversions-only; -Branch = --branch; -CreatedLastDays = --created-last-days; -ModifiedLastDays = --modified-last-days; -OrderBy = --order-by; -TargetDevHub = --target-dev-hub.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
     Also calls these psfdx cmdlets: Get-SalesforcePackage.
 
@@ -481,6 +745,9 @@ function Get-SalesforcePackageVersions {
         [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
         [Parameter(Mandatory = $false)][switch] $ConversionsOnly,
         [Parameter(Mandatory = $false)][string] $Branch,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 3650)][int] $CreatedLastDays,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 3650)][int] $ModifiedLastDays,
+        [Parameter(Mandatory = $false)][string] $OrderBy,
         [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
     if ((! $PackageId ) -and ($PackageName) ) {
@@ -493,6 +760,9 @@ function Get-SalesforcePackageVersions {
     }
 
     $arguments = @('package', 'version', 'list')
+    if ($PSBoundParameters.ContainsKey('CreatedLastDays')) { $arguments += @('--created-last-days', $CreatedLastDays) }
+    if ($PSBoundParameters.ContainsKey('ModifiedLastDays')) { $arguments += @('--modified-last-days', $ModifiedLastDays) }
+    if ($OrderBy) { $arguments += @('--order-by', $OrderBy) }
     if ($PackageId) { $arguments += @('--packages', $PackageId) }
     if ($Released) { $arguments += '--released' }
     if ($Concise) { $arguments += '--concise' }
@@ -547,6 +817,42 @@ function New-SalesforcePackageVersion {
     .PARAMETER ScratchOrgDefinitionFile
     Path to a definition file similar to scratch org definition file that contains the list of features and org preferences that the metadata of the package version depends on. Passed to sf as --definition-file. Default: "config/project-scratch-def.json".
 
+    .PARAMETER Path
+    Path to the directory that contains the contents of the package version, as an alternative to -PackageId or -PackageName. Passed to sf as --path. The directory must exist.
+
+    .PARAMETER Branch
+    Name of the branch in your source control system that the package version is created from. Passed to sf as --branch.
+
+    .PARAMETER VersionNumber
+    Version number of the package version, for example 1.2.0.NEXT. Overrides the sfdx-project.json value. Passed to sf as --version-number.
+
+    .PARAMETER Language
+    Language of the package version's metadata, as a language code such as en_US. Passed to sf as --language.
+
+    .PARAMETER PostInstallScript
+    Name of the Apex class that runs after the package is installed (managed packages only). Passed to sf as --post-install-script.
+
+    .PARAMETER UninstallScript
+    Name of the Apex class that runs when the package is uninstalled (managed packages only). Passed to sf as --uninstall-script.
+
+    .PARAMETER PostInstallUrl
+    URL of the post-install instructions. Passed to sf as --post-install-url.
+
+    .PARAMETER ReleaseNotesUrl
+    URL of the release notes. Passed to sf as --releasenotes-url.
+
+    .PARAMETER SkipAncestorCheck
+    Do not check that the new version has the right ancestor. Adds --skip-ancestor-check.
+
+    .PARAMETER AsyncValidation
+    Return the version as soon as it is created and run the validation, including the Apex tests, in the background. Adds --async-validation.
+
+    .PARAMETER GeneratePackageZip
+    Also create a zip file of the package contents and keep it, for managed package versions. Adds --generate-pkg-zip.
+
+    .PARAMETER ExtendedDetails
+    Show extended details of the version creation. Adds --verbose.
+
     .PARAMETER TargetDevHub
     Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
 
@@ -554,14 +860,18 @@ function New-SalesforcePackageVersion {
     New-SalesforcePackageVersion -PackageName MyPackage -InstallationKeyBypass -WaitMinutes 30 -TargetDevHub devhub
     Create a version and wait.
 
+    .EXAMPLE
+    New-SalesforcePackageVersion -PackageName MyPackage -InstallationKeyBypass -Branch main -VersionNumber 1.4.0.NEXT -AsyncValidation -TargetDevHub devhub
+    Create a version from the main branch and let the validation run in the background.
+
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
 
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf package version create (plugin @salesforce/plugin-packaging)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async-validation, --branch, --generate-pkg-zip, --language, --path, --post-install-script, --post-install-url, --releasenotes-url, --skip-ancestor-check, --uninstall-script, --version-number
-    Parameter to flag: -PackageId = --package; -Name = --version-name; -Description = --version-description; -Tag = --tag; -InstallationKey = --installation-key; -InstallationKeyBypass = --installation-key-bypass; -CodeCoverage = --code-coverage; -SkipValidation = --skip-validation; -WaitMinutes = --wait; -ScratchOrgDefinitionFile = --definition-file; -TargetDevHub = --target-dev-hub.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageId = --package; -Name = --version-name; -Description = --version-description; -Tag = --tag; -InstallationKey = --installation-key; -InstallationKeyBypass = --installation-key-bypass; -CodeCoverage = --code-coverage; -SkipValidation = --skip-validation; -WaitMinutes = --wait; -ScratchOrgDefinitionFile = --definition-file; -Path = --path; -Branch = --branch; -VersionNumber = --version-number; -Language = --language; -PostInstallScript = --post-install-script; -UninstallScript = --uninstall-script; -PostInstallUrl = --post-install-url; -ReleaseNotesUrl = --releasenotes-url; -SkipAncestorCheck = --skip-ancestor-check; -AsyncValidation = --async-validation; -GeneratePackageZip = --generate-pkg-zip; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
     Also calls these psfdx cmdlets: Get-SalesforcePackage.
 
@@ -592,11 +902,26 @@ function New-SalesforcePackageVersion {
 
         [Parameter(Mandatory = $false)][int] $WaitMinutes,
         [Parameter(Mandatory = $false)][string] $ScratchOrgDefinitionFile = "config/project-scratch-def.json",
+        [Parameter(Mandatory = $false)][string] $Path,
+        [Parameter(Mandatory = $false)][string] $Branch,
+        [Parameter(Mandatory = $false)][string] $VersionNumber,
+        [Parameter(Mandatory = $false)][string] $Language,
+        [Parameter(Mandatory = $false)][string] $PostInstallScript,
+        [Parameter(Mandatory = $false)][string] $UninstallScript,
+        [Parameter(Mandatory = $false)][string] $PostInstallUrl,
+        [Parameter(Mandatory = $false)][string] $ReleaseNotesUrl,
+        [Parameter(Mandatory = $false)][switch] $SkipAncestorCheck,
+        [Parameter(Mandatory = $false)][switch] $AsyncValidation,
+        [Parameter(Mandatory = $false)][switch] $GeneratePackageZip,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
         [Parameter(Mandatory = $false)][string] $TargetDevHub
     )
 
-    if ((! $PackageId ) -and (! $PackageName) ) {
-        throw "Please provide a PackageId or Package Name"
+    if ((! $PackageId ) -and (! $PackageName) -and (! $Path)) {
+        throw "Please provide a PackageId, a Package Name or a Path"
+    }
+    if ($Path -and -not (Test-Path -LiteralPath $Path -PathType Container)) {
+        throw "Path '$Path' does not exist."
     }
     if ((! $PackageId ) -and ($PackageName) ) {
         if ($TargetDevHub) {
@@ -607,7 +932,20 @@ function New-SalesforcePackageVersion {
         $PackageId = $package.Id
     }
 
-    $arguments = @('package', 'version', 'create', '--package', $PackageId)
+    $arguments = @('package', 'version', 'create')
+    if ($PackageId) { $arguments += @('--package', $PackageId) }
+    if ($Path) { $arguments += @('--path', $Path) }
+    if ($Branch) { $arguments += @('--branch', $Branch) }
+    if ($VersionNumber) { $arguments += @('--version-number', $VersionNumber) }
+    if ($Language) { $arguments += @('--language', $Language) }
+    if ($PostInstallScript) { $arguments += @('--post-install-script', $PostInstallScript) }
+    if ($UninstallScript) { $arguments += @('--uninstall-script', $UninstallScript) }
+    if ($PostInstallUrl) { $arguments += @('--post-install-url', $PostInstallUrl) }
+    if ($ReleaseNotesUrl) { $arguments += @('--releasenotes-url', $ReleaseNotesUrl) }
+    if ($SkipAncestorCheck) { $arguments += '--skip-ancestor-check' }
+    if ($AsyncValidation) { $arguments += '--async-validation' }
+    if ($GeneratePackageZip) { $arguments += '--generate-pkg-zip' }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
     if ($Name) { $arguments += @('--version-name', $Name) }
     if ($Description) { $arguments += @('--version-description', $Description) }
     if ($Tag) { $arguments += @('--tag', $Tag) }
@@ -785,9 +1123,22 @@ function Install-SalesforcePackageVersion {
     .PARAMETER AsObject
     Return the install request as an object (adds --json) instead of the CLI's text. Its Id, which starts with 0Hf, is the request ID for Get-SalesforcePackageInstallStatus.
 
+    .PARAMETER ApexCompile
+    Compile all the Apex in the org and the package, or only the Apex in the package, after the install. Passed to sf as --apex-compile. Valid values: all, package. The CLI default is all.
+
+    .PARAMETER InstallationKey
+    Installation key of the package version, for a version that is protected by one. Passed to sf as --installation-key.
+
+    .PARAMETER UpgradeType
+    What happens to the components that an upgrade removes. Passed to sf as --upgrade-type. Valid values: DeprecateOnly, Mixed, Delete. The CLI default is Mixed. Only used for an upgrade of an unlocked package.
+
     .EXAMPLE
     Install-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -TargetOrg dev1 -WhatIf
     Preview the install.
+
+    .EXAMPLE
+    Install-SalesforcePackageVersion -PackageVersionId 04t000000000001AAA -InstallationKey $key -ApexCompile package -UpgradeType DeprecateOnly -TargetOrg dev1
+    Upgrade an unlocked package, deprecate instead of deleting what it removes, and compile only the package's Apex.
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
@@ -795,8 +1146,8 @@ function Install-SalesforcePackageVersion {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf package install (plugin @salesforce/plugin-packaging)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --apex-compile, --installation-key, --upgrade-type
-    Parameter to flag: -PackageVersionId = --package; -TargetOrg = --target-org; -NoPrompt = --no-prompt; -WaitMinutes = --publish-wait; -SecurityType = --security-type; -AsObject = --json.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageVersionId = --package; -TargetOrg = --target-org; -NoPrompt = --no-prompt; -WaitMinutes = --publish-wait; -SecurityType = --security-type; -AsObject = --json; -ApexCompile = --apex-compile; -InstallationKey = --installation-key; -UpgradeType = --upgrade-type.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -818,11 +1169,17 @@ function Install-SalesforcePackageVersion {
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][int] $WaitMinutes = 10,
         [Parameter(Mandatory = $false)][ValidateSet('AllUsers','AdminsOnly')][string] $SecurityType = 'AdminsOnly',
-        [Parameter(Mandatory = $false)][switch] $AsObject
+        [Parameter(Mandatory = $false)][switch] $AsObject,
+        [Parameter(Mandatory = $false)][ValidateSet('all', 'package')][string] $ApexCompile,
+        [Parameter(Mandatory = $false)][string] $InstallationKey,
+        [Parameter(Mandatory = $false)][ValidateSet('DeprecateOnly', 'Mixed', 'Delete')][string] $UpgradeType
     )
 
     $arguments = @('package', 'install')
     $arguments += @('--package', $PackageVersionId)
+    if ($ApexCompile) { $arguments += @('--apex-compile', $ApexCompile) }
+    if ($InstallationKey) { $arguments += @('--installation-key', $InstallationKey) }
+    if ($UpgradeType) { $arguments += @('--upgrade-type', $UpgradeType) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($NoPrompt) { $arguments += '--no-prompt' }
     if ($SecurityType) { $arguments += @('--security-type', $SecurityType) }
@@ -841,6 +1198,325 @@ function Install-SalesforcePackageVersion {
     # is the request ID for Get-SalesforcePackageInstallStatus, so a later step can report the outcome.
     if ($AsObject) { return Show-SalesforceResult -Result $output }
     $output
+}
+
+function Get-SalesforcePackageVersion {
+    <#
+    .SYNOPSIS
+    Shows the details of one package version.
+
+    .DESCRIPTION
+    Runs sf package version report and returns the version's details (version number, branch, tag, code coverage, validation state, ancestor and more). It only reads. Use Get-SalesforcePackageVersions to list versions.
+
+    .PARAMETER PackageVersionId
+    ID (starts with 04t) or alias of the package version. Passed to sf as --package. Required.
+
+    .PARAMETER ExtendedDetails
+    Show extended details, such as the package version's ancestry. Adds --verbose.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforcePackageVersion -PackageVersionId 04txx0000000001AAA -TargetDevHub devhub
+    The details of one version.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package version report (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageVersionId = --package; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $PackageVersionId,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'report', '--package', $PackageVersionId)
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Update-SalesforcePackageVersion {
+    <#
+    .SYNOPSIS
+    Changes the details of a package version.
+
+    .DESCRIPTION
+    Runs sf package version update. Only the properties you give are changed. A released version can change only some of them. Supports -WhatIf and -Confirm; it does not prompt by default.
+
+    .PARAMETER PackageVersionId
+    ID (starts with 04t) or alias of the package version to update. Passed to sf as --package. Required.
+
+    .PARAMETER Branch
+    New branch of the package version. Passed to sf as --branch.
+
+    .PARAMETER InstallationKey
+    New installation key, a password that subscribers give when they install the version. Passed to sf as --installation-key.
+
+    .PARAMETER Tag
+    New tag of the package version. Passed to sf as --tag.
+
+    .PARAMETER Description
+    New description of the package version. Passed to sf as --version-description.
+
+    .PARAMETER Name
+    New name of the package version. Passed to sf as --version-name.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Update-SalesforcePackageVersion -PackageVersionId 04txx0000000001AAA -Tag release-1 -TargetDevHub devhub
+    Tag a version.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package version update (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageVersionId = --package; -Branch = --branch; -InstallationKey = --installation-key; -Tag = --tag; -Description = --version-description; -Name = --version-name; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $PackageVersionId,
+        [Parameter(Mandatory = $false)][string] $Branch,
+        [Parameter(Mandatory = $false)][string] $InstallationKey,
+        [Parameter(Mandatory = $false)][string] $Tag,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'update', '--package', $PackageVersionId)
+    if ($Branch) { $arguments += @('--branch', $Branch) }
+    if ($InstallationKey) { $arguments += @('--installation-key', $InstallationKey) }
+    if ($Tag) { $arguments += @('--tag', $Tag) }
+    if ($Description) { $arguments += @('--version-description', $Description) }
+    if ($Name) { $arguments += @('--version-name', $Name) }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess($PackageVersionId, 'Update package version')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Retrieve-SalesforcePackageVersion {
+    <#
+    .SYNOPSIS
+    Downloads the metadata of a package version into a folder.
+
+    .DESCRIPTION
+    Runs sf package version retrieve. It works only for second-generation managed package versions and unlocked package versions. The metadata is written under -OutputDir.
+
+    .PARAMETER PackageVersionId
+    ID (starts with 04t) or alias of the package version to retrieve. Passed to sf as --package. Required.
+
+    .PARAMETER OutputDir
+    Folder to write the metadata to. By default the CLI uses a temporary folder and reports it. Passed to sf as --output-dir.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Retrieve-SalesforcePackageVersion -PackageVersionId 04txx0000000001AAA -OutputDir .\pkg-source -TargetDevHub devhub
+    Download the version's metadata.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package version retrieve (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageVersionId = --package; -OutputDir = --output-dir; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $PackageVersionId,
+        [Parameter(Mandatory = $false)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'retrieve', '--package', $PackageVersionId)
+    if ($OutputDir) { $arguments += @('--output-dir', $OutputDir) }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforcePackageVersionAncestry {
+    <#
+    .SYNOPSIS
+    Shows the ancestry tree of a second-generation managed package.
+
+    .DESCRIPTION
+    Runs sf package version displayancestry. The ancestry shows which version each version builds on. It works for second-generation managed packages. With -DotCode the result is DOT graph code that you can draw with Graphviz.
+
+    .PARAMETER Package
+    ID (starts with 0Ho) or alias of the package, or ID (starts with 04t) or alias of a package version. Passed to sf as --package. Required.
+
+    .PARAMETER DotCode
+    Return the ancestry as DOT code for Graphviz. Adds --dot-code.
+
+    .PARAMETER ExtendedDetails
+    Show extended details of each version, such as its ID. Adds --verbose.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforcePackageVersionAncestry -Package MyManagedPkg -TargetDevHub devhub
+    The ancestry tree of the package.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package version displayancestry (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Package = --package; -DotCode = --dot-code; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Package,
+        [Parameter(Mandatory = $false)][switch] $DotCode,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'displayancestry', '--package', $Package)
+    if ($DotCode) { $arguments += '--dot-code' }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforcePackageVersionDependencies {
+    <#
+    .SYNOPSIS
+    Shows the dependency graph of an unlocked or second-generation managed package version.
+
+    .DESCRIPTION
+    Runs sf package version displaydependencies. It lists the package versions that the version depends on. The package must have the dependencies set in its project file.
+
+    .PARAMETER PackageVersionId
+    ID (starts with 04t) or alias of the package version. Passed to sf as --package. Required.
+
+    .PARAMETER EdgeDirection
+    Direction of the graph edges. Valid values: root-first, root-last. The CLI default is root-first. Passed to sf as --edge-direction.
+
+    .PARAMETER InstallationKey
+    Installation key of the package version, if it has one. Passed to sf as --installation-key.
+
+    .PARAMETER ExtendedDetails
+    Show extended details of each dependency. Adds --verbose.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforcePackageVersionDependencies -PackageVersionId 04txx0000000001AAA -TargetDevHub devhub
+    What the version depends on.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package version displaydependencies (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageVersionId = --package; -EdgeDirection = --edge-direction; -InstallationKey = --installation-key; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $PackageVersionId,
+        [Parameter(Mandatory = $false)][ValidateSet('root-first', 'root-last')][string] $EdgeDirection,
+        [Parameter(Mandatory = $false)][string] $InstallationKey,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'displaydependencies', '--package', $PackageVersionId)
+    if ($EdgeDirection) { $arguments += @('--edge-direction', $EdgeDirection) }
+    if ($InstallationKey) { $arguments += @('--installation-key', $InstallationKey) }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
 }
 
 #endregion
@@ -1050,6 +1726,645 @@ function Get-SalesforcePackageInstallStatus {
         $record2 = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $summary), 'PsfdxPackageJobFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $out)
         throw $record2
     }
+}
+
+function Get-SalesforcePackageVersionCreateRequests {
+    <#
+    .SYNOPSIS
+    Lists the package version creation requests of a Dev Hub.
+
+    .DESCRIPTION
+    Runs sf package version create list and returns one object per request (ID, status, package, version, branch, created date). Use Get-SalesforcePackageVersionCreateStatus for one request.
+
+    .PARAMETER CreatedLastDays
+    Only requests created in the last this many days. 0 means today. Passed to sf as --created-last-days.
+
+    .PARAMETER ConversionsOnly
+    Only requests that convert a first-generation package. Adds --show-conversions-only.
+
+    .PARAMETER Status
+    Only requests with this status. Valid values: Queued, InProgress, Success, Error. Passed to sf as --status.
+
+    .PARAMETER ExtendedDetails
+    Show extended details of each request. Adds --verbose.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforcePackageVersionCreateRequests -Status Error -CreatedLastDays 7 -TargetDevHub devhub
+    Version creations that failed this week.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package version create list (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -CreatedLastDays = --created-last-days; -ConversionsOnly = --show-conversions-only; -Status = --status; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidateRange(0, 3650)][int] $CreatedLastDays,
+        [Parameter(Mandatory = $false)][switch] $ConversionsOnly,
+        [Parameter(Mandatory = $false)][ValidateSet('Queued', 'InProgress', 'Success', 'Error')][string] $Status,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'version', 'create', 'list')
+    if ($PSBoundParameters.ContainsKey('CreatedLastDays')) { $arguments += @('--created-last-days', $CreatedLastDays) }
+    if ($ConversionsOnly) { $arguments += '--show-conversions-only' }
+    if ($Status) { $arguments += @('--status', $Status) }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforcePackageUninstallStatus {
+    <#
+    .SYNOPSIS
+    Shows the status of a package uninstall request.
+
+    .DESCRIPTION
+    Runs sf package uninstall report. The request ID comes from Uninstall-SalesforcePackage when it returned without waiting. It only reads.
+
+    .PARAMETER RequestId
+    ID of the uninstall request, from Uninstall-SalesforcePackage. Passed to sf as --request-id. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforcePackageUninstallStatus -RequestId 06yxx0000000001AAA -TargetOrg dev1
+    The state of the uninstall.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package uninstall report (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -RequestId = --request-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $RequestId,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package', 'uninstall', 'report', '--request-id', $RequestId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+#region Push Upgrades
+
+function New-SalesforcePushUpgrade {
+    <#
+    .SYNOPSIS
+    Schedules a push upgrade of a managed package version to subscriber orgs.
+
+    .DESCRIPTION
+    Runs sf package push-upgrade schedule. A push upgrade installs a package version in subscriber orgs without their admins starting it. It cannot be undone once it starts, though a request that has not started can be stopped with Stop-SalesforcePushUpgrade. Give the subscriber orgs as -OrgList or -OrgFile. Asks for confirmation and supports -WhatIf.
+
+    .PARAMETER Package
+    ID (starts with 04t) or alias of the package version to push. Passed to sf as --package. Required.
+
+    .PARAMETER OrgList
+    IDs of the subscriber orgs to upgrade (start with 00D). Joined with commas. Passed to sf as --org-list.
+
+    .PARAMETER OrgFile
+    Path of a CSV file that lists the subscriber org IDs, one per line. The file must exist. Passed to sf as --org-file.
+
+    .PARAMETER StartTime
+    When to start the push upgrade, as a date and time. It is sent in UTC (a time without a time zone is read as local time). By default the upgrade starts as soon as possible. Passed to sf as --start-time.
+
+    .PARAMETER MigrateTo2gp
+    Migrate the subscriber orgs from a first-generation to a second-generation package. Adds --migrate-to-2gp.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    New-SalesforcePushUpgrade -Package 04txx0000000001AAA -OrgList 00Dxx0000000001, 00Dxx0000000002 -StartTime '2026-12-01 02:00' -TargetDevHub devhub -WhatIf
+    Preview a scheduled push upgrade.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package push-upgrade schedule (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Package = --package; -OrgList = --org-list; -OrgFile = --org-file; -StartTime = --start-time; -MigrateTo2gp = --migrate-to-2gp; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Package,
+        [Parameter(Mandatory = $false)][ValidatePattern('^00D[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string[]] $OrgList,
+        [Parameter(Mandatory = $false)][string] $OrgFile,
+        [Parameter(Mandatory = $false)][datetime] $StartTime,
+        [Parameter(Mandatory = $false)][switch] $MigrateTo2gp,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    if (@($OrgList | Where-Object { $_ }).Count -eq 0 -and -not $OrgFile) { throw 'Give -OrgList or -OrgFile, the subscriber orgs to upgrade.' }
+    if (@($OrgList | Where-Object { $_ }).Count -gt 0 -and $OrgFile) { throw 'Give -OrgList or -OrgFile, not both.' }
+    if ($OrgFile -and -not (Test-Path -LiteralPath $OrgFile -PathType Leaf)) { throw "Org file '$OrgFile' does not exist." }
+    $arguments = @('package', 'push-upgrade', 'schedule', '--package', $Package)
+    if (@($OrgList | Where-Object { $_ }).Count -gt 0) { $arguments += @('--org-list', (@($OrgList | Where-Object { $_ }) -join ',')) }
+    if ($OrgFile) { $arguments += @('--org-file', $OrgFile) }
+    if ($PSBoundParameters.ContainsKey('StartTime')) {
+        $utc = $StartTime.ToUniversalTime()
+        $arguments += @('--start-time', $utc.ToString("yyyy-MM-dd'T'HH:mm:ss", [System.Globalization.CultureInfo]::InvariantCulture))
+    }
+    if ($MigrateTo2gp) { $arguments += '--migrate-to-2gp' }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $when = 'as soon as possible'
+    if ($PSBoundParameters.ContainsKey('StartTime')) { $when = 'at ' + $StartTime.ToUniversalTime().ToString("yyyy-MM-dd HH:mm 'UTC'", [System.Globalization.CultureInfo]::InvariantCulture) }
+    if (-not $PSCmdlet.ShouldProcess("package version $Package", "Schedule a push upgrade $when")) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforcePushUpgrades {
+    <#
+    .SYNOPSIS
+    Lists the push upgrade requests of a package.
+
+    .DESCRIPTION
+    Runs sf package push-upgrade list and returns one object per request (ID, status, package version, scheduled start and end). It only reads.
+
+    .PARAMETER Package
+    ID (starts with 0Ho) or alias of the package. Passed to sf as --package. Required.
+
+    .PARAMETER ScheduledLastDays
+    Only requests scheduled in the last this many days. Passed to sf as --scheduled-last-days.
+
+    .PARAMETER ShowMigrationsOnly
+    Only requests that migrate subscribers to a second-generation package. Adds --show-push-migrations-only.
+
+    .PARAMETER Status
+    Only requests with this status. Valid values: Created, Cancelled, Pending, In Progress, Failed, Succeeded. Passed to sf as --status.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforcePushUpgrades -Package MyManagedPkg -Status Pending -TargetDevHub devhub
+    Push upgrades that have not started.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package push-upgrade list (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Package = --package; -ScheduledLastDays = --scheduled-last-days; -ShowMigrationsOnly = --show-push-migrations-only; -Status = --status; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Package,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 3650)][int] $ScheduledLastDays,
+        [Parameter(Mandatory = $false)][switch] $ShowMigrationsOnly,
+        [Parameter(Mandatory = $false)][ValidateSet('Created', 'Cancelled', 'Pending', 'In Progress', 'Failed', 'Succeeded')][string] $Status,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'push-upgrade', 'list', '--package', $Package)
+    if ($PSBoundParameters.ContainsKey('ScheduledLastDays')) { $arguments += @('--scheduled-last-days', $ScheduledLastDays) }
+    if ($ShowMigrationsOnly) { $arguments += '--show-push-migrations-only' }
+    if ($Status) { $arguments += @('--status', $Status) }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforcePushUpgrade {
+    <#
+    .SYNOPSIS
+    Shows the status of one push upgrade request.
+
+    .DESCRIPTION
+    Runs sf package push-upgrade report for the request ID that New-SalesforcePushUpgrade returned. It only reads.
+
+    .PARAMETER PushRequestId
+    ID of the push upgrade request (starts with 0DV). Passed to sf as --push-request-id. Required.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -TargetDevHub devhub
+    The state of one push upgrade.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package push-upgrade report (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PushRequestId = --push-request-id; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^0DV[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $PushRequestId,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'push-upgrade', 'report', '--push-request-id', $PushRequestId)
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Stop-SalesforcePushUpgrade {
+    <#
+    .SYNOPSIS
+    Cancels a scheduled push upgrade.
+
+    .DESCRIPTION
+    Runs sf package push-upgrade abort. Only a request with the status Created or Pending can be aborted; one that has started cannot. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question.
+
+    .PARAMETER PushRequestId
+    ID of the push upgrade request to abort (starts with 0DV). Passed to sf as --push-request-id. Required.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Stop-SalesforcePushUpgrade -PushRequestId 0DVxx0000000001AAA -TargetDevHub devhub -WhatIf
+    Preview the abort.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package push-upgrade abort (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PushRequestId = --push-request-id; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^0DV[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $PushRequestId,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('package', 'push-upgrade', 'abort', '--push-request-id', $PushRequestId)
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    # -NoPrompt is the caller's decision not to be asked; it does not turn off -WhatIf.
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if (-not $PSCmdlet.ShouldProcess($PushRequestId, 'Abort push upgrade')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+#region First-generation packages
+
+# The sf package1 commands work on first-generation (1GP) packages. They are GA, and Convert-SalesforcePackage needs a released 1GP version, so they are wrapped.
+
+function New-SalesforceFirstGenPackageVersion {
+    <#
+    .SYNOPSIS
+    Uploads a new version of a first-generation package.
+
+    .DESCRIPTION
+    Runs sf package1 version create in the packaging org that owns the first-generation package. The upload can take a while: give -WaitMinutes, or follow up with Get-SalesforceFirstGenPackageVersionCreateStatus. For second-generation packages use New-SalesforcePackageVersion. Supports -WhatIf and -Confirm; it does not prompt by default.
+
+    .PARAMETER PackageId
+    ID of the first-generation package (starts with 033). Passed to sf as --package-id. Required.
+
+    .PARAMETER Name
+    Name of the package version. Passed to sf as --name. Required.
+
+    .PARAMETER Description
+    Description of the package version. Passed to sf as --description.
+
+    .PARAMETER Version
+    Version number of the package version, for example 1.2. Passed to sf as --version.
+
+    .PARAMETER InstallationKey
+    Installation key that subscribers give when they install the version. Passed to sf as --installation-key.
+
+    .PARAMETER ManagedReleased
+    Upload the version as managed-released, which cannot be deleted or changed. Without it the version is a beta. Adds --managed-released.
+
+    .PARAMETER PostInstallUrl
+    URL of the post-install instructions. Passed to sf as --post-install-url.
+
+    .PARAMETER ReleaseNotesUrl
+    URL of the release notes. Passed to sf as --release-notes-url.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the upload to finish. Passed to sf as --wait.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceFirstGenPackageVersion -PackageId 033xx0000000001AAA -Name 'Spring release' -Version 2.1 -WaitMinutes 20 -TargetOrg packaging
+    Upload a beta version and wait.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package1 version create (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageId = --package-id; -Name = --name; -Description = --description; -Version = --version; -InstallationKey = --installation-key; -ManagedReleased = --managed-released; -PostInstallUrl = --post-install-url; -ReleaseNotesUrl = --release-notes-url; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^033[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $PackageId,
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $Version,
+        [Parameter(Mandatory = $false)][string] $InstallationKey,
+        [Parameter(Mandatory = $false)][switch] $ManagedReleased,
+        [Parameter(Mandatory = $false)][string] $PostInstallUrl,
+        [Parameter(Mandatory = $false)][string] $ReleaseNotesUrl,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package1', 'version', 'create', '--package-id', $PackageId, '--name', $Name)
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($Version) { $arguments += @('--version', $Version) }
+    if ($InstallationKey) { $arguments += @('--installation-key', $InstallationKey) }
+    if ($ManagedReleased) { $arguments += '--managed-released' }
+    if ($PostInstallUrl) { $arguments += @('--post-install-url', $PostInstallUrl) }
+    if ($ReleaseNotesUrl) { $arguments += @('--release-notes-url', $ReleaseNotesUrl) }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $orgLabel = 'the default org'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+    if (-not $PSCmdlet.ShouldProcess("package $PackageId in $orgLabel", "Upload version '$Name'")) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceFirstGenPackageVersionCreateStatus {
+    <#
+    .SYNOPSIS
+    Shows the status of a first-generation package version upload.
+
+    .DESCRIPTION
+    Runs sf package1 version create get for the request ID from New-SalesforceFirstGenPackageVersion. It only reads.
+
+    .PARAMETER RequestId
+    ID of the upload request. Passed to sf as --request-id. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceFirstGenPackageVersionCreateStatus -RequestId 0HD000000000001 -TargetOrg packaging
+    The state of the upload.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package1 version create get (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -RequestId = --request-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $RequestId,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package1', 'version', 'create', 'get', '--request-id', $RequestId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceFirstGenPackageVersion {
+    <#
+    .SYNOPSIS
+    Shows the details of a first-generation package version.
+
+    .DESCRIPTION
+    Runs sf package1 version display. It only reads.
+
+    .PARAMETER PackageVersionId
+    ID of the package version (starts with 04t). Passed to sf as --package-version-id. Required.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceFirstGenPackageVersion -PackageVersionId 04txx0000000001AAA -TargetOrg packaging
+    The details of one version.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package1 version display (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageVersionId = --package-version-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^04t[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $PackageVersionId,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package1', 'version', 'display', '--package-version-id', $PackageVersionId)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceFirstGenPackageVersions {
+    <#
+    .SYNOPSIS
+    Lists first-generation package versions.
+
+    .DESCRIPTION
+    Runs sf package1 version list and returns one object per version. Without -PackageId it lists the versions of every package in the org. It only reads.
+
+    .PARAMETER PackageId
+    ID of the first-generation package (starts with 033). By default all packages of the org. Passed to sf as --package-id.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceFirstGenPackageVersions -TargetOrg packaging | Format-Table
+    Every first-generation version in the org.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf package1 version list (plugin @salesforce/plugin-packaging)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -PackageId = --package-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-packaging
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidatePattern('^033[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $PackageId,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('package1', 'version', 'list')
+    if ($PackageId) { $arguments += @('--package-id', $PackageId) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
 }
 
 #endregion

@@ -183,38 +183,38 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 131,
+    "commandsPsfdxRuns": 149,
     "flags": {
-      "total": 646,
-      "passed": 589
+      "total": 727,
+      "passed": 687
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 48,
+    "flagsWithAListOfValues": 53,
     "values": {
-      "total": 218,
-      "reachable": 198
+      "total": 235,
+      "reachable": 215
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 108,
-      "partiallyWrapped": 23,
-      "missing": 121,
+      "wrapped": 129,
+      "partiallyWrapped": 20,
+      "missing": 103,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "52.0"
+      "coveredPercent": "59.1"
     },
     "core": {
       "commands": 214,
-      "wrapped": 93,
-      "partiallyWrapped": 19,
-      "missing": 84,
+      "wrapped": 114,
+      "partiallyWrapped": 16,
+      "missing": 66,
       "excluded": 3,
       "notApplicable": 15,
       "inScope": 196,
-      "coveredPercent": "57.1"
+      "coveredPercent": "66.3"
     },
     "jit": {
       "commands": 65,
@@ -228,8 +228,8 @@
     }
   },
   "psfdx": {
-    "exportedFunctions": 177,
-    "runningTheCli": 146,
+    "exportedFunctions": 195,
+    "runningTheCli": 164,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -6202,13 +6202,13 @@
       "label": "Packages (second generation)",
       "totals": {
         "commands": 25,
-        "wrapped": 8,
-        "partiallyWrapped": 3,
-        "missing": 14,
+        "wrapped": 25,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 25,
-        "coveredPercent": "44.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -6218,31 +6218,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Convert a managed-released first-generation managed package into a second-generation managed package.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Convert-SalesforcePackage"
+          ],
           "flags": {
             "total": 10,
-            "passed": 0,
+            "passed": 10,
             "required": 2
           },
-          "uncoveredFlags": [
-            "code-coverage",
-            "definition-file",
-            "installation-key",
-            "installation-key-bypass",
-            "package",
-            "patch-version",
-            "seed-metadata",
-            "target-dev-hub",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6311,7 +6299,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Install or upgrade a version of a package in the target org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6319,20 +6307,16 @@
           ],
           "flags": {
             "total": 9,
-            "passed": 6,
+            "passed": 9,
             "required": 2
           },
-          "uncoveredFlags": [
-            "apex-compile",
-            "installation-key",
-            "upgrade-type"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 1,
-            "total": 2,
-            "reachable": 2
+            "flagsWithAList": 3,
+            "total": 7,
+            "reachable": 7
           }
         },
         {
@@ -6423,23 +6407,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Abort a package push upgrade that has been scheduled. Only push upgrade requests with a status of Created or Pending can be aborted.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Stop-SalesforcePushUpgrade"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "push-request-id",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "push-request-id",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6454,31 +6434,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Lists the status of push upgrade requests for a given package.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePushUpgrades"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "package",
-            "scheduled-last-days",
-            "show-push-migrations-only",
-            "status",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -6488,23 +6461,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Retrieve the status of a package push upgrade.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePushUpgrade"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "push-request-id",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "push-request-id",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6519,27 +6488,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Schedule a package push upgrade.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforcePushUpgrade"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "migrate-to-2gp",
-            "org-file",
-            "org-list",
-            "package",
-            "start-time",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6554,24 +6515,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Uninstall a second-generation package from the target org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Uninstall-SalesforcePackage"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "package",
-            "target-org",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6586,23 +6542,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Retrieve the status of a package uninstall request.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePackageUninstallStatus"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "request-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "request-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6617,29 +6569,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Update package details.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Update-SalesforcePackage"
+          ],
           "flags": {
             "total": 8,
-            "passed": 0,
+            "passed": 8,
             "required": 2
           },
-          "uncoveredFlags": [
-            "description",
-            "enable-app-analytics",
-            "error-notification-username",
-            "name",
-            "package",
-            "recommended-version-id",
-            "skip-ancestor-check",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6654,7 +6596,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create a package version in the Dev Hub org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6662,22 +6604,10 @@
           ],
           "flags": {
             "total": 23,
-            "passed": 12,
+            "passed": 23,
             "required": 1
           },
-          "uncoveredFlags": [
-            "async-validation",
-            "branch",
-            "generate-pkg-zip",
-            "language",
-            "path",
-            "post-install-script",
-            "post-install-url",
-            "releasenotes-url",
-            "skip-ancestor-check",
-            "uninstall-script",
-            "version-number"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6693,30 +6623,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List package version creation requests.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePackageVersionCreateRequests"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "created-last-days",
-            "show-conversions-only",
-            "status",
-            "target-dev-hub",
-            "verbose"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -6780,25 +6704,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display the ancestry tree for a 2GP managed package version.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePackageVersionAncestry"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 2
           },
-          "uncoveredFlags": [
-            "dot-code",
-            "package",
-            "target-dev-hub",
-            "verbose"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6813,31 +6731,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display the dependency graph for an unlocked or 2GP managed package version.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePackageVersionDependencies"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "edge-direction",
-            "installation-key",
-            "package",
-            "target-dev-hub",
-            "verbose"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -6847,7 +6758,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List all package versions in the Dev Hub org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6855,14 +6766,10 @@
           ],
           "flags": {
             "total": 10,
-            "passed": 7,
+            "passed": 10,
             "required": 1
           },
-          "uncoveredFlags": [
-            "created-last-days",
-            "modified-last-days",
-            "order-by"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6905,24 +6812,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Retrieve details about a package version in the Dev Hub org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePackageVersion"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "package",
-            "target-dev-hub",
-            "verbose"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6937,24 +6839,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Retrieve package metadata for a specified package version. Package metadata can be retrieved for only second-generation managed package versions or unlocked packages.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Retrieve-SalesforcePackageVersion"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "output-dir",
-            "package",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6969,28 +6866,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Update a package version.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Update-SalesforcePackageVersion"
+          ],
           "flags": {
             "total": 7,
-            "passed": 0,
+            "passed": 7,
             "required": 2
           },
-          "uncoveredFlags": [
-            "branch",
-            "installation-key",
-            "package",
-            "tag",
-            "target-dev-hub",
-            "version-description",
-            "version-name"
-          ],
-          "requiredFlagsNotPassed": [
-            "package",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7005,13 +6893,13 @@
       "label": "Packages (first generation)",
       "totals": {
         "commands": 4,
-        "wrapped": 0,
+        "wrapped": 4,
         "partiallyWrapped": 0,
-        "missing": 4,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 4,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -7021,32 +6909,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create a first-generation package version in the release org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceFirstGenPackageVersion"
+          ],
           "flags": {
             "total": 10,
-            "passed": 0,
+            "passed": 10,
             "required": 3
           },
-          "uncoveredFlags": [
-            "description",
-            "installation-key",
-            "managed-released",
-            "name",
-            "package-id",
-            "post-install-url",
-            "release-notes-url",
-            "target-org",
-            "version",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "package-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7061,23 +6936,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Retrieve the status of a package version creation request.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceFirstGenPackageVersionCreateStatus"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "request-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "request-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7092,23 +6963,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display details about a first-generation package version.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceFirstGenPackageVersion"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "package-version-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "package-version-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7123,22 +6990,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List package versions for the specified first-generation package or for the org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceFirstGenPackageVersions"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "package-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -9270,18 +9134,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 120,
-        "commandsPsfdxRunsThatHaveIt": 125
+        "psfdxFunctionsPassingIt": 138,
+        "commandsPsfdxRunsThatHaveIt": 143
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 128
+        "commandsPsfdxRunsThatHaveIt": 146
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 88
+        "commandsPsfdxRunsThatHaveIt": 106
       }
     ]
   },
