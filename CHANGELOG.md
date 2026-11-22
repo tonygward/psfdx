@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.46 - 2026-11-22
+
 - psfdx-packages: every `sf package` and `sf package1` command is now covered. New cmdlets for second-generation packages: `Convert-SalesforcePackage`, `Update-SalesforcePackage`, `Uninstall-SalesforcePackage` (asks for confirmation) with `Get-SalesforcePackageUninstallStatus`, `Get-SalesforcePackageVersion`, `Update-SalesforcePackageVersion`, `Retrieve-SalesforcePackageVersion`, `Get-SalesforcePackageVersionAncestry`, `Get-SalesforcePackageVersionDependencies` and `Get-SalesforcePackageVersionCreateRequests`. Push upgrades: `New-SalesforcePushUpgrade` and `Stop-SalesforcePushUpgrade` ask for confirmation and support `-WhatIf`; `Get-SalesforcePushUpgrades` and `Get-SalesforcePushUpgrade` read. First-generation packages: `New-SalesforceFirstGenPackageVersion`, `Get-SalesforceFirstGenPackageVersionCreateStatus`, `Get-SalesforceFirstGenPackageVersion` and `Get-SalesforceFirstGenPackageVersions`.
 - psfdx-packages: `New-SalesforcePackageVersion` gains `-Path`, `-Branch`, `-VersionNumber`, `-Language`, `-PostInstallScript`, `-UninstallScript`, `-PostInstallUrl`, `-ReleaseNotesUrl`, `-SkipAncestorCheck`, `-AsyncValidation`, `-GeneratePackageZip` and `-ExtendedDetails`. `Install-SalesforcePackageVersion` gains `-InstallationKey`, `-ApexCompile` and `-UpgradeType`, and `Get-SalesforcePackageVersions` gains `-CreatedLastDays`, `-ModifiedLastDays` and `-OrderBy`.
 - psfdx: `-Verbose` output now hides the value of `--installation-key` (the `--installation-key-bypass` switch is left alone), as it already did for passwords and tokens.

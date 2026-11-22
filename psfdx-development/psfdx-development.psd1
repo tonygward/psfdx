@@ -3,7 +3,7 @@
     RootModule        = 'psfdx-development.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.8.45'
+    ModuleVersion     = '0.8.46'
 
     # Supported PowerShell editions: Desktop = Windows PowerShell, Core = PowerShell 7+
     CompatiblePSEditions = @('Desktop','Core')
