@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.49 - 2026-11-22
+
 - psfdx-development: every `sf apex` and `sf code-analyzer` command is now covered. New cmdlets: `Get-SalesforceApexCompileStatus` (classes and triggers that do not compile cleanly), `Get-SalesforceCodeAnalyzerConfig` (the current configuration as YAML, optionally saved to a file) and `Get-SalesforceCodeAnalyzerAst` (the syntax tree PMD builds for a file; needs Java).
 - psfdx-development: `Invoke-SalesforceCodeAnalyzer` gains `-IncludeFixes`, `-IncludeSuggestions` (each violation then has `Fixes` and `Suggestions`), `-NoSuppressions`, `-TargetOrg`, `-View` and `-OutputFile` for extra result files; `Get-SalesforceCodeAnalyzerRule` gains `-View`. `Invoke-SalesforceApex` gains `-DebugLevel` and `-CategoryLevel`, `Test-SalesforceApex` gains `-Synchronous` and `-PollIntervalSeconds`, and `Get-SalesforceApexTestResult` gains `-ResultFormat` so you can get junit, tap or human text.
 
