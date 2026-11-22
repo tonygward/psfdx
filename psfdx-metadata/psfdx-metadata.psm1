@@ -3446,7 +3446,7 @@ function New-SalesforceCustomMetadataType {
     $arguments = @('cmdt', 'generate', 'object', '--type-name', $TypeName)
     if ($Label) { $arguments += @('--label', $Label) }
     if ($PluralLabel) { $arguments += @('--plural-label', $PluralLabel) }
-    if ($Visibility) { $arguments += @('--visibility', $Visibility) }
+    if ($Visibility) { $arguments += @('--visibility', (@('PackageProtected', 'Protected', 'Public') | Where-Object { $_ -eq $Visibility } | Select-Object -First 1)) }
     if ($OutputDirectory) { $arguments += @('--output-directory', $OutputDirectory) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -3517,6 +3517,8 @@ function New-SalesforceCustomMetadataField {
         [Parameter(Mandatory = $false)][string[]] $PicklistValues,
         [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
+    # ValidateSet ignores case, but the CLI does not: send the type spelled the way the CLI lists it.
+    $Type = @('Checkbox', 'Date', 'DateTime', 'Email', 'Number', 'Percent', 'Phone', 'Picklist', 'Text', 'TextArea', 'LongTextArea', 'Url') | Where-Object { $_ -eq $Type } | Select-Object -First 1
     $values = @($PicklistValues | Where-Object { $_ })
     if ($Type -eq 'Picklist' -and $values.Count -eq 0) { throw 'A Picklist field needs -PicklistValues.' }
     if ($Type -ne 'Picklist' -and $values.Count -gt 0) { throw '-PicklistValues is only for a Picklist field.' }
@@ -3601,7 +3603,9 @@ function New-SalesforceCustomMetadataRecord {
         foreach ($key in $Values.Keys) {
             $field = [string] $key
             if ($field -notmatch '^[A-Za-z][A-Za-z0-9_]*\z') { throw "'$field' is not a valid field name." }
-            $text = [System.Convert]::ToString($Values[$key], [System.Globalization.CultureInfo]::InvariantCulture)
+            # A PowerShell boolean prints as True or False, which is not a valid XML boolean in the record file: write true or false.
+            if ($Values[$key] -is [bool]) { $text = if ($Values[$key]) { 'true' } else { 'false' } }
+            else { $text = [System.Convert]::ToString($Values[$key], [System.Globalization.CultureInfo]::InvariantCulture) }
             if ($text -match '["\r\n]') { throw "The value of '$field' contains a double quote or a line break, which the CLI cannot take safely." }
             $pairs += "$field=$text"
         }
@@ -3759,7 +3763,7 @@ function New-SalesforceCustomMetadataTypeFromOrg {
     $arguments = @('cmdt', 'generate', 'fromorg', '--dev-name', $DevName, '--sobject', $Sobject)
     if ($Label) { $arguments += @('--label', $Label) }
     if ($PluralLabel) { $arguments += @('--plural-label', $PluralLabel) }
-    if ($Visibility) { $arguments += @('--visibility', $Visibility) }
+    if ($Visibility) { $arguments += @('--visibility', (@('PackageProtected', 'Protected', 'Public') | Where-Object { $_ -eq $Visibility } | Select-Object -First 1)) }
     if ($IgnoreUnsupported) { $arguments += '--ignore-unsupported' }
     if ($TypeOutputDirectory) { $arguments += @('--type-output-directory', $TypeOutputDirectory) }
     if ($RecordsOutputDir) { $arguments += @('--records-output-dir', $RecordsOutputDir) }

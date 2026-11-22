@@ -1080,6 +1080,16 @@ Describe 'psfdx-metadata custom metadata type generators (issue 251)' {
                 }
                 { New-SalesforceCustomMetadataField -Name F -Type Currency } | Should -Throw
             }
+            It 'sends the type and visibility spelled as the CLI lists them, whatever case was typed' {
+                New-SalesforceCustomMetadataField -Name Mode -Type picklist -PicklistValues A | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|field|--name|Mode|--type|Picklist|--picklist-values|A|--json' }
+                New-SalesforceCustomMetadataField -Name Body -Type longtextarea | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|field|--name|Body|--type|LongTextArea|--json' }
+                New-SalesforceCustomMetadataType -TypeName Cfg -Visibility packageprotected | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|object|--type-name|Cfg|--visibility|PackageProtected|--json' }
+                New-SalesforceCustomMetadataTypeFromOrg -DevName X -Sobject Y__c -Visibility PROTECTED | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|fromorg|--dev-name|X|--sobject|Y__c|--visibility|Protected|--json' }
+            }
             It 'checks the combinations before running sf' {
                 Mock Invoke-Salesforce { throw 'must not run' }
                 { New-SalesforceCustomMetadataField -Name F -Type Picklist } | Should -Throw -ExpectedMessage '*needs -PicklistValues*'
@@ -1114,6 +1124,10 @@ Describe 'psfdx-metadata custom metadata type generators (issue 251)' {
                 { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ '--json' = 'x' } } | Should -Throw -ExpectedMessage '*not a valid field name*'
                 { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ A__c = 'say "hi"' } } | Should -Throw -ExpectedMessage '*double quote*'
                 { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ A__c = "a`nb" } } | Should -Throw -ExpectedMessage '*line break*'
+            }
+            It 'writes a boolean value as true or false, which is what a Checkbox field needs' {
+                New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values ([ordered]@{ On__c = $true; Off__c = $false }) | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|record|--type-name|Cfg__mdt|--record-name|R|On__c=true|Off__c=false|--json' }
             }
             It 'does not treat a value that looks like a flag as one' {
                 New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ A__c = '--json' } | Out-Null
