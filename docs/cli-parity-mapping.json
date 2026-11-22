@@ -131,6 +131,13 @@
       "reason": "An Agentforce command; it is built with the other agent commands in PSF-61."
     },
     {
+      "match": "org create scratch",
+      "reason": "The CLI lists --track-source only as the negatable flag --no-track-source (source tracking is on by default in a scratch org); -NoTrackSource passes it.",
+      "ignoreFlags": [
+        "track-source"
+      ]
+    },
+    {
       "match": "org login sfdx-url",
       "reason": "--sfdx-url-stdin reads the URL from standard input, which Invoke-Salesforce cannot feed; -SfdxUrlFile covers the same login.",
       "ignoreFlags": [

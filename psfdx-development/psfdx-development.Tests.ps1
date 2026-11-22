@@ -1279,9 +1279,9 @@ Describe 'psfdx-development sf org parity (issue 248)' {
         }
 
         Context 'New-SalesforceScratchOrg new flags' {
-            It 'passes -Alias, -OAuthClientId, -NoAncestors, -NoNamespace and -TrackSource' {
-                New-SalesforceScratchOrg -TargetDevHub hub -Alias ci1 -OAuthClientId abc -NoAncestors -NoNamespace -TrackSource | Out-Null
-                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--target-dev-hub|hub|--definition-file|config/project-scratch-def.json|--alias|ci1|--client-id|abc|--no-ancestors|--no-namespace|--track-source|--json' }
+            It 'passes -Alias, -OAuthClientId, -NoAncestors, -NoNamespace and -NoTrackSource' {
+                New-SalesforceScratchOrg -TargetDevHub hub -Alias ci1 -OAuthClientId abc -NoAncestors -NoNamespace -NoTrackSource | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--target-dev-hub|hub|--definition-file|config/project-scratch-def.json|--alias|ci1|--client-id|abc|--no-ancestors|--no-namespace|--no-track-source|--json' }
             }
             It 'leaves the new flags out by default' {
                 New-SalesforceScratchOrg | Out-Null

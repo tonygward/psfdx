@@ -18,7 +18,7 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 psfdx exports **173** cmdlets; **142** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **126** commands psfdx runs, it passes **562 of 626** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **46** have a list of allowed values in the CLI, and psfdx can pass **193 of 213** of those values.
+**Flags and values.** Across the **126** commands psfdx runs, it passes **561 of 625** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **46** have a list of allowed values in the CLI, and psfdx can pass **193 of 213** of those values.
 
 ## By capability
 
@@ -462,7 +462,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf org assign permset` | wrapped | `Grant-SalesforcePermissionSet` | 3 of 3 |  |  |
 | `sf org assign permsetlicense` | wrapped | `Grant-SalesforcePermissionSetLicense` | 3 of 3 |  |  |
 | `sf org create sandbox` | wrapped | `Copy-SalesforceSandbox`, `New-SalesforceSandbox` | 13 of 13 |  |  |
-| `sf org create scratch` | wrapped | `New-SalesforceScratchOrg` | 19 of 19 |  |  |
+| `sf org create scratch` | wrapped | `New-SalesforceScratchOrg` | 18 of 18 |  |  |
 | `sf org create shape` | wrapped | `New-SalesforceOrgShape` | 1 of 1 |  |  |
 | `sf org create snapshot` | wrapped | `New-SalesforceOrgSnapshot` | 4 of 4 |  |  |
 | `sf org create user` | wrapped | `New-SalesforceUser` | 4 of 4 |  |  |

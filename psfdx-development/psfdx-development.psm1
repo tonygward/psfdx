@@ -680,8 +680,8 @@ function New-SalesforceScratchOrg {
     .PARAMETER NoNamespace
     Create the scratch org without the namespace of the Dev Hub or the project, even if the project has one. Adds --no-namespace.
 
-    .PARAMETER TrackSource
-    Turn source tracking on for the scratch org. Adds --track-source.
+    .PARAMETER NoTrackSource
+    Create the scratch org without source tracking. Scratch orgs have source tracking on by default. Adds --no-track-source.
 
     .EXAMPLE
     New-SalesforceScratchOrg -DefinitionFile config/project-scratch-def.json -Name ci-1 -DurationDays 3 -SetDefault
@@ -694,7 +694,7 @@ function New-SalesforceScratchOrg {
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org create scratch (plugin @salesforce/plugin-org)
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username; -Alias = --alias; -OAuthClientId = --client-id; -NoAncestors = --no-ancestors; -NoNamespace = --no-namespace; -TrackSource = --track-source.
+    Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username; -Alias = --alias; -OAuthClientId = --client-id; -NoAncestors = --no-ancestors; -NoNamespace = --no-namespace; -NoTrackSource = --no-track-source.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -729,7 +729,7 @@ function New-SalesforceScratchOrg {
         [Parameter(Mandatory = $false)][string] $OAuthClientId,
         [Parameter(Mandatory = $false)][switch] $NoAncestors,
         [Parameter(Mandatory = $false)][switch] $NoNamespace,
-        [Parameter(Mandatory = $false)][switch] $TrackSource
+        [Parameter(Mandatory = $false)][switch] $NoTrackSource
     )
     $arguments = @('org', 'create', 'scratch')
     if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
@@ -750,7 +750,7 @@ function New-SalesforceScratchOrg {
     if ($OAuthClientId) { $arguments += @('--client-id', $OAuthClientId) }
     if ($NoAncestors) { $arguments += '--no-ancestors' }
     if ($NoNamespace) { $arguments += '--no-namespace' }
-    if ($TrackSource) { $arguments += '--track-source' }
+    if ($NoTrackSource) { $arguments += '--no-track-source' }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
