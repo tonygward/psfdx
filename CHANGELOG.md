@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: `Connect-SalesforceApi` now accepts `-Password`, `-Token` and `-ClientSecret` as a SecureString, which is the recommended form: it is turned into text only when the login request is built and never appears in verbose, debug or error output. Plain strings still work, but each one now writes a warning because it stays readable in your session history. Nothing is removed yet.
+
 ## 0.8.42 - 2026-11-22
 
 - psfdx-metadata: every `sf project` command (project, deploy and retrieve) is now covered, with every flag. New cmdlets: `New-SalesforceManifest`, `ConvertTo-SalesforceSourceFormat`, `ConvertTo-SalesforceMdapiFormat`, `Enable-SalesforceSourceBehavior`, `Get-SalesforceIgnoredFiles`, `Remove-SalesforceSource`, `Remove-SalesforceSourceTracking` and `Reset-SalesforceSourceTracking`. The ones that delete or reset ask for confirmation and support `-WhatIf`; `-NoPrompt` skips the question, and `Remove-SalesforceSource -CheckOnly` validates without deleting.
