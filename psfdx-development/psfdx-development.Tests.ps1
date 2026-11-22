@@ -1639,7 +1639,8 @@ Describe 'psfdx-development template generators (issue 254)' {
     InModuleScope 'psfdx-development' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"outputDir":"C:\\p\\out","created":["out/X/X.js"],"rawOutput":"create out/X/X.js"}}' }
-            $script:out = Join-Path $TestDrive 'out'
+            # A folder of its own for each test: $TestDrive is shared by the tests of a block, so files from one must not show up in the next.
+            $script:out = Join-Path $TestDrive ('out-' + [guid]::NewGuid().ToString('N'))
             New-Item -ItemType Directory -Path $script:out -Force | Out-Null
         }
 
