@@ -1370,3 +1370,254 @@ Describe 'psfdx-development sf org parity (issue 248)' {
         }
     }
 }
+
+Describe 'psfdx-development Apex and Code Analyzer parity (issue 253)' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            $script:Exit = 0
+            $script:Stdout = 'progress text'
+            $script:Body = $null
+            $script:Seen = $null
+            $script:SeenFiles = @()
+            # A fake sf that writes the body to every --output-file it is given, like the real CLI does.
+            Mock Invoke-Salesforce {
+                $script:Seen = @($Arguments)
+                for ($i = 0; $i -lt $Arguments.Count - 1; $i++) {
+                    if ($Arguments[$i] -eq '--output-file' -and $null -ne $script:Body) { [System.IO.File]::WriteAllText($Arguments[$i + 1], $script:Body); $script:SeenFiles += $Arguments[$i + 1] }
+                }
+                $global:LASTEXITCODE = $script:Exit
+                $script:Stdout
+            }
+        }
+
+        Context 'Get-SalesforceCodeAnalyzerConfig' {
+            BeforeEach {
+                $script:Body = "# CODE ANALYZER CONFIGURATION`nlog_level: 4`nrules:`n  pmd:`n    ApexCRUDViolation:`n      severity: 2`n"
+            }
+            It 'passes every option and returns the YAML as one string' {
+                $ws = Join-Path $TestDrive 'ws'; New-Item -ItemType Directory -Path $ws | Out-Null
+                $cfg = Join-Path $TestDrive 'code-analyzer.yml'; Set-Content -LiteralPath $cfg -Value 'log_level: 4'
+                $yaml = Get-SalesforceCodeAnalyzerConfig -Workspace $ws -Target 'force-app/**/*.cls' -RuleSelector 'Recommended', 'Security' -ConfigFile $cfg -IncludeUnmodifiedRules -NoSuppressions
+                $a = $script:Seen
+                ($a[0..10] -join '|') | Should -Be "code-analyzer|config|--workspace|$ws|--target|force-app/**/*.cls|--rule-selector|Recommended|--rule-selector|Security|--config-file"
+                $a[11] | Should -Be $cfg
+                $a[12] | Should -Be '--output-file'
+                $a[13] | Should -BeLike '*psfdx-code-analyzer-*.yml'
+                ($a[14..15] -join '|') | Should -Be '--include-unmodified-rules|--no-suppressions'
+                $yaml | Should -BeOfType [string]
+                $yaml | Should -BeLike '*log_level: 4*'
+            }
+            It 'removes its temporary file, and keeps the file the caller asked for' {
+                Get-SalesforceCodeAnalyzerConfig | Out-Null
+                Test-Path -LiteralPath $script:SeenFiles[0] | Should -BeFalse
+                $out = Join-Path $TestDrive 'saved.yml'
+                $yaml = Get-SalesforceCodeAnalyzerConfig -OutputFile $out
+                Test-Path -LiteralPath $out | Should -BeTrue
+                (Get-Content -LiteralPath $out -Raw) | Should -Be $yaml
+            }
+            It 'reads a relative -OutputFile from the PowerShell location, not the process folder' {
+                Push-Location -LiteralPath $TestDrive
+                try {
+                    $yaml = Get-SalesforceCodeAnalyzerConfig -OutputFile '.\relative.yml'
+                    $script:Seen[$script:Seen.IndexOf('--output-file') + 1] | Should -Be (Join-Path $TestDrive 'relative.yml')
+                    $yaml | Should -BeLike '*log_level: 4*'
+                    Test-Path -LiteralPath (Join-Path $TestDrive 'relative.yml') | Should -BeTrue
+                } finally { Pop-Location }
+            }
+            It 'checks workspace, config file and output folder before running sf' {
+                Mock Invoke-Salesforce { throw 'must not run' }
+                { Get-SalesforceCodeAnalyzerConfig -Workspace (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Get-SalesforceCodeAnalyzerConfig -ConfigFile (Join-Path $TestDrive 'nope.yml') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Get-SalesforceCodeAnalyzerConfig -OutputFile (Join-Path $TestDrive 'nofolder/out.yml') } | Should -Throw -ExpectedMessage '*does not exist*'
+            }
+            It 'throws PsfdxCodeAnalyzerFailed with the CLI text, and guides when the plugin is missing' {
+                $script:Body = $null; $script:Exit = 1; $script:Stdout = 'Config file is invalid.'
+                $err = $null
+                try { Get-SalesforceCodeAnalyzerConfig } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxCodeAnalyzerFailed'
+                $err.Exception.Message | Should -BeLike '*Config file is invalid*'
+                $script:Exit = 2; $script:Stdout = 'Error: code-analyzer is not a sf command.'
+                { Get-SalesforceCodeAnalyzerConfig } | Should -Throw -ExpectedMessage '*Install-SalesforcePlugin -Name code-analyzer*'
+            }
+            It 'treats a successful run that wrote nothing as a failure' {
+                $script:Body = $null; $script:Exit = 0
+                { Get-SalesforceCodeAnalyzerConfig } | Should -Throw
+            }
+        }
+
+        Context 'Get-SalesforceCodeAnalyzerAst' {
+            BeforeEach {
+                $script:src = Join-Path $TestDrive 'My Class.cls'
+                Set-Content -LiteralPath $script:src -Value 'public class A {}'
+                $script:Body = '[{"name":"ApexFile","parent":null},{"name":"UserClass","parent":0}]'
+            }
+            It 'uses json by default and returns one object per node' {
+                $nodes = @(Get-SalesforceCodeAnalyzerAst -File $script:src)
+                $a = $script:Seen
+                ($a[0..3] -join '|') | Should -Be "code-analyzer|ast-dump|--file|$($script:src)"
+                ($a[4..5] -join '|') | Should -Be '--format|json'
+                $a[6] | Should -Be '--output-file'
+                $a[7] | Should -BeLike '*psfdx-code-analyzer-*.json'
+                $nodes.Count | Should -Be 2
+                $nodes[1].name | Should -Be 'UserClass'
+            }
+            It 'passes the language, and returns an XML document for the xml format' {
+                $script:Body = '<ApexFile><UserClass Name="A"/></ApexFile>'
+                $doc = Get-SalesforceCodeAnalyzerAst -File $script:src -Language apex -Format xml
+                ($script:Seen[4..7] -join '|') | Should -Be '--language|apex|--format|xml'
+                $doc | Should -BeOfType [xml]
+                $doc.ApexFile.UserClass.Name | Should -Be 'A'
+            }
+            It 'returns the text when the file is not valid for its format' {
+                $script:Body = 'not json at all'
+                (Get-SalesforceCodeAnalyzerAst -File $script:src) | Should -Be 'not json at all'
+            }
+            It 'accepts every documented language and rejects others' {
+                foreach ($l in 'apex', 'visualforce', 'html', 'xml', 'javascript') { { Get-SalesforceCodeAnalyzerAst -File $script:src -Language $l } | Should -Not -Throw }
+                { Get-SalesforceCodeAnalyzerAst -File $script:src -Language python } | Should -Throw
+                { Get-SalesforceCodeAnalyzerAst -File $script:src -Format yaml } | Should -Throw
+            }
+            It 'checks the file and the output folder, and removes its temporary file' {
+                { Get-SalesforceCodeAnalyzerAst -File (Join-Path $TestDrive 'missing.cls') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Get-SalesforceCodeAnalyzerAst -File $TestDrive } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Get-SalesforceCodeAnalyzerAst -File $script:src -OutputFile (Join-Path $TestDrive 'nofolder/o.json') } | Should -Throw -ExpectedMessage '*does not exist*'
+                Get-SalesforceCodeAnalyzerAst -File $script:src | Out-Null
+                Test-Path -LiteralPath $script:SeenFiles[0] | Should -BeFalse
+            }
+            It 'keeps the output file the caller asked for' {
+                $out = Join-Path $TestDrive 'ast.json'
+                Get-SalesforceCodeAnalyzerAst -File $script:src -OutputFile $out | Out-Null
+                Test-Path -LiteralPath $out | Should -BeTrue
+            }
+            It 'throws PsfdxCodeAnalyzerFailed when Java is missing' {
+                $script:Body = $null; $script:Exit = 1; $script:Stdout = 'Error: spawn java ENOENT'
+                $err = $null
+                try { Get-SalesforceCodeAnalyzerAst -File $script:src } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxCodeAnalyzerFailed'
+                $err.Exception.Message | Should -BeLike '*spawn java*'
+            }
+        }
+
+        Context 'Invoke-SalesforceCodeAnalyzer new options' {
+            BeforeEach {
+                $script:Body = '{"runDir":"/w/","violationCounts":{"total":1,"sev2":1},"violations":[{"rule":"R1","engine":"pmd","severity":2,"primaryLocationIndex":0,"locations":[{"file":"a.cls","startLine":1}],"message":"m","fixes":[{"location":{"file":"a.cls"},"fixedCode":"x"}],"suggestions":[{"message":"try y"}]}]}'
+            }
+            It 'passes fixes, suggestions, suppressions, org, view and extra output files' {
+                $out = Join-Path $TestDrive 'results.csv'
+                $r = Invoke-SalesforceCodeAnalyzer -IncludeFixes -IncludeSuggestions -NoSuppressions -TargetOrg dev1 -View table -OutputFile $out, (Join-Path $TestDrive 'r.html')
+                $a = $script:Seen
+                ($a -join '|') | Should -BeLike "code-analyzer|run|--include-fixes|--include-suggestions|--no-suppressions|--target-org|dev1|--view|table|--output-file|$out|--output-file|$(Join-Path $TestDrive 'r.html')|--output-file|*psfdx-code-analyzer-*.json"
+                $r.Violations[0].Fixes[0].fixedCode | Should -Be 'x'
+                $r.Violations[0].Suggestions[0].message | Should -Be 'try y'
+            }
+            It 'leaves the new options out by default, and reports no fixes when the CLI has none' {
+                $script:Body = '{"violationCounts":{"total":1},"violations":[{"rule":"R1","severity":3,"locations":[{"file":"a.cls"}],"message":"m"}]}'
+                $r = Invoke-SalesforceCodeAnalyzer
+                ($script:Seen -join '|') | Should -BeLike 'code-analyzer|run|--output-file|*.json'
+                $r.Violations[0].Fixes | Should -BeNullOrEmpty
+            }
+            It 'checks the output folder and the view before running sf' {
+                Mock Invoke-Salesforce { throw 'must not run' }
+                { Invoke-SalesforceCodeAnalyzer -OutputFile (Join-Path $TestDrive 'nofolder/o.csv') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Invoke-SalesforceCodeAnalyzer -View grid } | Should -Throw
+            }
+        }
+
+        Context 'Get-SalesforceCodeAnalyzerRule -View' {
+            It 'passes --view' {
+                $script:Body = '{"rules":[{"name":"r1","engine":"pmd"}]}'
+                Get-SalesforceCodeAnalyzerRule -View detail | Out-Null
+                ($script:Seen -join '|') | Should -BeLike 'code-analyzer|rules|--view|detail|--output-file|*.json'
+                { Get-SalesforceCodeAnalyzerRule -View grid } | Should -Throw
+            }
+        }
+
+        Context 'Invoke-SalesforceApex debug options' {
+            BeforeEach {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"success":true,"compiled":true}}' }
+                $script:apexFile = Join-Path $TestDrive 'hello.apex'; Set-Content -LiteralPath $script:apexFile -Value 'System.debug(1);'
+            }
+            It 'passes -DebugLevel' {
+                Invoke-SalesforceApex -ApexFile $script:apexFile -DebugLevel DETAIL -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "apex|run|--file|$($script:apexFile)|--debug-level|DETAIL|--target-org|me|--json" }
+            }
+            It 'passes each -CategoryLevel as its own flag' {
+                Invoke-SalesforceApex -ApexFile $script:apexFile -CategoryLevel ApexCode=FINEST, Database=INFO | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "apex|run|--file|$($script:apexFile)|--category-level|ApexCode=FINEST|--category-level|Database=INFO|--json" }
+            }
+            It 'refuses both together, and values the CLI does not take' {
+                { Invoke-SalesforceApex -ApexFile $script:apexFile -DebugLevel DB -CategoryLevel ApexCode=FINE } | Should -Throw -ExpectedMessage '*not both*'
+                { Invoke-SalesforceApex -ApexFile $script:apexFile -DebugLevel LOUD } | Should -Throw
+                foreach ($bad in 'ApexCode', 'ApexCode=', '=FINE', "ApexCode=FINE`n", 'A B=FINE') { { Invoke-SalesforceApex -ApexFile $script:apexFile -CategoryLevel $bad } | Should -Throw }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'is unchanged without the new options' {
+                Invoke-SalesforceApex -ApexFile $script:apexFile | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "apex|run|--file|$($script:apexFile)|--json" }
+            }
+        }
+
+        Context 'Test-SalesforceApex -Synchronous and -PollIntervalSeconds' {
+            BeforeEach {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"summary":{"outcome":"Passed","testRunCoverage":"90%"},"tests":[{"FullName":"A.t","Outcome":"Pass"}]}}' }
+            }
+            It 'passes --synchronous and --poll-interval' {
+                Test-SalesforceApex -ClassName AccountServiceTest -Synchronous -PollIntervalSeconds 5 -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--tests|AccountServiceTest|--synchronous|--poll-interval|5|--wait|10|--target-org|me|--result-format|json' }
+            }
+            It 'leaves them out by default' {
+                Test-SalesforceApex -ClassName AccountServiceTest | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|run|test|--tests|AccountServiceTest|--wait|10|--result-format|json' }
+            }
+            It 'checks that -Synchronous has exactly one class, and the poll interval range' {
+                { Test-SalesforceApex -Synchronous } | Should -Throw -ExpectedMessage '*needs -ClassName*'
+                { Test-SalesforceApex -ClassName A -TestName t -Synchronous } | Should -Throw -ExpectedMessage '*-TestName*'
+                { Test-SalesforceApex -TestsInProject -Synchronous } | Should -Throw -ExpectedMessage '*-TestsInProject*'
+                { Test-SalesforceApex -ClassName A -PollIntervalSeconds 0 } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Get-SalesforceApexTestResult -ResultFormat' {
+            BeforeEach {
+                Mock Select-SalesforceRecords { @([pscustomobject]@{ Status = 'Completed' }) } -ModuleName 'psfdx-development'
+            }
+            It 'returns the CLI text for junit, tap and human, without --json' {
+                Mock Invoke-Salesforce { '<testsuites/>' }
+                (Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA -ResultFormat junit -OutputDirectory $TestDrive -TargetOrg me) | Should -Be '<testsuites/>'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "apex|get|test|--test-run-id|707xx0000000001AAA|--output-dir|$TestDrive|--target-org|me|--result-format|junit" }
+                Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA -ResultFormat tap | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|test|--test-run-id|707xx0000000001AAA|--result-format|tap' }
+                Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA -ResultFormat human | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|test|--test-run-id|707xx0000000001AAA|--result-format|human' }
+            }
+            It 'rejects an unknown format' {
+                { Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA -ResultFormat xml } | Should -Throw
+            }
+        }
+
+        Context 'Get-SalesforceApexCompileStatus' {
+            It 'builds the command and returns the classes that do not compile' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"Broken","type":"ApexClass","problem":"Variable does not exist: x","line":4}]}' }
+                $r = @(Get-SalesforceApexCompileStatus -TargetOrg dev1)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|compile-status|--target-org|dev1|--json' }
+                $r.Count | Should -Be 1
+                $r[0].name | Should -Be 'Broken'
+            }
+            It 'uses the default org without -TargetOrg, and returns nothing when everything compiles' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
+                @(Get-SalesforceApexCompileStatus).Count | Should -Be 0
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|compile-status|--json' }
+            }
+            It 'throws the CLI message' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"No authorization information found for ghost."}' }
+                { Get-SalesforceApexCompileStatus -TargetOrg ghost } | Should -Throw -ExpectedMessage '*No authorization*'
+            }
+        }
+
+        It 'exports the new cmdlets' {
+            $exports = (Get-Module psfdx-development).ExportedFunctions.Keys
+            foreach ($n in 'Get-SalesforceCodeAnalyzerConfig', 'Get-SalesforceCodeAnalyzerAst', 'Get-SalesforceApexCompileStatus') { $exports | Should -Contain $n }
+        }
+    }
+}

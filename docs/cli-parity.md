@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 118 | 16 | 62 | 3 | 15 | 68.4% of 196 |
-| Just-in-time plugins (installed on first use) | 65 | 20 | 4 | 32 | 0 | 9 | 42.9% of 56 |
-| Both | 279 | 138 | 20 | 94 | 3 | 24 | 62.7% of 252 |
+| Core plugins (bundled with the CLI) | 214 | 122 | 13 | 61 | 3 | 15 | 68.9% of 196 |
+| Just-in-time plugins (installed on first use) | 65 | 24 | 2 | 30 | 0 | 9 | 46.4% of 56 |
+| Both | 279 | 146 | 15 | 91 | 3 | 24 | 63.9% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **204** cmdlets; **173** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **207** cmdlets; **176** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **158** commands psfdx runs, it passes **726 of 766** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **57** have a list of allowed values in the CLI, and psfdx can pass **235 of 255** of those values.
+**Flags and values.** Across the **161** commands psfdx runs, it passes **748 of 778** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **62** have a list of allowed values in the CLI, and psfdx can pass **255 of 272** of those values.
 
 ## By capability
 
@@ -26,11 +26,11 @@ psfdx exports **204** cmdlets; **173** of them run an sf command themselves. The
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Agentforce agents (sf agent) | 41 | 4 | 4 | 33 | 0 | 0 | 19.5% of 41 |
 | Aliases (sf alias) | 3 | 2 | 1 | 0 | 0 | 0 | 100.0% of 3 |
-| Apex (sf apex) | 10 | 6 | 3 | 1 | 0 | 0 | 90.0% of 10 |
+| Apex (sf apex) | 10 | 10 | 0 | 0 | 0 | 0 | 100.0% of 10 |
 | REST API requests (sf api) | 2 | 0 | 1 | 1 | 0 | 0 | 50.0% of 2 |
 | Shell autocomplete (sf autocomplete) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Custom metadata types (sf cmdt) | 5 | 5 | 0 | 0 | 0 | 0 | 100.0% of 5 |
-| Code Analyzer (sf code-analyzer) | 4 | 0 | 2 | 2 | 0 | 0 | 50.0% of 4 |
+| Code Analyzer (sf code-analyzer) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI command list (sf commands) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Experience Cloud sites (sf community) | 3 | 0 | 0 | 3 | 0 | 0 | 0.0% of 3 |
 | CLI configuration (sf config) | 4 | 3 | 1 | 0 | 0 | 0 | 100.0% of 4 |
@@ -101,12 +101,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | `sf agent trace list` | @salesforce/plugin-agent | 3 | missing |  |
 | `sf agent trace read` | @salesforce/plugin-agent | 4 (1 required) | missing |  |
 
-### Apex (`sf apex`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf apex get compile-status` | @salesforce/plugin-apex | 1 (1 required) | missing |  |
-
 ### REST API requests (`sf api`)
 
 | Command | Plugin | Flags | Status | Why, or issue |
@@ -118,13 +112,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
 | `sf autocomplete` | @oclif/plugin-autocomplete | 1 | not applicable | Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it. |
-
-### Code Analyzer (`sf code-analyzer`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf code-analyzer ast-dump` | @salesforce/plugin-code-analyzer | 4 (1 required) | missing |  |
-| `sf code-analyzer config` | @salesforce/plugin-code-analyzer | 7 | missing |  |
 
 ### CLI command list (`sf commands`)
 
@@ -323,11 +310,12 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf apex get compile-status` | wrapped | `Get-SalesforceApexCompileStatus` | 1 of 1 |  |  |
 | `sf apex get log` | wrapped | `Get-SalesforceDebugLogs` | 4 of 4 |  |  |
-| `sf apex get test` | partially wrapped | `Get-SalesforceApexTestResult` | 7 of 7 |  | `--result-format`: `human`, `tap`, `junit` |
+| `sf apex get test` | wrapped | `Get-SalesforceApexTestResult` | 7 of 7 |  |  |
 | `sf apex list log` | wrapped | `Select-SalesforceDebugLogs` | 1 of 1 |  |  |
-| `sf apex run` | partially wrapped | `Invoke-SalesforceApex` | 2 of 4 | `--category-level` `--debug-level` |  |
-| `sf apex run test` | partially wrapped | `Start-SalesforceApexTest`, `Test-SalesforceApex` | 11 of 13 | `--poll-interval` `--synchronous` |  |
+| `sf apex run` | wrapped | `Invoke-SalesforceApex` | 4 of 4 |  |  |
+| `sf apex run test` | wrapped | `Start-SalesforceApexTest`, `Test-SalesforceApex` | 13 of 13 |  |  |
 | `sf apex tail log` | wrapped | `Watch-SalesforceDebugLogs` | 4 of 4 |  |  |
 | `sf apex trace create` | wrapped | `Enable-SalesforceDebugLogging` | 5 of 5 |  |  |
 | `sf apex trace delete` | wrapped | `Disable-SalesforceDebugLogging` | 2 of 2 |  |  |
@@ -353,8 +341,10 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
-| `sf code-analyzer rules` | partially wrapped | `Get-SalesforceCodeAnalyzerRule` | 5 of 6 | `--view` |  |
-| `sf code-analyzer run` | partially wrapped | `Invoke-SalesforceCodeAnalyzer` | 6 of 11 | `--include-fixes` `--include-suggestions` `--no-suppressions` `--target-org` `--view` |  |
+| `sf code-analyzer ast-dump` | wrapped | `Get-SalesforceCodeAnalyzerAst` | 4 of 4 |  |  |
+| `sf code-analyzer config` | wrapped | `Get-SalesforceCodeAnalyzerConfig` | 7 of 7 |  |  |
+| `sf code-analyzer rules` | wrapped | `Get-SalesforceCodeAnalyzerRule` | 6 of 6 |  |  |
+| `sf code-analyzer run` | wrapped | `Invoke-SalesforceCodeAnalyzer` | 11 of 11 |  |  |
 
 ### CLI configuration (`sf config`)
 
@@ -557,9 +547,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 144 | 149 |
-| `--flags-dir` | 0 | 155 |
-| `--api-version` | 1 | 107 |
+| `--json` | 145 | 151 |
+| `--flags-dir` | 0 | 158 |
+| `--api-version` | 1 | 108 |
 
 ## How to read this
 

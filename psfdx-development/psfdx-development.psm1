@@ -1485,7 +1485,7 @@ function Invoke-SalesforceCodeAnalyzer {
 
     .DESCRIPTION
     Returns one object with Passed, ThresholdExceeded, ViolationCount, a count per severity, Violations (one object per finding with Rule,
-    Engine, Severity, Message, File, StartLine, StartColumn, EndLine, EndColumn, Tags and Resources), RunDirectory and Versions.
+    Engine, Severity, Message, File, StartLine, StartColumn, EndLine, EndColumn, Tags, Resources, and Fixes and Suggestions when the CLI reports them), RunDirectory and Versions.
     With -SeverityThreshold the CLI fails when a finding is at or above that severity. That is a threshold failure, not an error: the findings
     are still returned (the exit code is non-zero but the report is written) with Passed = $false and ThresholdExceeded = $true. Add -ThrowOnThreshold to turn it into an error (id
     PsfdxCodeAnalyzerThresholdExceeded, with the result as the target object) so a CI step fails. If the plugin or an engine cannot start there is
@@ -1511,6 +1511,24 @@ function Invoke-SalesforceCodeAnalyzer {
     .PARAMETER ThrowOnThreshold
     Throw an error (id PsfdxCodeAnalyzerThresholdExceeded, with the result as its target object) when a finding meets -SeverityThreshold, instead of returning the findings with ThresholdExceeded set. Meant for CI.
 
+    .PARAMETER IncludeFixes
+    Include fix data for the violations that have one. Each violation then has a Fixes property, as the CLI reports it. Adds --include-fixes.
+
+    .PARAMETER IncludeSuggestions
+    Include suggestion data for the violations that have one. Each violation then has a Suggestions property, as the CLI reports it. Adds --include-suggestions.
+
+    .PARAMETER NoSuppressions
+    Do not process inline and bulk suppression markers, so suppressed violations are reported again. Adds --no-suppressions.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org that remote analysis engines use, such as the engine that needs an org connection. Passed to sf as --target-org.
+
+    .PARAMETER View
+    How the CLI displays the results in the terminal. Passed to sf as --view. Valid values: detail, table. The cmdlet reads the results from a report file, so this changes only the text the CLI prints, not the returned object.
+
+    .PARAMETER OutputFile
+    Extra files to write the results to, in addition to the object that is returned. The file format follows each extension, such as .csv, .html or .xml. Each one is passed to sf as its own --output-file. The folders must exist.
+
     .EXAMPLE
     Invoke-SalesforceCodeAnalyzer -Workspace force-app -RuleSelector Recommended -SeverityThreshold 2 -ThrowOnThreshold
 
@@ -1521,8 +1539,8 @@ function Invoke-SalesforceCodeAnalyzer {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf code-analyzer run (plugin @salesforce/plugin-code-analyzer)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --include-fixes, --include-suggestions, --no-suppressions, --target-org, --view
-    Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -SeverityThreshold = --severity-threshold.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -SeverityThreshold = --severity-threshold; -IncludeFixes = --include-fixes; -IncludeSuggestions = --include-suggestions; -NoSuppressions = --no-suppressions; -TargetOrg = --target-org; -View = --view; -OutputFile = --output-file (psfdx also passes its own temporary --output-file to read the results).
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1544,11 +1562,22 @@ function Invoke-SalesforceCodeAnalyzer {
         [Parameter(Mandatory = $false)][string[]] $RuleSelector,
         [Parameter(Mandatory = $false)][string] $ConfigFile,
         [Parameter(Mandatory = $false)][ValidateSet('1', '2', '3', '4', '5', 'Critical', 'High', 'Moderate', 'Low', 'Info')][string] $SeverityThreshold,
-        [Parameter(Mandatory = $false)][switch] $ThrowOnThreshold
+        [Parameter(Mandatory = $false)][switch] $ThrowOnThreshold,
+        [Parameter(Mandatory = $false)][switch] $IncludeFixes,
+        [Parameter(Mandatory = $false)][switch] $IncludeSuggestions,
+        [Parameter(Mandatory = $false)][switch] $NoSuppressions,
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][ValidateSet('detail', 'table')][string] $View,
+        [Parameter(Mandatory = $false)][string[]] $OutputFile
     )
 
     foreach ($path in @($Workspace)) {
         if ($path -and -not (Test-Path -LiteralPath $path)) { throw "Workspace path '$path' does not exist." }
+    }
+    foreach ($file in @($OutputFile)) {
+        if (-not $file) { continue }
+        $parent = Split-Path -Path $file -Parent
+        if ($parent -and -not (Test-Path -LiteralPath $parent -PathType Container)) { throw "Output folder '$parent' does not exist." }
     }
     if ($ConfigFile -and -not (Test-Path -LiteralPath $ConfigFile -PathType Leaf)) { throw "Config file '$ConfigFile' does not exist." }
 
@@ -1559,6 +1588,12 @@ function Invoke-SalesforceCodeAnalyzer {
     foreach ($r in @($RuleSelector)) { if ($r) { $arguments += @('--rule-selector', $r) } }
     if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
     if ($SeverityThreshold) { $arguments += @('--severity-threshold', $SeverityThreshold) }
+    if ($IncludeFixes) { $arguments += '--include-fixes' }
+    if ($IncludeSuggestions) { $arguments += '--include-suggestions' }
+    if ($NoSuppressions) { $arguments += '--no-suppressions' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($View) { $arguments += @('--view', $View) }
+    foreach ($file in @($OutputFile)) { if ($file) { $arguments += @('--output-file', $file) } }
     $arguments += @('--output-file', $report)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('ThrowOnThreshold')
@@ -1606,6 +1641,8 @@ function Invoke-SalesforceCodeAnalyzer {
             EndColumn   = (& $field $loc 'endColumn')
             Tags        = @(& $field $v 'tags')
             Resources   = @(& $field $v 'resources')
+            Fixes       = (& $field $v 'fixes')
+            Suggestions = (& $field $v 'suggestions')
         }
     }
 
@@ -1666,6 +1703,9 @@ function Get-SalesforceCodeAnalyzerRule {
     .PARAMETER ConfigFile
     Path to the configuration file used to customize the engines and rules. Passed to sf as --config-file.
 
+    .PARAMETER View
+    How the CLI displays the rules in the terminal. Passed to sf as --view. Valid values: detail, table. The cmdlet reads the rules from a report file, so this changes only the text the CLI prints, not the returned objects.
+
     .EXAMPLE
     Get-SalesforceCodeAnalyzerRule -RuleSelector Security | Select-Object name, engine, severity
 
@@ -1673,8 +1713,8 @@ function Get-SalesforceCodeAnalyzerRule {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf code-analyzer rules (plugin @salesforce/plugin-code-analyzer)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --view
-    Parameter to flag: -RuleSelector = --rule-selector; -Workspace = --workspace; -Target = --target; -ConfigFile = --config-file.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -RuleSelector = --rule-selector; -Workspace = --workspace; -Target = --target; -ConfigFile = --config-file; -View = --view.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1694,7 +1734,8 @@ function Get-SalesforceCodeAnalyzerRule {
         [Parameter(Mandatory = $false)][string[]] $RuleSelector,
         [Parameter(Mandatory = $false)][string[]] $Workspace,
         [Parameter(Mandatory = $false)][string[]] $Target,
-        [Parameter(Mandatory = $false)][string] $ConfigFile
+        [Parameter(Mandatory = $false)][string] $ConfigFile,
+        [Parameter(Mandatory = $false)][ValidateSet('detail', 'table')][string] $View
     )
 
     foreach ($path in @($Workspace)) {
@@ -1708,6 +1749,7 @@ function Get-SalesforceCodeAnalyzerRule {
     foreach ($w in @($Workspace)) { if ($w) { $arguments += @('--workspace', $w) } }
     foreach ($t in @($Target)) { if ($t) { $arguments += @('--target', $t) } }
     if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
+    if ($View) { $arguments += @('--view', $View) }
     $arguments += @('--output-file', $report)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
@@ -1729,6 +1771,197 @@ function Get-SalesforceCodeAnalyzerRule {
     if ($data.PSObject.Properties.Name -contains 'name' -and $data.PSObject.Properties.Name -notcontains 'rules') { return @($data) }
     if ($data.PSObject.Properties.Name -contains 'rules' -and $null -ne $data.rules) { return @($data.rules) }
     return @()
+}
+
+function Get-SalesforceCodeAnalyzerConfig {
+    <#
+    .SYNOPSIS
+    Shows the current Code Analyzer configuration as YAML.
+
+    .DESCRIPTION
+    Runs sf code-analyzer config and returns the configuration as one YAML string: the top-level settings and the engine and rule overrides for the selected rules, with any code-analyzer.yml in the current folder (or -ConfigFile) applied. The CLI has no --json flag, so the YAML is read from a file. Give -OutputFile to keep that file, for example to save the state as the new code-analyzer.yml (the CLI keeps the values and overwrites the comments); without it a temporary file is used and removed. A plugin or engine failure throws the CLI message with install guidance.
+
+    .PARAMETER Workspace
+    Set of files that make up your workspace. Each is passed to sf as its own --workspace. Each must exist. Passed to sf as --workspace.
+
+    .PARAMETER Target
+    Subset of files within your workspace to target. Each is passed to sf as its own --target. Passed to sf as --target.
+
+    .PARAMETER RuleSelector
+    Selection of rules, based on engine name, severity level, rule name, tag, or a combination of criteria. Each is passed to sf as its own --rule-selector. The CLI default is all. Passed to sf as --rule-selector.
+
+    .PARAMETER ConfigFile
+    Path to an existing configuration file to start from. It must exist. Passed to sf as --config-file.
+
+    .PARAMETER OutputFile
+    File to write the configuration state to, in YAML. The folder must exist. An existing file is overwritten. Passed to sf as --output-file.
+
+    .PARAMETER IncludeUnmodifiedRules
+    Also list the rules whose settings have not been changed, in the rule override settings. Adds --include-unmodified-rules.
+
+    .PARAMETER NoSuppressions
+    Leave suppressions out of the output configuration. Adds --no-suppressions.
+
+    .EXAMPLE
+    Get-SalesforceCodeAnalyzerConfig
+    The YAML for all rules, with the code-analyzer.yml of the current folder applied.
+
+    .EXAMPLE
+    Get-SalesforceCodeAnalyzerConfig -ConfigFile .\code-analyzer.yml -OutputFile .\code-analyzer.yml | Out-Null
+    Rewrite the configuration file with its current state.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf code-analyzer config (plugin @salesforce/plugin-code-analyzer)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -OutputFile = --output-file; -IncludeUnmodifiedRules = --include-unmodified-rules; -NoSuppressions = --no-suppressions.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-code-analyzer
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $Workspace,
+        [Parameter(Mandatory = $false)][string[]] $Target,
+        [Parameter(Mandatory = $false)][string[]] $RuleSelector,
+        [Parameter(Mandatory = $false)][string] $ConfigFile,
+        [Parameter(Mandatory = $false)][string] $OutputFile,
+        [Parameter(Mandatory = $false)][switch] $IncludeUnmodifiedRules,
+        [Parameter(Mandatory = $false)][switch] $NoSuppressions
+    )
+    foreach ($path in @($Workspace)) {
+        if ($path -and -not (Test-Path -LiteralPath $path)) { throw "Workspace path '$path' does not exist." }
+    }
+    if ($ConfigFile -and -not (Test-Path -LiteralPath $ConfigFile -PathType Leaf)) { throw "Config file '$ConfigFile' does not exist." }
+    if ($OutputFile) {
+        $parent = Split-Path -Path $OutputFile -Parent
+        if ($parent -and -not (Test-Path -LiteralPath $parent -PathType Container)) { throw "Output folder '$parent' does not exist." }
+    }
+    $report = $null
+    if ($OutputFile) { $report = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputFile) }
+    if (-not $report) { $report = [System.IO.Path]::ChangeExtension((New-SalesforceCodeAnalyzerReportPath), '.yml') }
+    $arguments = @('code-analyzer', 'config')
+    foreach ($w in @($Workspace)) { if ($w) { $arguments += @('--workspace', $w) } }
+    foreach ($t in @($Target)) { if ($t) { $arguments += @('--target', $t) } }
+    foreach ($r in @($RuleSelector)) { if ($r) { $arguments += @('--rule-selector', $r) } }
+    if ($ConfigFile) { $arguments += @('--config-file', $ConfigFile) }
+    $arguments += @('--output-file', $report)
+    if ($IncludeUnmodifiedRules) { $arguments += '--include-unmodified-rules' }
+    if ($NoSuppressions) { $arguments += '--no-suppressions' }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $yaml = $null
+    try {
+        $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        $exitCode = $global:LASTEXITCODE
+        if (Test-Path -LiteralPath $report -PathType Leaf) { $yaml = [System.IO.File]::ReadAllText($report, [System.Text.Encoding]::UTF8) }
+    } finally {
+        if (-not $OutputFile -and (Test-Path -LiteralPath $report)) { Remove-Item -LiteralPath $report -Force -ErrorAction SilentlyContinue }
+    }
+    if ($exitCode -ne 0 -or [string]::IsNullOrWhiteSpace($yaml)) {
+        $message = Get-SalesforceCodeAnalyzerFailureMessage -Output $output
+        $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $output
+        throw $errorRecord
+    }
+    return $yaml
+}
+
+function Get-SalesforceCodeAnalyzerAst {
+    <#
+    .SYNOPSIS
+    Shows the syntax tree that PMD builds for a source file.
+
+    .DESCRIPTION
+    Runs sf code-analyzer ast-dump. The AST is what PMD sees when it parses the file, which helps you write and debug custom PMD rules. It works for Apex, Visualforce, HTML, XML and JavaScript files, and it needs Java 11 or later. The CLI writes the tree to a file, so psfdx reads that file: with -Format json (the default here) you get one object per node, with its name, attributes, parent and ancestors, as the CLI reports them; with -Format xml you get the raw tree as an XML document. Give -OutputFile to keep the file; without it a temporary file is used and removed.
+
+    .PARAMETER File
+    Path of the source file to parse. It must exist and be a file, not a folder. Passed to sf as --file. Required.
+
+    .PARAMETER Language
+    Language of the source file. By default the CLI uses apex. Valid values: apex, visualforce, html, xml, javascript. Passed to sf as --language.
+
+    .PARAMETER Format
+    Format of the tree. Valid values: json, xml. The CLI default is xml; this cmdlet uses json unless you say otherwise, because it gives objects. Passed to sf as --format.
+
+    .PARAMETER OutputFile
+    File to write the tree to. The folder must exist. An existing file is overwritten. Passed to sf as --output-file.
+
+    .EXAMPLE
+    Get-SalesforceCodeAnalyzerAst -File .\force-app\main\default\classes\MyClass.cls | Select-Object -First 5
+    The first nodes of an Apex class's tree.
+
+    .EXAMPLE
+    ([xml](Get-SalesforceCodeAnalyzerAst -File .\page.page -Language visualforce -Format xml)).OuterXml
+    The raw XML tree of a Visualforce page.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf code-analyzer ast-dump (plugin @salesforce/plugin-code-analyzer)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -File = --file; -Language = --language; -Format = --format; -OutputFile = --output-file.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-code-analyzer
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $File,
+        [Parameter(Mandatory = $false)][ValidateSet('apex', 'visualforce', 'html', 'xml', 'javascript')][string] $Language,
+        [Parameter(Mandatory = $false)][ValidateSet('json', 'xml')][string] $Format,
+        [Parameter(Mandatory = $false)][string] $OutputFile
+    )
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "Source file '$File' does not exist." }
+    if (-not $PSBoundParameters.ContainsKey('Format')) { $Format = 'json' }
+    if ($OutputFile) {
+        $parent = Split-Path -Path $OutputFile -Parent
+        if ($parent -and -not (Test-Path -LiteralPath $parent -PathType Container)) { throw "Output folder '$parent' does not exist." }
+    }
+    $report = $null
+    if ($OutputFile) { $report = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutputFile) }
+    if (-not $report) { $report = [System.IO.Path]::ChangeExtension((New-SalesforceCodeAnalyzerReportPath), '.' + $Format) }
+    $arguments = @('code-analyzer', 'ast-dump', '--file', $File)
+    if ($Language) { $arguments += @('--language', $Language) }
+    $arguments += @('--format', $Format, '--output-file', $report)
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $text = $null
+    try {
+        $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        $exitCode = $global:LASTEXITCODE
+        if (Test-Path -LiteralPath $report -PathType Leaf) { $text = [System.IO.File]::ReadAllText($report, [System.Text.Encoding]::UTF8) }
+    } finally {
+        if (-not $OutputFile -and (Test-Path -LiteralPath $report)) { Remove-Item -LiteralPath $report -Force -ErrorAction SilentlyContinue }
+    }
+    if ($exitCode -ne 0 -or [string]::IsNullOrWhiteSpace($text)) {
+        $message = Get-SalesforceCodeAnalyzerFailureMessage -Output $output
+        $errorRecord = New-Object System.Management.Automation.ErrorRecord ([System.Exception]::new($message)), 'PsfdxCodeAnalyzerFailed', ([System.Management.Automation.ErrorCategory]::InvalidResult), $output
+        throw $errorRecord
+    }
+    # The tree comes back as objects (json) or an XML document (xml). If the file is not what the format says, the text is returned as it is.
+    if ($Format -eq 'json') {
+        try { return @($text | ConvertFrom-Json -ErrorAction Stop) } catch { return $text }
+    }
+    try { return [xml] $text } catch { return $text }
 }
 
 #endregion
@@ -1770,6 +2003,12 @@ function Test-SalesforceApex {
     .PARAMETER TestsInProject
     Run every Apex test class found in the local project. psfdx reads the project folder and passes one --tests <class> per class it finds, so there is no matching CLI flag. The cmdlet stops if it finds none. It takes the place of -ClassName and -TestName.
 
+    .PARAMETER PollIntervalSeconds
+    Number of seconds to wait between checks while the tests run. Passed to sf as --poll-interval.
+
+    .PARAMETER Synchronous
+    Run the test methods of a single Apex class synchronously, so the command waits for the results; without it the tests run asynchronously. It needs -ClassName and cannot be used with -TestsInProject or -TestName. Adds --synchronous.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -1777,12 +2016,16 @@ function Test-SalesforceApex {
     Test-SalesforceApex -ClassName AccountServiceTest -CodeCoverage -TargetOrg dev1
     Run one test class with coverage.
 
+    .EXAMPLE
+    Test-SalesforceApex -ClassName AccountServiceTest -Synchronous -TargetOrg dev1
+    Run one test class synchronously.
+
     .NOTES
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf apex run test (plugin @salesforce/plugin-apex)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --poll-interval, --synchronous
-    Parameter to flag: -ClassName = --tests; -TestName = --tests; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -WaitMinutes = --wait; -OutputDirectory = --output-dir; -TestsInProject = --tests; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ClassName = --tests; -TestName = --tests; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -WaitMinutes = --wait; -OutputDirectory = --output-dir; -TestsInProject = --tests; -PollIntervalSeconds = --poll-interval; -Synchronous = --synchronous; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1811,12 +2054,22 @@ function Test-SalesforceApex {
 
         [Parameter(Mandatory = $false)][string] $OutputDirectory,
         [Parameter(Mandatory = $false)][switch] $TestsInProject,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 3600)][int] $PollIntervalSeconds,
+        [Parameter(Mandatory = $false)][switch] $Synchronous,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
+
+    if ($Synchronous) {
+        if ($TestsInProject) { throw '-Synchronous runs one Apex class, so it cannot be used with -TestsInProject.' }
+        if ($TestName) { throw '-Synchronous runs the methods of one Apex class, so it cannot be used with -TestName.' }
+        if (-not $ClassName) { throw '-Synchronous needs -ClassName, the one Apex class to run.' }
+    }
 
     $arguments = @('apex', 'run', 'test')
 
     $arguments += Get-SalesforceCliApexTestArguments -TestsInProject:$TestsInProject -ClassName $ClassName -TestName $TestName
+    if ($Synchronous) { $arguments += '--synchronous' }
+    if ($PSBoundParameters.ContainsKey('PollIntervalSeconds')) { $arguments += @('--poll-interval', $PollIntervalSeconds) }
 
     if ($OutputDirectory) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
@@ -2042,6 +2295,12 @@ function Invoke-SalesforceApex {
     .PARAMETER ApexFile
     Path of the local file that holds the Apex statements to run. Passed to sf as --file. Required.
 
+    .PARAMETER DebugLevel
+    Debug level for the debug log that the run creates in the org. Passed to sf as --debug-level. Valid values: NONE, DEBUGONLY, DB, PROFILING, CALLOUT, DETAIL. Use it instead of -CategoryLevel, not with it.
+
+    .PARAMETER CategoryLevel
+    Log level for one log category of that debug log, written as Category=Level, for example ApexCode=FINEST. Give the parameter several times, or a list, for several categories. Each one is passed to sf as its own --category-level. Use it instead of -DebugLevel, not with it.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -2049,14 +2308,18 @@ function Invoke-SalesforceApex {
     Invoke-SalesforceApex -ApexFile .\scripts\apex\hello.apex -TargetOrg dev1
     Run the script.
 
+    .EXAMPLE
+    Invoke-SalesforceApex -ApexFile .\scripts\apex\hello.apex -CategoryLevel ApexCode=FINEST, Database=INFO -TargetOrg dev1
+    Run the script with a detailed Apex log and a short database log.
+
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
 
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf apex run (plugin @salesforce/plugin-apex)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --category-level, --debug-level
-    Parameter to flag: -ApexFile = --file; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ApexFile = --file; -DebugLevel = --debug-level; -CategoryLevel = --category-level; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -2074,9 +2337,15 @@ function Invoke-SalesforceApex {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $ApexFile,
+        [Parameter(Mandatory = $false)][ValidateSet('NONE', 'DEBUGONLY', 'DB', 'PROFILING', 'CALLOUT', 'DETAIL')][string] $DebugLevel,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z_]+=[A-Za-z]+\z')][string[]] $CategoryLevel,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
+    $categories = @($CategoryLevel | Where-Object { $_ })
+    if ($DebugLevel -and $categories.Count -gt 0) { throw 'Use -DebugLevel or -CategoryLevel, not both.' }
     $arguments = @('apex', 'run', '--file', $ApexFile)
+    if ($DebugLevel) { $arguments += @('--debug-level', $DebugLevel) }
+    foreach ($category in $categories) { $arguments += @('--category-level', $category) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -2538,19 +2807,25 @@ function Get-SalesforceApexTestResult {
     .PARAMETER OutputDirectory
     Directory in which to store test result files. Passed to sf as --output-dir.
 
+    .PARAMETER ResultFormat
+    Format of the results. Passed to sf as --result-format. Default: json, which returns the object described above. With human, tap or junit the CLI's text is returned as it is, and a run that is still queued or processing returns nothing but a warning. Valid values: human, tap, junit, json.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     $r = Get-SalesforceApexTestResult -TestRunId 707xx0000000001 -CodeCoverage -TargetOrg myorg; $r.Tests | Where-Object Outcome -ne 'Pass'
 
+    .EXAMPLE
+    Get-SalesforceApexTestResult -TestRunId 707xx0000000001 -ResultFormat junit -OutputDirectory .\results -TargetOrg myorg
+    Write the results as JUnit XML for a CI system.
+
     .NOTES
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf apex get test (plugin @salesforce/plugin-apex)
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-      Values psfdx cannot pass: --result-format human, tap, junit
-    Parameter to flag: -TestRunId = --test-run-id; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -Concise = --concise; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+    Parameter to flag: -TestRunId = --test-run-id; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -Concise = --concise; -OutputDirectory = --output-dir; -ResultFormat = --result-format; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
     Also calls these psfdx cmdlets: Select-SalesforceRecords.
 
@@ -2573,6 +2848,7 @@ function Get-SalesforceApexTestResult {
         [Parameter(Mandatory = $false)][switch] $CodeCoverageDetailed,
         [Parameter(Mandatory = $false)][switch] $Concise,
         [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][ValidateSet('human', 'tap', 'junit', 'json')][string] $ResultFormat = 'json',
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     if ($CodeCoverageDetailed -and -not $CodeCoverage) { throw '-CodeCoverageDetailed needs -CodeCoverage.' }
@@ -2594,8 +2870,13 @@ function Get-SalesforceApexTestResult {
     if ($CodeCoverageDetailed) { $arguments += '--detailed-coverage' }
     if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
-    $arguments += @('--result-format', 'json', '--json')
+    $arguments += @('--result-format', $ResultFormat)
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    if ($ResultFormat -ne 'json') {
+        # human, tap and junit are text, so the CLI's output is handed back as it is.
+        return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
+    $arguments += '--json'
     $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     ConvertFrom-SalesforceTestRunOutput -Output $output -ResultFormat 'json' -Plugin '@salesforce/plugin-apex' -Command 'apex get test'
 }
@@ -3654,6 +3935,57 @@ function Watch-SalesforceJest {
     Param()
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Invoke-Salesforce -FilePath 'npm' -Arguments @('run', 'test:unit:watch') @commonParams
+}
+
+#endregion
+
+#region Apex compile status
+
+function Get-SalesforceApexCompileStatus {
+    <#
+    .SYNOPSIS
+    Lists the Apex classes and triggers in an org that do not compile cleanly.
+
+    .DESCRIPTION
+    Runs sf apex get compile-status. It returns the compile results of only the Apex classes and triggers that are invalid or have warnings, instead of compiling the whole org, so it is a quick check after a deploy or an upgrade. It only reads. No result means that everything compiles.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceApexCompileStatus -TargetOrg dev1
+    The classes and triggers in dev1 with compile errors or warnings.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf apex get compile-status (plugin @salesforce/plugin-apex)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-apex
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('apex', 'get', 'compile-status')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
 }
 
 #endregion

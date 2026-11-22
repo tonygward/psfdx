@@ -17,6 +17,7 @@
     "data create file", "data delete bulk", "data delete resume", "data resume", "data search",
     "cmdt generate field", "cmdt generate fromorg", "cmdt generate object", "cmdt generate record", "cmdt generate records",
     "schema generate field", "schema generate platformevent", "schema generate sobject", "schema generate tab",
+    "apex get compile-status", "code-analyzer config", "code-analyzer ast-dump",
     "flow get test", "flow run test",
     "logic get test", "logic run test",
     "lightning dev",
