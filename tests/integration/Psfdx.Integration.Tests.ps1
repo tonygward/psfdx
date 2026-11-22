@@ -35,6 +35,13 @@ AfterAll {
 
 Describe 'psfdx against a real scratch org' -Skip:(-not $script:Enabled) {
 
+    Context 'search (read only)' {
+        It 'runs a SOSL search and returns objects, or nothing' {
+            { @(Search-SalesforceRecords -Query 'FIND {psfdx} RETURNING Account(Id, Name)' -TargetOrg $script:Org) } | Should -Not -Throw
+            { Search-SalesforceRecords -Query 'FIND {psfdx} RETURNING Account(Id, Name)' -ResultFormat csv -TargetOrg $script:Org } | Should -Not -Throw
+        }
+    }
+
     Context 'org details (read only)' {
         It 'shows the org without a token, and lists the saved authorization' {
             $org = Get-SalesforceOrgDetails -TargetOrg $script:Org

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: every `sf data` command is now covered. New cmdlets: `Search-SalesforceRecords` (SOSL search, returns objects with their `SObject`), `New-SalesforceFile` (upload a file, optionally attached to a record), `Remove-SalesforceBulkData` (bulk delete from a CSV; asks for confirmation, supports `-WhatIf`, `-HardDelete` deletes permanently) and `Get-SalesforceBulkJobStatus`. `Resume-SalesforceBulkJob` can now resume a delete job (`-Operation Delete`) and any job by `-UseMostRecent`. `New-SalesforceRecord` and `Set-SalesforceRecord` gain `-SkipAssignmentRules`, and `Set-SalesforceRecord` can select the record with `-Where` as well as `-Id`.
+
 ## 0.8.44 - 2026-11-22
 
 - psfdx: every applicable `sf org` command is now covered. New cmdlets: `Get-SalesforceOrgDetails` (tokens and auth URLs are removed unless `-IncludeToken`), `Get-SalesforceAuthorizations`, `Connect-SalesforceAccessToken` (the token is a SecureString and reaches `sf` through its environment, never the command line) and `Get-SalesforceSObjectRecordCount`. `Connect-Salesforce` gains `-ClientApp`, `-Scopes` and `-Username`, `Disconnect-Salesforce` gains `-ClientApp`, and `Open-Salesforce` gains `-Path` and `-SourceFile`. The three `sf org auth show-*` commands that print a token, an auth URL or a password are deliberately left out.

@@ -857,7 +857,7 @@ Describe 'Bulk API 2.0 commands' {
             It 'rejects a malformed job ID and a bad operation without calling the CLI' {
                 { Resume-SalesforceBulkJob -Operation Import -JobId '001xx0000000001' } | Should -Throw
                 { Resume-SalesforceBulkJob -Operation Import -JobId '750xx0000000001; calc' } | Should -Throw
-                { Resume-SalesforceBulkJob -Operation Delete -JobId $script:JobId } | Should -Throw
+                { Resume-SalesforceBulkJob -Operation Purge -JobId $script:JobId } | Should -Throw
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
             }
         }
@@ -1694,6 +1694,186 @@ Describe 'psfdx sf org parity (issue 248)' {
         It 'exports the new cmdlets' {
             $exports = (Get-Module psfdx).ExportedFunctions.Keys
             foreach ($n in 'Get-SalesforceOrgDetails', 'Get-SalesforceAuthorizations', 'Connect-SalesforceAccessToken', 'Get-SalesforceSObjectRecordCount') { $exports | Should -Contain $n }
+        }
+    }
+}
+
+Describe 'psfdx sf data parity (issue 249)' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+
+        Context 'record flags' {
+            It 'New-SalesforceRecord passes -SkipAssignmentRules' {
+                New-SalesforceRecord -Type Case -FieldUpdates "Subject='Hi'" -SkipAssignmentRules -TargetOrg me -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|create|record|--sobject|Case|--values|Subject='Hi'|--skip-assignment-rules|--target-org|me|--json" }
+            }
+            It 'Set-SalesforceRecord still updates by ID, and passes -SkipAssignmentRules' {
+                Set-SalesforceRecord -Id 500xx000000001AAA -Type Case -FieldUpdates "Status='Closed'" -SkipAssignmentRules -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|update|record|--sobject|Case|--record-id|500xx000000001AAA|--values|Status='Closed'|--skip-assignment-rules|--json" }
+            }
+            It 'Set-SalesforceRecord updates by -Where' {
+                Set-SalesforceRecord -Type Account -Where @{ Name = 'Acme' } -FieldUpdates "Industry='Energy'" -TargetOrg me -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|update|record|--sobject|Account|--where|Name='Acme'|--values|Industry='Energy'|--target-org|me|--json" }
+            }
+            It 'Set-SalesforceRecord refuses an unsafe -Where value, a mix of -Id and -Where, and honours -WhatIf' {
+                { Set-SalesforceRecord -Type Account -Where @{ Name = "O'Brien" } -FieldUpdates "X='1'" -Confirm:$false } | Should -Throw -ExpectedMessage '*quote*'
+                { Set-SalesforceRecord -Id 001xx000003DGb2AAG -Where @{ Name = 'A' } -Type Account -FieldUpdates "X='1'" } | Should -Throw
+                Set-SalesforceRecord -Type Account -Where @{ Name = 'Acme' } -FieldUpdates "X='1'" -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'Set-SalesforceRecord still takes the ID from the pipeline' {
+                [pscustomobject]@{ Id = '001xx000003DGb2AAG' }, [pscustomobject]@{ Id = '001xx000003DGb3AAG' } | Set-SalesforceRecord -Type Account -FieldUpdates "X='1'" -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly
+            }
+        }
+
+        Context 'Remove-SalesforceBulkData' {
+            BeforeEach {
+                $script:csv = Join-Path $TestDrive 'old accounts.csv'
+                Set-Content -LiteralPath $script:csv -Value "Id`n001xx000003DGb2AAG"
+                Mock Invoke-Salesforce { '{"status":0,"result":{"jobId":"750xx0000000001AAA","state":"JobComplete","processedRecords":1,"successfulRecords":1,"failedRecords":0}}' }
+            }
+            It 'builds the command and returns the job object' {
+                $job = Remove-SalesforceBulkData -File $script:csv -Object Account -HardDelete -LineEnding LF -WaitMinutes 10 -TargetOrg me -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|delete|bulk|--file|$($script:csv)|--sobject|Account|--hard-delete|--line-ending|LF|--wait|10|--target-org|me|--json" }
+                $job.Operation | Should -Be 'Delete'
+                $job.Object | Should -Be 'Account'
+                $job.SuccessfulRecords | Should -Be 1
+            }
+            It 'leaves --hard-delete out by default, so records go to the Recycle Bin' {
+                Remove-SalesforceBulkData -File $script:csv -Object Account -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|delete|bulk|--file|$($script:csv)|--sobject|Account|--json" }
+            }
+            It 'asks first: -WhatIf makes no CLI call, and the cmdlet is high impact' {
+                Remove-SalesforceBulkData -File $script:csv -Object Account -HardDelete -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                (Get-Command Remove-SalesforceBulkData).ScriptBlock.Attributes.Where({ $_ -is [System.Management.Automation.CmdletBindingAttribute] })[0].ConfirmImpact | Should -Be 'High'
+            }
+            It 'checks the file and the object name before running sf' {
+                { Remove-SalesforceBulkData -File (Join-Path $TestDrive 'missing.csv') -Object Account -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Remove-SalesforceBulkData -File $script:csv -Object 'Account; drop' -Confirm:$false } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws PsfdxBulkJobFailed with the job ID when rows fail' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Job finished being processed but 1 records failed to process. 750xx0000000001AAA","data":{"jobId":"750xx0000000001AAA","state":"JobComplete"}}' }
+                $err = $null
+                try { Remove-SalesforceBulkData -File $script:csv -Object Account -Confirm:$false } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -Be 'PsfdxBulkJobFailed'
+                $err.TargetObject.JobId | Should -Be '750xx0000000001AAA'
+            }
+        }
+
+        Context 'Resume-SalesforceBulkJob for delete and -UseMostRecent' {
+            It 'resumes a delete job by ID, with -TargetOrg and -WaitMinutes' {
+                Resume-SalesforceBulkJob -Operation Delete -JobId 750xx0000000001AAA -WaitMinutes 5 -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|delete|resume|--job-id|750xx0000000001AAA|--wait|5|--target-org|me|--json' }
+            }
+            It 'resumes the most recent job of any operation' {
+                foreach ($op in 'Export', 'Import', 'Update', 'Upsert', 'Delete') {
+                    Resume-SalesforceBulkJob -Operation $op -UseMostRecent | Out-Null
+                    $expected = 'data|' + $op.ToLowerInvariant() + '|resume|--use-most-recent|--json'
+                    Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+                }
+            }
+            It 'does not accept -JobId together with -UseMostRecent' {
+                { Resume-SalesforceBulkJob -Operation Delete -JobId 750xx0000000001AAA -UseMostRecent } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Get-SalesforceBulkJobStatus' {
+            It 'reads a job, and one batch of it' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"id":"750xx0000000001AAA","state":"Closed","numberBatchesCompleted":2}}' }
+                $job = Get-SalesforceBulkJobStatus -JobId 750xx0000000001AAA -BatchId 751xx0000000001AAA -TargetOrg me
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|resume|--job-id|750xx0000000001AAA|--batch-id|751xx0000000001AAA|--target-org|me|--json' }
+                $job.state | Should -Be 'Closed'
+            }
+            It 'rejects malformed IDs, including a trailing line break, before running sf' {
+                { Get-SalesforceBulkJobStatus -JobId "750xx0000000001AAA`n" } | Should -Throw
+                { Get-SalesforceBulkJobStatus -JobId 'abc; calc' } | Should -Throw
+                { Get-SalesforceBulkJobStatus -JobId 750xx0000000001AAA -BatchId 'bad id' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Unable to find job 750xx0000000009AAA."}' }
+                { Get-SalesforceBulkJobStatus -JobId 750xx0000000009AAA } | Should -Throw -ExpectedMessage '*Unable to find job*'
+            }
+        }
+
+        Context 'New-SalesforceFile' {
+            BeforeEach {
+                $script:pdf = Join-Path $TestDrive 'Q4 report.pdf'
+                Set-Content -LiteralPath $script:pdf -Value 'x'
+                Mock Invoke-Salesforce { '{"status":0,"result":{"id":"068xx0000000001AAA","title":"Q4"}}' }
+            }
+            It 'builds the command and returns the result' {
+                $file = New-SalesforceFile -File $script:pdf -ParentId 001xx000003DGb2AAG -Title "Q4 'final' report" -TargetOrg me -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|create|file|--file|$($script:pdf)|--parent-id|001xx000003DGb2AAG|--title|Q4 'final' report|--target-org|me|--json" }
+                $file.id | Should -Be '068xx0000000001AAA'
+            }
+            It 'needs only the file' {
+                New-SalesforceFile -File $script:pdf -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|create|file|--file|$($script:pdf)|--json" }
+            }
+            It 'checks the file and the parent ID, and honours -WhatIf' {
+                { New-SalesforceFile -File (Join-Path $TestDrive 'nope.pdf') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                { New-SalesforceFile -File $script:pdf -ParentId 'not an id' -Confirm:$false } | Should -Throw
+                New-SalesforceFile -File $script:pdf -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"INVALID_CROSS_REFERENCE_KEY: invalid parent"}' }
+                { New-SalesforceFile -File $script:pdf -ParentId 001xx000003DGb2AAG -Confirm:$false } | Should -Throw -ExpectedMessage '*INVALID_CROSS_REFERENCE_KEY*'
+            }
+        }
+
+        Context 'Search-SalesforceRecords' {
+            BeforeEach {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"searchRecords":[{"attributes":{"type":"Account","url":"/x"},"Id":"001xx000003DGb2AAG","Name":"Acme"},{"attributes":{"type":"Contact","url":"/y"},"Id":"003xx000003DGb2AAG","Name":"Ann Acme"}]}}' }
+            }
+            It 'passes the SOSL as one argument and returns objects with their SObject' {
+                $query = 'FIND {Acme & "Co"} RETURNING Account(Id, Name), Contact(Id, Name)'
+                $rows = @(Search-SalesforceRecords -Query $query -TargetOrg me)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|search|--query|$query|--target-org|me|--json" }
+                $rows.Count | Should -Be 2
+                $rows[0].SObject | Should -Be 'Account'
+                $rows[1].SObject | Should -Be 'Contact'
+                $rows[1].Name | Should -Be 'Ann Acme'
+                $rows[0].PSObject.Properties.Name | Should -Not -Contain 'attributes'
+            }
+            It 'reads the query from a file that exists' {
+                $file = Join-Path $TestDrive 'my search.sosl'
+                Set-Content -LiteralPath $file -Value 'FIND {x} RETURNING Account'
+                Search-SalesforceRecords -File $file | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "data|search|--file|$file|--json" }
+                { Search-SalesforceRecords -File (Join-Path $TestDrive 'missing.sosl') } | Should -Throw -ExpectedMessage '*does not exist*'
+            }
+            It 'returns csv and human text untouched, without --json' {
+                Mock Invoke-Salesforce { "Id,Name`n001,Acme" }
+                (Search-SalesforceRecords -Query 'FIND {Acme}' -ResultFormat csv) | Should -Be "Id,Name`n001,Acme"
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|search|--query|FIND {Acme}|--result-format|csv' }
+                Search-SalesforceRecords -Query 'FIND {Acme}' -ResultFormat human | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'data|search|--query|FIND {Acme}|--result-format|human' }
+            }
+            It 'returns nothing when nothing matches, and accepts a bare array' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"searchRecords":[]}}' }
+                @(Search-SalesforceRecords -Query 'FIND {zzz}').Count | Should -Be 0
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"attributes":{"type":"Lead"},"Id":"00Qxx0000000001AAA"}]}' }
+                @(Search-SalesforceRecords -Query 'FIND {a}')[0].SObject | Should -Be 'Lead'
+            }
+            It 'needs exactly one of -Query and -File, and throws the CLI message for a bad search' {
+                { Search-SalesforceRecords } | Should -Throw
+                { Search-SalesforceRecords -Query 'FIND {a}' -File 'x.sosl' } | Should -Throw
+                Mock Invoke-Salesforce { '{"status":1,"message":"MALFORMED_SEARCH: unexpected token"}' }
+                { Search-SalesforceRecords -Query 'FIND' } | Should -Throw -ExpectedMessage '*MALFORMED_SEARCH*'
+            }
+        }
+
+        It 'exports the new cmdlets' {
+            $exports = (Get-Module psfdx).ExportedFunctions.Keys
+            foreach ($n in 'Search-SalesforceRecords', 'New-SalesforceFile', 'Remove-SalesforceBulkData', 'Get-SalesforceBulkJobStatus') { $exports | Should -Contain $n }
         }
     }
 }

@@ -1295,6 +1295,163 @@ function Select-SalesforceRecords {
     return ($result.result.records | Select-Object -Property * -ExcludeProperty attributes)
 }
 
+function Search-SalesforceRecords {
+    <#
+    .SYNOPSIS
+    Runs a SOSL text search and returns the matching records as objects.
+
+    .DESCRIPTION
+    Runs sf data search with --query or --file. SOSL searches the text fields of several objects at once, for example FIND {Acme} IN ALL FIELDS RETURNING Account(Id, Name), Contact(Id, Name). With the default -ResultFormat json the records are returned as objects without their attributes property, each with an SObject property that holds the object it came from; no match returns nothing (wrap the call in @() for an empty array). With human or csv the CLI text is returned as it is. A bad search throws the CLI message. The query is passed as one argument, so braces and quotes need no escaping; on Windows the CLI shim rejects a double quote or a line break in an argument, so put such a query in a file and use -File.
+
+    .PARAMETER Query
+    SOSL query to execute. Passed to sf as --query. Give -Query or -File.
+
+    .PARAMETER File
+    File that contains the SOSL query. Passed to sf as --file. It must exist. Give -Query or -File.
+
+    .PARAMETER ResultFormat
+    Format to display the results. Default: json. Valid values: human, csv, json. Passed to sf as --result-format for human and csv; json is read through --json.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Search-SalesforceRecords -Query 'FIND {Acme} IN NAME FIELDS RETURNING Account(Id, Name), Contact(Id, Name)' -TargetOrg dev1
+    Accounts and contacts whose name matches Acme.
+
+    .EXAMPLE
+    Search-SalesforceRecords -File .\search.sosl -ResultFormat csv -TargetOrg dev1
+    The result as CSV text.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data search (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Query = --query; -File = --file; -ResultFormat = --result-format; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'Query')]
+    Param(
+        [Parameter(Mandatory = $true, ParameterSetName = 'Query')][ValidateNotNullOrEmpty()][string] $Query,
+        [Parameter(Mandatory = $true, ParameterSetName = 'File')][ValidateNotNullOrEmpty()][string] $File,
+        [Parameter(Mandatory = $false)][ValidateSet('human', 'csv', 'json')][string] $ResultFormat = 'json',
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if ($PSCmdlet.ParameterSetName -eq 'File') {
+        if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "Search file '$File' does not exist." }
+        $arguments = @('data', 'search', '--file', $File)
+    } else {
+        $arguments = @('data', 'search', '--query', $Query)
+    }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
+    # csv and human output are not JSON, so hand them back untouched
+    if ($ResultFormat -ne 'json') {
+        $arguments += @('--result-format', $ResultFormat)
+        return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
+
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $details = Show-SalesforceResult -Result $result
+    if ($null -eq $details) { return }
+    # The records come under searchRecords; tolerate a bare array too.
+    $records = @()
+    if ($details -is [System.Collections.IEnumerable] -and $details -isnot [string]) {
+        $records = @($details)
+    } elseif ($null -ne $details.PSObject.Properties['searchRecords'] -and $null -ne $details.searchRecords) {
+        $records = @($details.searchRecords)
+    } elseif ($null -ne $details.PSObject.Properties['attributes']) {
+        # A one-element array arrives unrolled, as the record itself.
+        $records = @($details)
+    }
+    foreach ($record in $records) {
+        $record | Select-Object -Property @{ Name = 'SObject'; Expression = { if ($null -ne $_.PSObject.Properties['attributes'] -and $null -ne $_.attributes) { $_.attributes.type } else { $null } } }, * -ExcludeProperty attributes
+    }
+}
+
+function New-SalesforceFile {
+    <#
+    .SYNOPSIS
+    Uploads a local file to an org as a Salesforce File.
+
+    .DESCRIPTION
+    Runs sf data create file. The file becomes a ContentVersion, so it shows under Files in the org. Give -ParentId to attach it to a record, for example an account. Supports -WhatIf and -Confirm; it does not prompt by default. The file is read by the CLI; psfdx only checks that it exists.
+
+    .PARAMETER File
+    Path of the local file to upload. Passed to sf as --file. It must exist. Required.
+
+    .PARAMETER ParentId
+    ID of the record to attach the file to (a 15 or 18 character ID). Passed to sf as --parent-id.
+
+    .PARAMETER Title
+    Title of the file in Salesforce. By default the CLI uses the file name. Passed to sf as --title.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceFile -File '.\Q4 report.pdf' -ParentId 001xx000003DGb2AAG -Title 'Q4 report' -TargetOrg myorg
+    Upload the PDF and attach it to the account.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data create file (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -File = --file; -ParentId = --parent-id; -Title = --title; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $File,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $ParentId,
+        [Parameter(Mandatory = $false)][string] $Title,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "File '$File' does not exist." }
+    $arguments = @('data', 'create', 'file', '--file', $File)
+    if ($ParentId) { $arguments += @('--parent-id', $ParentId) }
+    if ($Title) { $arguments += @('--title', $Title) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $orgLabel = 'the default org'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $orgLabel = "org $TargetOrg" }
+    if (-not $PSCmdlet.ShouldProcess("'$File' in $orgLabel", 'Upload file')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
 function Get-SalesforceUsers {
     <#
     .SYNOPSIS
@@ -1370,6 +1527,9 @@ function New-SalesforceRecord {
     .PARAMETER UseToolingApi
     Use Tooling API so you can insert a record in a Tooling API object. Adds --use-tooling-api.
 
+    .PARAMETER SkipAssignmentRules
+    Do not run the assignment rules when the record is created. This matters for a Case or Lead, which are assigned by rule otherwise. Adds --skip-assignment-rules.
+
     .EXAMPLE
     New-SalesforceRecord -Type Account -FieldUpdates "Name='Acme'" -WhatIf
 
@@ -1377,8 +1537,8 @@ function New-SalesforceRecord {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf data create record (plugin @salesforce/plugin-data)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --skip-assignment-rules
-    Parameter to flag: -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api; -SkipAssignmentRules = --skip-assignment-rules.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1398,12 +1558,14 @@ function New-SalesforceRecord {
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+        [Parameter(Mandatory = $false)][switch] $SkipAssignmentRules
     )
     $arguments = @('data', 'create', 'record')
     $arguments += @('--sobject', $Type)
     $arguments += @('--values', $FieldUpdates)
     if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+    if ($SkipAssignmentRules) { $arguments += '--skip-assignment-rules' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -1419,11 +1581,14 @@ function Set-SalesforceRecord {
     Updates one record by ID (sf data update record).
 
     .DESCRIPTION
-    -Id can come from the pipeline (Id or RecordId property). -FieldUpdates is the CLI's values string, for example "Name='Acme' Active__c=true".
-    Supports -WhatIf and -Confirm; it does not prompt by default.
+    Select the record by -Id (which can come from the pipeline, as an Id or RecordId property), or by -Where, field values that identify exactly one record, as for Get-SalesforceRecord. -FieldUpdates is the CLI's values string, for example "Name='Acme' Active__c=true".
+    Supports -WhatIf and -Confirm; it does not prompt by default. A -Where that matches no record, or several, makes the cmdlet throw the CLI's message.
 
     .PARAMETER Id
-    ID of the record you're updating. Passed to sf as --record-id. Required. Alias: RecordId. Accepts input from the pipeline by property name.
+    ID of the record you're updating. Passed to sf as --record-id. Required in the ById parameter set. Alias: RecordId. Accepts input from the pipeline by property name.
+
+    .PARAMETER Where
+    List of <fieldName>=<value> pairs that identify the record you want to update, for example @{ Name = 'Acme' }. Passed to sf as --where. Required in the ByFields parameter set. Values may not contain quotes or control characters.
 
     .PARAMETER Type
     API name of the Salesforce or Tooling API object that contains the record you're updating. Passed to sf as --sobject. Required.
@@ -1437,15 +1602,22 @@ function Set-SalesforceRecord {
     .PARAMETER UseToolingApi
     Use Tooling API so you can update a record in a Tooling API object. Adds --use-tooling-api.
 
+    .PARAMETER SkipAssignmentRules
+    Do not run the assignment rules when the record is updated. This matters for a Case or Lead. Adds --skip-assignment-rules.
+
     .EXAMPLE
     Select-SalesforceRecords -Query "SELECT Id FROM Account WHERE Name = 'Old'" | Set-SalesforceRecord -Type Account -FieldUpdates "Name='New'" -WhatIf
+
+    .EXAMPLE
+    Set-SalesforceRecord -Type Account -Where @{ Name = 'Acme' } -FieldUpdates "Industry='Energy'" -TargetOrg myorg
+    Update the one account that is named Acme.
 
     .NOTES
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf data update record (plugin @salesforce/plugin-data)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --skip-assignment-rules, --where
-    Parameter to flag: -Id = --record-id; -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Id = --record-id; -Where = --where; -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api; -SkipAssignmentRules = --skip-assignment-rules.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1460,25 +1632,35 @@ function Set-SalesforceRecord {
     .LINK
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
-    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium', DefaultParameterSetName = 'ById')]
     Param(
-        [Parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById', ValueFromPipelineByPropertyName = $true)][Alias('RecordId')][string] $Id,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ByFields')][System.Collections.IDictionary] $Where,
         [Parameter(Mandatory = $true)][string] $Type,
         [Parameter(Mandatory = $true)][string] $FieldUpdates,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
-        [Parameter(Mandatory = $false)][switch] $UseToolingApi
+        [Parameter(Mandatory = $false)][switch] $UseToolingApi,
+        [Parameter(Mandatory = $false)][switch] $SkipAssignmentRules
     )
     process {
-            $arguments = @('data', 'update', 'record')
+        $arguments = @('data', 'update', 'record')
         $arguments += @('--sobject', $Type)
-        $arguments += @('--record-id', $Id)
+        if ($PSCmdlet.ParameterSetName -eq 'ById') {
+            $arguments += @('--record-id', $Id)
+            $what = "$Type $Id"
+        } else {
+            $selector = ConvertTo-SalesforceRecordSelector -Where $Where
+            $arguments += @('--where', $selector)
+            $what = "$Type where $selector"
+        }
         $arguments += @('--values', $FieldUpdates)
         if ($UseToolingApi) { $arguments += '--use-tooling-api' }
+        if ($SkipAssignmentRules) { $arguments += '--skip-assignment-rules' }
         if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
         $arguments += '--json'
         $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
         $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
-        if (-not $PSCmdlet.ShouldProcess("$Type $Id", 'Update record')) { return }
+        if (-not $PSCmdlet.ShouldProcess($what, 'Update record')) { return }
         $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
     }
@@ -2410,44 +2592,48 @@ function Upsert-SalesforceBulkData {
     return ConvertTo-SalesforceBulkJobObject -Result $result -Operation 'Upsert' -Object $objectName
 }
 
-function Resume-SalesforceBulkJob {
+function Remove-SalesforceBulkData {
     <#
     .SYNOPSIS
-    Resumes a Bulk API 2.0 job started without -WaitMinutes (sf data export|import|update|upsert resume).
+    Deletes the records whose IDs are in a CSV file with Bulk API 2.0 (sf data delete bulk).
 
     .DESCRIPTION
-    Pass the JobId from the earlier step and the -Operation that created it. The CLI remembers jobs it created on this computer, so import,
-    update and export resumes find the org from that record; they do not take -TargetOrg (it is ignored with a warning), and a job created
-    elsewhere cannot be resumed here: use Get-SalesforceBulkResult with -TargetOrg instead. Export resumes do not take -WaitMinutes.
-    Resuming only continues the existing job, so it does not ask for confirmation. Errors are as for the cmdlet that created the job.
+    The CSV needs an Id column. By default the records go to the Recycle Bin; -HardDelete deletes them permanently, which cannot be undone, and needs the Bulk API Hard Delete permission. Asks for confirmation by default, naming the object, the file, the org and whether the delete is permanent; -WhatIf makes no CLI call. Scripts that run unattended need -Confirm:$false. Without -WaitMinutes the job is created and its JobId returned; finish it with Resume-SalesforceBulkJob -Operation Delete. With -WaitMinutes the cmdlet waits and returns the counts. A job with failed rows throws PsfdxBulkJobFailed (see Get-SalesforceBulkResult for the row results).
 
-    .PARAMETER Operation
-    The kind of bulk job to resume: Export, Import, Update or Upsert. It selects which command runs: sf data export, import, update or upsert resume. Required. Valid values: Export, Import, Update, Upsert.
+    .PARAMETER File
+    CSV file that contains the IDs of the records to delete. Passed to sf as --file. Required.
 
-    .PARAMETER JobId
-    Job ID of the bulk export. Passed to sf as --job-id. Required.
+    .PARAMETER Object
+    API name of the Salesforce object, either standard or custom, that you want to delete records from. Passed to sf as --sobject. Required.
+
+    .PARAMETER HardDelete
+    Delete the records permanently, without moving them to the Recycle Bin. Adds --hard-delete. The user needs the Bulk API Hard Delete permission.
+
+    .PARAMETER LineEnding
+    Line ending used in the CSV file. Default value on Windows is `CRLF`; on macOS and Linux it's `LF`. Passed to sf as --line-ending. Valid values: LF, CRLF.
 
     .PARAMETER WaitMinutes
     Time to wait for the command to finish, in minutes. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
 
     .PARAMETER TargetOrg
-    Username or alias of the target org. Not required if the "target-org" configuration variable is already set. Passed to sf as --target-org.
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
-    Resume-SalesforceBulkJob -Operation Upsert -JobId 750xx0000000001 -WaitMinutes 10 -TargetOrg myorg
+    Remove-SalesforceBulkData -File .\old-accounts.csv -Object Account -WaitMinutes 10 -TargetOrg myorg -WhatIf
+    Preview the delete without sending anything.
+
+    .EXAMPLE
+    Remove-SalesforceBulkData -File .\old-accounts.csv -Object Account -HardDelete -WaitMinutes 10 -TargetOrg myorg -Confirm:$false
+    Delete the accounts permanently, without any question.
 
     .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf data export resume (plugin @salesforce/plugin-data)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
-    Command run: sf data import resume (plugin @salesforce/plugin-data)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
-    Command run: sf data update resume (plugin @salesforce/plugin-data)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
-    Command run: sf data upsert resume (plugin @salesforce/plugin-data)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --use-most-recent
-    Parameter to flag: -JobId = --job-id; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    Command run: sf data delete bulk (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -File = --file; -Object = --sobject; -HardDelete = --hard-delete; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -2462,25 +2648,113 @@ function Resume-SalesforceBulkJob {
     .LINK
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
     Param(
-        [Parameter(Mandatory = $true)][ValidateSet('Export', 'Import', 'Update', 'Upsert')][string] $Operation,
-        [Parameter(Mandatory = $true)][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $JobId,
+        [Parameter(Mandatory = $true)][string] $File,
+        [Parameter(Mandatory = $true)][string] $Object,
+        [Parameter(Mandatory = $false)][switch] $HardDelete,
+        [Parameter(Mandatory = $false)][ValidateSet('LF', 'CRLF')][string] $LineEnding,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $objectName = ConvertTo-SalesforceSoqlIdentifier -Value $Object
+    if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "CSV file '$File' does not exist." }
+    $arguments = @('data', 'delete', 'bulk', '--file', $File, '--sobject', $objectName)
+    if ($HardDelete) { $arguments += '--hard-delete' }
+    if ($LineEnding) { $arguments += @('--line-ending', $LineEnding) }
+    if ($WaitMinutes -gt 0) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $action = 'Bulk delete (to the Recycle Bin)'
+    if ($HardDelete) { $action = 'Bulk HARD delete (permanent, cannot be undone)' }
+    if (-not $PSCmdlet.ShouldProcess((Get-SalesforceBulkTargetLabel -Object $objectName -File $File -TargetOrg $TargetOrg), $action)) { return }
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = ConvertFrom-SalesforceBulkOutput -Output $output -Command 'data delete bulk'
+    return ConvertTo-SalesforceBulkJobObject -Result $result -Operation 'Delete' -Object $objectName
+}
+
+function Resume-SalesforceBulkJob {
+    <#
+    .SYNOPSIS
+    Resumes a Bulk API 2.0 job started without -WaitMinutes (sf data export|import|update|upsert|delete resume).
+
+    .DESCRIPTION
+    Pass the JobId from the earlier step and the -Operation that created it, or -UseMostRecent for the job the CLI started last. The CLI remembers jobs it created on this computer, so import,
+    update and export resumes find the org from that record; they do not take -TargetOrg (it is ignored with a warning), and a job created
+    elsewhere cannot be resumed here: use Get-SalesforceBulkResult with -TargetOrg instead. Upsert and Delete resumes do take -TargetOrg. Export resumes do not take -WaitMinutes.
+    Resuming only continues the existing job, so it does not ask for confirmation. Errors are as for the cmdlet that created the job.
+
+    .PARAMETER Operation
+    The kind of bulk job to resume: Export, Import, Update, Upsert or Delete. It selects which command runs: sf data export, import, update, upsert or delete resume. Required. Valid values: Export, Import, Update, Upsert, Delete.
+
+    .PARAMETER JobId
+    Job ID of the bulk job. Passed to sf as --job-id. Required unless you give -UseMostRecent.
+
+    .PARAMETER UseMostRecent
+    Resume the job that was started most recently, instead of giving -JobId. Adds --use-most-recent.
+
+    .PARAMETER WaitMinutes
+    Time to wait for the command to finish, in minutes. Passed to sf as --wait. Default: 0. Range: 0 to 1440.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the "target-org" configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Resume-SalesforceBulkJob -Operation Upsert -JobId 750xx0000000001 -WaitMinutes 10 -TargetOrg myorg
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data export resume (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Command run: sf data import resume (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Command run: sf data update resume (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Command run: sf data upsert resume (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Command run: sf data delete resume (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -JobId = --job-id; -UseMostRecent = --use-most-recent; -WaitMinutes = --wait; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'ById')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateSet('Export', 'Import', 'Update', 'Upsert', 'Delete')][string] $Operation,
+        [Parameter(Mandatory = $true, ParameterSetName = 'ById')][ValidatePattern('^750[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z')][string] $JobId,
+        [Parameter(Mandatory = $true, ParameterSetName = 'MostRecent')][switch] $UseMostRecent,
         [Parameter(Mandatory = $false)][ValidateRange(0, 1440)][int] $WaitMinutes = 0,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $hasTargetOrg = $PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)
-    if ($hasTargetOrg -and $Operation -ne 'Upsert') { Write-Warning "-TargetOrg is ignored for a $Operation resume: the CLI finds the org from its record of the job." }
+    $takesTargetOrg = $Operation -in 'Upsert', 'Delete'
+    if ($hasTargetOrg -and -not $takesTargetOrg) { Write-Warning "-TargetOrg is ignored for a $Operation resume: the CLI finds the org from its record of the job." }
     if ($WaitMinutes -gt 0 -and $Operation -eq 'Export') { Write-Warning '-WaitMinutes is ignored for an Export resume.' }
 
     switch ($Operation) {
-        'Export' { $arguments = @('data', 'export', 'resume', '--job-id', $JobId); $command = 'data export resume' }
-        'Import' { $arguments = @('data', 'import', 'resume', '--job-id', $JobId); $command = 'data import resume' }
-        'Update' { $arguments = @('data', 'update', 'resume', '--job-id', $JobId); $command = 'data update resume' }
-        'Upsert' { $arguments = @('data', 'upsert', 'resume', '--job-id', $JobId); $command = 'data upsert resume' }
+        'Export' { $arguments = @('data', 'export', 'resume'); $command = 'data export resume' }
+        'Import' { $arguments = @('data', 'import', 'resume'); $command = 'data import resume' }
+        'Update' { $arguments = @('data', 'update', 'resume'); $command = 'data update resume' }
+        'Upsert' { $arguments = @('data', 'upsert', 'resume'); $command = 'data upsert resume' }
+        'Delete' { $arguments = @('data', 'delete', 'resume'); $command = 'data delete resume' }
     }
+    if ($PSCmdlet.ParameterSetName -eq 'MostRecent') { $arguments += '--use-most-recent' } else { $arguments += @('--job-id', $JobId) }
     if ($WaitMinutes -gt 0 -and $Operation -ne 'Export') { $arguments += @('--wait', $WaitMinutes) }
-    if ($hasTargetOrg -and $Operation -eq 'Upsert') { $arguments += @('--target-org', $TargetOrg) }
+    if ($hasTargetOrg -and $takesTargetOrg) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $output = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -2576,6 +2850,62 @@ function Get-SalesforceBulkResult {
         FailedFilePath      = & $pathOf 'failedFilePath'
         UnprocessedFilePath = & $pathOf 'unprocessedFilePath'
     }
+}
+
+function Get-SalesforceBulkJobStatus {
+    <#
+    .SYNOPSIS
+    Shows the status of a bulk data load job, or of one batch in it (sf data resume).
+
+    .DESCRIPTION
+    Runs sf data resume, which reads the state of a bulk job from the org and returns it as an object. It only reads: it does not continue or change the job. For a Bulk API 2.0 job started with -WaitMinutes 0, use Resume-SalesforceBulkJob to continue it and Get-SalesforceBulkResult for its row results.
+
+    .PARAMETER JobId
+    ID of the bulk job. Passed to sf as --job-id. Required.
+
+    .PARAMETER BatchId
+    ID of one batch in the job. Passed to sf as --batch-id.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceBulkJobStatus -JobId 750xx0000000001AAA -TargetOrg myorg
+    The state of the job.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf data resume (plugin @salesforce/plugin-data)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -JobId = --job-id; -BatchId = --batch-id; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-data
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $JobId,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?\z')][string] $BatchId,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('data', 'resume', '--job-id', $JobId)
+    if ($BatchId) { $arguments += @('--batch-id', $BatchId) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
 }
 
 function Get-SalesforceBulkTargetLabel {
