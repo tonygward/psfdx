@@ -1594,6 +1594,19 @@ Describe 'psfdx-development Apex and Code Analyzer parity (issue 253)' {
             It 'rejects an unknown format' {
                 { Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA -ResultFormat xml } | Should -Throw
             }
+            It 'for a run that has not finished, returns a warning and no object in a text format, and the status object for json' {
+                Mock Select-SalesforceRecords { @([pscustomobject]@{ Status = 'Processing' }, [pscustomobject]@{ Status = 'Completed' }) } -ModuleName 'psfdx-development'
+                Mock Invoke-Salesforce { throw 'must not run' }
+                foreach ($format in 'junit', 'tap', 'human') {
+                    $out = @(Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA -ResultFormat $format -WarningVariable w -WarningAction SilentlyContinue)
+                    $out.Count | Should -Be 0
+                    ($w -join ' ') | Should -BeLike '*has not finished*1 of 2 tests*'
+                }
+                $json = Get-SalesforceApexTestResult -TestRunId 707xx0000000001AAA
+                $json.Completed | Should -BeFalse
+                $json.PendingTests | Should -Be 1
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
         }
 
         Context 'Get-SalesforceApexCompileStatus' {
