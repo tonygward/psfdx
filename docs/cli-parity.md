@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 82 | 25 | 89 | 3 | 15 | 54.6% of 196 |
+| Core plugins (bundled with the CLI) | 214 | 93 | 19 | 84 | 3 | 15 | 57.1% of 196 |
 | Just-in-time plugins (installed on first use) | 65 | 15 | 4 | 37 | 0 | 9 | 33.9% of 56 |
-| Both | 279 | 97 | 29 | 126 | 3 | 24 | 50.0% of 252 |
+| Both | 279 | 108 | 23 | 121 | 3 | 24 | 52.0% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **173** cmdlets; **142** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **177** cmdlets; **146** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **126** commands psfdx runs, it passes **561 of 625** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **46** have a list of allowed values in the CLI, and psfdx can pass **193 of 213** of those values.
+**Flags and values.** Across the **131** commands psfdx runs, it passes **589 of 646** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **48** have a list of allowed values in the CLI, and psfdx can pass **198 of 218** of those values.
 
 ## By capability
 
@@ -34,7 +34,7 @@ psfdx exports **173** cmdlets; **142** of them run an sf command themselves. The
 | CLI command list (sf commands) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Experience Cloud sites (sf community) | 3 | 0 | 0 | 3 | 0 | 0 | 0.0% of 3 |
 | CLI configuration (sf config) | 4 | 3 | 1 | 0 | 0 | 0 | 100.0% of 4 |
-| Data and records (sf data) | 21 | 10 | 6 | 5 | 0 | 0 | 76.2% of 21 |
+| Data and records (sf data) | 21 | 21 | 0 | 0 | 0 | 0 | 100.0% of 21 |
 | CLI plugin development (sf dev) | 6 | 0 | 0 | 0 | 0 | 6 | n/a of 0 |
 | DevOps Center (sf devops) | 26 | 0 | 0 | 26 | 0 | 0 | 0.0% of 26 |
 | CLI diagnostics (sf doctor) | 1 | 0 | 0 | 1 | 0 | 0 | 0.0% of 1 |
@@ -149,16 +149,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | `sf community create` | @salesforce/plugin-community | 5 (3 required) | missing |  |
 | `sf community list template` | @salesforce/plugin-community | 1 (1 required) | missing |  |
 | `sf community publish` | @salesforce/plugin-community | 2 (2 required) | missing |  |
-
-### Data and records (`sf data`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf data create file` | @salesforce/plugin-data | 4 (2 required) | missing |  |
-| `sf data delete bulk` | @salesforce/plugin-data | 6 (3 required) | missing |  |
-| `sf data delete resume` | @salesforce/plugin-data | 4 | missing |  |
-| `sf data resume` | @salesforce/plugin-data | 3 (2 required) | missing |  |
-| `sf data search` | @salesforce/plugin-data | 4 (1 required) | missing |  |
 
 ### CLI plugin development (`sf dev`)
 
@@ -417,21 +407,26 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf data bulk results` | wrapped | `Get-SalesforceBulkResult` | 2 of 2 |  |  |
-| `sf data create record` | partially wrapped | `New-SalesforceRecord` | 4 of 5 | `--skip-assignment-rules` |  |
+| `sf data create file` | wrapped | `New-SalesforceFile` | 4 of 4 |  |  |
+| `sf data create record` | wrapped | `New-SalesforceRecord` | 5 of 5 |  |  |
+| `sf data delete bulk` | wrapped | `Remove-SalesforceBulkData` | 6 of 6 |  |  |
 | `sf data delete record` | wrapped | `Remove-SalesforceRecord` | 5 of 5 |  |  |
+| `sf data delete resume` | wrapped | `Resume-SalesforceBulkJob` | 4 of 4 |  |  |
 | `sf data export bulk` | wrapped | `Export-SalesforceBulkData` | 9 of 9 |  |  |
-| `sf data export resume` | partially wrapped | `Resume-SalesforceBulkJob` | 1 of 2 | `--use-most-recent` |  |
+| `sf data export resume` | wrapped | `Resume-SalesforceBulkJob` | 2 of 2 |  |  |
 | `sf data export tree` | wrapped | `Export-SalesforceTreeData` | 5 of 5 |  |  |
 | `sf data get record` | wrapped | `Get-SalesforceRecord` | 5 of 5 |  |  |
 | `sf data import bulk` | wrapped | `Import-SalesforceBulkData` | 6 of 6 |  |  |
-| `sf data import resume` | partially wrapped | `Resume-SalesforceBulkJob` | 2 of 3 | `--use-most-recent` |  |
+| `sf data import resume` | wrapped | `Resume-SalesforceBulkJob` | 3 of 3 |  |  |
 | `sf data import tree` | wrapped | `Import-SalesforceTreeData` | 3 of 3 |  |  |
 | `sf data query` | wrapped | `Export-SalesforceEventFiles`, `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `Get-SalesforceSandboxRefreshStatus`, `Select-SalesforceEventFiles`, `Select-SalesforceRecords` | 7 of 7 |  |  |
+| `sf data resume` | wrapped | `Get-SalesforceBulkJobStatus` | 3 of 3 |  |  |
+| `sf data search` | wrapped | `Search-SalesforceRecords` | 4 of 4 |  |  |
 | `sf data update bulk` | wrapped | `Update-SalesforceBulkData` | 6 of 6 |  |  |
-| `sf data update record` | partially wrapped | `Set-SalesforceRecord` | 5 of 7 | `--skip-assignment-rules` `--where` |  |
-| `sf data update resume` | partially wrapped | `Resume-SalesforceBulkJob` | 2 of 3 | `--use-most-recent` |  |
+| `sf data update record` | wrapped | `Set-SalesforceRecord` | 7 of 7 |  |  |
+| `sf data update resume` | wrapped | `Resume-SalesforceBulkJob` | 3 of 3 |  |  |
 | `sf data upsert bulk` | wrapped | `Upsert-SalesforceBulkData` | 7 of 7 |  |  |
-| `sf data upsert resume` | partially wrapped | `Resume-SalesforceBulkJob` | 3 of 4 | `--use-most-recent` |  |
+| `sf data upsert resume` | wrapped | `Resume-SalesforceBulkJob` | 4 of 4 |  |  |
 
 ### Flow (`sf flow`)
 
@@ -567,9 +562,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 116 | 120 |
-| `--flags-dir` | 0 | 123 |
-| `--api-version` | 1 | 83 |
+| `--json` | 120 | 125 |
+| `--flags-dir` | 0 | 128 |
+| `--api-version` | 1 | 88 |
 
 ## How to read this
 

@@ -14,6 +14,7 @@
     "data bulk results", "data export bulk", "data export resume", "data export tree", "data import tree",
     "data import bulk", "data import resume", "data update bulk", "data update resume",
     "data upsert bulk", "data upsert resume",
+    "data create file", "data delete bulk", "data delete resume", "data resume", "data search",
     "flow get test", "flow run test",
     "logic get test", "logic run test",
     "lightning dev",

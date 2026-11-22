@@ -183,38 +183,38 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 126,
+    "commandsPsfdxRuns": 131,
     "flags": {
-      "total": 625,
-      "passed": 561
+      "total": 646,
+      "passed": 589
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 46,
+    "flagsWithAListOfValues": 48,
     "values": {
-      "total": 213,
-      "reachable": 193
+      "total": 218,
+      "reachable": 198
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 97,
-      "partiallyWrapped": 29,
-      "missing": 126,
+      "wrapped": 108,
+      "partiallyWrapped": 23,
+      "missing": 121,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "50.0"
+      "coveredPercent": "52.0"
     },
     "core": {
       "commands": 214,
-      "wrapped": 82,
-      "partiallyWrapped": 25,
-      "missing": 89,
+      "wrapped": 93,
+      "partiallyWrapped": 19,
+      "missing": 84,
       "excluded": 3,
       "notApplicable": 15,
       "inScope": 196,
-      "coveredPercent": "54.6"
+      "coveredPercent": "57.1"
     },
     "jit": {
       "commands": 65,
@@ -228,8 +228,8 @@
     }
   },
   "psfdx": {
-    "exportedFunctions": 173,
-    "runningTheCli": 142,
+    "exportedFunctions": 177,
+    "runningTheCli": 146,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -2793,13 +2793,13 @@
       "label": "Data and records",
       "totals": {
         "commands": 21,
-        "wrapped": 10,
-        "partiallyWrapped": 6,
-        "missing": 5,
+        "wrapped": 21,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 21,
-        "coveredPercent": "76.2"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -2836,25 +2836,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Upload a local file to an org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceFile"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 2
           },
-          "uncoveredFlags": [
-            "file",
-            "parent-id",
-            "target-org",
-            "title"
-          ],
-          "requiredFlagsNotPassed": [
-            "file",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -2869,7 +2863,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create and insert a record into a Salesforce or Tooling API object.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -2877,12 +2871,10 @@
           ],
           "flags": {
             "total": 5,
-            "passed": 4,
+            "passed": 5,
             "required": 3
           },
-          "uncoveredFlags": [
-            "skip-assignment-rules"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -2898,33 +2890,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Bulk delete records from an org using a CSV file. Uses Bulk API 2.0.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceBulkData"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 3
           },
-          "uncoveredFlags": [
-            "file",
-            "hard-delete",
-            "line-ending",
-            "sobject",
-            "target-org",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "file",
-            "sobject",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -2961,21 +2944,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume a bulk delete job that you previously started. Uses Bulk API 2.0.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Resume-SalesforceBulkJob"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "job-id",
-            "target-org",
-            "use-most-recent",
-            "wait"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -3018,7 +2998,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume a bulk export job that you previously started. Uses Bulk API 2.0.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -3026,12 +3006,10 @@
           ],
           "flags": {
             "total": 2,
-            "passed": 1,
+            "passed": 2,
             "required": 0
           },
-          "uncoveredFlags": [
-            "use-most-recent"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -3128,7 +3106,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume a bulk import job that you previously started. Uses Bulk API 2.0.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -3136,12 +3114,10 @@
           ],
           "flags": {
             "total": 3,
-            "passed": 2,
+            "passed": 3,
             "required": 0
           },
-          "uncoveredFlags": [
-            "use-most-recent"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -3216,24 +3192,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "View the status of a bulk data load job or batch.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceBulkJobStatus"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "batch-id",
-            "job-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "job-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3248,29 +3219,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Execute a SOSL text-based search query.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Search-SalesforceRecords"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "file",
-            "query",
-            "result-format",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -3307,7 +3273,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Updates a single record of a Salesforce or Tooling API object.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -3315,13 +3281,10 @@
           ],
           "flags": {
             "total": 7,
-            "passed": 5,
+            "passed": 7,
             "required": 3
           },
-          "uncoveredFlags": [
-            "skip-assignment-rules",
-            "where"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -3337,7 +3300,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume a bulk update job that you previously started. Uses Bulk API 2.0.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -3345,12 +3308,10 @@
           ],
           "flags": {
             "total": 3,
-            "passed": 2,
+            "passed": 3,
             "required": 0
           },
-          "uncoveredFlags": [
-            "use-most-recent"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -3393,7 +3354,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume a bulk upsert job that you previously started. Uses Bulk API 2.0.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -3401,12 +3362,10 @@
           ],
           "flags": {
             "total": 4,
-            "passed": 3,
+            "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "use-most-recent"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -9311,18 +9270,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 116,
-        "commandsPsfdxRunsThatHaveIt": 120
+        "psfdxFunctionsPassingIt": 120,
+        "commandsPsfdxRunsThatHaveIt": 125
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 123
+        "commandsPsfdxRunsThatHaveIt": 128
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 83
+        "commandsPsfdxRunsThatHaveIt": 88
       }
     ]
   },

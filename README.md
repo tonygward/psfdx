@@ -175,6 +175,7 @@ Included in the `psfdx` package.
 | Cmdlet | Description |
 | :--- | :--- |
 | `Select-SalesforceRecords` | Run SOQL and return records. |
+| `Search-SalesforceRecords` | Run a SOSL text search and return the matches as objects, each with its `SObject` (`sf data search`). `-File` reads the search from a file; `-ResultFormat` csv or human returns the CLI text. |
 | `Get-SalesforceUsers` | List users with optional filters (username, active only, limit). |
 | `Get-SalesforceAuthenticatedUser` | List the users of an org that the CLI has authorised here (`sf org list users`); tokens removed. |
 | `Get-SalesforceOrgUser` | Show the user the CLI is signed in as (`sf org display user`); never returns the token or password (the CLI redacts them), only `HasPassword`. |
@@ -182,8 +183,9 @@ Included in the `psfdx` package.
 | `New-SalesforceUserPassword` | Generate a password for a user, returned as a SecureString (`sf org generate password`). Asks for confirmation. |
 | `Grant-SalesforcePermissionSet` | Assign permission sets to users (`sf org assign permset`); re-running is safe (`AlreadyAssigned`). Asks for confirmation. |
 | `Grant-SalesforcePermissionSetLicense` | Assign permission set licences to users (`sf org assign permsetlicense`). Asks for confirmation. |
-| `New-SalesforceRecord` | Create a record. |
-| `Set-SalesforceRecord` | Update a record. |
+| `New-SalesforceRecord` | Create a record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
+| `Set-SalesforceRecord` | Update a record by `-Id` or by `-Where` field values that identify exactly one record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
+| `New-SalesforceFile` | Upload a local file as a Salesforce File, optionally attached to a record with `-ParentId` (`sf data create file`). Supports `-WhatIf`. |
 | `Get-SalesforceRecord` | Get one record by `-Id`, or by `-Where` field values that identify exactly one (`sf data get record`). |
 | `Remove-SalesforceRecord` | Delete one record by `-Id` or `-Where` (`sf data delete record`). Asks for confirmation; supports `-WhatIf`. |
 | `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
@@ -193,7 +195,9 @@ Included in the `psfdx` package.
 | `Import-SalesforceBulkData` | Insert the rows of a CSV with Bulk API 2.0 (`sf data import bulk`). Supports `-WhatIf`. |
 | `Update-SalesforceBulkData` | Update records from a CSV with Bulk API 2.0 (`sf data update bulk`). Supports `-WhatIf`. |
 | `Upsert-SalesforceBulkData` | Upsert records from a CSV by external ID with Bulk API 2.0 (`sf data upsert bulk`). Supports `-WhatIf`. |
-| `Resume-SalesforceBulkJob` | Resume an export, import, update or upsert job by `-JobId` in a later step. The CLI finds the org from its record of the job, so it must have been created on this computer. |
+| `Remove-SalesforceBulkData` | Delete the records whose IDs are in a CSV with Bulk API 2.0 (`sf data delete bulk`). `-HardDelete` deletes permanently. Asks for confirmation, supports `-WhatIf`. |
+| `Get-SalesforceBulkJobStatus` | Read the status of a bulk job, or one batch, from the org (`sf data resume`). |
+| `Resume-SalesforceBulkJob` | Resume an export, import, update, upsert or delete job by `-JobId`, or the latest with `-UseMostRecent`, in a later step. The CLI finds the org from its record of the job, so it must have been created on this computer. |
 | `Get-SalesforceBulkResult` | Get a bulk ingest job's counts and save its success, failed and unprocessed row CSVs to `-OutputDirectory` (`sf data bulk results`). Works for any job in the org. |
 | `Get-SalesforceRecordType` | List record types (optionally by object). |
 
