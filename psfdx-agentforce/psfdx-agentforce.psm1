@@ -3406,8 +3406,11 @@ function Set-SalesforceMcpAssets {
         [Parameter(Mandatory = $false)][string] $AssetsFile,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $sources = @($(if ($Assets) { 'a' }), $(if ($PSBoundParameters.ContainsKey('AssetList')) { 'l' }), $(if ($AssetsFile) { 'f' })) | Where-Object { $_ }
-    if ($sources.Count -ne 1) { throw 'Give exactly one of -Assets, -AssetList and -AssetsFile.' }
+    $sourceCount = 0
+    if ($Assets) { $sourceCount++ }
+    if ($PSBoundParameters.ContainsKey('AssetList')) { $sourceCount++ }
+    if ($AssetsFile) { $sourceCount++ }
+    if ($sourceCount -ne 1) { throw 'Give exactly one of -Assets, -AssetList and -AssetsFile.' }
     $json = $Assets
     if ($PSBoundParameters.ContainsKey('AssetList')) { $json = ConvertTo-Json -InputObject $AssetList -Depth 10 -Compress }
     if ($json) { try { $null = $json | ConvertFrom-Json -ErrorAction Stop } catch { throw "The assets are not valid JSON: $($_.Exception.Message)" } }

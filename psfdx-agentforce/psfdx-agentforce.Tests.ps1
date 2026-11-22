@@ -363,7 +363,7 @@ Describe 'psfdx-agentforce full sf agent parity (issue 255)' {
                 @{ Cmdlet = 'Get-SalesforceMcpServerLiveAssets'; Splat = @{ McpServerId = '0Xxxx0000000001' }; Expected = 'agent|mcp|fetch|--mcp-server-id|0Xxxx0000000001|--json' }
                 @{ Cmdlet = 'Remove-SalesforceMcpServer'; Splat = @{ McpServerId = '0Xxxx0000000001'; Confirm = $false }; Expected = 'agent|mcp|delete|--mcp-server-id|0Xxxx0000000001|--no-prompt|--json' }
                 @{ Cmdlet = 'Set-SalesforceMcpAssets'; Splat = @{ McpServerId = '0Xxxx0000000001'; AssetsFile = '{dir}\assets.json'; Confirm = $false }; Expected = 'agent|mcp|asset|replace|--mcp-server-id|0Xxxx0000000001|--assets-file|{dir}\assets.json|--json' }
-                @{ Cmdlet = 'Set-SalesforceMcpAssets'; Splat = @{ McpServerId = '0Xxxx0000000001'; AssetList = @(@{ name = 'tool1'; type = 'tool' }); Confirm = $false }; Expected = 'agent|mcp|asset|replace|--mcp-server-id|0Xxxx0000000001|--assets|[{"name":"tool1","type":"tool"}]|--json' }
+                @{ Cmdlet = 'Set-SalesforceMcpAssets'; Splat = @{ McpServerId = '0Xxxx0000000001'; AssetList = @([ordered]@{ name = 'tool1'; type = 'tool' }); Confirm = $false }; Expected = 'agent|mcp|asset|replace|--mcp-server-id|0Xxxx0000000001|--assets|[{"name":"tool1","type":"tool"}]|--json' }
             ) {
                 $invokeArgs = @{}
                 foreach ($k in $Splat.Keys) { $v = $Splat[$k]; if ($v -is [array]) { $invokeArgs[$k] = @($v | ForEach-Object { & $script:resolve $_ }) } else { $invokeArgs[$k] = & $script:resolve $v } }
