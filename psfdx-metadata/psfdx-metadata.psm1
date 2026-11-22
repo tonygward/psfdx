@@ -3775,3 +3775,223 @@ function New-SalesforceCustomMetadataTypeFromOrg {
 }
 
 #endregion
+
+#region Schema generators
+
+# Wraps sf schema generate sobject, field, platformevent and tab. They write metadata files into the current Salesforce DX project. Three of them are interactive and run through Invoke-Salesforce -Interactive; tab takes everything from its parameters.
+
+function Assert-SalesforceInteractiveSession {
+    # Private: stops with a clear message when the session cannot ask questions, so an interactive generator does not wait for input that never comes.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Command
+    )
+    if ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected) {
+        throw "$Command asks questions, so it needs a terminal. Run it in an interactive PowerShell session, not in a script, job or pipeline whose input or output is redirected."
+    }
+}
+
+function New-SalesforceCustomObject {
+    <#
+    .SYNOPSIS
+    Creates the source files of a new custom object in the project, asking questions.
+
+    .DESCRIPTION
+    Runs sf schema generate sobject, which writes the metadata files of a custom object, with its Name field. It is interactive: it asks you questions (the API name, plural label, field type and so on, with suggestions based on the label), so it needs a terminal and a Salesforce DX project folder. Run it as a plain command. If you assign its output to a variable or pipe it, PowerShell captures the output and you cannot see the questions. It returns nothing; the files it writes are the result. Use -UseDefaultFeatures to switch on the optional features, such as reports and search, without being asked about each. To add fields afterwards use New-SalesforceCustomField.
+
+    .PARAMETER Label
+    Label of the custom object, for example My Object. The command suggests the API name and plural label from it. Passed to sf as --label. Required.
+
+    .PARAMETER UseDefaultFeatures
+    Turn on all the optional object features without asking. Adds --use-default-features.
+
+    .EXAMPLE
+    New-SalesforceCustomObject -Label 'Invoice' -UseDefaultFeatures
+    Create the Invoice object and answer the rest of the questions at the prompt.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf schema generate sobject (plugin @salesforce/plugin-sobject)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Label = --label; -UseDefaultFeatures = --use-default-features.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-sobject
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Label,
+        [Parameter(Mandatory = $false)][switch] $UseDefaultFeatures
+    )
+    Assert-SalesforceInteractiveSession -Command 'sf schema generate sobject'
+    $arguments = @('schema', 'generate', 'sobject', '--label', $Label)
+    if ($UseDefaultFeatures) { $arguments += '--use-default-features' }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments -Interactive @commonParams
+}
+
+function New-SalesforceCustomField {
+    <#
+    .SYNOPSIS
+    Creates the source files of a new custom field on an object in the project, asking questions.
+
+    .DESCRIPTION
+    Runs sf schema generate field, which writes the metadata file of a custom field on a standard or custom object. The object's source files must already be in the project (retrieve them first if they are not). It is interactive: it asks you questions (the API name, plural label, field type and so on, with suggestions based on the label), so it needs a terminal and a Salesforce DX project folder. Run it as a plain command. If you assign its output to a variable or pipe it, PowerShell captures the output and you cannot see the questions. It returns nothing; the files it writes are the result.
+
+    .PARAMETER Label
+    Label of the field, for example Invoice Total. The command suggests the API name from it. Passed to sf as --label. Required.
+
+    .PARAMETER ObjectDirectory
+    Folder that holds the object's source files, for example force-app/main/default/objects/Invoice__c. If you leave it out the command asks for the object. The folder must exist. Passed to sf as --object.
+
+    .EXAMPLE
+    New-SalesforceCustomField -Label 'Invoice Total' -ObjectDirectory force-app/main/default/objects/Invoice__c
+    Add a field to the Invoice object and answer the questions about its type.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf schema generate field (plugin @salesforce/plugin-sobject)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Label = --label; -ObjectDirectory = --object.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-sobject
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Label,
+        [Parameter(Mandatory = $false)][string] $ObjectDirectory
+    )
+    if ($ObjectDirectory -and -not (Test-Path -LiteralPath $ObjectDirectory -PathType Container)) { throw "Object folder '$ObjectDirectory' does not exist." }
+    Assert-SalesforceInteractiveSession -Command 'sf schema generate field'
+    $arguments = @('schema', 'generate', 'field', '--label', $Label)
+    if ($ObjectDirectory) { $arguments += @('--object', $ObjectDirectory) }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments -Interactive @commonParams
+}
+
+function New-SalesforcePlatformEvent {
+    <#
+    .SYNOPSIS
+    Creates the source files of a new platform event in the project, asking questions.
+
+    .DESCRIPTION
+    Runs sf schema generate platformevent, which writes the metadata file of a platform event. It is interactive: it asks you questions (the API name, plural label, field type and so on, with suggestions based on the label), so it needs a terminal and a Salesforce DX project folder. Run it as a plain command. If you assign its output to a variable or pipe it, PowerShell captures the output and you cannot see the questions. It returns nothing; the files it writes are the result.
+
+    .PARAMETER Label
+    Label of the platform event, for example Order Shipped. The command suggests the API name from it. Passed to sf as --label. Required.
+
+    .EXAMPLE
+    New-SalesforcePlatformEvent -Label 'Order Shipped'
+    Create the platform event and answer the rest of the questions at the prompt.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf schema generate platformevent (plugin @salesforce/plugin-sobject)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Label = --label.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-sobject
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Label
+    )
+    Assert-SalesforceInteractiveSession -Command 'sf schema generate platformevent'
+    $arguments = @('schema', 'generate', 'platformevent', '--label', $Label)
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments -Interactive @commonParams
+}
+
+function New-SalesforceCustomTab {
+    <#
+    .SYNOPSIS
+    Creates the source file of a new custom tab for a custom object.
+
+    .DESCRIPTION
+    Runs sf schema generate tab, which writes a custom tab file. Unlike the other schema generators it asks no questions: everything comes from the parameters. Run it inside a Salesforce DX project. The custom object's own source files do not have to be in the project. It returns the CLI result as an object.
+
+    .PARAMETER ObjectName
+    API name of the custom object the tab is for, for example Invoice__c. Letters, digits and underscores only. Passed to sf as --object. Required.
+
+    .PARAMETER Directory
+    Path of the tabs folder that will hold the tab file, for example force-app/main/default/tabs. The folder must already exist; the CLI does not create it. Passed to sf as --directory. Required.
+
+    .PARAMETER Icon
+    Number from 1 to 100 that picks the tab's color scheme and icon. The CLI default is 1, which is also used here. Passed to sf as --icon.
+
+    .EXAMPLE
+    New-SalesforceCustomTab -ObjectName Invoice__c -Directory force-app/main/default/tabs -Icon 54
+    Create a tab for the Invoice object with icon 54.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf schema generate tab (plugin @salesforce/plugin-sobject)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ObjectName = --object; -Directory = --directory; -Icon = --icon.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-sobject
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $ObjectName,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Directory,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 100)][int] $Icon
+    )
+    # The CLI does not create the tabs folder and fails with a bare ENOENT when it is missing.
+    if (-not (Test-Path -LiteralPath $Directory -PathType Container)) { throw "Tabs folder '$Directory' does not exist. Create it first, for example force-app/main/default/tabs." }
+    if (-not $PSBoundParameters.ContainsKey('Icon')) { $Icon = 1 }
+    $arguments = @('schema', 'generate', 'tab', '--object', $ObjectName, '--directory', $Directory, '--icon', $Icon)
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion

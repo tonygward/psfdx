@@ -264,9 +264,13 @@ using System.Text;
 public static class FakeSf {
     public static int Main(string[] args) {
         var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
-        foreach (var a in args) { writer.Write("<" + a + ">\n"); }
+        int code = 0;
+        foreach (var a in args) {
+            if (a.StartsWith("--fake-exit=")) { code = int.Parse(a.Substring(12)); continue; }
+            writer.Write("<" + a + ">\n");
+        }
         writer.Flush();
-        return 0;
+        return code;
     }
 }
 '@
@@ -278,7 +282,7 @@ public static class FakeSf {
                 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
             } else {
                 $script:fake = Join-Path $script:fakeDir 'fakesf'
-                Set-Content -LiteralPath $script:fake -Value "#!/bin/sh`nfor a in `"`$@`"; do printf '<%s>\n' `"`$a`"; done" -Encoding ascii
+                Set-Content -LiteralPath $script:fake -Value "#!/bin/sh`ncode=0`nfor a in `"`$@`"; do case `"`$a`" in --fake-exit=*) code=`"`${a#--fake-exit=}`";; *) printf '<%s>\n' `"`$a`";; esac; done`nexit `$code" -Encoding ascii
                 & chmod +x $script:fake
             }
         }
@@ -290,6 +294,21 @@ public static class FakeSf {
         It 'passes the exact argv' {
             $out = @(Invoke-Salesforce -Command "`"$($script:fake)`" one `"two words`" three")
             $out | Should -Be @('<one>', '<two words>', '<three>')
+        }
+
+        It '-Interactive runs the program with the exact argv, parses nothing and returns no result object' {
+            $out = @(Invoke-Salesforce -FilePath $script:fake -Arguments @('schema', 'generate', 'field', '--label', 'My Field', '--object', 'a b') -Interactive)
+            # The fake prints its argv; a real interactive command keeps the console, so a caller that does not capture sees it there.
+            ($out | ForEach-Object { [string]$_ }) -join '|' | Should -Be '<schema>|<generate>|<field>|<--label>|<My Field>|<--object>|<a b>'
+        }
+
+        It '-Interactive throws on a non-zero exit code, and does not demand JSON' {
+            { Invoke-Salesforce -FilePath $script:fake -Arguments @('x', '--fake-exit=3') -Interactive } | Should -Throw -ExpectedMessage '*exited with code 3*'
+            { Invoke-Salesforce -FilePath $script:fake -Arguments @('x', '--fake-exit=0') -Interactive } | Should -Not -Throw
+        }
+
+        It 'without -Interactive a failing program in JSON mode still reports no JSON result' {
+            { Invoke-Salesforce -FilePath $script:fake -Arguments @('--json', '--fake-exit=1') } | Should -Throw -ExpectedMessage '*returned no JSON result*'
         }
 
         It 'does not execute injected commands' {
@@ -404,9 +423,13 @@ using System.Text;
 public static class ArgvCapture {
     public static int Main(string[] args) {
         var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
-        foreach (var a in args) { writer.Write("<" + a + ">\n"); }
+        int code = 0;
+        foreach (var a in args) {
+            if (a.StartsWith("--fake-exit=")) { code = int.Parse(a.Substring(12)); continue; }
+            writer.Write("<" + a + ">\n");
+        }
         writer.Flush();
-        return 0;
+        return code;
     }
 }
 '@
@@ -582,9 +605,13 @@ using System.Text;
 public static class ArgvCapture {
     public static int Main(string[] args) {
         var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
-        foreach (var a in args) { writer.Write("<" + a + ">\n"); }
+        int code = 0;
+        foreach (var a in args) {
+            if (a.StartsWith("--fake-exit=")) { code = int.Parse(a.Substring(12)); continue; }
+            writer.Write("<" + a + ">\n");
+        }
         writer.Flush();
-        return 0;
+        return code;
     }
 }
 '@

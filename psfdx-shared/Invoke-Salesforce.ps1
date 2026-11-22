@@ -255,6 +255,9 @@ function Invoke-Salesforce {
     .PARAMETER Arguments
     The arguments, one array element each, exactly as the program should receive them. On Windows, a .cmd shim (sf, npm, yarn) refuses an argument with a double quote or line break, or bare shell metacharacters, and a command line over about 7800 characters. Belongs to the Arguments parameter set. Default: @().
 
+    .PARAMETER Interactive
+    For a command that asks the person questions, such as sf schema generate field. The output is not stored in a variable, so the command keeps the console and can show its prompts and read the answers, and nothing is parsed. A non-zero exit code throws. Run the calling cmdlet as a plain command: if its output is assigned to a variable or piped, PowerShell captures it and the prompts are hidden. Belongs to the Arguments parameter set.
+
     .EXAMPLE
     Invoke-Salesforce -FilePath sf -Arguments @('org', 'list', '--json')
     Run sf org list and return its output.
@@ -288,7 +291,8 @@ function Invoke-Salesforce {
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'Command')][string] $Command,
         [Parameter(Mandatory = $true, ParameterSetName = 'Arguments')][ValidateNotNullOrEmpty()][string] $FilePath,
-        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][AllowEmptyCollection()][AllowEmptyString()][string[]] $Arguments = @()
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][AllowEmptyCollection()][AllowEmptyString()][string[]] $Arguments = @(),
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $Interactive
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Arguments') {
@@ -321,13 +325,25 @@ function Invoke-Salesforce {
     }
     try {
         $global:LASTEXITCODE = 0
-        $output = & $filePath @nativeArguments
-        $exitCode = $global:LASTEXITCODE
+        if ($Interactive) {
+            # Not assigned to a variable, so the program is not redirected and keeps the console for its prompts.
+            & $filePath @nativeArguments
+            $exitCode = $global:LASTEXITCODE
+            $output = $null
+        } else {
+            $output = & $filePath @nativeArguments
+            $exitCode = $global:LASTEXITCODE
+        }
     } finally {
         if ($needsPercent) {
             # [NullString]::Value, not $null: PowerShell turns $null into an empty string for this call, which leaves the variable set.
             [System.Environment]::SetEnvironmentVariable($percentName, [NullString]::Value)
         }
+    }
+
+    if ($Interactive) {
+        if ($exitCode -ne 0) { throw "Salesforce CLI exited with code $exitCode." }
+        return
     }
 
     # In JSON mode the CLI prints a JSON error body on failure, which Show-SalesforceResult

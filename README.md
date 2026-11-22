@@ -283,6 +283,19 @@ These write metadata files into the current Salesforce DX project and return the
 | `New-SalesforceCustomMetadataRecordsFromCsv` | Create one record per CSV row, named from `-NameColumn` (`sf cmdt generate records`). |
 | `New-SalesforceCustomMetadataTypeFromOrg` | Turn a custom object or custom setting in an org into a type plus its records (`sf cmdt generate fromorg`). |
 
+### Schema generators
+
+These write metadata source files into the current Salesforce DX project and need no org.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforceCustomObject` | Create a custom object, with its Name field (`sf schema generate sobject`). Interactive: it asks questions, so run it in a terminal as a plain command (see below). `-UseDefaultFeatures` skips the feature questions. |
+| `New-SalesforceCustomField` | Create a custom field on an object (`sf schema generate field`). Interactive. `-ObjectDirectory` names the object's source folder. |
+| `New-SalesforcePlatformEvent` | Create a platform event (`sf schema generate platformevent`). Interactive. |
+| `New-SalesforceCustomTab` | Create a custom tab for a custom object (`sf schema generate tab`). Not interactive: `-ObjectName`, `-Directory` (must exist) and `-Icon` 1 to 100. Returns the CLI result. |
+
+The three interactive cmdlets refuse to run in a session without a terminal, such as a script run with redirected input or output, and tell you so instead of waiting for answers that never come. Run them as a plain command: if you assign their output to a variable or pipe it, PowerShell captures the output and the questions are hidden.
+
 ### DevOps Center pipeline deploys (beta)
 
 These run the beta `sf project deploy pipeline` commands. They need a DevOps Center org you are logged in to (`-DevOpsCenterUsername`), and because the CLI commands are beta their names, flags and results can change in a later Salesforce CLI release; psfdx does not promise they stay stable. The cmdlets that change an org ask for confirmation and support `-WhatIf`.

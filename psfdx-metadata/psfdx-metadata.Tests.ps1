@@ -1176,3 +1176,115 @@ Describe 'psfdx-metadata custom metadata type generators (issue 251)' {
         }
     }
 }
+
+Describe 'psfdx-metadata schema generators (issue 252)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"tab":{"customObject":true,"motif":"Custom1: Heart"},"path":"force-app/main/default/tabs/Invoice__c.tab-meta.xml"}}' }
+            Mock Assert-SalesforceInteractiveSession { }
+        }
+
+        Context 'the interactive generators' {
+            It 'New-SalesforceCustomObject runs interactively, without --json, and passes the switch' {
+                New-SalesforceCustomObject -Label 'My Object' -UseDefaultFeatures | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Interactive -and (($Arguments -join '|') -eq 'schema|generate|sobject|--label|My Object|--use-default-features') }
+            }
+            It 'New-SalesforceCustomObject needs only the label' {
+                New-SalesforceCustomObject -Label 'Invoice' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Interactive -and (($Arguments -join '|') -eq 'schema|generate|sobject|--label|Invoice') }
+            }
+            It 'New-SalesforceCustomField passes an object folder that exists' {
+                $dir = Join-Path $TestDrive 'objects/Invoice__c'; New-Item -ItemType Directory -Path $dir -Force | Out-Null
+                New-SalesforceCustomField -Label 'Invoice Total' -ObjectDirectory $dir | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Interactive -and (($Arguments -join '|') -eq "schema|generate|field|--label|Invoice Total|--object|$dir") }
+            }
+            It 'New-SalesforceCustomField leaves --object out so the command asks for the object' {
+                New-SalesforceCustomField -Label 'Total' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Interactive -and (($Arguments -join '|') -eq 'schema|generate|field|--label|Total') }
+            }
+            It 'New-SalesforceCustomField checks the object folder before asking anything' {
+                { New-SalesforceCustomField -Label 'Total' -ObjectDirectory (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                Assert-MockCalled Assert-SalesforceInteractiveSession -Times 0 -Exactly
+            }
+            It 'New-SalesforcePlatformEvent runs interactively' {
+                New-SalesforcePlatformEvent -Label 'Order Shipped' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Interactive -and (($Arguments -join '|') -eq 'schema|generate|platformevent|--label|Order Shipped') }
+            }
+            It 'they return nothing, so the files are the result' {
+                Mock Invoke-Salesforce { }
+                @(New-SalesforceCustomObject -Label 'X').Count | Should -Be 0
+                @(New-SalesforcePlatformEvent -Label 'X').Count | Should -Be 0
+            }
+            It 'they refuse an empty label before running sf' {
+                foreach ($bad in '', $null) {
+                    { New-SalesforceCustomObject -Label $bad } | Should -Throw
+                    { New-SalesforceCustomField -Label $bad } | Should -Throw
+                    { New-SalesforcePlatformEvent -Label $bad } | Should -Throw
+                }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'they check that a terminal is available first' {
+                New-SalesforceCustomObject -Label 'X' | Out-Null
+                New-SalesforceCustomField -Label 'X' | Out-Null
+                New-SalesforcePlatformEvent -Label 'X' | Out-Null
+                Assert-MockCalled Assert-SalesforceInteractiveSession -Times 1 -Exactly -ParameterFilter { $Command -eq 'sf schema generate sobject' }
+                Assert-MockCalled Assert-SalesforceInteractiveSession -Times 1 -Exactly -ParameterFilter { $Command -eq 'sf schema generate field' }
+                Assert-MockCalled Assert-SalesforceInteractiveSession -Times 1 -Exactly -ParameterFilter { $Command -eq 'sf schema generate platformevent' }
+            }
+            It 'a failing CLI makes the cmdlet throw' {
+                Mock Invoke-Salesforce { throw 'Salesforce CLI exited with code 1.' }
+                { New-SalesforcePlatformEvent -Label 'X' } | Should -Throw -ExpectedMessage '*exited with code 1*'
+            }
+        }
+
+        Context 'New-SalesforceCustomTab' {
+            BeforeEach {
+                $script:tabs = Join-Path $TestDrive 'force-app/main/default/tabs'
+                New-Item -ItemType Directory -Path $script:tabs -Force | Out-Null
+            }
+            It 'builds the command, uses icon 1 by default and returns the result' {
+                $r = New-SalesforceCustomTab -ObjectName Invoice__c -Directory $script:tabs
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { -not $Interactive -and (($Arguments -join '|') -eq "schema|generate|tab|--object|Invoice__c|--directory|$($script:tabs)|--icon|1|--json") }
+                $r.path | Should -BeLike '*Invoice__c.tab-meta.xml'
+            }
+            It 'passes the icon, including the limits 1 and 100' {
+                New-SalesforceCustomTab -ObjectName Order__c -Directory $script:tabs -Icon 54 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -like '*|--icon|54|--json' }
+                New-SalesforceCustomTab -ObjectName Order__c -Directory $script:tabs -Icon 1 | Out-Null
+                New-SalesforceCustomTab -ObjectName Order__c -Directory $script:tabs -Icon 100 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 2 -Exactly -ParameterFilter { ($Arguments -join '|') -like '*|--icon|1|--json' -or ($Arguments -join '|') -like '*|--icon|100|--json' }
+            }
+            It 'rejects an icon outside 1 to 100 and a bad object name' {
+                foreach ($icon in 0, 101, -5) { { New-SalesforceCustomTab -ObjectName Order__c -Directory $script:tabs -Icon $icon } | Should -Throw }
+                foreach ($name in 'bad name', 'Order__c;calc', "Order__c`n", '1Order') { { New-SalesforceCustomTab -ObjectName $name -Directory $script:tabs } | Should -Throw }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'says so clearly when the tabs folder does not exist, instead of the CLI''s ENOENT' {
+                { New-SalesforceCustomTab -ObjectName Order__c -Directory (Join-Path $TestDrive 'no tabs here') } | Should -Throw -ExpectedMessage '*does not exist. Create it first*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws the CLI message' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"RequiresProjectError: run it from a project."}' }
+                { New-SalesforceCustomTab -ObjectName Order__c -Directory $script:tabs } | Should -Throw -ExpectedMessage '*RequiresProjectError*'
+            }
+        }
+
+        It 'exports the four generators and keeps the helper private' {
+            $exports = (Get-Module psfdx-metadata).ExportedFunctions.Keys
+            foreach ($n in 'New-SalesforceCustomObject', 'New-SalesforceCustomField', 'New-SalesforcePlatformEvent', 'New-SalesforceCustomTab') { $exports | Should -Contain $n }
+            $exports | Should -Not -Contain 'Assert-SalesforceInteractiveSession'
+        }
+    }
+}
+
+Describe 'Assert-SalesforceInteractiveSession (issue 252)' {
+    InModuleScope 'psfdx-metadata' {
+        It 'refuses to run where input or output is redirected, as in CI and in scripts' -Skip:(-not ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected)) {
+            { Assert-SalesforceInteractiveSession -Command 'sf schema generate sobject' } | Should -Throw -ExpectedMessage '*needs a terminal*'
+        }
+        It 'names the command it was asked about' -Skip:(-not ([Console]::IsInputRedirected -or [Console]::IsOutputRedirected)) {
+            { Assert-SalesforceInteractiveSession -Command 'sf schema generate field' } | Should -Throw -ExpectedMessage 'sf schema generate field asks questions*'
+        }
+    }
+}
