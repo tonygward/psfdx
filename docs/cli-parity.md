@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 93 | 19 | 84 | 3 | 15 | 57.1% of 196 |
+| Core plugins (bundled with the CLI) | 214 | 114 | 16 | 66 | 3 | 15 | 66.3% of 196 |
 | Just-in-time plugins (installed on first use) | 65 | 15 | 4 | 37 | 0 | 9 | 33.9% of 56 |
-| Both | 279 | 108 | 23 | 121 | 3 | 24 | 52.0% of 252 |
+| Both | 279 | 129 | 20 | 103 | 3 | 24 | 59.1% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **177** cmdlets; **146** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **195** cmdlets; **164** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **131** commands psfdx runs, it passes **589 of 646** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **48** have a list of allowed values in the CLI, and psfdx can pass **198 of 218** of those values.
+**Flags and values.** Across the **149** commands psfdx runs, it passes **687 of 727** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **53** have a list of allowed values in the CLI, and psfdx can pass **215 of 235** of those values.
 
 ## By capability
 
@@ -45,8 +45,8 @@ psfdx exports **177** cmdlets; **146** of them run an sf command themselves. The
 | Lightning development (sf lightning) | 3 | 1 | 2 | 0 | 0 | 0 | 100.0% of 3 |
 | Logic tests (sf logic) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
 | Orgs, users and sandboxes (sf org) | 40 | 35 | 0 | 2 | 3 | 0 | 94.6% of 37 |
-| Packages (second generation) (sf package) | 25 | 8 | 3 | 14 | 0 | 0 | 44.0% of 25 |
-| Packages (first generation) (sf package1) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
+| Packages (second generation) (sf package) | 25 | 25 | 0 | 0 | 0 | 0 | 100.0% of 25 |
+| Packages (first generation) (sf package1) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI plugins (sf plugins) | 15 | 1 | 2 | 10 | 0 | 2 | 23.1% of 13 |
 | Project, deploy and retrieve (sf project) | 22 | 22 | 0 | 0 | 0 | 0 | 100.0% of 22 |
 | Schema (sf schema) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
@@ -231,34 +231,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | `sf org auth show-user-password` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints a user's password. psfdx generates one with New-SalesforceUserPassword and never reads it back from the CLI. |
 | `sf org create agent-user` | @salesforce/plugin-org | 4 (1 required) | missing | An Agentforce command; it is built with the other agent commands in PSF-61. [#255](https://github.com/tonygward/psfdx/issues/255) |
 | `sf org open agent` | @salesforce/plugin-org | 7 (1 required) | missing | An Agentforce command; it is built with the other agent commands in PSF-61. [#255](https://github.com/tonygward/psfdx/issues/255) |
-
-### Packages (second generation) (`sf package`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf package convert` | @salesforce/plugin-packaging | 10 (2 required) | missing |  |
-| `sf package push-upgrade abort` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
-| `sf package push-upgrade list` | @salesforce/plugin-packaging | 5 (2 required) | missing |  |
-| `sf package push-upgrade report` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
-| `sf package push-upgrade schedule` | @salesforce/plugin-packaging | 6 (2 required) | missing |  |
-| `sf package uninstall` | @salesforce/plugin-packaging | 3 (2 required) | missing |  |
-| `sf package uninstall report` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
-| `sf package update` | @salesforce/plugin-packaging | 8 (2 required) | missing |  |
-| `sf package version create list` | @salesforce/plugin-packaging | 5 (1 required) | missing |  |
-| `sf package version displayancestry` | @salesforce/plugin-packaging | 4 (2 required) | missing |  |
-| `sf package version displaydependencies` | @salesforce/plugin-packaging | 5 (2 required) | missing |  |
-| `sf package version report` | @salesforce/plugin-packaging | 3 (2 required) | missing |  |
-| `sf package version retrieve` | @salesforce/plugin-packaging | 3 (2 required) | missing |  |
-| `sf package version update` | @salesforce/plugin-packaging | 7 (2 required) | missing |  |
-
-### Packages (first generation) (`sf package1`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf package1 version create` | @salesforce/plugin-packaging | 10 (3 required) | missing |  |
-| `sf package1 version create get` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
-| `sf package1 version display` | @salesforce/plugin-packaging | 2 (2 required) | missing |  |
-| `sf package1 version list` | @salesforce/plugin-packaging | 2 (1 required) | missing |  |
 
 ### CLI plugins (`sf plugins`)
 
@@ -494,17 +466,40 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf package convert` | wrapped | `Convert-SalesforcePackage` | 10 of 10 |  |  |
 | `sf package create` | wrapped | `New-SalesforcePackage` | 8 of 8 |  |  |
 | `sf package delete` | wrapped | `Remove-SalesforcePackage` | 3 of 3 |  |  |
-| `sf package install` | partially wrapped | `Install-SalesforcePackageVersion` | 6 of 9 | `--apex-compile` `--installation-key` `--upgrade-type` |  |
+| `sf package install` | wrapped | `Install-SalesforcePackageVersion` | 9 of 9 |  |  |
 | `sf package install report` | wrapped | `Get-SalesforcePackageInstallStatus` | 2 of 2 |  |  |
 | `sf package installed list` | wrapped | `Get-SalesforcePackagesInstalled` | 1 of 1 |  |  |
 | `sf package list` | wrapped | `Get-SalesforcePackages` | 2 of 2 |  |  |
-| `sf package version create` | partially wrapped | `New-SalesforcePackageVersion` | 12 of 23 | `--async-validation` `--branch` `--generate-pkg-zip` `--language` `--path` `--post-install-script` `--post-install-url` `--releasenotes-url` `--skip-ancestor-check` `--uninstall-script` `--version-number` |  |
+| `sf package push-upgrade abort` | wrapped | `Stop-SalesforcePushUpgrade` | 2 of 2 |  |  |
+| `sf package push-upgrade list` | wrapped | `Get-SalesforcePushUpgrades` | 5 of 5 |  |  |
+| `sf package push-upgrade report` | wrapped | `Get-SalesforcePushUpgrade` | 2 of 2 |  |  |
+| `sf package push-upgrade schedule` | wrapped | `New-SalesforcePushUpgrade` | 6 of 6 |  |  |
+| `sf package uninstall` | wrapped | `Uninstall-SalesforcePackage` | 3 of 3 |  |  |
+| `sf package uninstall report` | wrapped | `Get-SalesforcePackageUninstallStatus` | 2 of 2 |  |  |
+| `sf package update` | wrapped | `Update-SalesforcePackage` | 8 of 8 |  |  |
+| `sf package version create` | wrapped | `New-SalesforcePackageVersion` | 23 of 23 |  |  |
+| `sf package version create list` | wrapped | `Get-SalesforcePackageVersionCreateRequests` | 5 of 5 |  |  |
 | `sf package version create report` | wrapped | `Get-SalesforcePackageVersionCreateStatus` | 2 of 2 |  |  |
 | `sf package version delete` | wrapped | `Remove-SalesforcePackageVersion` | 3 of 3 |  |  |
-| `sf package version list` | partially wrapped | `Get-SalesforcePackageVersions` | 7 of 10 | `--created-last-days` `--modified-last-days` `--order-by` |  |
+| `sf package version displayancestry` | wrapped | `Get-SalesforcePackageVersionAncestry` | 4 of 4 |  |  |
+| `sf package version displaydependencies` | wrapped | `Get-SalesforcePackageVersionDependencies` | 5 of 5 |  |  |
+| `sf package version list` | wrapped | `Get-SalesforcePackageVersions` | 10 of 10 |  |  |
 | `sf package version promote` | wrapped | `Promote-SalesforcePackageVersion` | 3 of 3 |  |  |
+| `sf package version report` | wrapped | `Get-SalesforcePackageVersion` | 3 of 3 |  |  |
+| `sf package version retrieve` | wrapped | `Retrieve-SalesforcePackageVersion` | 3 of 3 |  |  |
+| `sf package version update` | wrapped | `Update-SalesforcePackageVersion` | 7 of 7 |  |  |
+
+### Packages (first generation) (`sf package1`)
+
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf package1 version create` | wrapped | `New-SalesforceFirstGenPackageVersion` | 10 of 10 |  |  |
+| `sf package1 version create get` | wrapped | `Get-SalesforceFirstGenPackageVersionCreateStatus` | 2 of 2 |  |  |
+| `sf package1 version display` | wrapped | `Get-SalesforceFirstGenPackageVersion` | 2 of 2 |  |  |
+| `sf package1 version list` | wrapped | `Get-SalesforceFirstGenPackageVersions` | 2 of 2 |  |  |
 
 ### CLI plugins (`sf plugins`)
 
@@ -562,9 +557,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 120 | 125 |
-| `--flags-dir` | 0 | 128 |
-| `--api-version` | 1 | 88 |
+| `--json` | 138 | 143 |
+| `--flags-dir` | 0 | 146 |
+| `--api-version` | 1 | 106 |
 
 ## How to read this
 

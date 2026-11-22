@@ -56,6 +56,15 @@ The live lane fails when the **CLI** changed, not only when psfdx did, so a Mond
 
 `tests/cli-compatibility.json` holds `knownCommands`, `removedCommands` and `legacyFlags`. It has no CLI version. When psfdx starts using a new `sf` command, add it to `knownCommands`; the live lane then checks it against the real CLI.
 
+## First-generation (`package1`) commands
+
+Decision for issue 250: psfdx wraps the four `sf package1 version` commands (`create`, `create get`, `display`, `list`) in psfdx-packages, as `New-SalesforceFirstGenPackageVersion`, `Get-SalesforceFirstGenPackageVersionCreateStatus`, `Get-SalesforceFirstGenPackageVersion` and `Get-SalesforceFirstGenPackageVersions`.
+
+- **Why wrap them.** They are GA commands, not deprecated aliases, and a team that is moving a managed package to second generation needs them: `Convert-SalesforcePackage` converts a released 1GP package, and these commands show which 1GP versions exist and upload new ones from the packaging org.
+- **Why separate names.** The cmdlets say `FirstGen` so they are not confused with the second-generation `Get-SalesforcePackageVersions` and `New-SalesforcePackageVersion`. Nothing about the 2GP cmdlets changed.
+- **Risk.** Salesforce is steering new work to second generation, so these commands may be deprecated in a later CLI release. The live lane (`PSFDX_SF_CLI_HELP=1`) fails when a command or flag disappears, which is the signal to remove the matching cmdlet in a breaking release.
+- **Nothing left out.** These four are the only `package1` commands in the CLI version that `docs/cli-parity.md` was generated from, so `sf package1` is fully covered. A new `package1` command shows up as missing in the next parity report.
+
 ## Rollback
 
 The checks are test-only. To stop the live lane, disable or delete `.github/workflows/ci-cli-compat.yml`. To remove the checks entirely, revert the test files; nothing in the modules depends on them.

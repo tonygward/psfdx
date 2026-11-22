@@ -4,7 +4,7 @@
 function Get-CliCommandWords {
     param([string] $Text)
     # 'sf org create sandbox --name x' -> 'org create sandbox'. Stops at the first flag or variable.
-    if ($Text -notmatch '^\s*sf((?:\s+[a-z][a-z-]*)*)') { return $null }
+    if ($Text -notmatch '^\s*sf((?:\s+[a-z][a-z0-9-]*)*)') { return $null }
     return (($Matches[1] -split '\s+' | Where-Object { $_ }) -join ' ')
 }
 

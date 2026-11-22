@@ -139,7 +139,7 @@ function Get-PsfdxRedactedCommand {
         [Parameter(Mandatory = $true)][AllowEmptyString()][string] $Command
     )
 
-    $secretOption = '(?i)(--(?:password|client-secret|client-secret-stdin|access-token|refresh-token|sfdx-url|sfdx-auth-url|jwt-key|token|secret)[\w-]*)(\s+|=)("(?:[^"`]|`.)*"|''(?:[^'']|'''')*''|\S+)'
+    $secretOption = '(?i)(--(?:password|client-secret|client-secret-stdin|access-token|refresh-token|sfdx-url|sfdx-auth-url|jwt-key|token|secret|installation-key(?!-bypass))[\w-]*)(\s+|=)("(?:[^"`]|`.)*"|''(?:[^'']|'''')*''|\S+)'
     return [regex]::Replace($Command, $secretOption, '$1$2********')
 }
 

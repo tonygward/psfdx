@@ -94,6 +94,13 @@ InModuleScope 'psfdx-shared' {
                 Should -Be 'sf x --sfdx-url ******** --access-token=********'
         }
 
+        It 'masks an installation key, but not the value-less --installation-key-bypass or the argument after it' {
+            Get-PsfdxRedactedCommand -Command 'sf package install --package 04t000000000001 --installation-key s3cret --target-org me' |
+                Should -Be 'sf package install --package 04t000000000001 --installation-key ******** --target-org me'
+            Get-PsfdxRedactedCommand -Command 'sf package version create --installation-key-bypass --wait 10 --json' |
+                Should -Be 'sf package version create --installation-key-bypass --wait 10 --json'
+        }
+
         It 'leaves ordinary commands alone' {
             Get-PsfdxRedactedCommand -Command 'sf org list --json' | Should -Be 'sf org list --json'
         }
