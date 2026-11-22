@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.47 - 2026-11-22
+
 - psfdx-metadata: all five `sf cmdt generate` commands are now covered, so you can build custom metadata in a project from PowerShell: `New-SalesforceCustomMetadataType`, `New-SalesforceCustomMetadataField`, `New-SalesforceCustomMetadataRecord` (field values as a hashtable), `New-SalesforceCustomMetadataRecordsFromCsv` and `New-SalesforceCustomMetadataTypeFromOrg`. They write files into the current project; only `...FromOrg` reads an org.
 
 ## 0.8.46 - 2026-11-22
