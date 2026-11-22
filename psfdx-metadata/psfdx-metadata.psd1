@@ -33,6 +33,7 @@
         'Describe-SalesforceObject',
         'Describe-SalesforceFields',
         'Describe-SalesforceMetadataTypes',
+        'Get-SalesforceMetadataComponents',
         'Clear-SalesforceMetadataTypeCache',
         'Build-SalesforceQuery',
         'New-SalesforceManifest',

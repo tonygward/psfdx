@@ -1535,3 +1535,165 @@ Describe 'Open-Salesforce private mode' {
         }
     }
 }
+
+Describe 'psfdx sf org parity (issue 248)' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+
+        Context 'new flags on existing cmdlets' {
+            It 'Connect-Salesforce passes -ClientApp, -Scopes and -Username' {
+                Connect-Salesforce -ClientApp mine -Scopes 'api web refresh_token' -Username me@example.com -OAuthClientId abc | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|login|web|--client-id|abc|--client-app|mine|--scopes|api web refresh_token|--username|me@example.com|--json' }
+            }
+            It 'Disconnect-Salesforce passes -ClientApp with -TargetOrg only' {
+                Disconnect-Salesforce -TargetOrg dev1 -ClientApp mine -NoPrompt -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|logout|--target-org|dev1|--client-app|mine|--no-prompt|--json' }
+                { Disconnect-Salesforce -All -ClientApp mine -Confirm:$false } | Should -Throw
+            }
+            It 'Open-Salesforce passes -Path and an existing -SourceFile' {
+                $file = Join-Path $TestDrive 'My Page.flexipage-meta.xml'
+                Set-Content -LiteralPath $file -Value '<x/>'
+                Mock Invoke-Salesforce { 'https://example.my.salesforce.com' }
+                Open-Salesforce -TargetOrg me -Path '/lightning/setup/SetupOneHome/home' -UrlOnly | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|open|--target-org|me|--url-only|--path|/lightning/setup/SetupOneHome/home' }
+                Open-Salesforce -TargetOrg me -SourceFile $file -UrlOnly | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "org|open|--target-org|me|--url-only|--source-file|$file" }
+            }
+            It 'Open-Salesforce stops before running sf when the source file is missing' {
+                { Open-Salesforce -SourceFile (Join-Path $TestDrive 'nope.cls') } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Get-SalesforceOrgDetails' {
+            BeforeEach {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"id":"00D000000000001","username":"me@example.com","instanceUrl":"https://x.my.salesforce.com","accessToken":"TOKEN123","sfdxAuthUrl":"force://PlatformCLI::REFRESH@x.my.salesforce.com"}}' }
+            }
+            It 'builds the command and removes tokens by default' {
+                $org = Get-SalesforceOrgDetails -TargetOrg dev1 -ShowVerboseDetails
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|display|--target-org|dev1|--verbose|--json' }
+                $org.username | Should -Be 'me@example.com'
+                $org.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                $org.PSObject.Properties.Name | Should -Not -Contain 'sfdxAuthUrl'
+            }
+            It 'returns the token only with -IncludeToken' {
+                (Get-SalesforceOrgDetails -IncludeToken).accessToken | Should -Be 'TOKEN123'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|display|--json' }
+            }
+            It 'throws the CLI message when the org is unknown' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"No authorization information found for ghost."}' }
+                { Get-SalesforceOrgDetails -TargetOrg ghost } | Should -Throw -ExpectedMessage '*No authorization information found*'
+            }
+        }
+
+        Context 'Get-SalesforceAuthorizations' {
+            It 'lists the saved logins without tokens' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"username":"a@example.com","orgId":"00D000000000001","aliases":["a"],"instanceUrl":"https://a.my.salesforce.com","isExpired":false,"accessToken":"T1"},{"username":"b@example.com","orgId":"00D000000000002","aliases":[],"isExpired":true}]}' }
+                $auths = @(Get-SalesforceAuthorizations)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|auth|--json' }
+                $auths.Count | Should -Be 2
+                $auths[0].username | Should -Be 'a@example.com'
+                $auths[0].PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+                $auths[1].isExpired | Should -BeTrue
+            }
+        }
+
+        Context 'Connect-SalesforceAccessToken' {
+            BeforeEach {
+                $script:seenToken = $null
+                $script:seenArgs = $null
+                Mock Invoke-Salesforce {
+                    $script:seenToken = [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN')
+                    $script:seenArgs = $Arguments -join '|'
+                    '{"status":0,"result":{"username":"me@example.com","accessToken":"LEAK","instanceUrl":"https://x.my.salesforce.com"}}'
+                }
+                $script:secure = ConvertTo-SecureString 'TOPSECRETTOKEN' -AsPlainText -Force
+            }
+            AfterEach { [Environment]::SetEnvironmentVariable('SF_ACCESS_TOKEN', $null) }
+
+            It 'hands the token to sf in the environment, not the arguments, and removes it afterwards' {
+                $r = Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure -Alias ci -SetDefault -SetDefaultDevHub -NoPrompt
+                $script:seenToken | Should -Be 'TOPSECRETTOKEN'
+                $script:seenArgs | Should -Be 'org|login|access-token|--instance-url|https://x.my.salesforce.com|--alias|ci|--set-default|--set-default-dev-hub|--no-prompt|--json'
+                $script:seenArgs | Should -Not -BeLike '*TOPSECRET*'
+                [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN') | Should -BeNullOrEmpty
+                $r.username | Should -Be 'me@example.com'
+                $r.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+            }
+            It 'restores an earlier SF_ACCESS_TOKEN value, also when sf fails' {
+                [Environment]::SetEnvironmentVariable('SF_ACCESS_TOKEN', 'EARLIER')
+                Mock Invoke-Salesforce { throw 'sf exploded' }
+                { Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure } | Should -Throw -ExpectedMessage '*sf exploded*'
+                [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN') | Should -Be 'EARLIER'
+            }
+            It 'refuses a non-https or relative instance URL before sending the token' {
+                foreach ($url in 'http://x.my.salesforce.com', 'x.my.salesforce.com', 'ftp://x') {
+                    { Connect-SalesforceAccessToken -InstanceUrl $url -AccessToken $script:secure } | Should -Throw -ExpectedMessage '*absolute https://*'
+                }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'lets only one login in the process use SF_ACCESS_TOKEN at a time, so tokens are never mixed' {
+                # A second runspace holds the process-wide lock, as a parallel login would while it runs sf.
+                $gate = [string]::Intern('psfdx.Connect-SalesforceAccessToken.SF_ACCESS_TOKEN')
+                $held = New-Object System.Threading.ManualResetEventSlim($false)
+                $release = New-Object System.Threading.ManualResetEventSlim($false)
+                $other = [powershell]::Create()
+                [void]$other.AddScript({
+                        param($g, $h, $r)
+                        [System.Threading.Monitor]::Enter($g)
+                        try { $h.Set(); [void]$r.Wait(15000) } finally { [System.Threading.Monitor]::Exit($g) }
+                    }).AddArgument($gate).AddArgument($held).AddArgument($release)
+                $pending = $other.BeginInvoke()
+                try {
+                    $held.Wait(10000) | Should -BeTrue
+                    $script:PsfdxAccessTokenLockTimeoutMs = 200
+                    { Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure } | Should -Throw -ExpectedMessage '*still running*'
+                    Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                    [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN') | Should -BeNullOrEmpty
+                }
+                finally {
+                    $script:PsfdxAccessTokenLockTimeoutMs = 60000
+                    $release.Set()
+                    [void]$other.EndInvoke($pending)
+                    $other.Dispose()
+                }
+                # The lock is free again, so the next login runs.
+                Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure | Out-Null
+                $script:seenToken | Should -Be 'TOPSECRETTOKEN'
+            }
+            It 'takes only a SecureString and never writes the token to verbose, warning or error output' {
+                (Get-Command Connect-SalesforceAccessToken).Parameters['AccessToken'].ParameterType | Should -Be ([System.Security.SecureString])
+                $out = Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure -Verbose 4>&1 3>&1 | Out-String
+                $out | Should -Not -BeLike '*TOPSECRET*'
+                $out | Should -Not -BeLike '*LEAK*'
+            }
+        }
+
+        Context 'Get-SalesforceSObjectRecordCount' {
+            It 'passes each object as its own --sobject' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"Account","count":12},{"name":"Contact","count":40}]}' }
+                $counts = @(Get-SalesforceSObjectRecordCount -SObject Account, Contact, Invoice__c -TargetOrg dev1)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|sobject|record-counts|--sobject|Account|--sobject|Contact|--sobject|Invoice__c|--target-org|dev1|--json' }
+                $counts.Count | Should -Be 2
+                $counts[1].count | Should -Be 40
+            }
+            It 'counts every object when none is named' {
+                Get-SalesforceSObjectRecordCount | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|sobject|record-counts|--json' }
+            }
+            It 'rejects names that are not API names, including a trailing line break' {
+                foreach ($bad in 'Account;drop', 'Acc ount', "Account`n", '1Account') {
+                    { Get-SalesforceSObjectRecordCount -SObject $bad } | Should -Throw
+                }
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        It 'exports the new cmdlets' {
+            $exports = (Get-Module psfdx).ExportedFunctions.Keys
+            foreach ($n in 'Get-SalesforceOrgDetails', 'Get-SalesforceAuthorizations', 'Connect-SalesforceAccessToken', 'Get-SalesforceSObjectRecordCount') { $exports | Should -Contain $n }
+        }
+    }
+}

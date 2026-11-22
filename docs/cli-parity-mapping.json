@@ -104,6 +104,47 @@
       "reason": "Unlinks a local plugin under development, which only plugin authors do."
     },
     {
+      "match": "org auth show-access-token",
+      "status": "deliberately excluded",
+      "reason": "Prints a live access token. psfdx keeps tokens out of its output; use Connect-SalesforceAccessToken to log in with a token you already have, or Open-Salesforce -UrlOnly for a login link."
+    },
+    {
+      "match": "org auth show-sfdx-auth-url",
+      "status": "deliberately excluded",
+      "reason": "Prints the Salesforce DX authorization URL, which holds a refresh token that gives anyone full access as that user. psfdx removes it from every result, including Get-SalesforceOrgDetails, unless -IncludeToken is given."
+    },
+    {
+      "match": "org auth show-user-password",
+      "status": "deliberately excluded",
+      "reason": "Prints a user's password. psfdx generates one with New-SalesforceUserPassword and never reads it back from the CLI."
+    },
+    {
+      "match": "org create agent-user",
+      "status": "missing",
+      "issue": 255,
+      "reason": "An Agentforce command; it is built with the other agent commands in PSF-61."
+    },
+    {
+      "match": "org open agent",
+      "status": "missing",
+      "issue": 255,
+      "reason": "An Agentforce command; it is built with the other agent commands in PSF-61."
+    },
+    {
+      "match": "org create scratch",
+      "reason": "The CLI lists --track-source only as the negatable flag --no-track-source (source tracking is on by default in a scratch org); -NoTrackSource passes it.",
+      "ignoreFlags": [
+        "track-source"
+      ]
+    },
+    {
+      "match": "org login sfdx-url",
+      "reason": "--sfdx-url-stdin reads the URL from standard input, which Invoke-Salesforce cannot feed; -SfdxUrlFile covers the same login.",
+      "ignoreFlags": [
+        "sfdx-url-stdin"
+      ]
+    },
+    {
       "match": "api request rest",
       "reason": "GET is what the CLI uses when --method is left out, and psfdx leaves it out for reads; the CLI data does not record that default.",
       "ignoreValues": [

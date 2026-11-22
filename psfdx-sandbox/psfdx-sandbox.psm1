@@ -200,6 +200,18 @@ function New-SalesforceSandbox {
     .PARAMETER NoTrackSource
     Do not use source tracking for this sandbox. Adds --no-track-source.
 
+    .PARAMETER Async
+    Request the sandbox and return at once, without waiting for it to be ready. Finish with Resume-SalesforceSandbox. Adds --async.
+
+    .PARAMETER PollIntervalSeconds
+    Number of seconds to wait between checks while waiting for the sandbox. Passed to sf as --poll-interval.
+
+    .PARAMETER SetDefault
+    Set the sandbox as your default org once it is ready. Adds --set-default.
+
+    .PARAMETER SourceId
+    ID of the sandbox to clone, as an alternative to -SourceSandboxName of Copy-SalesforceSandbox. Passed to sf as --source-id.
+
     .PARAMETER TargetOrg
     Username or alias of the production org that contains the sandbox license. Passed to sf as --target-org.
 
@@ -207,14 +219,18 @@ function New-SalesforceSandbox {
     New-SalesforceSandbox -SandboxName dev2 -LicenseType Developer -TargetOrg prod
     Create a developer sandbox.
 
+    .EXAMPLE
+    New-SalesforceSandbox -SandboxName dev2 -Async -TargetOrg prod
+    Request the sandbox and return at once; finish later with Resume-SalesforceSandbox.
+
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
 
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org create sandbox (plugin @salesforce/plugin-org)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async, --poll-interval, --set-default, --source-id
-    Parameter to flag: -SandboxName = --name; -Alias = --alias; -DefinitionFile = --definition-file; -LicenseType = --license-type; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -NoTrackSource = --no-track-source; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SandboxName = --name; -Alias = --alias; -DefinitionFile = --definition-file; -LicenseType = --license-type; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -NoTrackSource = --no-track-source; -Async = --async; -PollIntervalSeconds = --poll-interval; -SetDefault = --set-default; -SourceId = --source-id; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -238,6 +254,10 @@ function New-SalesforceSandbox {
         [Parameter(Mandatory = $false)][int] $WaitMinutes,
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
         [Parameter(Mandatory = $false)][switch] $NoTrackSource,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 2147483647)][int] $PollIntervalSeconds,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
+        [Parameter(Mandatory = $false)][string] $SourceId,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
@@ -249,6 +269,10 @@ function New-SalesforceSandbox {
     if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
     if ($NoPrompt) { $arguments += '--no-prompt' }
     if ($NoTrackSource) { $arguments += '--no-track-source' }
+    if ($Async) { $arguments += '--async' }
+    if ($PSBoundParameters.ContainsKey('PollIntervalSeconds')) { $arguments += @('--poll-interval', $PollIntervalSeconds) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($SourceId) { $arguments += @('--source-id', $SourceId) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -262,10 +286,16 @@ function Resume-SalesforceSandbox {
     Checks a sandbox creation and logs in to it when it is ready.
 
     .DESCRIPTION
-    Runs sf org resume sandbox for the sandbox name. Use it after New-SalesforceSandbox returned without waiting.
+    Runs sf org resume sandbox. Use it after New-SalesforceSandbox, Copy-SalesforceSandbox or Update-SalesforceSandbox returned without waiting. Say which sandbox with -SandboxName, with the -JobId of the sandbox process, or with -UseMostRecent for the latest one.
 
     .PARAMETER SandboxName
-    Name of the sandbox org. Passed to sf as --name. Required.
+    Name of the sandbox org. Passed to sf as --name. Required unless you give -JobId or -UseMostRecent.
+
+    .PARAMETER JobId
+    ID of the sandbox creation or refresh process (the SandboxProcess ID, starting 0GR). Passed to sf as --job-id. Use it instead of -SandboxName.
+
+    .PARAMETER UseMostRecent
+    Resume the most recent sandbox creation or refresh. Adds --use-most-recent. Use it instead of -SandboxName.
 
     .PARAMETER WaitMinutes
     Number of minutes to wait for the sandbox org to be ready. Passed to sf as --wait.
@@ -277,14 +307,18 @@ function Resume-SalesforceSandbox {
     Resume-SalesforceSandbox -SandboxName dev2 -WaitMinutes 30 -TargetOrg prod
     Wait up to 30 minutes.
 
+    .EXAMPLE
+    Resume-SalesforceSandbox -UseMostRecent -WaitMinutes 30
+    Resume the latest sandbox creation or refresh.
+
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
 
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org resume sandbox (plugin @salesforce/plugin-org)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --job-id, --use-most-recent
-    Parameter to flag: -SandboxName = --name; -WaitMinutes = --wait; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SandboxName = --name; -JobId = --job-id; -UseMostRecent = --use-most-recent; -WaitMinutes = --wait; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -299,14 +333,21 @@ function Resume-SalesforceSandbox {
     .LINK
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Name')]
     Param(
-        [Parameter(Mandatory = $true)][string] $SandboxName,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')][string] $SandboxName,
+        [Parameter(Mandatory = $true, ParameterSetName = 'JobId')][string] $JobId,
+        [Parameter(Mandatory = $true, ParameterSetName = 'MostRecent')][switch] $UseMostRecent,
         [Parameter(Mandatory = $false)][int] $WaitMinutes,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    $arguments = @('org', 'resume', 'sandbox', '--name', $SandboxName)
+    $arguments = @('org', 'resume', 'sandbox')
+    switch ($PSCmdlet.ParameterSetName) {
+        'Name' { $arguments += @('--name', $SandboxName) }
+        'JobId' { $arguments += @('--job-id', $JobId) }
+        'MostRecent' { $arguments += '--use-most-recent' }
+    }
     if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
@@ -324,7 +365,10 @@ function Copy-SalesforceSandbox {
     Runs sf org create sandbox with --source-sandbox-name, which clones an existing sandbox. The CLI waits only when you give -WaitMinutes.
 
     .PARAMETER SourceSandboxName
-    Name of the sandbox org to clone. Passed to sf as --source-sandbox-name. Required.
+    Name of the sandbox org to clone. Passed to sf as --source-sandbox-name. Required unless you give -SourceId.
+
+    .PARAMETER SourceId
+    ID of the sandbox to clone, instead of its name. Passed to sf as --source-id. Use it instead of -SourceSandboxName.
 
     .PARAMETER CloneSandboxName
     Name of the sandbox org. Passed to sf as --name. Required.
@@ -341,6 +385,15 @@ function Copy-SalesforceSandbox {
     .PARAMETER NoPrompt
     Don't prompt for confirmation about the sandbox configuration. Adds --no-prompt.
 
+    .PARAMETER Async
+    Request the clone and return at once, without waiting for it to be ready. Finish with Resume-SalesforceSandbox. Adds --async.
+
+    .PARAMETER PollIntervalSeconds
+    Number of seconds to wait between checks while waiting for the sandbox. Passed to sf as --poll-interval.
+
+    .PARAMETER SetDefault
+    Set the sandbox as your default org once it is ready. Adds --set-default.
+
     .PARAMETER TargetOrg
     Username or alias of the production org that contains the sandbox license. Passed to sf as --target-org.
 
@@ -354,8 +407,8 @@ function Copy-SalesforceSandbox {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org create sandbox (plugin @salesforce/plugin-org)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async, --poll-interval, --set-default, --source-id
-    Parameter to flag: -SourceSandboxName = --source-sandbox-name; -CloneSandboxName = --name; -LicenseType = --license-type; -Alias = --alias; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SourceSandboxName = --source-sandbox-name; -SourceId = --source-id; -CloneSandboxName = --name; -LicenseType = --license-type; -Alias = --alias; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -Async = --async; -PollIntervalSeconds = --poll-interval; -SetDefault = --set-default; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -370,23 +423,32 @@ function Copy-SalesforceSandbox {
     .LINK
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Name')]
     Param(
-        [Parameter(Mandatory = $true)][string] $SourceSandboxName,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Name')][string] $SourceSandboxName,
+        [Parameter(Mandatory = $true, ParameterSetName = 'Id')][string] $SourceId,
         [Parameter(Mandatory = $true)][string] $CloneSandboxName,
         [Parameter(Mandatory = $false)][string] $LicenseType,
         [Parameter(Mandatory = $false)][string] $Alias,
         [Parameter(Mandatory = $false)][int] $WaitMinutes,
         [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 2147483647)][int] $PollIntervalSeconds,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
-    # 'sf org clone sandbox' no longer exists; cloning is 'sf org create sandbox --source-sandbox-name'.
-    $arguments = @('org', 'create', 'sandbox', '--source-sandbox-name', $SourceSandboxName, '--name', $CloneSandboxName)
+    # 'sf org clone sandbox' no longer exists; cloning is 'sf org create sandbox --source-sandbox-name' (or --source-id).
+    $arguments = @('org', 'create', 'sandbox')
+    if ($PSCmdlet.ParameterSetName -eq 'Id') { $arguments += @('--source-id', $SourceId) } else { $arguments += @('--source-sandbox-name', $SourceSandboxName) }
+    $arguments += @('--name', $CloneSandboxName)
     if ($LicenseType) { $arguments += @('--license-type', $LicenseType) }
     if ($Alias) { $arguments += @('--alias', $Alias) }
     if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
     if ($NoPrompt) { $arguments += '--no-prompt' }
+    if ($Async) { $arguments += '--async' }
+    if ($PSBoundParameters.ContainsKey('PollIntervalSeconds')) { $arguments += @('--poll-interval', $PollIntervalSeconds) }
+    if ($SetDefault) { $arguments += '--set-default' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -448,6 +510,117 @@ function Remove-SalesforceSandbox {
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     $target = if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $TargetOrg } else { 'default target org' }
     if ($PSCmdlet.ShouldProcess($target, 'Delete sandbox')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Update-SalesforceSandbox {
+    <#
+    .SYNOPSIS
+    Refreshes a sandbox from production or from another sandbox.
+
+    .DESCRIPTION
+    Runs sf org refresh sandbox. A refresh replaces the sandbox's data and metadata with a fresh copy, so everything in it that is not in the source is lost. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time. The CLI waits only when you give -WaitMinutes; otherwise finish with Resume-SalesforceSandbox. Give the sandbox with -SandboxName, or put its name in a -DefinitionFile.
+
+    .PARAMETER SandboxName
+    Name of the sandbox to refresh. Passed to sf as --name.
+
+    .PARAMETER DefinitionFile
+    Path to a sandbox definition file that holds the refresh settings, such as the license type. Passed to sf as --definition-file.
+
+    .PARAMETER SourceSandboxName
+    Name of the sandbox to refresh from, instead of production. Passed to sf as --source-sandbox-name.
+
+    .PARAMETER SourceId
+    ID of the sandbox to refresh from, instead of its name. Passed to sf as --source-id.
+
+    .PARAMETER NoAutoActivate
+    Do not activate the sandbox when the refresh finishes; you activate it yourself later. Adds --no-auto-activate.
+
+    .PARAMETER Async
+    Start the refresh and return at once, without waiting for it to finish. Finish with Resume-SalesforceSandbox. Adds --async.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the refresh to finish. Passed to sf as --wait.
+
+    .PARAMETER PollIntervalSeconds
+    Number of seconds to wait between checks while waiting for the refresh. Passed to sf as --poll-interval.
+
+    .PARAMETER NoPrompt
+    Don't ask for confirmation. Skips the PowerShell confirmation; psfdx always passes --no-prompt to the CLI after it has confirmed.
+
+    .PARAMETER TargetOrg
+    Username or alias of the production org that owns the sandbox. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Update-SalesforceSandbox -SandboxName dev1 -TargetOrg prod -WhatIf
+    Preview the refresh without starting it.
+
+    .EXAMPLE
+    Update-SalesforceSandbox -SandboxName dev1 -SourceSandboxName uat -Async -NoPrompt -TargetOrg prod
+    Refresh dev1 from the uat sandbox and return at once, without any question.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org refresh sandbox (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SandboxName = --name; -DefinitionFile = --definition-file; -SourceSandboxName = --source-sandbox-name; -SourceId = --source-id; -NoAutoActivate = --no-auto-activate; -Async = --async; -WaitMinutes = --wait; -PollIntervalSeconds = --poll-interval; -TargetOrg = --target-org. psfdx always passes --no-prompt, because it asks first.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $SandboxName,
+        [Parameter(Mandatory = $false)][string] $DefinitionFile,
+        [Parameter(Mandatory = $false)][string] $SourceSandboxName,
+        [Parameter(Mandatory = $false)][string] $SourceId,
+        [Parameter(Mandatory = $false)][switch] $NoAutoActivate,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 2147483647)][int] $PollIntervalSeconds,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    if (-not $SandboxName -and -not $DefinitionFile) { throw 'Specify -SandboxName, or a -DefinitionFile that names the sandbox.' }
+    if ($SourceSandboxName -and $SourceId) { throw 'Specify -SourceSandboxName or -SourceId, not both.' }
+    if ($DefinitionFile -and -not (Test-Path -LiteralPath $DefinitionFile)) { throw "Definition file '$DefinitionFile' does not exist." }
+
+    $arguments = @('org', 'refresh', 'sandbox')
+    if ($SandboxName) { $arguments += @('--name', $SandboxName) }
+    if ($DefinitionFile) { $arguments += @('--definition-file', $DefinitionFile) }
+    if ($SourceSandboxName) { $arguments += @('--source-sandbox-name', $SourceSandboxName) }
+    if ($SourceId) { $arguments += @('--source-id', $SourceId) }
+    if ($NoAutoActivate) { $arguments += '--no-auto-activate' }
+    if ($Async) { $arguments += '--async' }
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($PSBoundParameters.ContainsKey('PollIntervalSeconds')) { $arguments += @('--poll-interval', $PollIntervalSeconds) }
+    # psfdx asks first (or the caller said not to), so the CLI must not ask a second time.
+    $arguments += '--no-prompt'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+
+    # -NoPrompt is the caller's decision not to be asked; it does not turn off -WhatIf.
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    $target = if ($SandboxName) { $SandboxName } else { $DefinitionFile }
+    if ($PSCmdlet.ShouldProcess($target, 'Refresh sandbox (replaces its data and metadata)')) {
         $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
         return Show-SalesforceResult -Result $result
     }

@@ -142,11 +142,14 @@ Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Connect-Salesforce` | Web-based org authentication. |
+| `Connect-Salesforce` | Web-based org authentication. Also takes `-ClientApp`, `-Scopes` and `-Username`. |
+| `Connect-SalesforceAccessToken` | Log in with an access token you already have. The token is a `SecureString`, handed to `sf` in the environment, never on the command line (`sf org login access-token`). |
+| `Get-SalesforceOrgDetails` | Show one org's ID, instance URL, user and status. Tokens and auth URLs are removed unless `-IncludeToken` (`sf org display`). |
+| `Get-SalesforceAuthorizations` | List every login saved on this computer, without contacting the orgs (`sf org list auth`). |
 | `Connect-SalesforceAuthUrl` | Authenticate using a stored SFDX auth URL file (supports alias/default flags and hides tokens and auth URLs unless `-IncludeToken`; `-IncludeToken` only returns what the CLI itself provides). |
-| `Disconnect-Salesforce` | Logout from Salesforce org (asks for confirmation, supports `-WhatIf`). |
+| `Disconnect-Salesforce` | Logout from Salesforce org (asks for confirmation, supports `-WhatIf`). `-ClientApp` logs out of one client app login. |
 | `Connect-SalesforceJwt` | JWT-based authentication. |
-| `Open-Salesforce` | Open org in a browser or get URL. |
+| `Open-Salesforce` | Open org in a browser or get URL. `-Path` opens a page, `-SourceFile` opens a project file's component. |
 | `Get-SalesforceConnections` | List connected orgs (excluding scratch orgs). |
 | `Repair-SalesforceConnections` | Clean up stale connections. |
 
@@ -163,6 +166,7 @@ Included in the `psfdx` package.
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceLimits` | Retrieve org limits (API, storage, etc.). |
+| `Get-SalesforceSObjectRecordCount` | Record counts of objects, all or the ones named with `-SObject` (`sf org list sobject record-counts`). |
 | `Get-SalesforceDataStorage` | Calculate data storage usage and percent. |
 | `Get-SalesforceApiUsage` | Calculate API usage percent. |
 
@@ -293,7 +297,8 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 | `Describe-SalesforceObjects` | List Objects for a target org. |
 | `Describe-SalesforceObject` | Describe a specific Object (supports tooling API). |
 | `Describe-SalesforceFields` | List fields for an Object. |
-| `Describe-SalesforceMetadataTypes` | List available metadata types. |
+| `Describe-SalesforceMetadataTypes` | List available metadata types. `-OutputFile` also writes the CLI's full result to a file. |
+| `Get-SalesforceMetadataComponents` | List the components of one metadata type in an org, with `-Folder` for folder types (`sf org list metadata`). |
 
 ### Utilities
 
@@ -329,6 +334,22 @@ Included in the `psfdx` package.
 | `Get-SalesforceCodeAnalyzerRule` | List the rules a selector matches (`sf code-analyzer rules`). |
 | `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
 | `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
+
+`New-SalesforceScratchOrg` also takes `-Alias`, `-OAuthClientId`, `-NoAncestors`, `-NoNamespace` and `-NoTrackSource`.
+
+### Org Source Tracking, Shapes and Snapshots
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Enable-SalesforceSourceTracking` | Turn source tracking on for an org that allows it (supports `-WhatIf`). |
+| `Disable-SalesforceSourceTracking` | Turn source tracking off for an org (asks for confirmation, supports `-WhatIf`). |
+| `New-SalesforceOrgShape` | Create an org shape that scratch orgs can be made from (`sf org create shape`). |
+| `Get-SalesforceOrgShapes` | List org shapes. |
+| `Remove-SalesforceOrgShape` | Delete the shapes of an org (asks for confirmation, supports `-WhatIf`). |
+| `New-SalesforceOrgSnapshot` | Create a scratch org snapshot from a scratch org (`-SourceOrg`, `-SnapshotName`). |
+| `Get-SalesforceOrgSnapshot` | Show one snapshot and whether it is ready. |
+| `Get-SalesforceOrgSnapshots` | List the snapshots of a Dev Hub. |
+| `Remove-SalesforceOrgSnapshot` | Delete a snapshot (asks for confirmation, supports `-WhatIf`). |
 
 ### Apex Testing & Automation
 
@@ -378,10 +399,11 @@ Included in the `psfdx` package.
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceSandboxes` | List sandboxes that belong to the production org. |
-| `New-SalesforceSandbox` | Request creation of a sandbox using a definition file or license type. |
+| `New-SalesforceSandbox` | Request creation of a sandbox using a definition file or license type. `-Async`, `-PollIntervalSeconds`, `-SetDefault` and `-SourceId` are available. |
 | `Get-SalesforceSandboxRefreshStatus` | Show the most recent refresh details and next eligible refresh date for a sandbox. |
-| `Copy-SalesforceSandbox` | Clone an existing sandbox into a new sandbox. |
-| `Resume-SalesforceSandbox` | Resume a pending or paused sandbox copy. |
+| `Copy-SalesforceSandbox` | Clone an existing sandbox (by `-SourceSandboxName` or `-SourceId`) into a new sandbox. |
+| `Update-SalesforceSandbox` | Refresh a sandbox from production or another sandbox; this replaces its data (asks for confirmation, supports `-WhatIf`). |
+| `Resume-SalesforceSandbox` | Resume a pending or paused sandbox creation or refresh, by `-SandboxName`, `-JobId` or `-UseMostRecent`. |
 | `Remove-SalesforceSandbox` | Delete a sandbox from the production org, optionally specifying the target org (asks for confirmation, supports `-WhatIf`). |
 
 ### psfdx-agentforce

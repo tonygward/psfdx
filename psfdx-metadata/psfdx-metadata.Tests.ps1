@@ -983,3 +983,57 @@ Describe 'psfdx-metadata exports the sf project parity cmdlets (issue 244)' {
         }
     }
 }
+
+Describe 'psfdx-metadata sf org parity (issue 248)' {
+    InModuleScope 'psfdx-metadata' {
+        Context 'Describe-SalesforceMetadataTypes -OutputFile' {
+            It 'passes --output-file and still returns the type names' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[{"xmlName":"ApexClass"},{"xmlName":"CustomObject"}]}}' }
+                $file = Join-Path $TestDrive 'types.json'
+                $types = @(Describe-SalesforceMetadataTypes -OutputFile $file -TargetOrg dev1)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "org|list|metadata-types|--target-org|dev1|--output-file|$file|--json" }
+                $types | Should -Be @('ApexClass', 'CustomObject')
+            }
+            It 'stops before running sf when the output folder does not exist' {
+                Mock Invoke-Salesforce { '{"status":0,"result":{"metadataObjects":[]}}' }
+                { Describe-SalesforceMetadataTypes -OutputFile (Join-Path $TestDrive 'nope/types.json') } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Get-SalesforceMetadataComponents' {
+            BeforeEach {
+                Clear-SalesforceMetadataTypeCache
+                Mock Describe-SalesforceMetadataTypes { @() }
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"fullName":"AccountService","type":"ApexClass","fileName":"classes/AccountService.cls","lastModifiedDate":"2026-11-01T10:00:00.000Z"},{"fullName":"OrderService","type":"ApexClass","fileName":"classes/OrderService.cls","lastModifiedDate":"2026-11-02T10:00:00.000Z"}]}' }
+            }
+            It 'builds the command and returns one object per component' {
+                $components = @(Get-SalesforceMetadataComponents -MetadataType ApexClass -TargetOrg dev1)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|metadata|--metadata-type|ApexClass|--target-org|dev1|--json' }
+                $components.Count | Should -Be 2
+                $components[1].fullName | Should -Be 'OrderService'
+            }
+            It 'passes -Folder and -OutputFile' {
+                $file = Join-Path $TestDrive 'components.json'
+                Get-SalesforceMetadataComponents -MetadataType Report -Folder 'Sales Reports' -OutputFile $file | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "org|list|metadata|--metadata-type|Report|--folder|Sales Reports|--output-file|$file|--json" }
+            }
+            It 'rejects an unknown metadata type and a missing output folder before running sf' {
+                { Get-SalesforceMetadataComponents -MetadataType NotAType } | Should -Throw -ExpectedMessage '*Unknown metadata type*'
+                { Get-SalesforceMetadataComponents -MetadataType ApexClass -OutputFile (Join-Path $TestDrive 'nope/out.json') } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'returns nothing when the org has no components of the type' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[]}' }
+                @(Get-SalesforceMetadataComponents -MetadataType ApexClass).Count | Should -Be 0
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Folder is required for Report."}' }
+                { Get-SalesforceMetadataComponents -MetadataType Report } | Should -Throw -ExpectedMessage '*Folder is required*'
+            }
+            It 'is exported' {
+                (Get-Module psfdx-metadata).ExportedFunctions.Keys | Should -Contain 'Get-SalesforceMetadataComponents'
+            }
+        }
+    }
+}

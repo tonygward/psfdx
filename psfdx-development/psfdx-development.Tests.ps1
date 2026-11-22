@@ -1271,3 +1271,102 @@ Describe 'Code Analyzer' {
         }
     }
 }
+
+Describe 'psfdx-development sf org parity (issue 248)' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+
+        Context 'New-SalesforceScratchOrg new flags' {
+            It 'passes -Alias, -OAuthClientId, -NoAncestors, -NoNamespace and -NoTrackSource' {
+                New-SalesforceScratchOrg -TargetDevHub hub -Alias ci1 -OAuthClientId abc -NoAncestors -NoNamespace -NoTrackSource | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--target-dev-hub|hub|--definition-file|config/project-scratch-def.json|--alias|ci1|--client-id|abc|--no-ancestors|--no-namespace|--no-track-source|--json' }
+            }
+            It 'leaves the new flags out by default' {
+                New-SalesforceScratchOrg | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--definition-file|config/project-scratch-def.json|--json' }
+            }
+        }
+
+        Context 'source tracking' {
+            It 'Enable-SalesforceSourceTracking builds the command and honours -WhatIf' {
+                Enable-SalesforceSourceTracking -TargetOrg dev1 -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|enable|tracking|--target-org|dev1|--json' }
+                Enable-SalesforceSourceTracking -TargetOrg dev1 -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'Disable-SalesforceSourceTracking asks first, and -NoPrompt does not turn -WhatIf off' {
+                Disable-SalesforceSourceTracking -TargetOrg dev1 -WhatIf | Out-Null
+                Disable-SalesforceSourceTracking -TargetOrg dev1 -NoPrompt -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                Disable-SalesforceSourceTracking -TargetOrg dev1 -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|disable|tracking|--target-org|dev1|--json' }
+            }
+            It 'uses the default org when no -TargetOrg is given' {
+                Enable-SalesforceSourceTracking -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|enable|tracking|--json' }
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Source tracking cannot be enabled for this org."}' }
+                { Enable-SalesforceSourceTracking -TargetOrg prod -Confirm:$false } | Should -Throw -ExpectedMessage '*cannot be enabled*'
+            }
+        }
+
+        Context 'org shapes' {
+            It 'New-SalesforceOrgShape builds the command and honours -WhatIf' {
+                New-SalesforceOrgShape -TargetOrg prod -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|shape|--target-org|prod|--json' }
+                New-SalesforceOrgShape -TargetOrg prod -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'Get-SalesforceOrgShapes lists shapes' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"orgId":"00D000000000001","shapeId":"3SR000000000001","status":"Active"},{"orgId":"00D000000000002","shapeId":"3SR000000000002","status":"Active"}]}' }
+                $shapes = @(Get-SalesforceOrgShapes)
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|shape|--json' }
+                $shapes.Count | Should -Be 2
+                $shapes[0].shapeId | Should -Be '3SR000000000001'
+            }
+            It 'Remove-SalesforceOrgShape confirms first and always passes --no-prompt to the CLI' {
+                Remove-SalesforceOrgShape -TargetOrg prod -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                Remove-SalesforceOrgShape -TargetOrg prod -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|delete|shape|--no-prompt|--target-org|prod|--json' }
+            }
+        }
+
+        Context 'org snapshots' {
+            It 'New-SalesforceOrgSnapshot passes the name, source org, description and Dev Hub' {
+                New-SalesforceOrgSnapshot -SourceOrg my-scratch -SnapshotName 'Release 1' -Description "Before 'the' upgrade" -TargetDevHub hub -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "org|create|snapshot|--source-org|my-scratch|--name|Release 1|--description|Before 'the' upgrade|--target-dev-hub|hub|--json" }
+            }
+            It 'New-SalesforceOrgSnapshot needs a source org and a name, and honours -WhatIf' {
+                { New-SalesforceOrgSnapshot -SourceOrg x -SnapshotName $null } | Should -Throw
+                New-SalesforceOrgSnapshot -SourceOrg x -SnapshotName y -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'Get-SalesforceOrgSnapshot and Get-SalesforceOrgSnapshots build their commands' {
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"SnapshotName":"Release1","Status":"Active"}]}' }
+                @(Get-SalesforceOrgSnapshots -TargetDevHub hub)[0].SnapshotName | Should -Be 'Release1'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|list|snapshot|--target-dev-hub|hub|--json' }
+                Get-SalesforceOrgSnapshot -Snapshot Release1 -TargetDevHub hub | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|get|snapshot|--snapshot|Release1|--target-dev-hub|hub|--json' }
+            }
+            It 'Remove-SalesforceOrgSnapshot confirms first and always passes --no-prompt to the CLI' {
+                Remove-SalesforceOrgSnapshot -Snapshot Release1 -TargetDevHub hub -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                Remove-SalesforceOrgSnapshot -Snapshot Release1 -TargetDevHub hub -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|delete|snapshot|--snapshot|Release1|--no-prompt|--target-dev-hub|hub|--json' }
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"Snapshot Release9 was not found."}' }
+                { Get-SalesforceOrgSnapshot -Snapshot Release9 } | Should -Throw -ExpectedMessage '*was not found*'
+            }
+        }
+
+        It 'exports the new cmdlets' {
+            $exports = (Get-Module psfdx-development).ExportedFunctions.Keys
+            foreach ($n in 'Enable-SalesforceSourceTracking', 'Disable-SalesforceSourceTracking', 'New-SalesforceOrgShape', 'Get-SalesforceOrgShapes', 'Remove-SalesforceOrgShape', 'New-SalesforceOrgSnapshot', 'Get-SalesforceOrgSnapshot', 'Get-SalesforceOrgSnapshots', 'Remove-SalesforceOrgSnapshot') { $exports | Should -Contain $n }
+        }
+    }
+}

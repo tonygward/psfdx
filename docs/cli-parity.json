@@ -183,10 +183,10 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 111,
+    "commandsPsfdxRuns": 126,
     "flags": {
-      "total": 589,
-      "passed": 506
+      "total": 625,
+      "passed": 561
     },
     "requiredFlagsNotPassed": 0,
     "flagsWithAListOfValues": 46,
@@ -198,38 +198,38 @@
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 74,
-      "partiallyWrapped": 37,
-      "missing": 144,
-      "excluded": 0,
+      "wrapped": 97,
+      "partiallyWrapped": 29,
+      "missing": 126,
+      "excluded": 3,
       "notApplicable": 24,
-      "inScope": 255,
-      "coveredPercent": "43.5"
+      "inScope": 252,
+      "coveredPercent": "50.0"
     },
     "core": {
       "commands": 214,
-      "wrapped": 66,
-      "partiallyWrapped": 33,
-      "missing": 100,
-      "excluded": 0,
+      "wrapped": 82,
+      "partiallyWrapped": 25,
+      "missing": 89,
+      "excluded": 3,
       "notApplicable": 15,
-      "inScope": 199,
-      "coveredPercent": "49.7"
+      "inScope": 196,
+      "coveredPercent": "54.6"
     },
     "jit": {
       "commands": 65,
-      "wrapped": 8,
+      "wrapped": 15,
       "partiallyWrapped": 4,
-      "missing": 44,
+      "missing": 37,
       "excluded": 0,
       "notApplicable": 9,
       "inScope": 56,
-      "coveredPercent": "21.4"
+      "coveredPercent": "33.9"
     }
   },
   "psfdx": {
-    "exportedFunctions": 158,
-    "runningTheCli": 127,
+    "exportedFunctions": 173,
+    "runningTheCli": 142,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -5121,13 +5121,13 @@
       "label": "Orgs, users and sandboxes",
       "totals": {
         "commands": 40,
-        "wrapped": 12,
-        "partiallyWrapped": 8,
-        "missing": 20,
-        "excluded": 0,
+        "wrapped": 35,
+        "partiallyWrapped": 0,
+        "missing": 2,
+        "excluded": 3,
         "notApplicable": 0,
-        "inScope": 40,
-        "coveredPercent": "50.0"
+        "inScope": 37,
+        "coveredPercent": "94.6"
       },
       "commands": [
         {
@@ -5191,8 +5191,8 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Show the current access token for an org.",
-          "status": "missing",
-          "reason": null,
+          "status": "deliberately excluded",
+          "reason": "Prints a live access token. psfdx keeps tokens out of its output; use Connect-SalesforceAccessToken to log in with a token you already have, or Open-Salesforce -UrlOnly for a login link.",
           "issue": null,
           "psfdx": [],
           "flags": {
@@ -5221,8 +5221,8 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Show the SFDX Auth URL for an org.",
-          "status": "missing",
-          "reason": null,
+          "status": "deliberately excluded",
+          "reason": "Prints the Salesforce DX authorization URL, which holds a refresh token that gives anyone full access as that user. psfdx removes it from every result, including Get-SalesforceOrgDetails, unless -IncludeToken is given.",
           "issue": null,
           "psfdx": [],
           "flags": {
@@ -5251,8 +5251,8 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Show the stored password for an org's user.",
-          "status": "missing",
-          "reason": null,
+          "status": "deliberately excluded",
+          "reason": "Prints a user's password. psfdx generates one with New-SalesforceUserPassword and never reads it back from the CLI.",
           "issue": null,
           "psfdx": [],
           "flags": {
@@ -5282,8 +5282,8 @@
           "state": "ga",
           "summary": "Create the default Salesforce user that is used to run an agent.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "An Agentforce command; it is built with the other agent commands in PSF-61.",
+          "issue": 255,
           "psfdx": [],
           "flags": {
             "total": 4,
@@ -5313,7 +5313,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create a sandbox org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -5322,15 +5322,10 @@
           ],
           "flags": {
             "total": 13,
-            "passed": 9,
+            "passed": 13,
             "required": 1
           },
-          "uncoveredFlags": [
-            "async",
-            "poll-interval",
-            "set-default",
-            "source-id"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -5346,24 +5341,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create a scratch org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
             "New-SalesforceScratchOrg"
           ],
           "flags": {
-            "total": 19,
-            "passed": 14,
+            "total": 18,
+            "passed": 18,
             "required": 1
           },
-          "uncoveredFlags": [
-            "alias",
-            "client-id",
-            "no-ancestors",
-            "no-namespace",
-            "track-source"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -5379,21 +5368,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create a scratch org configuration (shape) based on the specified source org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceOrgShape"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5408,26 +5395,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create a snapshot of a scratch org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceOrgSnapshot"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 3
           },
-          "uncoveredFlags": [
-            "description",
-            "name",
-            "source-org",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "source-org",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5523,22 +5503,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Delete all org shapes for a target org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceOrgShape"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "no-prompt",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5553,24 +5530,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Delete a scratch org snapshot.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceOrgSnapshot"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "no-prompt",
-            "snapshot",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "snapshot",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5585,21 +5557,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Prevent Salesforce CLI from tracking changes in your source files between your project and an org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Disable-SalesforceSourceTracking"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5614,22 +5584,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display information about an org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceOrgDetails"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org",
-            "verbose"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5671,21 +5638,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Allow Salesforce CLI to track changes in your source files between your project and an org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Enable-SalesforceSourceTracking"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5727,23 +5692,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Get details about a scratch org snapshot.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceOrgSnapshot"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "snapshot",
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "snapshot",
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5788,10 +5749,12 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List authorization information about the orgs you created or logged into.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceAuthorizations"
+          ],
           "flags": {
             "total": 0,
             "passed": 0,
@@ -5840,25 +5803,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List the metadata components and properties of a specified type.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceMetadataComponents"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 2
           },
-          "uncoveredFlags": [
-            "folder",
-            "metadata-type",
-            "output-file",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "metadata-type",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5873,7 +5830,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display details about the metadata types that are enabled for your org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -5881,12 +5838,10 @@
           ],
           "flags": {
             "total": 2,
-            "passed": 1,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "output-file"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -5902,10 +5857,12 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "List all org shapes you’ve created.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceOrgShapes"
+          ],
           "flags": {
             "total": 0,
             "passed": 0,
@@ -5927,21 +5884,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "List scratch org snapshots.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceOrgSnapshots"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-dev-hub"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -5956,22 +5911,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display record counts for the specified standard or custom objects.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceSObjectRecordCount"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "sobject",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6013,25 +5965,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Authorize an org using an existing Salesforce access token.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Connect-SalesforceAccessToken"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "alias",
-            "instance-url",
-            "no-prompt",
-            "set-default",
-            "set-default-dev-hub"
-          ],
-          "requiredFlagsNotPassed": [
-            "instance-url"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6073,20 +6019,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Authorize an org using a Salesforce DX authorization URL stored in a file or through standard input (stdin).",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
             "Connect-SalesforceAuthUrl"
           ],
           "flags": {
-            "total": 5,
+            "total": 4,
             "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "sfdx-url-stdin"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6102,7 +6046,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Log in to a Salesforce org using the web server flow.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6110,14 +6054,10 @@
           ],
           "flags": {
             "total": 9,
-            "passed": 6,
+            "passed": 9,
             "required": 0
           },
-          "uncoveredFlags": [
-            "client-app",
-            "scopes",
-            "username"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6133,7 +6073,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Log out of a Salesforce org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6141,12 +6081,10 @@
           ],
           "flags": {
             "total": 4,
-            "passed": 3,
+            "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "client-app"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6162,7 +6100,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Open your default scratch org, or another specified org, in a browser.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6170,13 +6108,10 @@
           ],
           "flags": {
             "total": 6,
-            "passed": 4,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "path",
-            "source-file"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6193,8 +6128,8 @@
           "state": "ga",
           "summary": "Open an agent in your org's Agentforce Builder UI in a browser.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "An Agentforce command; it is built with the other agent commands in PSF-61.",
+          "issue": 255,
           "psfdx": [],
           "flags": {
             "total": 7,
@@ -6227,30 +6162,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Refresh a sandbox org using the sandbox name.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Update-SalesforceSandbox"
+          ],
           "flags": {
             "total": 10,
-            "passed": 0,
+            "passed": 10,
             "required": 1
           },
-          "uncoveredFlags": [
-            "async",
-            "definition-file",
-            "name",
-            "no-auto-activate",
-            "no-prompt",
-            "poll-interval",
-            "source-id",
-            "source-sandbox-name",
-            "target-org",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6265,7 +6189,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Check the status of a sandbox creation, and log in to it if it's ready.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6273,13 +6197,10 @@
           ],
           "flags": {
             "total": 5,
-            "passed": 3,
+            "passed": 5,
             "required": 0
           },
-          "uncoveredFlags": [
-            "job-id",
-            "use-most-recent"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -9390,18 +9311,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 101,
-        "commandsPsfdxRunsThatHaveIt": 105
+        "psfdxFunctionsPassingIt": 116,
+        "commandsPsfdxRunsThatHaveIt": 120
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 108
+        "commandsPsfdxRunsThatHaveIt": 123
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 74
+        "commandsPsfdxRunsThatHaveIt": 83
       }
     ]
   },
