@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.41 - 2026-11-22
+
 - psfdx, psfdx-development, psfdx-logs: the cmdlets now run the current Salesforce CLI command names instead of deprecated aliases and reordered words: `Get-SalesforceLimits` runs `sf org list limits`, `New-SalesforceProject` runs `sf template generate project`, `New-SalesforceApexClass` and `New-SalesforceApexTrigger` run `sf template generate apex class` and `trigger`, and the debug log cmdlets run `sf apex list log`, `get log` and `tail log`. Results are the same, but a CLI release that removes the old names no longer breaks them.
 
 ## 0.8.40 - 2026-11-21
