@@ -183,10 +183,10 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 154,
+    "commandsPsfdxRuns": 158,
     "flags": {
-      "total": 758,
-      "passed": 718
+      "total": 766,
+      "passed": 726
     },
     "requiredFlagsNotPassed": 0,
     "flagsWithAListOfValues": 57,
@@ -198,23 +198,23 @@
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 134,
+      "wrapped": 138,
       "partiallyWrapped": 20,
-      "missing": 98,
+      "missing": 94,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "61.1"
+      "coveredPercent": "62.7"
     },
     "core": {
       "commands": 214,
-      "wrapped": 114,
+      "wrapped": 118,
       "partiallyWrapped": 16,
-      "missing": 66,
+      "missing": 62,
       "excluded": 3,
       "notApplicable": 15,
       "inScope": 196,
-      "coveredPercent": "66.3"
+      "coveredPercent": "68.4"
     },
     "jit": {
       "commands": 65,
@@ -228,8 +228,8 @@
     }
   },
   "psfdx": {
-    "exportedFunctions": 200,
-    "runningTheCli": 169,
+    "exportedFunctions": 204,
+    "runningTheCli": 173,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -8037,13 +8037,13 @@
       "label": "Schema",
       "totals": {
         "commands": 4,
-        "wrapped": 0,
+        "wrapped": 4,
         "partiallyWrapped": 0,
-        "missing": 4,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 4,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -8053,22 +8053,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate metadata source files for a new custom field on a specified object.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomField"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "label",
-            "object"
-          ],
-          "requiredFlagsNotPassed": [
-            "label"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8083,21 +8080,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate metadata source files for a new platform event.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforcePlatformEvent"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "label"
-          ],
-          "requiredFlagsNotPassed": [
-            "label"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8112,22 +8107,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate metadata source files for a new custom object.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomObject"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "label",
-            "use-default-features"
-          ],
-          "requiredFlagsNotPassed": [
-            "label"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8142,25 +8134,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate the metadata source files for a new custom tab on a custom object.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomTab"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "directory",
-            "icon",
-            "object"
-          ],
-          "requiredFlagsNotPassed": [
-            "directory",
-            "icon",
-            "object"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -9093,13 +9079,13 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 143,
-        "commandsPsfdxRunsThatHaveIt": 148
+        "psfdxFunctionsPassingIt": 144,
+        "commandsPsfdxRunsThatHaveIt": 149
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 151
+        "commandsPsfdxRunsThatHaveIt": 155
       },
       {
         "flag": "api-version",

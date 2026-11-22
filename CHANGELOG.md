@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-metadata: all four `sf schema generate` commands are now covered: `New-SalesforceCustomObject`, `New-SalesforceCustomField`, `New-SalesforcePlatformEvent` and `New-SalesforceCustomTab`. The first three are interactive, as the CLI commands are: they ask questions, so run them in a terminal as plain commands. In a session without a terminal they stop with a clear message instead of waiting. `New-SalesforceCustomTab` takes everything from its parameters and says so clearly when the tabs folder does not exist.
+
 ## 0.8.47 - 2026-11-22
 
 - psfdx-metadata: all five `sf cmdt generate` commands are now covered, so you can build custom metadata in a project from PowerShell: `New-SalesforceCustomMetadataType`, `New-SalesforceCustomMetadataField`, `New-SalesforceCustomMetadataRecord` (field values as a hashtable), `New-SalesforceCustomMetadataRecordsFromCsv` and `New-SalesforceCustomMetadataTypeFromOrg`. They write files into the current project; only `...FromOrg` reads an org.

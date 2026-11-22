@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 114 | 16 | 66 | 3 | 15 | 66.3% of 196 |
+| Core plugins (bundled with the CLI) | 214 | 118 | 16 | 62 | 3 | 15 | 68.4% of 196 |
 | Just-in-time plugins (installed on first use) | 65 | 20 | 4 | 32 | 0 | 9 | 42.9% of 56 |
-| Both | 279 | 134 | 20 | 98 | 3 | 24 | 61.1% of 252 |
+| Both | 279 | 138 | 20 | 94 | 3 | 24 | 62.7% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **200** cmdlets; **169** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **204** cmdlets; **173** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **154** commands psfdx runs, it passes **718 of 758** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **57** have a list of allowed values in the CLI, and psfdx can pass **235 of 255** of those values.
+**Flags and values.** Across the **158** commands psfdx runs, it passes **726 of 766** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **57** have a list of allowed values in the CLI, and psfdx can pass **235 of 255** of those values.
 
 ## By capability
 
@@ -49,7 +49,7 @@ psfdx exports **200** cmdlets; **169** of them run an sf command themselves. The
 | Packages (first generation) (sf package1) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI plugins (sf plugins) | 15 | 1 | 2 | 10 | 0 | 2 | 23.1% of 13 |
 | Project, deploy and retrieve (sf project) | 22 | 22 | 0 | 0 | 0 | 0 | 100.0% of 22 |
-| Schema (sf schema) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
+| Schema (sf schema) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI search (sf search) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Objects (sf sobject) | 2 | 1 | 1 | 0 | 0 | 0 | 100.0% of 2 |
 | Templates and generators (sf template) | 17 | 0 | 3 | 14 | 0 | 0 | 17.6% of 17 |
@@ -238,15 +238,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | `sf plugins trust verify` | @salesforce/plugin-trust | 2 (1 required) | missing |  |
 | `sf plugins uninstall` | @oclif/plugin-plugins | 2 | missing |  |
 | `sf plugins unlink` | @oclif/plugin-plugins | 2 | not applicable | Unlinks a local plugin under development, which only plugin authors do. |
-
-### Schema (`sf schema`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf schema generate field` | @salesforce/plugin-sobject | 2 (1 required) | missing |  |
-| `sf schema generate platformevent` | @salesforce/plugin-sobject | 1 (1 required) | missing |  |
-| `sf schema generate sobject` | @salesforce/plugin-sobject | 2 (1 required) | missing |  |
-| `sf schema generate tab` | @salesforce/plugin-sobject | 3 (3 required) | missing |  |
 
 ### CLI search (`sf search`)
 
@@ -536,6 +527,15 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf project retrieve preview` | wrapped | `Get-SalesforceRetrievePreview` | 3 of 3 |  |  |
 | `sf project retrieve start` | wrapped | `Retrieve-SalesforceComponent`, `Retrieve-SalesforceMetadata`, `Retrieve-SalesforceOrg`, `Retrieve-SalesforcePackage` | 13 of 13 |  |  |
 
+### Schema (`sf schema`)
+
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf schema generate field` | wrapped | `New-SalesforceCustomField` | 2 of 2 |  |  |
+| `sf schema generate platformevent` | wrapped | `New-SalesforcePlatformEvent` | 1 of 1 |  |  |
+| `sf schema generate sobject` | wrapped | `New-SalesforceCustomObject` | 2 of 2 |  |  |
+| `sf schema generate tab` | wrapped | `New-SalesforceCustomTab` | 3 of 3 |  |  |
+
 ### Objects (`sf sobject`)
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
@@ -557,8 +557,8 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 143 | 148 |
-| `--flags-dir` | 0 | 151 |
+| `--json` | 144 | 149 |
+| `--flags-dir` | 0 | 155 |
 | `--api-version` | 1 | 107 |
 
 ## How to read this
