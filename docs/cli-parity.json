@@ -183,43 +183,43 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 161,
+    "commandsPsfdxRuns": 175,
     "flags": {
-      "total": 778,
-      "passed": 748
+      "total": 839,
+      "passed": 813
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 62,
+    "flagsWithAListOfValues": 76,
     "values": {
-      "total": 272,
-      "reachable": 255
+      "total": 308,
+      "reachable": 302
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 146,
-      "partiallyWrapped": 15,
-      "missing": 91,
+      "wrapped": 165,
+      "partiallyWrapped": 10,
+      "missing": 77,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "63.9"
+      "coveredPercent": "69.4"
     },
     "core": {
       "commands": 214,
-      "wrapped": 122,
-      "partiallyWrapped": 13,
-      "missing": 61,
+      "wrapped": 139,
+      "partiallyWrapped": 10,
+      "missing": 47,
       "excluded": 3,
       "notApplicable": 15,
       "inScope": 196,
-      "coveredPercent": "68.9"
+      "coveredPercent": "76.0"
     },
     "jit": {
       "commands": 65,
-      "wrapped": 24,
-      "partiallyWrapped": 2,
+      "wrapped": 26,
+      "partiallyWrapped": 0,
       "missing": 30,
       "excluded": 0,
       "notApplicable": 9,
@@ -228,8 +228,8 @@
     }
   },
   "psfdx": {
-    "exportedFunctions": 207,
-    "runningTheCli": 176,
+    "exportedFunctions": 221,
+    "runningTheCli": 190,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -4825,8 +4825,8 @@
       "label": "Lightning development",
       "totals": {
         "commands": 3,
-        "wrapped": 1,
-        "partiallyWrapped": 2,
+        "wrapped": 3,
+        "partiallyWrapped": 0,
         "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
@@ -4841,7 +4841,7 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Preview a Lightning Experience app locally and in real-time, without deploying it.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -4849,25 +4849,16 @@
           ],
           "flags": {
             "total": 4,
-            "passed": 3,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "device-id"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "device-type",
-              "values": [
-                "desktop"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 1,
             "total": 3,
-            "reachable": 2
+            "reachable": 3
           }
         },
         {
@@ -4877,7 +4868,7 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Preview LWC components in isolation.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -4885,12 +4876,10 @@
           ],
           "flags": {
             "total": 3,
-            "passed": 2,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "client-select"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -8238,13 +8227,13 @@
       "label": "Templates and generators",
       "totals": {
         "commands": 17,
-        "wrapped": 0,
-        "partiallyWrapped": 3,
-        "missing": 14,
+        "wrapped": 17,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 17,
-        "coveredPercent": "17.6"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -8254,22 +8243,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a simple Analytics template.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceAnalyticsTemplate"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8284,7 +8270,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an Apex class.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8297,21 +8283,11 @@
           },
           "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "template",
-              "values": [
-                "ApexException",
-                "BasicUnitTest",
-                "Batchable",
-                "Queueable"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 1,
             "total": 7,
-            "reachable": 3
+            "reachable": 7
           }
         },
         {
@@ -8321,7 +8297,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate an Apex trigger.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8329,18 +8305,16 @@
           ],
           "flags": {
             "total": 5,
-            "passed": 4,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "template"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 1,
-            "total": 7,
-            "reachable": 7
+            "flagsWithAList": 2,
+            "total": 8,
+            "reachable": 8
           }
         },
         {
@@ -8350,32 +8324,24 @@
           "pluginType": "core",
           "state": "preview",
           "summary": "Generate an Experience Cloud site.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceExperienceSite"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "admin-email",
-            "name",
-            "output-dir",
-            "target-org",
-            "template-name",
-            "url-path-prefix"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "template-name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -8385,35 +8351,24 @@
           "pluginType": "core",
           "state": "beta",
           "summary": "Generate a FlexiPage, also known as a Lightning page.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceFlexiPage"
+          ],
           "flags": {
             "total": 9,
-            "passed": 0,
+            "passed": 9,
             "required": 2
           },
-          "uncoveredFlags": [
-            "description",
-            "detail-fields",
-            "label",
-            "name",
-            "output-dir",
-            "primary-field",
-            "secondary-fields",
-            "sobject",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "template"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -8423,28 +8378,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Lightning App.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceLightningApp"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -8454,29 +8405,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a bundle for an Aura component or a Lightning web component.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceLightningComponent"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "template",
-            "type"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -8486,28 +8432,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Lightning Event.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceLightningEvent"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -8517,28 +8459,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Lightning Interface.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceLightningInterface"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -8548,28 +8486,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Lightning test.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceLightningTest"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -8579,32 +8513,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate the required metadata to scaffold a Lightning Out 2.0 app.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceLightningOutApp"
+          ],
           "flags": {
             "total": 9,
-            "passed": 0,
+            "passed": 9,
             "required": 0
           },
-          "uncoveredFlags": [
-            "app-name",
-            "components",
-            "definition-file",
-            "eca-callback-url",
-            "eca-contact-email",
-            "eca-name",
-            "host-domains",
-            "output-dir",
-            "runtime"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -8614,7 +8540,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Salesforce DX project.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8622,30 +8548,16 @@
           ],
           "flags": {
             "total": 7,
-            "passed": 6,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "lwc-language"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "template",
-              "values": [
-                "reactinternalapp",
-                "reactexternalapp",
-                "angularinternalapp",
-                "angularexternalapp",
-                "vueinternalapp",
-                "agent"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 1,
-            "total": 9,
-            "reachable": 3
+            "flagsWithAList": 2,
+            "total": 11,
+            "reachable": 11
           }
         },
         {
@@ -8655,23 +8567,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a static resource.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceStaticResource"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "type"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8686,29 +8594,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a UI bundle, which contains the code and metadata to build a UI experience that uses non-native Salesforce frameworks, such as React or Angular.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceUiBundle"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "label",
-            "name",
-            "output-dir",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -8718,33 +8621,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Lightning Web Component (LWC) bundle that wraps the <lightning-ui-embedding> base component.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceUiEmbedding"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 4
           },
-          "uncoveredFlags": [
-            "name",
-            "output-dir",
-            "sandbox",
-            "src",
-            "title"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "sandbox",
-            "src",
-            "title"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 12,
+            "reachable": 12
           }
         },
         {
@@ -8754,30 +8648,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Visualforce Component.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceVisualforceComponent"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 2
           },
-          "uncoveredFlags": [
-            "label",
-            "name",
-            "output-dir",
-            "template"
-          ],
-          "requiredFlagsNotPassed": [
-            "label",
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 1,
+            "reachable": 1
           }
         },
         {
@@ -8787,24 +8675,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Generate a Visualforce Page.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceVisualforcePage"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "label",
-            "name",
-            "output-dir"
-          ],
-          "requiredFlagsNotPassed": [
-            "label",
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -9043,18 +8926,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 145,
-        "commandsPsfdxRunsThatHaveIt": 151
+        "psfdxFunctionsPassingIt": 159,
+        "commandsPsfdxRunsThatHaveIt": 165
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 158
+        "commandsPsfdxRunsThatHaveIt": 172
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 108
+        "commandsPsfdxRunsThatHaveIt": 120
       }
     ]
   },

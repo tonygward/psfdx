@@ -124,7 +124,7 @@ function New-SalesforceProject {
     Name of the generated project. Passed to sf as --name. Required.
 
     .PARAMETER Template
-    Template to use for project creation. Passed to sf as --template. Default: standard. Valid values: standard, empty, analytics.
+    Template to use for project creation. Passed to sf as --template. Default: standard. Valid values: standard, empty, analytics, reactinternalapp, reactexternalapp, angularinternalapp, angularexternalapp, vueinternalapp, agent.
 
     .PARAMETER DefaultUserName
     A user name or alias to set as the default target org (target-org) after the project is created. psfdx does this with Set-SalesforceTargetOrg; it is not a flag of the CLI command.
@@ -141,9 +141,16 @@ function New-SalesforceProject {
     .PARAMETER GenerateManifest
     Generate a manifest (package.xml) for change-set based development. Adds --manifest.
 
+    .PARAMETER LwcLanguage
+    Language of the Lightning web components the project is set up for. Passed to sf as --lwc-language. Valid values: javascript, typescript. The CLI default is javascript.
+
     .EXAMPLE
     New-SalesforceProject -Name my-project -Template standard
     A standard project in a new folder.
+
+    .EXAMPLE
+    New-SalesforceProject -Name my-ts-project -LwcLanguage typescript
+    A project that is set up for TypeScript components.
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
@@ -151,9 +158,8 @@ function New-SalesforceProject {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf template generate project (plugin @salesforce/plugin-templates)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --lwc-language
-      Values psfdx cannot pass: --template reactinternalapp, reactexternalapp, angularinternalapp, angularexternalapp, vueinternalapp, agent
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir; -DefaultPackageDirectory = --default-package-dir; -Namespace = --namespace; -GenerateManifest = --manifest.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir; -DefaultPackageDirectory = --default-package-dir; -Namespace = --namespace; -GenerateManifest = --manifest; -LwcLanguage = --lwc-language.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
     Also calls these psfdx cmdlets: Set-SalesforceTargetOrg.
 
@@ -172,13 +178,14 @@ function New-SalesforceProject {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
-        [Parameter(Mandatory = $false)][string][ValidateSet('standard', 'empty', 'analytics')] $Template = 'standard',
+        [Parameter(Mandatory = $false)][string][ValidateSet('standard', 'empty', 'analytics', 'reactinternalapp', 'reactexternalapp', 'angularinternalapp', 'angularexternalapp', 'vueinternalapp', 'agent')] $Template = 'standard',
         [Parameter(Mandatory = $false)][string] $DefaultUserName = $null,
 
         [Parameter(Mandatory = $false)][string] $OutputDirectory,
         [Parameter(Mandatory = $false)][string] $DefaultPackageDirectory,
         [Parameter(Mandatory = $false)][string] $Namespace,
-        [Parameter(Mandatory = $false)][switch] $GenerateManifest
+        [Parameter(Mandatory = $false)][switch] $GenerateManifest,
+        [Parameter(Mandatory = $false)][ValidateSet('javascript', 'typescript')][string] $LwcLanguage
     )
     $arguments = @('template', 'generate', 'project', '--name', $Name)
     if ($OutputDirectory) {
@@ -190,6 +197,7 @@ function New-SalesforceProject {
     if ($DefaultPackageDirectory) { $arguments += @('--default-package-dir', $DefaultPackageDirectory) }
     if ($Namespace) { $arguments += @('--namespace', $Namespace) }
     if ($GenerateManifest) { $arguments += '--manifest' }
+    if ($LwcLanguage) { $arguments += @('--lwc-language', $LwcLanguage) }
     $arguments += @('--template', $Template)
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -3480,7 +3488,7 @@ function New-SalesforceApexClass {
     Name of the generated Apex class. Passed to sf as --name. Required.
 
     .PARAMETER Template
-    Template to use for file creation. Passed to sf as --template. Default: DefaultApexClass. Valid values: DefaultApexClass, ApexUnitTest, InboundEmailService.
+    Template to use for file creation. Passed to sf as --template. Default: DefaultApexClass. Valid values: DefaultApexClass, ApexUnitTest, InboundEmailService, ApexException, BasicUnitTest, Batchable, Queueable.
 
     .PARAMETER OutputDirectory
     Directory for saving the created files. Passed to sf as --output-dir.
@@ -3516,7 +3524,7 @@ function New-SalesforceApexClass {
     Param(
         [Parameter(Mandatory = $true)][string] $Name,
         [Parameter(Mandatory = $false)][string]
-            [ValidateSet('DefaultApexClass', 'ApexUnitTest', 'InboundEmailService')]
+            [ValidateSet('DefaultApexClass', 'ApexUnitTest', 'InboundEmailService', 'ApexException', 'BasicUnitTest', 'Batchable', 'Queueable')]
             $Template = 'DefaultApexClass',
         # No default: when omitted, --output-dir is left off so the CLI picks the
         # project's own default package directory.
@@ -3552,6 +3560,9 @@ function New-SalesforceApexTrigger {
     .PARAMETER SObject
     Salesforce object to generate a trigger on. Passed to sf as --sobject.
 
+    .PARAMETER Template
+    Template to use. Passed to sf as --template. Valid value: ApexTrigger, which is also the CLI default.
+
     .PARAMETER OutputDirectory
     Directory for saving the created files. Passed to sf as --output-dir.
 
@@ -3565,8 +3576,8 @@ function New-SalesforceApexTrigger {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf template generate apex trigger (plugin @salesforce/plugin-templates)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --template
-    Parameter to flag: -Name = --name; -Event = --event; -SObject = --sobject; -OutputDirectory = --output-dir.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Event = --event; -SObject = --sobject; -Template = --template; -OutputDirectory = --output-dir.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -3588,6 +3599,7 @@ function New-SalesforceApexTrigger {
             [ValidateSet('before insert', 'before update', 'before delete', 'after insert', 'after update', 'after delete', 'after undelete')]
             $Event = 'before insert',
         [Parameter(Mandatory = $false)][string] $SObject,
+        [Parameter(Mandatory = $false)][ValidateSet('ApexTrigger')][string] $Template,
         # No default: when omitted, --output-dir is left off so the CLI picks the
         # project's own default package directory.
         [Parameter(Mandatory = $false)][string] $OutputDirectory
@@ -3596,6 +3608,7 @@ function New-SalesforceApexTrigger {
     $arguments += @('--name', $Name)
     $arguments += @('--event', $Event)
     if ($SObject) { $arguments += @('--sobject', $SObject) }
+    if ($Template) { $arguments += @('--template', $Template) }
     if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
@@ -3673,7 +3686,13 @@ function Start-SalesforceLwcDevServer {
     Name of the app, component or site to preview. Passed as --name.
 
     .PARAMETER DeviceType
-    Type of device to display the app preview. Passed to sf as --device-type. Valid values: ios, android.
+    Type of device to display the app preview. Passed to sf as --device-type. Valid values: desktop, ios, android. Only with -Mode App.
+
+    .PARAMETER DeviceId
+    ID of the mobile device to show the preview on, when -DeviceType is ios or android. By default the CLI uses the first mobile device it finds. Passed to sf as --device-id. Only with -Mode App.
+
+    .PARAMETER ClientSelect
+    Open the component preview without choosing a component first, so you pick one in the browser. Adds --client-select. Only with -Mode Component.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -3682,17 +3701,20 @@ function Start-SalesforceLwcDevServer {
     Start-SalesforceLwcDevServer -Mode Component -Name accountCard -TargetOrg dev1
     Preview one component.
 
+    .EXAMPLE
+    Start-SalesforceLwcDevServer -Mode App -Name Sales -DeviceType ios -DeviceId 8A1B2C3D -TargetOrg dev1
+    Preview an app on a specific iOS simulator.
+
     .NOTES
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf lightning dev app (plugin @salesforce/plugin-lightning-dev)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --device-id
-      Values psfdx cannot pass: --device-type desktop
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Command run: sf lightning dev component (plugin @salesforce/plugin-lightning-dev)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --client-select
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Command run: sf lightning dev site (plugin @salesforce/plugin-lightning-dev)
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -DeviceType = --device-type; -TargetOrg = --target-org.
+    Parameter to flag: -Name = --name; -DeviceType = --device-type; -DeviceId = --device-id; -ClientSelect = --client-select; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
     Before it starts, an internal helper (Test-SalesforceLightningDevPluginInstalled) runs sf plugins --core --json to check that @salesforce/plugin-lightning-dev is listed.
 
@@ -3712,12 +3734,17 @@ function Start-SalesforceLwcDevServer {
     Param(
         [Parameter(Mandatory = $false)][ValidateSet('App', 'Component', 'Site')][string] $Mode = 'App',
         [Parameter(Mandatory = $false)][string] $Name,
-        [Parameter(Mandatory = $false)][ValidateSet('ios', 'android')][string] $DeviceType,
+        [Parameter(Mandatory = $false)][ValidateSet('desktop', 'ios', 'android')][string] $DeviceType,
+        [Parameter(Mandatory = $false)][string] $DeviceId,
+        [Parameter(Mandatory = $false)][switch] $ClientSelect,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     if ($PSBoundParameters.ContainsKey('DeviceType') -and $Mode -ne 'App') {
         throw "-DeviceType is only supported with -Mode App."
     }
+    if ($DeviceId -and $Mode -ne 'App') { throw '-DeviceId is only supported with -Mode App.' }
+    if ($DeviceId -and $DeviceType -eq 'desktop') { throw '-DeviceId is for a mobile device, so use it with -DeviceType ios or android.' }
+    if ($ClientSelect -and $Mode -ne 'Component') { throw '-ClientSelect is only supported with -Mode Component.' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     if (-not (Test-SalesforceLightningDevPluginInstalled @commonParams)) {
         throw "The Salesforce CLI plugin '@salesforce/plugin-lightning-dev' is not installed. Run Install-SalesforceLwcDevServer, then try again."
@@ -3727,6 +3754,8 @@ function Start-SalesforceLwcDevServer {
         $arguments += @('--name', $Name)
     }
     if ($DeviceType) { $arguments += @('--device-type', $DeviceType) }
+    if ($DeviceId) { $arguments += @('--device-id', $DeviceId) }
+    if ($ClientSelect) { $arguments += '--client-select' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
@@ -3988,6 +4017,995 @@ function Get-SalesforceApexCompileStatus {
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
     $arguments = @('apex', 'get', 'compile-status')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+#region Template generators
+
+# Wraps the sf template generate commands that write Lightning, Visualforce, static resource, FlexiPage, UI bundle and similar source files into the current project. The CLI replaces a file that differs from the template without asking, so each generator checks for its target first and needs -Force to go ahead.
+
+function Assert-SalesforceGeneratedPathFree {
+    # Private: stops when a generator's target already exists, because the CLI replaces a file that differs from the template without asking.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][AllowNull()][AllowEmptyString()][string] $Directory,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]] $RelativePath,
+        [Parameter(Mandatory = $true)][string] $What,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    if ($Force) { return }
+    $base = $Directory
+    if ([string]::IsNullOrWhiteSpace($base)) { $base = '.' }
+    $existing = @()
+    foreach ($relative in @($RelativePath | Where-Object { $_ })) {
+        $candidate = Join-Path $base $relative
+        if (Test-Path -LiteralPath $candidate) { $existing += $candidate }
+    }
+    if ($existing.Count -gt 0) {
+        throw "The $What already exists ($($existing -join ', ')). Generating it again replaces any file that differs from the template, without asking, and your changes in it are lost. Use -Force to generate it anyway."
+    }
+}
+
+function New-SalesforceLightningApp {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Aura Lightning app in the project.
+
+    .DESCRIPTION
+    Runs sf template generate lightning app. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning app already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Lightning app. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Template
+    Template to use. Valid value: DefaultLightningApp, which is also the CLI default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It must be a folder named aura, such as force-app/main/default/aura, or the CLI refuses. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceLightningApp -Name MyApp -OutputDirectory force-app/main/default/aura
+    Generate the Lightning app.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate lightning app (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][ValidateSet('DefaultLightningApp')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($Name) -What 'Lightning app' -Force:$Force
+    $arguments = @('template', 'generate', 'lightning', 'app', '--name', $Name)
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceLightningEvent {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Aura Lightning event in the project.
+
+    .DESCRIPTION
+    Runs sf template generate lightning event. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning event already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Lightning event. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Template
+    Template to use. Valid value: DefaultLightningEvt, which is also the CLI default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It must be a folder named aura, such as force-app/main/default/aura, or the CLI refuses. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceLightningEvent -Name MyEvent -OutputDirectory force-app/main/default/aura
+    Generate the Lightning event.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate lightning event (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][ValidateSet('DefaultLightningEvt')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($Name) -What 'Lightning event' -Force:$Force
+    $arguments = @('template', 'generate', 'lightning', 'event', '--name', $Name)
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceLightningInterface {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Aura Lightning interface in the project.
+
+    .DESCRIPTION
+    Runs sf template generate lightning interface. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning interface already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Lightning interface. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Template
+    Template to use. Valid value: DefaultLightningIntf, which is also the CLI default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It must be a folder named aura, such as force-app/main/default/aura, or the CLI refuses. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceLightningInterface -Name MyInterface -OutputDirectory force-app/main/default/aura
+    Generate the Lightning interface.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate lightning interface (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][ValidateSet('DefaultLightningIntf')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($Name) -What 'Lightning interface' -Force:$Force
+    $arguments = @('template', 'generate', 'lightning', 'interface', '--name', $Name)
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceLightningTest {
+    <#
+    .SYNOPSIS
+    Creates the static resource of a new Lightning test in the project.
+
+    .DESCRIPTION
+    Runs sf template generate lightning test. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning test already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Lightning test. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Template
+    Template to use. Valid value: DefaultLightningTest, which is also the CLI default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceLightningTest -Name MyTest -OutputDirectory force-app/main/default/staticresources
+    Generate the Lightning test.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate lightning test (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][ValidateSet('DefaultLightningTest')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @("$Name.resource", "$Name.resource-meta.xml") -What 'Lightning test' -Force:$Force
+    $arguments = @('template', 'generate', 'lightning', 'test', '--name', $Name)
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceVisualforceComponent {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Visualforce component in the project.
+
+    .DESCRIPTION
+    Runs sf template generate visualforce component. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Visualforce component already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Visualforce component. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Label
+    Label of the Visualforce item, as shown in Setup. Passed to sf as --label. Required.
+
+    .PARAMETER Template
+    Template to use. Valid value: DefaultVFComponent, which is also the CLI default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceVisualforceComponent -Name MyComponent -Label 'My Component' -OutputDirectory force-app/main/default/components
+    Generate the Visualforce component.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate visualforce component (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Label = --label; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Label,
+        [Parameter(Mandatory = $false)][ValidateSet('DefaultVFComponent')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @("$Name.component", "$Name.component-meta.xml") -What 'Visualforce component' -Force:$Force
+    $arguments = @('template', 'generate', 'visualforce', 'component', '--name', $Name, '--label', $Label)
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceVisualforcePage {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Visualforce page in the project.
+
+    .DESCRIPTION
+    Runs sf template generate visualforce page. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Visualforce page already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Visualforce page. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Label
+    Label of the Visualforce item, as shown in Setup. Passed to sf as --label. Required.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceVisualforcePage -Name MyPage -Label 'My Page' -OutputDirectory force-app/main/default/pages
+    Generate the Visualforce page.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate visualforce page (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Label = --label; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Label,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @("$Name.page", "$Name.page-meta.xml") -What 'Visualforce page' -Force:$Force
+    $arguments = @('template', 'generate', 'visualforce', 'page', '--name', $Name, '--label', $Label)
+    
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceAnalyticsTemplate {
+    <#
+    .SYNOPSIS
+    Creates the files of a simple CRM Analytics template in the project.
+
+    .DESCRIPTION
+    Runs sf template generate analytics template. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Analytics template already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the Analytics template. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It must be a folder named waveTemplates, such as force-app/main/default/waveTemplates, or the CLI refuses. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceAnalyticsTemplate -Name SalesDashboard -OutputDirectory force-app/main/default/waveTemplates
+    Generate the Analytics template.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate analytics template (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($Name) -What 'Analytics template' -Force:$Force
+    $arguments = @('template', 'generate', 'analytics', 'template', '--name', $Name)
+    
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceLightningComponent {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Lightning web component or Aura component in the project.
+
+    .DESCRIPTION
+    Runs sf template generate lightning component. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the component already exists in the output folder the cmdlet stops, unless you pass -Force. The output folder must be named lwc for a web component and aura for an Aura component.
+
+    .PARAMETER Name
+    Name of the component. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Type
+    Kind of component. Valid values: aura, lwc. The CLI default is lwc. Passed to sf as --type.
+
+    .PARAMETER Template
+    Template to use. Valid values: default, analyticsDashboard, analyticsDashboardWithStep, typescript. The CLI default is default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It must be named lwc for -Type lwc and aura for -Type aura, or the CLI refuses. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceLightningComponent -Name accountCard -Type lwc -OutputDirectory force-app/main/default/lwc
+    Generate a Lightning web component.
+
+    .EXAMPLE
+    New-SalesforceLightningComponent -Name accountCard -Type lwc -Template typescript -OutputDirectory force-app/main/default/lwc
+    Generate a TypeScript component.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate lightning component (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Type = --type; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][ValidateSet('aura', 'lwc')][string] $Type,
+        [Parameter(Mandatory = $false)][ValidateSet('default', 'analyticsDashboard', 'analyticsDashboardWithStep', 'typescript')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($Name) -What 'Lightning component' -Force:$Force
+    $arguments = @('template', 'generate', 'lightning', 'component', '--name', $Name)
+    if ($Type) { $arguments += @('--type', $Type) }
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceStaticResource {
+    <#
+    .SYNOPSIS
+    Creates the files of a new static resource in the project.
+
+    .DESCRIPTION
+    Runs sf template generate static-resource. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. It writes the metadata file and an empty folder for the content. If the static resource already exists in the output folder the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the static resource. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Type
+    Content (MIME) type of the static resource. The CLI default is application/zip. Passed to sf as --type.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceStaticResource -Name Logos -Type application/zip -OutputDirectory force-app/main/default/staticresources
+    Generate a zip static resource.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate static-resource (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Type = --type; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*\z')][string] $Type,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @("$Name", "$Name.resource-meta.xml") -What 'static resource' -Force:$Force
+    $arguments = @('template', 'generate', 'static-resource', '--name', $Name)
+    if ($Type) { $arguments += @('--type', $Type) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceUiBundle {
+    <#
+    .SYNOPSIS
+    Creates a UI bundle: the code and metadata of a React, Angular or Vue experience.
+
+    .DESCRIPTION
+    Runs sf template generate ui-bundle, which writes a bundle for a UI built with a non-native framework such as React or Angular, under a uiBundles folder in the output folder. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the bundle already exists the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the UI bundle. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Label
+    Label of the UI bundle. By default the CLI uses the name. Passed to sf as --label.
+
+    .PARAMETER Template
+    Template to use. Valid values: default, reactbasic, angularbasic, vuebasic. The CLI default is default. Passed to sf as --template.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceUiBundle -Name Storefront -Label Storefront -Template reactbasic -OutputDirectory force-app/main/default
+    Generate a React bundle.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate ui-bundle (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Label = --label; -Template = --template; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $false)][string] $Label,
+        [Parameter(Mandatory = $false)][ValidateSet('default', 'reactbasic', 'angularbasic', 'vuebasic')][string] $Template,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @((Join-Path 'uiBundles' $Name)) -What 'UI bundle' -Force:$Force
+    $arguments = @('template', 'generate', 'ui-bundle', '--name', $Name)
+    if ($Label) { $arguments += @('--label', $Label) }
+    if ($Template) { $arguments += @('--template', $Template) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceUiEmbedding {
+    <#
+    .SYNOPSIS
+    Creates a Lightning web component that embeds a web page with lightning-ui-embedding.
+
+    .DESCRIPTION
+    Runs sf template generate ui-embedding, which writes a Lightning web component that wraps the lightning-ui-embedding base component and shows -Src in a sandboxed frame. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. The output folder must be named lwc. If the component already exists the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    Name of the component. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Src
+    URL of the page to embed. It must be an absolute https:// URL. Passed to sf as --src. Required.
+
+    .PARAMETER Title
+    Title of the embedded frame. Passed to sf as --title. Required.
+
+    .PARAMETER Sandbox
+    What the embedded page may do: one or more sandbox permissions. Each is passed to sf as its own --sandbox. Valid values: allow-forms, allow-modals, allow-orientation-lock, allow-pointer-lock, allow-popups, allow-popups-to-escape-sandbox, allow-presentation, allow-same-origin, allow-scripts, allow-storage-access-by-user-activation, allow-top-navigation, allow-top-navigation-by-user-activation. Passed to sf as --sandbox. Required.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It must be a folder named lwc, such as force-app/main/default/lwc, or the CLI refuses. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceUiEmbedding -Name statusPage -Src https://status.example.com -Title 'Status' -Sandbox allow-scripts, allow-forms -OutputDirectory force-app/main/default/lwc
+    Embed a status page.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate ui-embedding (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Src = --src; -Title = --title; -Sandbox = --sandbox; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Src,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Title,
+        [Parameter(Mandatory = $true)][ValidateSet('allow-forms', 'allow-modals', 'allow-orientation-lock', 'allow-pointer-lock', 'allow-popups', 'allow-popups-to-escape-sandbox', 'allow-presentation', 'allow-same-origin', 'allow-scripts', 'allow-storage-access-by-user-activation', 'allow-top-navigation', 'allow-top-navigation-by-user-activation')][string[]] $Sandbox,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    if (-not [System.Uri]::TryCreate($Src, [System.UriKind]::Absolute, [ref]$null) -or -not $Src.StartsWith('https://', [System.StringComparison]::OrdinalIgnoreCase)) { throw "-Src must be an absolute https:// URL. Got '$Src'." }
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($Name) -What 'component' -Force:$Force
+    $arguments = @('template', 'generate', 'ui-embedding', '--name', $Name, '--src', $Src, '--title', $Title)
+    foreach ($item in @($Sandbox | Where-Object { $_ })) { $arguments += @('--sandbox', $item) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceFlexiPage {
+    <#
+    .SYNOPSIS
+    Creates a FlexiPage (Lightning page) in the project. Beta.
+
+    .DESCRIPTION
+    Runs sf template generate flexipage, which writes a record page, app page or home page under a flexipages folder in the output folder. This CLI command is in beta, so its flags and output can change in a later release. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. A record page needs -SObject. If the page already exists the cmdlet stops, unless you pass -Force.
+
+    .PARAMETER Name
+    API name of the FlexiPage. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Template
+    Kind of page. Valid values: RecordPage, AppPage, HomePage. Passed to sf as --template. Required.
+
+    .PARAMETER SObject
+    API name of the object the page is for. Required for a RecordPage. Passed to sf as --sobject.
+
+    .PARAMETER Label
+    Label of the page. By default the CLI uses the name. Passed to sf as --label.
+
+    .PARAMETER Description
+    Description of the page. Passed to sf as --description.
+
+    .PARAMETER PrimaryField
+    Primary field of the highlights header, usually Name. Only for a RecordPage. Passed to sf as --primary-field.
+
+    .PARAMETER SecondaryFields
+    Secondary fields of the highlights header, at most 11. Each is passed to sf as its own --secondary-fields. Only for a RecordPage. Passed to sf as --secondary-fields.
+
+    .PARAMETER DetailFields
+    Fields to show in the Details tab, split into two columns. Each is passed to sf as its own --detail-fields. Only for a RecordPage. Passed to sf as --detail-fields.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceFlexiPage -Name Account_Record_Page -Template RecordPage -SObject Account -PrimaryField Name -SecondaryFields Industry, Phone -OutputDirectory force-app/main/default
+    Generate a record page for Account.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate flexipage (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Template = --template; -SObject = --sobject; -Label = --label; -Description = --description; -PrimaryField = --primary-field; -SecondaryFields = --secondary-fields; -DetailFields = --detail-fields; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateSet('RecordPage', 'AppPage', 'HomePage')][string] $Template,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $SObject,
+        [Parameter(Mandatory = $false)][string] $Label,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $PrimaryField,
+        [Parameter(Mandatory = $false)][string[]] $SecondaryFields,
+        [Parameter(Mandatory = $false)][string[]] $DetailFields,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    if ($Template -eq 'RecordPage' -and -not $SObject) { throw 'A RecordPage needs -SObject, the object the page is for.' }
+    if ($Template -ne 'RecordPage' -and ($PrimaryField -or $SecondaryFields -or $DetailFields)) { throw '-PrimaryField, -SecondaryFields and -DetailFields are only for a RecordPage.' }
+    $secondary = @($SecondaryFields | Where-Object { $_ })
+    if ($secondary.Count -gt 11) { throw "-SecondaryFields takes at most 11 fields, not $($secondary.Count)." }
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @((Join-Path 'flexipages' "$Name.flexipage-meta.xml")) -What 'FlexiPage' -Force:$Force
+    $arguments = @('template', 'generate', 'flexipage', '--name', $Name, '--template', $Template)
+    if ($SObject) { $arguments += @('--sobject', $SObject) }
+    if ($Label) { $arguments += @('--label', $Label) }
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($PrimaryField) { $arguments += @('--primary-field', $PrimaryField) }
+    foreach ($item in $secondary) { $arguments += @('--secondary-fields', $item) }
+    foreach ($item in @($DetailFields | Where-Object { $_ })) { $arguments += @('--detail-fields', $item) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceLightningOutApp {
+    <#
+    .SYNOPSIS
+    Creates the metadata of a Lightning Out 2.0 app, with its External Client App.
+
+    .DESCRIPTION
+    Runs sf template generate lightning-out, which scaffolds the files for a Lightning Out 2.0 app that puts Lightning web components in an outside web page. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. The CLI needs the External Client App name, contact email and callback URL, the runtime and the host domains. Give them as parameters, or in a -DefinitionFile JSON file; a parameter replaces the same value in the file. Without a file all of them are needed, and the cmdlet says which are missing before it runs sf.
+
+    .PARAMETER AppName
+    Developer name of the new Lightning Out 2.0 app. Passed to sf as --app-name.
+
+    .PARAMETER Components
+    Components the app exposes, written as namespace/myComponent for a Lightning web component (c/myComponent for your own) or namespace:Name for an Aura component. Each is passed to sf as its own --components. They replace, not merge with, the components in the definition file. Passed to sf as --components.
+
+    .PARAMETER DefinitionFile
+    Path of a JSON file that describes the app. It must exist. Parameters replace the matching values in it. Passed to sf as --definition-file.
+
+    .PARAMETER EcaName
+    Developer name of the External Client App of the app. Passed to sf as --eca-name.
+
+    .PARAMETER EcaContactEmail
+    Contact email of the External Client App. Passed to sf as --eca-contact-email.
+
+    .PARAMETER EcaCallbackUrl
+    OAuth callback URL of the External Client App. It must be an absolute https:// URL. Passed to sf as --eca-callback-url.
+
+    .PARAMETER HostDomains
+    HTTP or HTTPS origins of the outside pages that embed the app. Each is passed to sf as its own --host-domains. They replace, not merge with, the host domains in the definition file. Passed to sf as --host-domains.
+
+    .PARAMETER Runtime
+    Runtime that serves the app. Valid values: LWR_CORE, CLWR. Passed to sf as --runtime.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in. It is created if it does not exist. The CLI default is the current folder. Passed to sf as --output-dir.
+
+    .PARAMETER Force
+    Generate even if the files already exist. Without it the cmdlet stops when the target is already there, because the CLI replaces any file that differs from the template without asking, and your changes in it would be lost. This switch is not a CLI flag.
+
+    .EXAMPLE
+    New-SalesforceLightningOutApp -AppName StoreWidget -Components storeCart -EcaName StoreWidgetEca -EcaContactEmail dev@example.com -EcaCallbackUrl https://shop.example.com/callback -HostDomains https://shop.example.com -Runtime LWR_CORE -OutputDirectory force-app/main/default
+    Generate the app with every required value given.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate lightning-out (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -AppName = --app-name; -Components = --components; -DefinitionFile = --definition-file; -EcaName = --eca-name; -EcaContactEmail = --eca-contact-email; -EcaCallbackUrl = --eca-callback-url; -HostDomains = --host-domains; -Runtime = --runtime; -OutputDirectory = --output-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $AppName,
+        [Parameter(Mandatory = $false)][string[]] $Components,
+        [Parameter(Mandatory = $false)][string] $DefinitionFile,
+        [Parameter(Mandatory = $false)][string] $EcaName,
+        [Parameter(Mandatory = $false)][string] $EcaContactEmail,
+        [Parameter(Mandatory = $false)][string] $EcaCallbackUrl,
+        [Parameter(Mandatory = $false)][string[]] $HostDomains,
+        [Parameter(Mandatory = $false)][ValidateSet('LWR_CORE', 'CLWR')][string] $Runtime,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $Force
+    )
+    if ($DefinitionFile -and -not (Test-Path -LiteralPath $DefinitionFile -PathType Leaf)) { throw "Definition file '$DefinitionFile' does not exist." }
+    if ($EcaCallbackUrl -and -not ([System.Uri]::TryCreate($EcaCallbackUrl, [System.UriKind]::Absolute, [ref]$null) -and $EcaCallbackUrl.StartsWith('https://', [System.StringComparison]::OrdinalIgnoreCase))) { throw "-EcaCallbackUrl must be an absolute https:// URL. Got '$EcaCallbackUrl'." }
+    if (-not $DefinitionFile) {
+        $missing = @()
+        if (-not $EcaName) { $missing += '-EcaName' }
+        if (-not $Runtime) { $missing += '-Runtime' }
+        if (@($HostDomains | Where-Object { $_ }).Count -eq 0) { $missing += '-HostDomains' }
+        if (-not $EcaContactEmail) { $missing += '-EcaContactEmail' }
+        if (-not $EcaCallbackUrl) { $missing += '-EcaCallbackUrl' }
+        if ($missing.Count -gt 0) { throw "Without a -DefinitionFile the CLI needs $($missing -join ', ')." }
+    }
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($AppName | Where-Object { $_ }) -What 'Lightning Out app' -Force:$Force
+    $arguments = @('template', 'generate', 'lightning-out')
+    if ($AppName) { $arguments += @('--app-name', $AppName) }
+    foreach ($item in @($Components | Where-Object { $_ })) { $arguments += @('--components', $item) }
+    if ($DefinitionFile) { $arguments += @('--definition-file', $DefinitionFile) }
+    if ($EcaName) { $arguments += @('--eca-name', $EcaName) }
+    if ($EcaContactEmail) { $arguments += @('--eca-contact-email', $EcaContactEmail) }
+    if ($EcaCallbackUrl) { $arguments += @('--eca-callback-url', $EcaCallbackUrl) }
+    foreach ($item in @($HostDomains | Where-Object { $_ })) { $arguments += @('--host-domains', $item) }
+    if ($Runtime) { $arguments += @('--runtime', $Runtime) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceExperienceSite {
+    <#
+    .SYNOPSIS
+    Creates the files of a new Experience Cloud site in the project. Preview.
+
+    .DESCRIPTION
+    Runs sf template generate digital-experience site. This CLI command is a preview, so its flags, templates and output can change in a later release. It writes the site files into the project; it does not create the site in an org (deploy the files for that). It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput.
+
+    .PARAMETER Name
+    Name of the Experience Cloud site. Passed to sf as --name. Required.
+
+    .PARAMETER TemplateName
+    Template to build the site from. Valid value: Build Your Own (LWR). Passed to sf as --template-name. Required.
+
+    .PARAMETER AdminEmail
+    Email address of the site administrator. By default the CLI uses the user name of the authenticated user. Passed to sf as --admin-email.
+
+    .PARAMETER UrlPathPrefix
+    URL path prefix of the site. Letters and digits only. Passed to sf as --url-path-prefix.
+
+    .PARAMETER OutputDirectory
+    Folder to generate the site files in. Passed to sf as --output-dir.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceExperienceSite -Name 'Partner Portal' -TemplateName 'Build Your Own (LWR)' -UrlPathPrefix partners -TargetOrg dev1
+    Generate the files of an LWR site.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf template generate digital-experience site (plugin @salesforce/plugin-templates)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -TemplateName = --template-name; -AdminEmail = --admin-email; -UrlPathPrefix = --url-path-prefix; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-templates
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateSet('Build Your Own (LWR)')][string] $TemplateName,
+        [Parameter(Mandatory = $false)][string] $AdminEmail,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z0-9]+\z')][string] $UrlPathPrefix,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('template', 'generate', 'digital-experience', 'site', '--name', $Name, '--template-name', $TemplateName)
+    if ($AdminEmail) { $arguments += @('--admin-email', $AdminEmail) }
+    if ($UrlPathPrefix) { $arguments += @('--url-path-prefix', $UrlPathPrefix) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', $OutputDirectory) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
