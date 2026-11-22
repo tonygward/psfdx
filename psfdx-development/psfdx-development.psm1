@@ -2863,6 +2863,11 @@ function Get-SalesforceApexTestResult {
     $queueItems = @(Select-SalesforceRecords @statusParams)
     $pending = @($queueItems | Where-Object { $_.Status -in @('Queued', 'Preparing', 'Processing', 'Holding') })
     if ($pending.Count -gt 0) {
+        # A text format (junit, tap, human) is often redirected to a report file, so give it a warning and no object.
+        if ($ResultFormat -ne 'json') {
+            Write-Warning "Test run $TestRunId has not finished ($($pending.Count) of $($queueItems.Count) tests are still queued or running), so there are no $ResultFormat results yet. Use Wait-SalesforceApexTest to wait for it."
+            return
+        }
         return [pscustomobject]@{ TestRunId = $TestRunId; Summary = $null; Tests = @(); Coverage = $null; Completed = $false; PendingTests = $pending.Count; TotalTests = $queueItems.Count }
     }
 
