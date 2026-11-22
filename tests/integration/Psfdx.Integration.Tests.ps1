@@ -112,5 +112,29 @@ Describe 'psfdx against a real scratch org' -Skip:(-not $script:Enabled) {
             $result.Summary.outcome | Should -Be 'Passed'
             (Get-SalesforceApexTestResult -TestRunId $run.TestRunId -TargetOrg $script:Org).Tests.Count | Should -BeGreaterThan 0
         }
+        It 'validates a deployment, then reports on it, without deploying' {
+            $validation = Test-SalesforceDeploy -Manifest $script:ManifestPath -TestLevel SpecificTests -Tests PsfdxItProbeTest -Wait 10 -TargetOrg $script:Org
+            $validation | Should -Not -BeNullOrEmpty
+            Get-SalesforceDeployStatus -JobId $validation.id -TargetOrg $script:Org | Should -Not -BeNullOrEmpty
+        }
+        It 'writes a manifest from source and lists the files .forceignore skips' {
+            $out = Join-Path $script:Project 'generated'
+            New-Item -ItemType Directory -Path $out -Force | Out-Null
+            New-SalesforceManifest -SourceDir (Join-Path $script:Project 'force-app') -Name generated -OutputDir $out | Out-Null
+            Test-Path -LiteralPath (Join-Path $out 'generated.xml') | Should -BeTrue
+            { Get-SalesforceIgnoredFiles } | Should -Not -Throw
+        }
+        It 'converts source to metadata format and back' {
+            $mdapi = Join-Path $script:Project 'mdapi'
+            $back = Join-Path $script:Project 'back'
+            ConvertTo-SalesforceMdapiFormat -SourceDir (Join-Path $script:Project 'force-app') -OutputDir $mdapi | Out-Null
+            @(Get-ChildItem -LiteralPath $mdapi -Recurse -File -Filter 'PsfdxItProbe.cls').Count | Should -BeGreaterThan 0
+            ConvertTo-SalesforceSourceFormat -RootDir $mdapi -OutputDir $back | Out-Null
+            @(Get-ChildItem -LiteralPath $back -Recurse -File -Filter 'PsfdxItProbe.cls').Count | Should -BeGreaterThan 0
+        }
+        It 'previews a source-tracking reset without changing anything' {
+            Reset-SalesforceSourceTracking -TargetOrg $script:Org -WhatIf | Out-Null
+            { Get-SalesforceDeployPreview -TargetOrg $script:Org } | Should -Not -Throw
+        }
     }
 }

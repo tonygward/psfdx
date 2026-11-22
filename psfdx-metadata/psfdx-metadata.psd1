@@ -34,7 +34,20 @@
         'Describe-SalesforceFields',
         'Describe-SalesforceMetadataTypes',
         'Clear-SalesforceMetadataTypeCache',
-        'Build-SalesforceQuery'
+        'Build-SalesforceQuery',
+        'New-SalesforceManifest',
+        'ConvertTo-SalesforceSourceFormat',
+        'ConvertTo-SalesforceMdapiFormat',
+        'Enable-SalesforceSourceBehavior',
+        'Get-SalesforceIgnoredFiles',
+        'Remove-SalesforceSource',
+        'Remove-SalesforceSourceTracking',
+        'Reset-SalesforceSourceTracking',
+        'Start-SalesforcePipelineDeploy',
+        'Test-SalesforcePipelineDeploy',
+        'Start-SalesforcePipelineQuickDeploy',
+        'Get-SalesforcePipelineDeployStatus',
+        'Resume-SalesforcePipelineDeploy'
     )
     CmdletsToExport       = @()
     VariablesToExport     = @()

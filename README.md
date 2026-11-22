@@ -239,14 +239,41 @@ Included in the `psfdx` package.
 | Cmdlet | Description |
 | :--- | :--- |
 | `Deploy-SalesforceComponent` | Deploy specific metadata by type/name. |
-| `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. |
-| `Test-SalesforceDeploy` | Validate a deployment without saving it (check-only); use `-Manifest`, `-SourceDir` or `-InputDir` (a Metadata API directory or `.zip`); returns a job ID for quick deploy. Tests always run (`NoTests` is not allowed); `-TestLevel` is `SpecificTests`, `ReferencedTests`, `TestsInFolder`, `TestsInOrg` (default), `TestsInOrgAndPackages` or `RelevantTests`. |
+| `Deploy-SalesforceMetadata` | Deploy using a manifest, metadata directory, or single-package artifact. Also takes `-PreDestructiveChanges`, `-PostDestructiveChanges`, `-PurgeOnDelete`, `-Async`, `-CoverageFormatters`, `-Junit` and `-ResultsDir`. |
+| `Test-SalesforceDeploy` | Validate a deployment without saving it (check-only); use `-Manifest`, `-SourceDir` or `-InputDir` (a Metadata API directory or `.zip`); returns a job ID for quick deploy. Tests always run (`NoTests` is not allowed); `-Metadata` validates named components, and the destructive-changes and `-CoverageFormatters`/`-Junit`/`-ResultsDir` options match `Deploy-SalesforceMetadata`; `-TestLevel` is `SpecificTests`, `ReferencedTests`, `TestsInFolder`, `TestsInOrg` (default), `TestsInOrgAndPackages` or `RelevantTests`. |
 | `Start-SalesforceQuickDeploy` | Quick deploy a validated deployment by `-JobId` or `-UseMostRecent` (asks for confirmation). |
 | `Get-SalesforceDeployStatus` | Report the status of a deployment by `-JobId` or `-UseMostRecent`. |
 | `Resume-SalesforceDeploy` | Resume watching a deployment that is still running, by `-JobId` or `-UseMostRecent`. The org comes from the cached deployment, so there is no `-TargetOrg`. |
 | `Get-SalesforceDeployPreview` | Read-only preview of what a deploy would send, with conflicts, deletes and ignored files, from `sf project deploy preview`. Needs a source-tracked org. Narrow with `-SourceDir`, `-Manifest` or `-Metadata`. |
 | `Get-SalesforceRetrievePreview` | Read-only preview of what a retrieve would bring down and any conflicts, from `sf project retrieve preview`. Needs a source-tracked org. |
 | `Stop-SalesforceDeploy` | Cancel a running deployment (asks for confirmation). |
+
+`Get-SalesforceDeployStatus` and `Resume-SalesforceDeploy` also write test and coverage results with `-CoverageFormatters`, `-Junit` and `-ResultsDir`. `Get-SalesforceDeployPreview` and `Get-SalesforceRetrievePreview` take `-ConciseResults`. `Retrieve-SalesforceComponent` takes `-SourceDir` and `-RootTypeWithDependencies`; `Retrieve-SalesforceMetadata` takes `-SinglePackage` and `-ZipFileName`.
+
+### Manifest, conversion and source tracking
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforceManifest` | Write a package.xml (or destructive-changes manifest) from metadata names, local source or an org (`sf project generate manifest`). |
+| `ConvertTo-SalesforceSourceFormat` | Convert Metadata API files into source format (`sf project convert mdapi`). |
+| `ConvertTo-SalesforceMdapiFormat` | Convert source format into Metadata API format (`sf project convert source`). |
+| `Enable-SalesforceSourceBehavior` | Beta. Turn on a source behavior such as decomposed permission sets (`sf project convert source-behavior`); `-DryRun` shows the change. |
+| `Get-SalesforceIgnoredFiles` | List the files `.forceignore` leaves out (`sf project list ignored`). |
+| `Remove-SalesforceSource` | Delete components from the org and the project (asks for confirmation; `-CheckOnly` validates; `-NoPrompt` skips the question). |
+| `Remove-SalesforceSourceTracking` | Delete the local source tracking files of an org (asks for confirmation). |
+| `Reset-SalesforceSourceTracking` | Reset local and remote source tracking to a `-Revision` (asks for confirmation). |
+
+### DevOps Center pipeline deploys (beta)
+
+These run the beta `sf project deploy pipeline` commands. They need a DevOps Center org you are logged in to (`-DevOpsCenterUsername`), and because the CLI commands are beta their names, flags and results can change in a later Salesforce CLI release; psfdx does not promise they stay stable. The cmdlets that change an org ask for confirmation and support `-WhatIf`.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Start-SalesforcePipelineDeploy` | Deploy a branch to a pipeline stage (`sf project deploy pipeline start`). |
+| `Test-SalesforcePipelineDeploy` | Validate a branch deployment without deploying (`... pipeline validate`). |
+| `Start-SalesforcePipelineQuickDeploy` | Quick deploy a validated pipeline deployment by `-JobId` or `-UseMostRecent` (`... pipeline quick`). |
+| `Get-SalesforcePipelineDeployStatus` | Report the status of a pipeline deployment (`... pipeline report`). |
+| `Resume-SalesforcePipelineDeploy` | Resume watching a pipeline deployment (`... pipeline resume`). |
 
 Validate, then quick deploy, and resume or report on a running deployment:
 

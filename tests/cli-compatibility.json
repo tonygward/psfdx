@@ -34,6 +34,10 @@
     "project deploy cancel", "project deploy quick", "project deploy report",
     "project deploy resume", "project deploy start", "project deploy validate",
     "project deploy preview",
+    "project deploy pipeline quick", "project deploy pipeline report", "project deploy pipeline resume",
+    "project deploy pipeline start", "project deploy pipeline validate",
+    "project convert mdapi", "project convert source", "project convert source-behavior",
+    "project delete source", "project delete tracking", "project list ignored", "project reset tracking",
     "template generate project", "project generate manifest",
     "project retrieve preview", "project retrieve start",
     "sobject describe", "sobject list"

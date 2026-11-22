@@ -391,13 +391,19 @@ function Retrieve-SalesforceComponent {
     Runs sf project retrieve start with --metadata Type, Type:Name or Type:Name.ChildName. The type is checked against the org's metadata types.
 
     .PARAMETER Type
-    Metadata type, for example ApexClass or CustomField. Required; completes from the org's metadata types and is checked.
+    Metadata type, for example ApexClass or CustomField. Required unless you give -SourceDir; completes from the org's metadata types and is checked.
 
     .PARAMETER Name
     Name of the component, for example an object name for a field. Together with -Type it forms --metadata Type:Name.
 
     .PARAMETER ChildName
     Metadata component names to retrieve. Wildcards (`*`) supported as long as you use quotes, such as `ApexClass:MyClass*`. Passed to sf as --metadata.
+
+    .PARAMETER SourceDir
+    Local source folders or files whose components are retrieved from the org. Each path must exist. Use instead of -Type. Passed as one --source-dir per value.
+
+    .PARAMETER RootTypeWithDependencies
+    Metadata types to retrieve together with the components they depend on. Valid values: Bot, AiAgentDefinitionVersion. Passed as one --root-type-with-dependencies per value.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -421,8 +427,8 @@ function Retrieve-SalesforceComponent {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --root-type-with-dependencies, --single-package, --source-dir, --zip-file-name
-    Parameter to flag: -ChildName = --metadata; -TargetOrg = --target-org; -Wait = --wait; -OutputDir = --output-dir; -IgnoreConflicts = --ignore-conflicts.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Type = --metadata; -Name = --metadata; -ChildName = --metadata; -SourceDir = --source-dir; -RootTypeWithDependencies = --root-type-with-dependencies; -TargetOrg = --target-org; -Wait = --wait; -OutputDir = --output-dir; -IgnoreConflicts = --ignore-conflicts.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -442,6 +448,8 @@ function Retrieve-SalesforceComponent {
         [Parameter(Mandatory = $false)][ArgumentCompleter({ & (Get-Module psfdx-metadata -All | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $Type,
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string] $ChildName,
+        [Parameter(Mandatory = $false)][string[]] $SourceDir,
+        [Parameter(Mandatory = $false)][ValidateSet('Bot', 'AiAgentDefinitionVersion')][string[]] $RootTypeWithDependencies,
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][string] $OutputDir,
@@ -452,17 +460,29 @@ function Retrieve-SalesforceComponent {
         throw "Specify -Name when using -ChildName."
     }
 
-    if ([string]::IsNullOrWhiteSpace($Type)) {
-        throw "Specify -Type when retrieving a component."
+    $sourceDirs = @($SourceDir | Where-Object { $_ })
+    if ([string]::IsNullOrWhiteSpace($Type) -and $sourceDirs.Count -eq 0) {
+        throw "Specify -Type or -SourceDir when retrieving a component."
     }
-    Assert-SalesforceMetadataType -Type $Type
+    if ([string]::IsNullOrWhiteSpace($Type) -and $Name) {
+        throw "Specify -Type when using -Name."
+    }
+    foreach ($dir in $sourceDirs) {
+        if (-not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
+    }
 
-    $metadata = $Type
-    if ($Name) {
-        $metadata += ":$Name"
-        if ($ChildName) { $metadata += ".$ChildName" }
+    $arguments = @('project', 'retrieve', 'start')
+    if (-not [string]::IsNullOrWhiteSpace($Type)) {
+        Assert-SalesforceMetadataType -Type $Type
+        $metadata = $Type
+        if ($Name) {
+            $metadata += ":$Name"
+            if ($ChildName) { $metadata += ".$ChildName" }
+        }
+        $arguments += @('--metadata', $metadata)
     }
-    $arguments = @('project', 'retrieve', 'start', '--metadata', $metadata)
+    foreach ($dir in $sourceDirs) { $arguments += @('--source-dir', $dir) }
+    foreach ($rootType in @($RootTypeWithDependencies | Where-Object { $_ })) { $arguments += @('--root-type-with-dependencies', $rootType) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
     if ($OutputDir) {
@@ -496,6 +516,12 @@ function Retrieve-SalesforceMetadata {
     .PARAMETER Unzip
     Extract the retrieved zip. Passed as --unzip.
 
+    .PARAMETER SinglePackage
+    Treat the manifest as a single package (the retrieved zip holds one package folder). Adds --single-package.
+
+    .PARAMETER ZipFileName
+    File name of the retrieved zip. Passed as --zip-file-name. The CLI uses unpackaged.zip when omitted.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -509,8 +535,8 @@ function Retrieve-SalesforceMetadata {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --root-type-with-dependencies, --single-package, --source-dir, --zip-file-name
-    Parameter to flag: -Manifest = --manifest; -OutputDir = --target-metadata-dir; -Wait = --wait; -Unzip = --unzip; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Manifest = --manifest; -OutputDir = --target-metadata-dir; -Wait = --wait; -Unzip = --unzip; -SinglePackage = --single-package; -ZipFileName = --zip-file-name; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -531,6 +557,8 @@ function Retrieve-SalesforceMetadata {
         [Parameter(Mandatory = $true)][string] $OutputDir,
         [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][switch] $Unzip,
+        [Parameter(Mandatory = $false)][switch] $SinglePackage,
+        [Parameter(Mandatory = $false)][string] $ZipFileName,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
 
@@ -545,6 +573,8 @@ function Retrieve-SalesforceMetadata {
     $arguments += @('--target-metadata-dir', $OutputDir)
     if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
     if ($Unzip) { $arguments += '--unzip' }
+    if ($SinglePackage) { $arguments += '--single-package' }
+    if ($ZipFileName) { $arguments += @('--zip-file-name', $ZipFileName) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -580,7 +610,7 @@ function Retrieve-SalesforcePackage {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --root-type-with-dependencies, --single-package, --source-dir, --zip-file-name
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Parameter to flag: -Name = --package-name; -OutputDir = --output-dir; -Wait = --wait; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
@@ -712,7 +742,7 @@ function Retrieve-SalesforceOrg {
     Username or alias of the org to retrieve from. Passed as --from-org to sf project generate manifest and as --target-org to sf project retrieve start. If omitted, the CLI uses the default target org.
 
     .PARAMETER IncludePackages
-    Also include the org's unlocked package contents. psfdx passes --include-packages=unlocked; the value managed is not available.
+    Also include the org's unlocked package contents. psfdx passes --include-packages=unlocked. Use New-SalesforceManifest for managed packages.
 
     .EXAMPLE
     Retrieve-SalesforceOrg -TargetOrg dev1
@@ -724,10 +754,9 @@ function Retrieve-SalesforceOrg {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project generate manifest (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --excluded-metadata, --metadata, --source-dir, --type
-      Values psfdx cannot pass: --include-packages managed
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --root-type-with-dependencies, --single-package, --source-dir, --zip-file-name
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Parameter to flag: -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
@@ -801,10 +830,22 @@ function Deploy-SalesforceComponent {
     Number of minutes to wait for command to complete and display results. Passed to sf as --wait.
 
     .PARAMETER TestLevel
-    How tests run. psfdx level names are translated to the CLI's (see the value mapping). Passed to sf as --test-level. Default: NoTests. Valid values: NoTests, SpecificTests, ReferencedTests, TestsInFolder, TestsInOrg, TestsInOrgAndPackages. Value mapping to the CLI: NoTests = NoTestRun, SpecificTests = RunSpecifiedTests, ReferencedTests = RunSpecifiedTests, TestsInFolder = RunSpecifiedTests, TestsInOrg = RunLocalTests, TestsInOrgAndPackages = RunAllTestsInOrg, RelevantTests = RunRelevantTests.
+    How tests run. psfdx level names are translated to the CLI's (see the value mapping). Passed to sf as --test-level. Default: NoTests. Valid values: NoTests, SpecificTests, ReferencedTests, TestsInFolder, TestsInOrg, TestsInOrgAndPackages, RelevantTests. Value mapping to the CLI: NoTests = NoTestRun, SpecificTests = RunSpecifiedTests, ReferencedTests = RunSpecifiedTests, TestsInFolder = RunSpecifiedTests, TestsInOrg = RunLocalTests, TestsInOrgAndPackages = RunAllTestsInOrg, RelevantTests = RunRelevantTests.
 
     .PARAMETER Tests
     Test classes to run for -TestLevel SpecificTests. Passed as one --tests per name.
+
+    .PARAMETER Async
+    Start the deployment and return without waiting for it (use Get-SalesforceDeployStatus or Resume-SalesforceDeploy later). Adds --async.
+
+    .PARAMETER CoverageFormatters
+    Format of the code coverage results written to the results folder. Valid values: clover, cobertura, html-spa, html, json, json-summary, lcovonly, none, teamcity, text, text-summary. Passed as one --coverage-formatters per value.
+
+    .PARAMETER Junit
+    Also write JUnit test results. Adds --junit.
+
+    .PARAMETER ResultsDir
+    Folder that receives the test and coverage results. Passed as --results-dir.
 
     .PARAMETER DryRun
     Validate only. Passed as --dry-run; nothing is deployed.
@@ -832,9 +873,8 @@ function Deploy-SalesforceComponent {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project deploy start (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async, --coverage-formatters, --junit, --post-destructive-changes, --pre-destructive-changes, --purge-on-delete, --results-dir
-      Values psfdx cannot pass: --test-level RunRelevantTests
-    Parameter to flag: -Type = --metadata; -Name = --metadata; -SourceDir = --source-dir; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -Wait = --wait; -TestLevel = --test-level; -Tests = --tests; -DryRun = --dry-run; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Type = --metadata; -Name = --metadata; -SourceDir = --source-dir; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -Wait = --wait; -TestLevel = --test-level; -Tests = --tests; -Async = --async; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir; -DryRun = --dry-run; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -864,8 +904,13 @@ function Deploy-SalesforceComponent {
             'ReferencedTests',
             'TestsInFolder',
             'TestsInOrg',
-            'TestsInOrgAndPackages')][string] $TestLevel = 'NoTests',
+            'TestsInOrgAndPackages',
+            'RelevantTests')][string] $TestLevel = 'NoTests',
         [Parameter(Mandatory = $false)][string[]] $Tests,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][ValidateSet('clover', 'cobertura', 'html-spa', 'html', 'json', 'json-summary', 'lcovonly', 'none', 'teamcity', 'text', 'text-summary')][string[]] $CoverageFormatters,
+        [Parameter(Mandatory = $false)][switch] $Junit,
+        [Parameter(Mandatory = $false)][string] $ResultsDir,
         [Parameter(Mandatory = $false)][switch] $DryRun,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
         [Parameter(Mandatory = $false)][switch] $DetailedResults,
@@ -875,6 +920,7 @@ function Deploy-SalesforceComponent {
     if ($ConciseResults -and $DetailedResults) {
         throw "Specify only one of -ConciseResults or -DetailedResults."
     }
+    Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
 
     if (-not $Type -and -not $SourceDir) {
         throw "Specify -Type or -SourceDir when deploying metadata."
@@ -909,6 +955,8 @@ function Deploy-SalesforceComponent {
 
     $arguments += Get-SalesforceApexCliTestArguments @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
 
+    if ($Async) { $arguments += '--async' }
+    $arguments += Get-SalesforceDeployReportArguments -CoverageFormatters $CoverageFormatters -Junit:$Junit -ResultsDir $ResultsDir
     if ($DryRun) { $arguments += '--dry-run' }
     if ($ConciseResults) { $arguments += '--concise' }
     if ($DetailedResults) { $arguments += '--verbose' }
@@ -949,9 +997,34 @@ function Deploy-SalesforceMetadata {
     .PARAMETER IgnoreErrors
     Ignore any errors and don't roll back deployment. Adds --ignore-errors.
 
+    .PARAMETER PreDestructiveChanges
+    Path of a destructiveChangesPre.xml file; the components it lists are deleted before the deploy. The file must exist. Passed as --pre-destructive-changes.
+
+    .PARAMETER PostDestructiveChanges
+    Path of a destructiveChangesPost.xml file; the components it lists are deleted after the deploy. The file must exist. Passed as --post-destructive-changes.
+
+    .PARAMETER PurgeOnDelete
+    Delete the destructive-changes components permanently instead of keeping them in the Recycle Bin. Needs -PreDestructiveChanges or -PostDestructiveChanges. Adds --purge-on-delete.
+
+    .PARAMETER Async
+    Start the deployment and return without waiting for it (use Get-SalesforceDeployStatus or Resume-SalesforceDeploy later). Adds --async.
+
+    .PARAMETER CoverageFormatters
+    Format of the code coverage results written to the results folder. Valid values: clover, cobertura, html-spa, html, json, json-summary, lcovonly, none, teamcity, text, text-summary. Passed as one --coverage-formatters per value.
+
+    .PARAMETER Junit
+    Also write JUnit test results. Adds --junit.
+
+    .PARAMETER ResultsDir
+    Folder that receives the test and coverage results. Passed as --results-dir.
+
     .EXAMPLE
     Deploy-SalesforceMetadata -Manifest manifest/package.xml -TargetOrg dev1 -WhatIf
     Preview deploying a manifest.
+
+    .EXAMPLE
+    Deploy-SalesforceMetadata -Manifest manifest/package.xml -PostDestructiveChanges manifest/destructiveChangesPost.xml -TargetOrg dev1
+    Deploy a manifest, then delete the components listed in the destructive changes file.
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
@@ -959,9 +1032,8 @@ function Deploy-SalesforceMetadata {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project deploy start (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --async, --coverage-formatters, --junit, --post-destructive-changes, --pre-destructive-changes, --purge-on-delete, --results-dir
-      Values psfdx cannot pass: --test-level RunRelevantTests
-    Parameter to flag: -Manifest = --manifest; -InputDir = --metadata-dir; -ManifestPackage = --single-package; -TargetOrg = --target-org; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Manifest = --manifest; -InputDir = --metadata-dir; -ManifestPackage = --single-package; -TargetOrg = --target-org; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -PreDestructiveChanges = --pre-destructive-changes; -PostDestructiveChanges = --post-destructive-changes; -PurgeOnDelete = --purge-on-delete; -Async = --async; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -984,7 +1056,14 @@ function Deploy-SalesforceMetadata {
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
         [Parameter(Mandatory = $false)][switch] $IgnoreWarnings,
-        [Parameter(Mandatory = $false)][switch] $IgnoreErrors
+        [Parameter(Mandatory = $false)][switch] $IgnoreErrors,
+        [Parameter(Mandatory = $false)][string] $PreDestructiveChanges,
+        [Parameter(Mandatory = $false)][string] $PostDestructiveChanges,
+        [Parameter(Mandatory = $false)][switch] $PurgeOnDelete,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][ValidateSet('clover', 'cobertura', 'html-spa', 'html', 'json', 'json-summary', 'lcovonly', 'none', 'teamcity', 'text', 'text-summary')][string[]] $CoverageFormatters,
+        [Parameter(Mandatory = $false)][switch] $Junit,
+        [Parameter(Mandatory = $false)][string] $ResultsDir
     )
 
     $optionsProvided = 0
@@ -1010,6 +1089,9 @@ function Deploy-SalesforceMetadata {
     if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
     if ($IgnoreWarnings) { $arguments += '--ignore-warnings' }
     if ($IgnoreErrors) { $arguments += '--ignore-errors' }
+    $arguments += Get-SalesforceDestructiveChangeArguments -PreDestructiveChanges $PreDestructiveChanges -PostDestructiveChanges $PostDestructiveChanges -PurgeOnDelete:$PurgeOnDelete
+    if ($Async) { $arguments += '--async' }
+    $arguments += Get-SalesforceDeployReportArguments -CoverageFormatters $CoverageFormatters -Junit:$Junit -ResultsDir $ResultsDir
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
@@ -1023,6 +1105,45 @@ function Deploy-SalesforceMetadata {
 #endregion
 
 #region Deploy lifecycle
+
+function Get-SalesforceDeployReportArguments {
+    # Private: the --coverage-formatters, --junit and --results-dir flags that deploy start, validate, report and resume share.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $CoverageFormatters,
+        [Parameter(Mandatory = $false)][switch] $Junit,
+        [Parameter(Mandatory = $false)][string] $ResultsDir
+    )
+    $arguments = @()
+    foreach ($formatter in @($CoverageFormatters | Where-Object { $_ })) { $arguments += @('--coverage-formatters', $formatter) }
+    if ($Junit) { $arguments += '--junit' }
+    if ($ResultsDir) { $arguments += @('--results-dir', $ResultsDir) }
+    return $arguments
+}
+
+function Get-SalesforceDestructiveChangeArguments {
+    # Private: the --pre-destructive-changes, --post-destructive-changes and --purge-on-delete flags of deploy start and validate.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $PreDestructiveChanges,
+        [Parameter(Mandatory = $false)][string] $PostDestructiveChanges,
+        [Parameter(Mandatory = $false)][switch] $PurgeOnDelete
+    )
+    $arguments = @()
+    if ($PreDestructiveChanges) {
+        if (-not (Test-Path -LiteralPath $PreDestructiveChanges -PathType Leaf)) { throw "Pre-destructive changes file '$PreDestructiveChanges' does not exist." }
+        $arguments += @('--pre-destructive-changes', $PreDestructiveChanges)
+    }
+    if ($PostDestructiveChanges) {
+        if (-not (Test-Path -LiteralPath $PostDestructiveChanges -PathType Leaf)) { throw "Post-destructive changes file '$PostDestructiveChanges' does not exist." }
+        $arguments += @('--post-destructive-changes', $PostDestructiveChanges)
+    }
+    if ($PurgeOnDelete) {
+        if (-not $PreDestructiveChanges -and -not $PostDestructiveChanges) { throw "-PurgeOnDelete needs -PreDestructiveChanges or -PostDestructiveChanges." }
+        $arguments += '--purge-on-delete'
+    }
+    return $arguments
+}
 
 function Get-SalesforceDeployJobParams {
     [CmdletBinding()]
@@ -1095,6 +1216,26 @@ function Test-SalesforceDeploy {
     .PARAMETER InputDir
     Root of directory or zip file of metadata formatted files to deploy. Passed to sf as --metadata-dir.
 
+    .PARAMETER Metadata
+    Metadata components to validate, such as ApexClass:MyClass. Use instead of -Manifest, -SourceDir and -InputDir. Passed as one --metadata per value.
+
+    .PARAMETER PreDestructiveChanges
+    Path of a destructiveChangesPre.xml file; the components it lists are deleted before the deploy. The file must exist. Passed as --pre-destructive-changes.
+
+    .PARAMETER PostDestructiveChanges
+    Path of a destructiveChangesPost.xml file; the components it lists are deleted after the deploy. The file must exist. Passed as --post-destructive-changes.
+
+    .PARAMETER PurgeOnDelete
+    Delete the destructive-changes components permanently instead of keeping them in the Recycle Bin. Needs -PreDestructiveChanges or -PostDestructiveChanges. Adds --purge-on-delete.
+
+    .PARAMETER CoverageFormatters
+    Format of the code coverage results written to the results folder. Valid values: clover, cobertura, html-spa, html, json, json-summary, lcovonly, none, teamcity, text, text-summary. Passed as one --coverage-formatters per value.
+
+    .PARAMETER Junit
+    Also write JUnit test results. Adds --junit.
+
+    .PARAMETER ResultsDir
+    Folder that receives the test and coverage results. Passed as --results-dir.
     .PARAMETER ManifestPackage
     Indicates that the metadata zip file points to a directory structure for a single package. Adds --single-package.
 
@@ -1130,8 +1271,8 @@ function Test-SalesforceDeploy {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project deploy validate (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --coverage-formatters, --junit, --metadata, --post-destructive-changes, --pre-destructive-changes, --purge-on-delete, --results-dir
-    Parameter to flag: -Manifest = --manifest; -SourceDir = --source-dir; -InputDir = --metadata-dir; -ManifestPackage = --single-package; -TestLevel = --test-level; -Tests = --tests; -IgnoreWarnings = --ignore-warnings; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Manifest = --manifest; -SourceDir = --source-dir; -InputDir = --metadata-dir; -Metadata = --metadata; -PreDestructiveChanges = --pre-destructive-changes; -PostDestructiveChanges = --post-destructive-changes; -PurgeOnDelete = --purge-on-delete; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir; -ManifestPackage = --single-package; -TestLevel = --test-level; -Tests = --tests; -IgnoreWarnings = --ignore-warnings; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1151,6 +1292,13 @@ function Test-SalesforceDeploy {
         [Parameter(Mandatory = $false)][string] $Manifest,
         [Parameter(Mandatory = $false)][string] $SourceDir,
         [Parameter(Mandatory = $false)][string] $InputDir,
+        [Parameter(Mandatory = $false)][string[]] $Metadata,
+        [Parameter(Mandatory = $false)][string] $PreDestructiveChanges,
+        [Parameter(Mandatory = $false)][string] $PostDestructiveChanges,
+        [Parameter(Mandatory = $false)][switch] $PurgeOnDelete,
+        [Parameter(Mandatory = $false)][ValidateSet('clover', 'cobertura', 'html-spa', 'html', 'json', 'json-summary', 'lcovonly', 'none', 'teamcity', 'text', 'text-summary')][string[]] $CoverageFormatters,
+        [Parameter(Mandatory = $false)][switch] $Junit,
+        [Parameter(Mandatory = $false)][string] $ResultsDir,
         [Parameter(Mandatory = $false)][switch] $ManifestPackage,
         [Parameter(Mandatory = $false)][ValidateSet(
             'SpecificTests',
@@ -1172,8 +1320,9 @@ function Test-SalesforceDeploy {
     if ($Manifest) { $optionsProvided++ }
     if ($SourceDir) { $optionsProvided++ }
     if ($InputDir) { $optionsProvided++ }
+    if (@($Metadata | Where-Object { $_ }).Count -gt 0) { $optionsProvided++ }
     if ($optionsProvided -ne 1) {
-        throw "Specify exactly one of -Manifest, -SourceDir, or -InputDir."
+        throw "Specify exactly one of -Manifest, -SourceDir, -InputDir, or -Metadata."
     }
     if ($ManifestPackage -and -not $InputDir) {
         throw "-ManifestPackage can only be used with -InputDir."
@@ -1206,11 +1355,14 @@ function Test-SalesforceDeploy {
     if ($Manifest) { $arguments += @('--manifest', $Manifest) }
     if ($SourceDir) { $arguments += @('--source-dir', $SourceDir) }
     if ($InputDir) { $arguments += @('--metadata-dir', $InputDir) }
+    foreach ($component in @($Metadata | Where-Object { $_ })) { $arguments += @('--metadata', $component) }
     if ($ManifestPackage) { $arguments += '--single-package' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($IgnoreWarnings) { $arguments += '--ignore-warnings' }
     if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
     if ($Async) { $arguments += '--async' }
+    $arguments += Get-SalesforceDestructiveChangeArguments -PreDestructiveChanges $PreDestructiveChanges -PostDestructiveChanges $PostDestructiveChanges -PurgeOnDelete:$PurgeOnDelete
+    $arguments += Get-SalesforceDeployReportArguments -CoverageFormatters $CoverageFormatters -Junit:$Junit -ResultsDir $ResultsDir
     $arguments += Get-SalesforceApexCliTestArguments @commonParams -SourceDir $SourceDir -TestLevel $TestLevel -Tests $Tests
     if ($ConciseResults) { $arguments += '--concise' }
     if ($DetailedResults) { $arguments += '--verbose' }
@@ -1327,6 +1479,14 @@ function Get-SalesforceDeployStatus {
     .PARAMETER TargetOrg
     Username or alias of the target org. Passed to sf as --target-org.
 
+    .PARAMETER CoverageFormatters
+    Format of the code coverage results written to the results folder. Valid values: clover, cobertura, html-spa, html, json, json-summary, lcovonly, none, teamcity, text, text-summary. Passed as one --coverage-formatters per value.
+
+    .PARAMETER Junit
+    Also write JUnit test results. Adds --junit.
+
+    .PARAMETER ResultsDir
+    Folder that receives the test and coverage results. Passed as --results-dir.
     .EXAMPLE
     Get-SalesforceDeployStatus -UseMostRecent -TargetOrg dev1
     Status of the last deployment.
@@ -1335,8 +1495,8 @@ function Get-SalesforceDeployStatus {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project deploy report (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --coverage-formatters, --junit, --results-dir
-    Parameter to flag: -JobId = --job-id; -Wait = --wait; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -JobId = --job-id; -Wait = --wait; -TargetOrg = --target-org; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1356,7 +1516,10 @@ function Get-SalesforceDeployStatus {
         [Parameter(Mandatory = $false)][string] $JobId,
         [Parameter(Mandatory = $false)][switch] $UseMostRecent,
         [Parameter(Mandatory = $false)][int] $Wait,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][ValidateSet('clover', 'cobertura', 'html-spa', 'html', 'json', 'json-summary', 'lcovonly', 'none', 'teamcity', 'text', 'text-summary')][string[]] $CoverageFormatters,
+        [Parameter(Mandatory = $false)][switch] $Junit,
+        [Parameter(Mandatory = $false)][string] $ResultsDir
     )
 
     $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
@@ -1365,6 +1528,7 @@ function Get-SalesforceDeployStatus {
     $arguments = @('project', 'deploy', 'report') + $jobParams
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    $arguments += Get-SalesforceDeployReportArguments -CoverageFormatters $CoverageFormatters -Junit:$Junit -ResultsDir $ResultsDir
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -1394,6 +1558,14 @@ function Resume-SalesforceDeploy {
     .PARAMETER DetailedResults
     Show verbose output of the deploy operation result. Adds --verbose.
 
+    .PARAMETER CoverageFormatters
+    Format of the code coverage results written to the results folder. Valid values: clover, cobertura, html-spa, html, json, json-summary, lcovonly, none, teamcity, text, text-summary. Passed as one --coverage-formatters per value.
+
+    .PARAMETER Junit
+    Also write JUnit test results. Adds --junit.
+
+    .PARAMETER ResultsDir
+    Folder that receives the test and coverage results. Passed as --results-dir.
     .EXAMPLE
     Resume-SalesforceDeploy -UseMostRecent -Wait 10
     Wait up to ten more minutes for the last deployment.
@@ -1402,8 +1574,8 @@ function Resume-SalesforceDeploy {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project deploy resume (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --coverage-formatters, --junit, --results-dir
-    Parameter to flag: -JobId = --job-id; -Wait = --wait; -ConciseResults = --concise; -DetailedResults = --verbose.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -JobId = --job-id; -Wait = --wait; -ConciseResults = --concise; -DetailedResults = --verbose; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1424,7 +1596,10 @@ function Resume-SalesforceDeploy {
         [Parameter(Mandatory = $false)][switch] $UseMostRecent,
         [Parameter(Mandatory = $false)][int] $Wait,
         [Parameter(Mandatory = $false)][switch] $ConciseResults,
-        [Parameter(Mandatory = $false)][switch] $DetailedResults
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][ValidateSet('clover', 'cobertura', 'html-spa', 'html', 'json', 'json-summary', 'lcovonly', 'none', 'teamcity', 'text', 'text-summary')][string[]] $CoverageFormatters,
+        [Parameter(Mandatory = $false)][switch] $Junit,
+        [Parameter(Mandatory = $false)][string] $ResultsDir
     )
 
     $jobParams = Get-SalesforceDeployJobParams -JobId $JobId -UseMostRecent:$UseMostRecent
@@ -1436,6 +1611,7 @@ function Resume-SalesforceDeploy {
     if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
     if ($ConciseResults) { $arguments += '--concise' }
     if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += Get-SalesforceDeployReportArguments -CoverageFormatters $CoverageFormatters -Junit:$Junit -ResultsDir $ResultsDir
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -1604,6 +1780,8 @@ function Get-SalesforceDeployPreview {
 
     .PARAMETER IgnoreConflicts
     Don't display conflicts in preview of the deployment. Adds --ignore-conflicts.
+    .PARAMETER ConciseResults
+    Show concise output. Adds --concise.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -1618,8 +1796,8 @@ function Get-SalesforceDeployPreview {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project deploy preview (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --concise
-    Parameter to flag: -SourceDir = --source-dir; -Manifest = --manifest; -Metadata = --metadata; -IgnoreConflicts = --ignore-conflicts; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SourceDir = --source-dir; -Manifest = --manifest; -Metadata = --metadata; -IgnoreConflicts = --ignore-conflicts; -ConciseResults = --concise; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1640,9 +1818,9 @@ function Get-SalesforceDeployPreview {
         [Parameter(Mandatory = $false)][string] $Manifest,
         [Parameter(Mandatory = $false)][string[]] $Metadata,
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-
     if ($Manifest -and -not (Test-Path -LiteralPath $Manifest -PathType Leaf)) { throw "Manifest file '$Manifest' does not exist." }
     foreach ($dir in @($SourceDir)) {
         if ($dir -and -not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
@@ -1652,6 +1830,7 @@ function Get-SalesforceDeployPreview {
     if ($Manifest) { $arguments += @('--manifest', $Manifest) }
     foreach ($m in @($Metadata)) { if ($m) { $arguments += @('--metadata', $m) } }
     if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
+    if ($ConciseResults) { $arguments += '--concise' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -1669,6 +1848,8 @@ function Get-SalesforceRetrievePreview {
 
     .PARAMETER IgnoreConflicts
     Don't display conflicts in the preview of the retrieval. Adds --ignore-conflicts.
+    .PARAMETER ConciseResults
+    Show concise output. Adds --concise.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -1680,8 +1861,8 @@ function Get-SalesforceRetrievePreview {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf project retrieve preview (plugin @salesforce/plugin-deploy-retrieve)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --concise
-    Parameter to flag: -IgnoreConflicts = --ignore-conflicts; -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -IgnoreConflicts = --ignore-conflicts; -ConciseResults = --concise; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -1699,11 +1880,12 @@ function Get-SalesforceRetrievePreview {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $false)][switch] $IgnoreConflicts,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-
     $arguments = @('project', 'retrieve', 'preview')
     if ($IgnoreConflicts) { $arguments += '--ignore-conflicts' }
+    if ($ConciseResults) { $arguments += '--concise' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -1711,6 +1893,1107 @@ function Get-SalesforceRetrievePreview {
 }
 
 #endregion
+
+#region Manifest and source conversion
+
+function New-SalesforceManifest {
+    <#
+    .SYNOPSIS
+    Writes a package.xml manifest from metadata names, local source or an org.
+
+    .DESCRIPTION
+    Runs sf project generate manifest and returns the CLI result (the path of the manifest written). Build the manifest from -Metadata names, from -SourceDir files, or from the metadata of an org with -FromOrg. Use -Type to write a destructive-changes or package manifest instead of package.xml. The output folder must already exist.
+
+    .PARAMETER Metadata
+    Metadata components to put in the manifest, such as ApexClass:MyClass. Passed as one --metadata per value.
+
+    .PARAMETER ExcludedMetadata
+    Metadata types to leave out of a manifest built with -FromOrg. Passed as one --excluded-metadata per value.
+
+    .PARAMETER SourceDir
+    Local source folders or files to build the manifest from. Passed as one --source-dir per value. Each path must exist.
+
+    .PARAMETER FromOrg
+    Username or alias of an org to build the manifest from. Passed as --from-org.
+
+    .PARAMETER IncludePackages
+    Also include the contents of managed or unlocked packages when building from an org. Valid values: managed, unlocked. Passed as one --include-packages per value.
+
+    .PARAMETER Name
+    File name of the manifest, without the .xml extension. Passed as --name. The CLI chooses a name from -Type when omitted.
+
+    .PARAMETER OutputDir
+    Folder that receives the manifest. It must exist. Passed as --output-dir.
+
+    .PARAMETER Type
+    Kind of manifest to write. Valid values: pre, post, destroy, package. Passed as --type.
+
+    .EXAMPLE
+    New-SalesforceManifest -SourceDir force-app -Name package -OutputDir manifest
+    Write manifest/package.xml for everything in force-app.
+
+    .EXAMPLE
+    New-SalesforceManifest -FromOrg dev1 -ExcludedMetadata Report,Dashboard -IncludePackages unlocked
+    Build a manifest from an org, leaving out reports and dashboards and adding unlocked package contents.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project generate manifest (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Metadata = --metadata; -ExcludedMetadata = --excluded-metadata; -SourceDir = --source-dir; -FromOrg = --from-org; -IncludePackages = --include-packages; -Name = --name; -OutputDir = --output-dir; -Type = --type.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $Metadata,
+        [Parameter(Mandatory = $false)][string[]] $ExcludedMetadata,
+        [Parameter(Mandatory = $false)][string[]] $SourceDir,
+        [Parameter(Mandatory = $false)][string] $FromOrg,
+        [Parameter(Mandatory = $false)][ValidateSet('managed', 'unlocked')][string[]] $IncludePackages,
+        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][ValidateSet('pre', 'post', 'destroy', 'package')][string] $Type
+    )
+
+    foreach ($dir in @($SourceDir | Where-Object { $_ })) {
+        if (-not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
+    }
+    if ($OutputDir -and -not (Test-Path -LiteralPath $OutputDir -PathType Container)) {
+        throw "Output directory '$OutputDir' does not exist."
+    }
+
+    $arguments = @('project', 'generate', 'manifest')
+    foreach ($component in @($Metadata | Where-Object { $_ })) { $arguments += @('--metadata', $component) }
+    foreach ($component in @($ExcludedMetadata | Where-Object { $_ })) { $arguments += @('--excluded-metadata', $component) }
+    foreach ($dir in @($SourceDir | Where-Object { $_ })) { $arguments += @('--source-dir', $dir) }
+    if ($FromOrg) { $arguments += @('--from-org', $FromOrg) }
+    foreach ($package in @($IncludePackages | Where-Object { $_ })) { $arguments += @('--include-packages', $package) }
+    if ($Name) { $arguments += @('--name', $Name) }
+    if ($OutputDir) { $arguments += @('--output-dir', $OutputDir) }
+    if ($Type) { $arguments += @('--type', $Type) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function ConvertTo-SalesforceSourceFormat {
+    <#
+    .SYNOPSIS
+    Converts Metadata API (mdapi) files into the source format of a Salesforce DX project.
+
+    .DESCRIPTION
+    Runs sf project convert mdapi. The files in -RootDir, which you retrieved as a package, are converted into source format and written to -OutputDir, or to the default package folder of the project. Use -Manifest, -Metadata or -MetadataDir to convert only part of them. Works on local files only; it does not touch an org.
+
+    .PARAMETER RootDir
+    Folder that holds the Metadata API files. It must exist. Passed as --root-dir. Required.
+
+    .PARAMETER OutputDir
+    Folder that receives the source format files. Passed as --output-dir. The CLI uses the default package folder when omitted.
+
+    .PARAMETER Manifest
+    Path of a package.xml that selects what to convert. The file must exist. Passed as --manifest.
+
+    .PARAMETER Metadata
+    Metadata components to convert, such as ApexClass:MyClass. Passed as one --metadata per value.
+
+    .PARAMETER MetadataDir
+    Folders inside -RootDir to convert. Passed as one --metadata-dir per value.
+
+    .EXAMPLE
+    ConvertTo-SalesforceSourceFormat -RootDir .\retrieved -OutputDir force-app
+    Convert a retrieved package into source format.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project convert mdapi (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -RootDir = --root-dir; -OutputDir = --output-dir; -Manifest = --manifest; -Metadata = --metadata; -MetadataDir = --metadata-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $RootDir,
+        [Parameter(Mandatory = $false)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][string] $Manifest,
+        [Parameter(Mandatory = $false)][string[]] $Metadata,
+        [Parameter(Mandatory = $false)][string[]] $MetadataDir
+    )
+
+    if (-not (Test-Path -LiteralPath $RootDir -PathType Container)) { throw "Root directory '$RootDir' does not exist." }
+    if ($Manifest -and -not (Test-Path -LiteralPath $Manifest -PathType Leaf)) { throw "Manifest file '$Manifest' does not exist." }
+
+    $arguments = @('project', 'convert', 'mdapi', '--root-dir', $RootDir)
+    if ($OutputDir) { $arguments += @('--output-dir', $OutputDir) }
+    if ($Manifest) { $arguments += @('--manifest', $Manifest) }
+    foreach ($component in @($Metadata | Where-Object { $_ })) { $arguments += @('--metadata', $component) }
+    foreach ($dir in @($MetadataDir | Where-Object { $_ })) { $arguments += @('--metadata-dir', $dir) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function ConvertTo-SalesforceMdapiFormat {
+    <#
+    .SYNOPSIS
+    Converts Salesforce DX source files into Metadata API (mdapi) format.
+
+    .DESCRIPTION
+    Runs sf project convert source. The source in the project (or in -RootDir or -SourceDir) is converted into the format that Metadata API deploys, and written to -OutputDir. Works on local files only; it does not touch an org.
+
+    .PARAMETER RootDir
+    Folder that holds the source files. Passed as --root-dir. The CLI uses the project package folders when omitted.
+
+    .PARAMETER SourceDir
+    Source folders or files to convert. Each path must exist. Passed as one --source-dir per value.
+
+    .PARAMETER OutputDir
+    Folder that receives the converted files. Passed as --output-dir.
+
+    .PARAMETER Manifest
+    Path of a package.xml that selects what to convert. The file must exist. Passed as --manifest.
+
+    .PARAMETER Metadata
+    Metadata components to convert, such as ApexClass:MyClass. Passed as one --metadata per value.
+
+    .PARAMETER PackageName
+    Name of the package the converted files belong to. Passed as --package-name.
+
+    .EXAMPLE
+    ConvertTo-SalesforceMdapiFormat -SourceDir force-app -OutputDir .\mdapi
+    Convert force-app to Metadata API format.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project convert source (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -RootDir = --root-dir; -SourceDir = --source-dir; -OutputDir = --output-dir; -Manifest = --manifest; -Metadata = --metadata; -PackageName = --package-name.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $RootDir,
+        [Parameter(Mandatory = $false)][string[]] $SourceDir,
+        [Parameter(Mandatory = $false)][string] $OutputDir,
+        [Parameter(Mandatory = $false)][string] $Manifest,
+        [Parameter(Mandatory = $false)][string[]] $Metadata,
+        [Parameter(Mandatory = $false)][string] $PackageName
+    )
+
+    if ($RootDir -and -not (Test-Path -LiteralPath $RootDir -PathType Container)) { throw "Root directory '$RootDir' does not exist." }
+    foreach ($dir in @($SourceDir | Where-Object { $_ })) {
+        if (-not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
+    }
+    if ($Manifest -and -not (Test-Path -LiteralPath $Manifest -PathType Leaf)) { throw "Manifest file '$Manifest' does not exist." }
+
+    $arguments = @('project', 'convert', 'source')
+    if ($RootDir) { $arguments += @('--root-dir', $RootDir) }
+    foreach ($dir in @($SourceDir | Where-Object { $_ })) { $arguments += @('--source-dir', $dir) }
+    if ($OutputDir) { $arguments += @('--output-dir', $OutputDir) }
+    if ($Manifest) { $arguments += @('--manifest', $Manifest) }
+    foreach ($component in @($Metadata | Where-Object { $_ })) { $arguments += @('--metadata', $component) }
+    if ($PackageName) { $arguments += @('--package-name', $PackageName) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Enable-SalesforceSourceBehavior {
+    <#
+    .SYNOPSIS
+    Turns on a beta source behavior, such as decomposed permission sets, and updates the project to use it (beta).
+
+    .DESCRIPTION
+    Runs sf project convert source-behavior, a beta command, so its name, flags and result can change in a later CLI release. It rewrites the source files of the project and adds the behavior to sfdx-project.json. Supports -WhatIf and -Confirm (no prompt by default). -DryRun asks the CLI to show what it would change and changes nothing, so it runs without confirmation.
+
+    .PARAMETER Behavior
+    The behavior to turn on. Valid values: decomposeCustomLabelsBeta2, decomposeCustomLabelsBeta, decomposePermissionSetBeta, decomposePermissionSetBeta2, decomposeSharingRulesBeta, decomposeWorkflowBeta, decomposeExternalServiceRegistrationBeta. Passed as --behavior. Required.
+
+    .PARAMETER DryRun
+    Show what would change without changing it. Adds --dry-run.
+
+    .PARAMETER PreserveTempDir
+    Keep the temporary folder the CLI uses during the conversion. Adds --preserve-temp-dir.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Enable-SalesforceSourceBehavior -Behavior decomposePermissionSetBeta2 -DryRun
+    See what the behavior would change.
+
+    .NOTES
+    This runs a beta Salesforce CLI command. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project convert source-behavior (plugin @salesforce/plugin-deploy-retrieve, beta)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Behavior = --behavior; -DryRun = --dry-run; -PreserveTempDir = --preserve-temp-dir; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateSet(
+            'decomposeCustomLabelsBeta2',
+            'decomposeCustomLabelsBeta',
+            'decomposePermissionSetBeta',
+            'decomposePermissionSetBeta2',
+            'decomposeSharingRulesBeta',
+            'decomposeWorkflowBeta',
+            'decomposeExternalServiceRegistrationBeta')][string] $Behavior,
+        [Parameter(Mandatory = $false)][switch] $DryRun,
+        [Parameter(Mandatory = $false)][switch] $PreserveTempDir,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $arguments = @('project', 'convert', 'source-behavior', '--behavior', $Behavior)
+    if ($DryRun) { $arguments += '--dry-run' }
+    if ($PreserveTempDir) { $arguments += '--preserve-temp-dir' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    # A dry run changes nothing, so only a real conversion needs confirming.
+    if (-not $DryRun -and -not $PSCmdlet.ShouldProcess('the project source files', "Enable source behavior $Behavior")) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceIgnoredFiles {
+    <#
+    .SYNOPSIS
+    Lists the files in the project package folders that .forceignore leaves out.
+
+    .DESCRIPTION
+    Runs sf project list ignored and returns one path per ignored file. Read-only. Use -SourceDir to check one folder instead of every package directory.
+
+    .PARAMETER SourceDir
+    Folder or file to check. It must exist. Passed as --source-dir. The CLI checks every package directory when omitted.
+
+    .EXAMPLE
+    Get-SalesforceIgnoredFiles -SourceDir force-app/main/default/classes
+    Which class files does .forceignore skip.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project list ignored (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SourceDir = --source-dir.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $SourceDir
+    )
+
+    if ($SourceDir -and -not (Test-Path -LiteralPath $SourceDir)) { throw "Source path '$SourceDir' does not exist." }
+
+    $arguments = @('project', 'list', 'ignored')
+    if ($SourceDir) { $arguments += @('--source-dir', $SourceDir) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+#region Delete source and source tracking
+
+function Remove-SalesforceSource {
+    <#
+    .SYNOPSIS
+    Deletes components from the org and from the local project.
+
+    .DESCRIPTION
+    Runs sf project delete source. The named source files or metadata components are deleted from a org that does not use source tracking, and their files are deleted from the project. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. -CheckOnly validates the delete without making it, so it needs no confirmation. Give -SourceDir or -Metadata. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
+
+    .PARAMETER SourceDir
+    Source folders or files to delete. Each path must exist. Passed as one --source-dir per value.
+
+    .PARAMETER Metadata
+    Metadata components to delete, such as ApexClass:MyClass. Passed as one --metadata per value.
+
+    .PARAMETER CheckOnly
+    Validate the delete, run any tests, and change nothing. Adds --check-only.
+
+    .PARAMETER ForceOverwrite
+    Delete even if it overwrites changes in a source-tracked org. Adds --force-overwrite.
+
+    .PARAMETER TrackSource
+    Update source tracking after the delete. Adds --track-source.
+
+    .PARAMETER TestLevel
+    Apex testing level. Passed to sf as --test-level. Valid values: NoTests, SpecificTests, TestsInOrg, TestsInOrgAndPackages, RelevantTests. Value mapping to the CLI: NoTests = NoTestRun, SpecificTests = RunSpecifiedTests, TestsInOrg = RunLocalTests, TestsInOrgAndPackages = RunAllTestsInOrg, RelevantTests = RunRelevantTests. The CLI default applies when omitted.
+
+    .PARAMETER Tests
+    Apex test classes to run with -TestLevel SpecificTests. Passed as one --tests per name.
+
+    .PARAMETER Wait
+    Number of minutes to wait for the command to finish. Passed as --wait.
+
+    .PARAMETER DetailedResults
+    Show verbose output of the delete result. Adds --verbose.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. Use it in unattended scripts. -WhatIf still shows what would happen without deleting.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Remove-SalesforceSource -Metadata ApexClass:OldHelper -TargetOrg dev1 -WhatIf
+    Preview deleting one class from the org and the project.
+
+    .EXAMPLE
+    Remove-SalesforceSource -SourceDir force-app/main/default/classes/OldHelper.cls -CheckOnly -TargetOrg dev1
+    Validate the delete without making it.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project delete source (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SourceDir = --source-dir; -Metadata = --metadata; -CheckOnly = --check-only; -ForceOverwrite = --force-overwrite; -TrackSource = --track-source; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -DetailedResults = --verbose; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][string[]] $SourceDir,
+        [Parameter(Mandatory = $false)][string[]] $Metadata,
+        [Parameter(Mandatory = $false)][switch] $CheckOnly,
+        [Parameter(Mandatory = $false)][switch] $ForceOverwrite,
+        [Parameter(Mandatory = $false)][switch] $TrackSource,
+        [Parameter(Mandatory = $false)][ValidateSet(
+            'NoTests',
+            'SpecificTests',
+            'TestsInOrg',
+            'TestsInOrgAndPackages',
+            'RelevantTests')][string] $TestLevel,
+        [Parameter(Mandatory = $false)][string[]] $Tests,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $sourceDirs = @($SourceDir | Where-Object { $_ })
+    $components = @($Metadata | Where-Object { $_ })
+    if ($sourceDirs.Count -eq 0 -and $components.Count -eq 0) { throw "Specify -SourceDir or -Metadata." }
+    foreach ($dir in $sourceDirs) {
+        if (-not (Test-Path -LiteralPath $dir)) { throw "Source path '$dir' does not exist." }
+    }
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+
+    $arguments = @('project', 'delete', 'source')
+    foreach ($dir in $sourceDirs) { $arguments += @('--source-dir', $dir) }
+    foreach ($component in $components) { $arguments += @('--metadata', $component) }
+    if ($CheckOnly) { $arguments += '--check-only' }
+    if ($ForceOverwrite) { $arguments += '--force-overwrite' }
+    if ($TrackSource) { $arguments += '--track-source' }
+    if ($PSBoundParameters.ContainsKey('TestLevel')) {
+        $arguments += Get-SalesforceApexCliTestArguments @commonParams -TestLevel $TestLevel -Tests $Tests
+    } elseif (@($Tests | Where-Object { $_ }).Count -gt 0) {
+        throw "-Tests needs -TestLevel SpecificTests."
+    }
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    # psfdx asks first (or the caller said not to), so the CLI must not ask a second time.
+    $arguments += '--no-prompt'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+
+    # A check-only run deletes nothing. -NoPrompt is the caller's decision not to be asked; it does not turn off -WhatIf.
+    if ($NoPrompt -or $CheckOnly) { $ConfirmPreference = 'None' }
+    $what = (@($sourceDirs) + @($components)) -join ', '
+    if (-not $CheckOnly -and -not $PSCmdlet.ShouldProcess($what, 'Delete source from the org and the project')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Remove-SalesforceSourceTracking {
+    <#
+    .SYNOPSIS
+    Deletes the local source tracking information of an org.
+
+    .DESCRIPTION
+    Runs sf project delete tracking. The local files that record what has changed between the project and the org are deleted; nothing in the org or in your source files changes, but the next deploy or retrieve cannot tell what changed. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. Use it in unattended scripts. -WhatIf still shows what would happen without deleting.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Remove-SalesforceSourceTracking -TargetOrg dev1 -WhatIf
+    Preview deleting the tracking files of dev1.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project delete tracking (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $arguments = @('project', 'delete', 'tracking', '--no-prompt')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    $target = if ($TargetOrg) { $TargetOrg } else { 'the default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Delete local source tracking information')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Reset-SalesforceSourceTracking {
+    <#
+    .SYNOPSIS
+    Resets local and remote source tracking of an org to a revision.
+
+    .DESCRIPTION
+    Runs sf project reset tracking. Source tracking is reset to the latest revision in the org, or to the revision number you give with -Revision. After a reset the next deploy or retrieve starts from that point, so changes made before it are no longer reported. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
+
+    .PARAMETER Revision
+    SourceMember revision number to reset to. Passed as --revision. The CLI uses the latest revision when omitted; 0 resets to the beginning.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. Use it in unattended scripts. -WhatIf still shows what would happen without resetting.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Reset-SalesforceSourceTracking -Revision 0 -TargetOrg my-scratch -WhatIf
+    Preview resetting tracking to the beginning.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project reset tracking (plugin @salesforce/plugin-deploy-retrieve)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Revision = --revision; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-deploy-retrieve
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][ValidateRange(0, [int]::MaxValue)][int] $Revision,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+
+    $arguments = @('project', 'reset', 'tracking')
+    if ($PSBoundParameters.ContainsKey('Revision')) { $arguments += @('--revision', $Revision) }
+    $arguments += '--no-prompt'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    $target = if ($TargetOrg) { $TargetOrg } else { 'the default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Reset source tracking')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+#endregion
+
+#region DevOps Center pipeline deploys (beta)
+
+function Get-SalesforcePipelineJobArguments {
+    # Private: the --job-id / --use-most-recent choice of the sf project deploy pipeline commands.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent
+    )
+    if ($JobId -and $UseMostRecent) { throw "Specify only one of -JobId or -UseMostRecent." }
+    if (-not $JobId -and -not $UseMostRecent) { throw "Specify -JobId or -UseMostRecent." }
+    if ($JobId) {
+        if ($JobId -notmatch '^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?\z') {
+            throw "Job ID '$JobId' is not a valid pipeline deploy job ID. Expected a 15 or 18 character ID."
+        }
+        return @('--job-id', $JobId)
+    }
+    return @('--use-most-recent')
+}
+
+function Get-SalesforcePipelineStartArguments {
+    # Private: the arguments that sf project deploy pipeline start and validate share. Returns the arguments after the command words.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterUsername,
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterProjectName,
+        [Parameter(Mandatory = $true)][string] $BranchName,
+        [Parameter(Mandatory = $false)][string] $BundleVersionName,
+        [Parameter(Mandatory = $false)][switch] $DeployAll,
+        [Parameter(Mandatory = $false)][string] $TestLevel,
+        [Parameter(Mandatory = $false)][string[]] $Tests,
+        [Parameter(Mandatory = $false)][bool] $HasWait,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults,
+        [Parameter(Mandatory = $false)][hashtable] $CommonParams = @{}
+    )
+    Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
+    Test-SalesforceDeployWaitParams -HasWait $HasWait -Async ([bool]$Async)
+    if ($HasWait) { Test-SalesforceValidDeployWait -Wait $Wait }
+    $arguments = @('--devops-center-username', $DevOpsCenterUsername, '--devops-center-project-name', $DevOpsCenterProjectName, '--branch-name', $BranchName)
+    if ($BundleVersionName) { $arguments += @('--bundle-version-name', $BundleVersionName) }
+    if ($DeployAll) { $arguments += '--deploy-all' }
+    if ($TestLevel) {
+        $arguments += Get-SalesforceApexCliTestArguments @CommonParams -TestLevel $TestLevel -Tests $Tests
+    } elseif (@($Tests | Where-Object { $_ }).Count -gt 0) {
+        throw "-Tests needs -TestLevel SpecificTests."
+    }
+    if ($HasWait) { $arguments += @('--wait', $Wait) }
+    if ($Async) { $arguments += '--async' }
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    return $arguments
+}
+
+function Start-SalesforcePipelineDeploy {
+    <#
+    .SYNOPSIS
+    Deploys the changes of a branch to the org of a DevOps Center pipeline stage (beta).
+
+    .DESCRIPTION
+    Runs sf project deploy pipeline start, a beta command of the DevOps Center plugin. It needs a DevOps Center org that you are logged in to (-DevOpsCenterUsername) and the name of the DevOps Center project. Because the command is beta, its name, flags and result can change in a later CLI release. Asks for confirmation and supports -WhatIf. Returns the CLI result, which holds the job ID that Get-SalesforcePipelineDeployStatus, Resume-SalesforcePipelineDeploy and Start-SalesforcePipelineQuickDeploy take.
+
+    .PARAMETER DevOpsCenterUsername
+    Username or alias of the DevOps Center org. Passed as --devops-center-username. Required.
+
+    .PARAMETER DevOpsCenterProjectName
+    Name of the DevOps Center project. Passed as --devops-center-project-name. Required.
+
+    .PARAMETER BranchName
+    Branch whose changes are deployed to the pipeline stage. Passed as --branch-name. Required.
+
+    .PARAMETER BundleVersionName
+    Version name of the bundle to deploy. Passed as --bundle-version-name.
+
+    .PARAMETER DeployAll
+    Deploy all the metadata in the branch, not only the changes. Adds --deploy-all.
+
+    .PARAMETER TestLevel
+    Apex testing level. Passed to sf as --test-level. Valid values: NoTests, SpecificTests, TestsInOrg, TestsInOrgAndPackages. Value mapping to the CLI: NoTests = NoTestRun, SpecificTests = RunSpecifiedTests, TestsInOrg = RunLocalTests, TestsInOrgAndPackages = RunAllTestsInOrg. The CLI default applies when omitted.
+
+    .PARAMETER Tests
+    Apex test classes to run with -TestLevel SpecificTests. Passed as one --tests per name.
+
+    .PARAMETER Wait
+    Number of minutes to wait for the deployment to finish. Passed as --wait. Cannot be used with -Async.
+
+    .PARAMETER Async
+    Start the deployment and return without waiting. Adds --async.
+
+    .PARAMETER ConciseResults
+    Show concise output of the result. Adds --concise.
+
+    .PARAMETER DetailedResults
+    Show verbose output of the result. Adds --verbose.
+
+    .EXAMPLE
+    Start-SalesforcePipelineDeploy -DevOpsCenterUsername doc-org -DevOpsCenterProjectName "Sales App" -BranchName feature/new-flow -TestLevel TestsInOrg -WhatIf
+    Preview deploying a branch with all local tests.
+
+    .NOTES
+    This runs a beta Salesforce CLI command that needs a DevOps Center org. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project deploy pipeline start (plugin @salesforce/plugin-devops-center, beta)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -DevOpsCenterProjectName = --devops-center-project-name; -BranchName = --branch-name; -BundleVersionName = --bundle-version-name; -DeployAll = --deploy-all; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-devops-center
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterUsername,
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterProjectName,
+        [Parameter(Mandatory = $true)][string] $BranchName,
+        [Parameter(Mandatory = $false)][string] $BundleVersionName,
+        [Parameter(Mandatory = $false)][switch] $DeployAll,
+        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel,
+        [Parameter(Mandatory = $false)][string[]] $Tests,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
+    )
+
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $arguments = @('project', 'deploy', 'pipeline', 'start')
+    $arguments += Get-SalesforcePipelineStartArguments -DevOpsCenterUsername $DevOpsCenterUsername -DevOpsCenterProjectName $DevOpsCenterProjectName -BranchName $BranchName -BundleVersionName $BundleVersionName -DeployAll:$DeployAll -TestLevel $TestLevel -Tests $Tests -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Wait $Wait -Async:$Async -ConciseResults:$ConciseResults -DetailedResults:$DetailedResults -CommonParams $commonParams
+    $arguments += '--json'
+    if ($PSCmdlet.ShouldProcess("branch $BranchName of $DevOpsCenterProjectName", 'Deploy to the pipeline stage')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Test-SalesforcePipelineDeploy {
+    <#
+    .SYNOPSIS
+    Validates a deployment of a branch to the org of a DevOps Center pipeline stage, without deploying it (beta).
+
+    .DESCRIPTION
+    Runs sf project deploy pipeline validate, a beta command of the DevOps Center plugin. Nothing is deployed; a passing validation can be released with Start-SalesforcePipelineQuickDeploy. It needs a DevOps Center org that you are logged in to. Because the command is beta, its name, flags and result can change in a later CLI release.
+
+    .PARAMETER DevOpsCenterUsername
+    Username or alias of the DevOps Center org. Passed as --devops-center-username. Required.
+
+    .PARAMETER DevOpsCenterProjectName
+    Name of the DevOps Center project. Passed as --devops-center-project-name. Required.
+
+    .PARAMETER BranchName
+    Branch whose changes are validated. Passed as --branch-name. Required.
+
+    .PARAMETER BundleVersionName
+    Version name of the bundle to validate. Passed as --bundle-version-name.
+
+    .PARAMETER DeployAll
+    Validate all the metadata in the branch, not only the changes. Adds --deploy-all.
+
+    .PARAMETER TestLevel
+    Apex testing level. Passed to sf as --test-level. Valid values: NoTests, SpecificTests, TestsInOrg, TestsInOrgAndPackages. Value mapping to the CLI: NoTests = NoTestRun, SpecificTests = RunSpecifiedTests, TestsInOrg = RunLocalTests, TestsInOrgAndPackages = RunAllTestsInOrg. The CLI default applies when omitted.
+
+    .PARAMETER Tests
+    Apex test classes to run with -TestLevel SpecificTests. Passed as one --tests per name.
+
+    .PARAMETER Wait
+    Number of minutes to wait for the validation to finish. Passed as --wait. Cannot be used with -Async.
+
+    .PARAMETER Async
+    Start the validation and return without waiting. Adds --async.
+
+    .PARAMETER ConciseResults
+    Show concise output of the result. Adds --concise.
+
+    .PARAMETER DetailedResults
+    Show verbose output of the result. Adds --verbose.
+
+    .EXAMPLE
+    Test-SalesforcePipelineDeploy -DevOpsCenterUsername doc-org -DevOpsCenterProjectName "Sales App" -BranchName main -TestLevel TestsInOrg -Wait 30
+    Validate a branch with all local tests.
+
+    .NOTES
+    This runs a beta Salesforce CLI command that needs a DevOps Center org. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project deploy pipeline validate (plugin @salesforce/plugin-devops-center, beta)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -DevOpsCenterProjectName = --devops-center-project-name; -BranchName = --branch-name; -BundleVersionName = --bundle-version-name; -DeployAll = --deploy-all; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-devops-center
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterUsername,
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterProjectName,
+        [Parameter(Mandatory = $true)][string] $BranchName,
+        [Parameter(Mandatory = $false)][string] $BundleVersionName,
+        [Parameter(Mandatory = $false)][switch] $DeployAll,
+        [Parameter(Mandatory = $false)][ValidateSet('NoTests', 'SpecificTests', 'TestsInOrg', 'TestsInOrgAndPackages')][string] $TestLevel,
+        [Parameter(Mandatory = $false)][string[]] $Tests,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
+    )
+
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $arguments = @('project', 'deploy', 'pipeline', 'validate')
+    $arguments += Get-SalesforcePipelineStartArguments -DevOpsCenterUsername $DevOpsCenterUsername -DevOpsCenterProjectName $DevOpsCenterProjectName -BranchName $BranchName -BundleVersionName $BundleVersionName -DeployAll:$DeployAll -TestLevel $TestLevel -Tests $Tests -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Wait $Wait -Async:$Async -ConciseResults:$ConciseResults -DetailedResults:$DetailedResults -CommonParams $commonParams
+    $arguments += '--json'
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Start-SalesforcePipelineQuickDeploy {
+    <#
+    .SYNOPSIS
+    Deploys a validated pipeline deployment without running the tests again (beta).
+
+    .DESCRIPTION
+    Runs sf project deploy pipeline quick, a beta command of the DevOps Center plugin, for the job ID of a validation made with Test-SalesforcePipelineDeploy (or the most recent one with -UseMostRecent). Because the command is beta, its name, flags and result can change in a later CLI release. Asks for confirmation and supports -WhatIf.
+
+    .PARAMETER DevOpsCenterUsername
+    Username or alias of the DevOps Center org. Passed as --devops-center-username. Required.
+
+    .PARAMETER JobId
+    Job ID of the validated deployment. A 15 or 18 character ID. Passed as --job-id.
+
+    .PARAMETER UseMostRecent
+    Use the validation the CLI ran most recently. Use instead of -JobId. Adds --use-most-recent.
+
+    .PARAMETER Wait
+    Number of minutes to wait for the deployment to finish. Passed as --wait. Cannot be used with -Async.
+
+    .PARAMETER Async
+    Start the deployment and return without waiting. Adds --async.
+
+    .PARAMETER ConciseResults
+    Show concise output of the result. Adds --concise.
+
+    .PARAMETER DetailedResults
+    Show verbose output of the result. Adds --verbose.
+
+    .EXAMPLE
+    Start-SalesforcePipelineQuickDeploy -DevOpsCenterUsername doc-org -UseMostRecent -WhatIf
+    Preview the quick deploy of the last validation.
+
+    .NOTES
+    This runs a beta Salesforce CLI command that needs a DevOps Center org. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project deploy pipeline quick (plugin @salesforce/plugin-devops-center, beta)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -JobId = --job-id; -UseMostRecent = --use-most-recent; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-devops-center
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterUsername,
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
+    )
+
+    $jobParams = Get-SalesforcePipelineJobArguments -JobId $JobId -UseMostRecent:$UseMostRecent
+    Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
+    Test-SalesforceDeployWaitParams -HasWait ($PSBoundParameters.ContainsKey('Wait')) -Async ([bool]$Async)
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $arguments = @('project', 'deploy', 'pipeline', 'quick', '--devops-center-username', $DevOpsCenterUsername) + $jobParams
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($Async) { $arguments += '--async' }
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($JobId) { $JobId } else { 'most recent validated pipeline deployment' }
+    if ($PSCmdlet.ShouldProcess($target, 'Quick deploy validated pipeline deployment')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Get-SalesforcePipelineDeployStatus {
+    <#
+    .SYNOPSIS
+    Reports the status of a DevOps Center pipeline deployment (beta).
+
+    .DESCRIPTION
+    Runs sf project deploy pipeline report, a beta command of the DevOps Center plugin, for a job ID or for the most recent deployment with -UseMostRecent. Read-only. Because the command is beta, its name, flags and result can change in a later CLI release.
+
+    .PARAMETER DevOpsCenterUsername
+    Username or alias of the DevOps Center org. Passed as --devops-center-username. Required.
+
+    .PARAMETER JobId
+    Job ID of the pipeline deployment. A 15 or 18 character ID. Passed as --job-id.
+
+    .PARAMETER UseMostRecent
+    Report on the deployment the CLI started most recently. Use instead of -JobId. Adds --use-most-recent.
+
+    .EXAMPLE
+    Get-SalesforcePipelineDeployStatus -DevOpsCenterUsername doc-org -UseMostRecent
+    Status of the last pipeline deployment.
+
+    .NOTES
+    This runs a beta Salesforce CLI command that needs a DevOps Center org. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project deploy pipeline report (plugin @salesforce/plugin-devops-center, beta)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -JobId = --job-id; -UseMostRecent = --use-most-recent.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-devops-center
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterUsername,
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent
+    )
+
+    $jobParams = Get-SalesforcePipelineJobArguments -JobId $JobId -UseMostRecent:$UseMostRecent
+    $arguments = @('project', 'deploy', 'pipeline', 'report', '--devops-center-username', $DevOpsCenterUsername) + $jobParams
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Resume-SalesforcePipelineDeploy {
+    <#
+    .SYNOPSIS
+    Resumes watching a DevOps Center pipeline deployment that is still running (beta).
+
+    .DESCRIPTION
+    Runs sf project deploy pipeline resume, a beta command of the DevOps Center plugin, for a job ID or for the most recent deployment with -UseMostRecent. Because the command is beta, its name, flags and result can change in a later CLI release.
+
+    .PARAMETER DevOpsCenterUsername
+    Username or alias of the DevOps Center org. Passed as --devops-center-username. Required.
+
+    .PARAMETER JobId
+    Job ID of the pipeline deployment. A 15 or 18 character ID. Passed as --job-id.
+
+    .PARAMETER UseMostRecent
+    Resume the deployment the CLI started most recently. Use instead of -JobId. Adds --use-most-recent.
+
+    .PARAMETER Wait
+    Number of minutes to wait for the deployment to finish. Passed as --wait.
+
+    .PARAMETER ConciseResults
+    Show concise output of the result. Adds --concise.
+
+    .PARAMETER DetailedResults
+    Show verbose output of the result. Adds --verbose.
+
+    .EXAMPLE
+    Resume-SalesforcePipelineDeploy -DevOpsCenterUsername doc-org -UseMostRecent -Wait 10
+    Wait up to ten more minutes for the last pipeline deployment.
+
+    .NOTES
+    This runs a beta Salesforce CLI command that needs a DevOps Center org. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf project deploy pipeline resume (plugin @salesforce/plugin-devops-center, beta)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -JobId = --job-id; -UseMostRecent = --use-most-recent; -Wait = --wait; -ConciseResults = --concise; -DetailedResults = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-devops-center
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $DevOpsCenterUsername,
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][int] $Wait,
+        [Parameter(Mandatory = $false)][switch] $ConciseResults,
+        [Parameter(Mandatory = $false)][switch] $DetailedResults
+    )
+
+    $jobParams = Get-SalesforcePipelineJobArguments -JobId $JobId -UseMostRecent:$UseMostRecent
+    Test-SalesforceDeployResultOptions -ConciseResults ([bool]$ConciseResults) -DetailedResults ([bool]$DetailedResults)
+    if ($PSBoundParameters.ContainsKey('Wait')) { Test-SalesforceValidDeployWait -Wait $Wait }
+
+    $arguments = @('project', 'deploy', 'pipeline', 'resume', '--devops-center-username', $DevOpsCenterUsername) + $jobParams
+    if ($PSBoundParameters.ContainsKey('Wait')) { $arguments += @('--wait', $Wait) }
+    if ($ConciseResults) { $arguments += '--concise' }
+    if ($DetailedResults) { $arguments += '--verbose' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+
 
 #region Describe
 

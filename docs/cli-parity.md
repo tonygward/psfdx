@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 51 | 41 | 107 | 0 | 15 | 46.2% of 199 |
-| Just-in-time plugins (installed on first use) | 65 | 3 | 4 | 49 | 0 | 9 | 12.5% of 56 |
-| Both | 279 | 54 | 45 | 156 | 0 | 24 | 38.8% of 255 |
+| Core plugins (bundled with the CLI) | 214 | 66 | 33 | 100 | 0 | 15 | 49.7% of 199 |
+| Just-in-time plugins (installed on first use) | 65 | 8 | 4 | 44 | 0 | 9 | 21.4% of 56 |
+| Both | 279 | 74 | 37 | 144 | 0 | 24 | 43.5% of 255 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **158** cmdlets; **127** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **99** commands psfdx runs, it passes **406 of 519** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **36** have a list of allowed values in the CLI, and psfdx can pass **121 of 143** of those values.
+**Flags and values.** Across the **111** commands psfdx runs, it passes **506 of 589** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **46** have a list of allowed values in the CLI, and psfdx can pass **193 of 213** of those values.
 
 ## By capability
 
@@ -48,7 +48,7 @@ psfdx exports **145** cmdlets; **114** of them run an sf command themselves. The
 | Packages (second generation) (sf package) | 25 | 8 | 3 | 14 | 0 | 0 | 44.0% of 25 |
 | Packages (first generation) (sf package1) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
 | CLI plugins (sf plugins) | 15 | 1 | 2 | 10 | 0 | 2 | 23.1% of 13 |
-| Project, deploy and retrieve (sf project) | 22 | 2 | 8 | 12 | 0 | 0 | 45.5% of 22 |
+| Project, deploy and retrieve (sf project) | 22 | 22 | 0 | 0 | 0 | 0 | 100.0% of 22 |
 | Schema (sf schema) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
 | CLI search (sf search) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Objects (sf sobject) | 2 | 1 | 1 | 0 | 0 | 0 | 100.0% of 2 |
@@ -302,23 +302,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | `sf plugins uninstall` | @oclif/plugin-plugins | 2 | missing |  |
 | `sf plugins unlink` | @oclif/plugin-plugins | 2 | not applicable | Unlinks a local plugin under development, which only plugin authors do. |
 
-### Project, deploy and retrieve (`sf project`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf project convert mdapi` | @salesforce/plugin-deploy-retrieve | 5 (1 required) | missing |  |
-| `sf project convert source` | @salesforce/plugin-deploy-retrieve | 6 | missing |  |
-| `sf project convert source-behavior` (beta) | @salesforce/plugin-deploy-retrieve | 4 (1 required) | missing |  |
-| `sf project delete source` | @salesforce/plugin-deploy-retrieve | 11 (1 required) | missing |  |
-| `sf project delete tracking` | @salesforce/plugin-deploy-retrieve | 2 (1 required) | missing |  |
-| `sf project deploy pipeline quick` (beta) | @salesforce/plugin-devops-center | 7 (1 required) | missing |  |
-| `sf project deploy pipeline report` (beta) | @salesforce/plugin-devops-center | 3 (1 required) | missing |  |
-| `sf project deploy pipeline resume` (beta) | @salesforce/plugin-devops-center | 6 (1 required) | missing |  |
-| `sf project deploy pipeline start` (beta) | @salesforce/plugin-devops-center | 11 (3 required) | missing |  |
-| `sf project deploy pipeline validate` (beta) | @salesforce/plugin-devops-center | 11 (3 required) | missing |  |
-| `sf project list ignored` | @salesforce/plugin-deploy-retrieve | 1 | missing |  |
-| `sf project reset tracking` | @salesforce/plugin-deploy-retrieve | 3 (1 required) | missing |  |
-
 ### Schema (`sf schema`)
 
 | Command | Plugin | Flags | Status | Why, or issue |
@@ -540,16 +523,28 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf project convert mdapi` | wrapped | `ConvertTo-SalesforceSourceFormat` | 5 of 5 |  |  |
+| `sf project convert source` | wrapped | `ConvertTo-SalesforceMdapiFormat` | 6 of 6 |  |  |
+| `sf project convert source-behavior` | wrapped | `Enable-SalesforceSourceBehavior` | 4 of 4 |  |  |
+| `sf project delete source` | wrapped | `Remove-SalesforceSource` | 11 of 11 |  |  |
+| `sf project delete tracking` | wrapped | `Remove-SalesforceSourceTracking` | 2 of 2 |  |  |
 | `sf project deploy cancel` | wrapped | `Stop-SalesforceDeploy` | 5 of 5 |  |  |
-| `sf project deploy preview` | partially wrapped | `Get-SalesforceDeployPreview` | 5 of 6 | `--concise` |  |
+| `sf project deploy pipeline quick` | wrapped | `Start-SalesforcePipelineQuickDeploy` | 7 of 7 |  |  |
+| `sf project deploy pipeline report` | wrapped | `Get-SalesforcePipelineDeployStatus` | 3 of 3 |  |  |
+| `sf project deploy pipeline resume` | wrapped | `Resume-SalesforcePipelineDeploy` | 6 of 6 |  |  |
+| `sf project deploy pipeline start` | wrapped | `Start-SalesforcePipelineDeploy` | 11 of 11 |  |  |
+| `sf project deploy pipeline validate` | wrapped | `Test-SalesforcePipelineDeploy` | 11 of 11 |  |  |
+| `sf project deploy preview` | wrapped | `Get-SalesforceDeployPreview` | 6 of 6 |  |  |
 | `sf project deploy quick` | wrapped | `Start-SalesforceQuickDeploy` | 7 of 7 |  |  |
-| `sf project deploy report` | partially wrapped | `Get-SalesforceDeployStatus` | 4 of 7 | `--coverage-formatters` `--junit` `--results-dir` |  |
-| `sf project deploy resume` | partially wrapped | `Resume-SalesforceDeploy` | 5 of 8 | `--coverage-formatters` `--junit` `--results-dir` |  |
-| `sf project deploy start` | partially wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | 15 of 22 | `--async` `--coverage-formatters` `--junit` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` | `--test-level`: `RunRelevantTests` |
-| `sf project deploy validate` | partially wrapped | `Test-SalesforceDeploy` | 12 of 19 | `--coverage-formatters` `--junit` `--metadata` `--post-destructive-changes` `--pre-destructive-changes` `--purge-on-delete` `--results-dir` |  |
-| `sf project generate manifest` | partially wrapped | `Retrieve-SalesforceOrg` | 4 of 8 | `--excluded-metadata` `--metadata` `--source-dir` `--type` | `--include-packages`: `managed` |
-| `sf project retrieve preview` | partially wrapped | `Get-SalesforceRetrievePreview` | 2 of 3 | `--concise` |  |
-| `sf project retrieve start` | partially wrapped | `Retrieve-SalesforceComponent`, `Retrieve-SalesforceMetadata`, `Retrieve-SalesforceOrg`, `Retrieve-SalesforcePackage` | 9 of 13 | `--root-type-with-dependencies` `--single-package` `--source-dir` `--zip-file-name` |  |
+| `sf project deploy report` | wrapped | `Get-SalesforceDeployStatus` | 7 of 7 |  |  |
+| `sf project deploy resume` | wrapped | `Resume-SalesforceDeploy` | 8 of 8 |  |  |
+| `sf project deploy start` | wrapped | `Deploy-SalesforceComponent`, `Deploy-SalesforceMetadata`, Watch-SalesforceApexAction (internal) | 22 of 22 |  |  |
+| `sf project deploy validate` | wrapped | `Test-SalesforceDeploy` | 19 of 19 |  |  |
+| `sf project generate manifest` | wrapped | `New-SalesforceManifest`, `Retrieve-SalesforceOrg` | 8 of 8 |  |  |
+| `sf project list ignored` | wrapped | `Get-SalesforceIgnoredFiles` | 1 of 1 |  |  |
+| `sf project reset tracking` | wrapped | `Reset-SalesforceSourceTracking` | 3 of 3 |  |  |
+| `sf project retrieve preview` | wrapped | `Get-SalesforceRetrievePreview` | 3 of 3 |  |  |
+| `sf project retrieve start` | wrapped | `Retrieve-SalesforceComponent`, `Retrieve-SalesforceMetadata`, `Retrieve-SalesforceOrg`, `Retrieve-SalesforcePackage` | 13 of 13 |  |  |
 
 ### Objects (`sf sobject`)
 
@@ -572,9 +567,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 88 | 93 |
-| `--flags-dir` | 0 | 96 |
-| `--api-version` | 1 | 69 |
+| `--json` | 101 | 105 |
+| `--flags-dir` | 0 | 108 |
+| `--api-version` | 1 | 74 |
 
 ## How to read this
 
