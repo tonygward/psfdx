@@ -15,6 +15,7 @@
     "data import bulk", "data import resume", "data update bulk", "data update resume",
     "data upsert bulk", "data upsert resume",
     "data create file", "data delete bulk", "data delete resume", "data resume", "data search",
+    "cmdt generate field", "cmdt generate fromorg", "cmdt generate object", "cmdt generate record", "cmdt generate records",
     "flow get test", "flow run test",
     "logic get test", "logic run test",
     "lightning dev",

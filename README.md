@@ -271,6 +271,18 @@ Included in the `psfdx` package.
 | `Remove-SalesforceSourceTracking` | Delete the local source tracking files of an org (asks for confirmation). |
 | `Reset-SalesforceSourceTracking` | Reset local and remote source tracking to a `-Revision` (asks for confirmation). |
 
+### Custom metadata types
+
+These write metadata files into the current Salesforce DX project and return the CLI result as an object. Run them inside a project. Only the last one reads an org.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforceCustomMetadataType` | Create a custom metadata type (`sf cmdt generate object`): `-TypeName`, `-Label`, `-PluralLabel`, `-Visibility`, `-OutputDirectory`. |
+| `New-SalesforceCustomMetadataField` | Create a field of a type (`sf cmdt generate field`): `-Name`, `-Type` (Checkbox to Url), `-PicklistValues`, `-DecimalPlaces`. |
+| `New-SalesforceCustomMetadataRecord` | Create one record with `-Values @{ Field__c = 'x' }` (`sf cmdt generate record`). |
+| `New-SalesforceCustomMetadataRecordsFromCsv` | Create one record per CSV row, named from `-NameColumn` (`sf cmdt generate records`). |
+| `New-SalesforceCustomMetadataTypeFromOrg` | Turn a custom object or custom setting in an org into a type plus its records (`sf cmdt generate fromorg`). |
+
 ### DevOps Center pipeline deploys (beta)
 
 These run the beta `sf project deploy pipeline` commands. They need a DevOps Center org you are logged in to (`-DevOpsCenterUsername`), and because the CLI commands are beta their names, flags and results can change in a later Salesforce CLI release; psfdx does not promise they stay stable. The cmdlets that change an org ask for confirmation and support `-WhatIf`.
