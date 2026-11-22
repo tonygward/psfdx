@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.48 - 2026-11-22
+
 - psfdx-metadata: all four `sf schema generate` commands are now covered: `New-SalesforceCustomObject`, `New-SalesforceCustomField`, `New-SalesforcePlatformEvent` and `New-SalesforceCustomTab`. The first three are interactive, as the CLI commands are: they ask questions, so run them in a terminal as plain commands. In a session without a terminal they stop with a clear message instead of waiting. `New-SalesforceCustomTab` takes everything from its parameters and says so clearly when the tabs folder does not exist.
 
 ## 0.8.47 - 2026-11-22
