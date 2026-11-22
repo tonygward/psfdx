@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.45 - 2026-11-22
+
 - psfdx: every `sf data` command is now covered. New cmdlets: `Search-SalesforceRecords` (SOSL search, returns objects with their `SObject`), `New-SalesforceFile` (upload a file, optionally attached to a record), `Remove-SalesforceBulkData` (bulk delete from a CSV; asks for confirmation, supports `-WhatIf`, `-HardDelete` deletes permanently) and `Get-SalesforceBulkJobStatus`. `Resume-SalesforceBulkJob` can now resume a delete job (`-Operation Delete`) and any job by `-UseMostRecent`. `New-SalesforceRecord` and `Set-SalesforceRecord` gain `-SkipAssignmentRules`, and `Set-SalesforceRecord` can select the record with `-Where` as well as `-Id`.
 
 ## 0.8.44 - 2026-11-22
