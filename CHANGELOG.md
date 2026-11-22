@@ -6,6 +6,8 @@
 - psfdx-packages: `New-SalesforcePackageVersion` gains `-Path`, `-Branch`, `-VersionNumber`, `-Language`, `-PostInstallScript`, `-UninstallScript`, `-PostInstallUrl`, `-ReleaseNotesUrl`, `-SkipAncestorCheck`, `-AsyncValidation`, `-GeneratePackageZip` and `-ExtendedDetails`. `Install-SalesforcePackageVersion` gains `-InstallationKey`, `-ApexCompile` and `-UpgradeType`, and `Get-SalesforcePackageVersions` gains `-CreatedLastDays`, `-ModifiedLastDays` and `-OrderBy`.
 - psfdx: `-Verbose` output now hides the value of `--installation-key` (the `--installation-key-bypass` switch is left alone), as it already did for passwords and tokens.
 
+## 0.8.45 - 2026-11-22
+
 - psfdx: every `sf data` command is now covered. New cmdlets: `Search-SalesforceRecords` (SOSL search, returns objects with their `SObject`), `New-SalesforceFile` (upload a file, optionally attached to a record), `Remove-SalesforceBulkData` (bulk delete from a CSV; asks for confirmation, supports `-WhatIf`, `-HardDelete` deletes permanently) and `Get-SalesforceBulkJobStatus`. `Resume-SalesforceBulkJob` can now resume a delete job (`-Operation Delete`) and any job by `-UseMostRecent`. `New-SalesforceRecord` and `Set-SalesforceRecord` gain `-SkipAssignmentRules`, and `Set-SalesforceRecord` can select the record with `-Where` as well as `-Id`.
 
 ## 0.8.44 - 2026-11-22
