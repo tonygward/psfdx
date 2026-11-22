@@ -1959,7 +1959,9 @@ function Get-SalesforceCodeAnalyzerAst {
     }
     # The tree comes back as objects (json) or an XML document (xml). If the file is not what the format says, the text is returned as it is.
     if ($Format -eq 'json') {
-        try { return @($text | ConvertFrom-Json -ErrorAction Stop) } catch { return $text }
+        # Windows PowerShell 5.1 returns a JSON array as one object, so enumerate it to get one object per node on every version.
+        try { $parsed = $text | ConvertFrom-Json -ErrorAction Stop } catch { return $text }
+        return @($parsed | ForEach-Object { $_ })
     }
     try { return [xml] $text } catch { return $text }
 }
