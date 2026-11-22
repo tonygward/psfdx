@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+## 0.8.42 - 2026-11-22
+
 - psfdx-metadata: every `sf project` command (project, deploy and retrieve) is now covered, with every flag. New cmdlets: `New-SalesforceManifest`, `ConvertTo-SalesforceSourceFormat`, `ConvertTo-SalesforceMdapiFormat`, `Enable-SalesforceSourceBehavior`, `Get-SalesforceIgnoredFiles`, `Remove-SalesforceSource`, `Remove-SalesforceSourceTracking` and `Reset-SalesforceSourceTracking`. The ones that delete or reset ask for confirmation and support `-WhatIf`; `-NoPrompt` skips the question, and `Remove-SalesforceSource -CheckOnly` validates without deleting.
 - psfdx-metadata: new beta DevOps Center pipeline cmdlets `Start-SalesforcePipelineDeploy`, `Test-SalesforcePipelineDeploy`, `Start-SalesforcePipelineQuickDeploy`, `Get-SalesforcePipelineDeployStatus` and `Resume-SalesforcePipelineDeploy`. They run the beta `sf project deploy pipeline` commands, need a DevOps Center org, and may change when the Salesforce CLI changes them.
 - psfdx-metadata: `Deploy-SalesforceMetadata` and `Deploy-SalesforceComponent` gain `-Async`, `-CoverageFormatters`, `-Junit` and `-ResultsDir`; `Deploy-SalesforceMetadata` also gains `-PreDestructiveChanges`, `-PostDestructiveChanges` and `-PurgeOnDelete`, and `Deploy-SalesforceComponent -TestLevel` accepts `RelevantTests`. `Test-SalesforceDeploy` gains `-Metadata` and the same destructive-changes and results options. `Get-SalesforceDeployStatus` and `Resume-SalesforceDeploy` gain `-CoverageFormatters`, `-Junit` and `-ResultsDir`. The deploy and retrieve previews gain `-ConciseResults`. `Retrieve-SalesforceComponent` gains `-SourceDir` and `-RootTypeWithDependencies`, and `Retrieve-SalesforceMetadata` gains `-SinglePackage` and `-ZipFileName`.
 - psfdx-metadata: two error messages changed because there are more ways to name what to deploy or retrieve: `Test-SalesforceDeploy` now says "Specify exactly one of -Manifest, -SourceDir, -InputDir, or -Metadata." and `Retrieve-SalesforceComponent` says "Specify -Type or -SourceDir when retrieving a component."
+
 ## 0.8.41 - 2026-11-22
 
 - psfdx, psfdx-development, psfdx-logs: the cmdlets now run the current Salesforce CLI command names instead of deprecated aliases and reordered words: `Get-SalesforceLimits` runs `sf org list limits`, `New-SalesforceProject` runs `sf template generate project`, `New-SalesforceApexClass` and `New-SalesforceApexTrigger` run `sf template generate apex class` and `trigger`, and the debug log cmdlets run `sf apex list log`, `get log` and `tail log`. Results are the same, but a CLI release that removes the old names no longer breaks them.
