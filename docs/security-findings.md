@@ -18,7 +18,7 @@ Scope: the seven product modules and `psfdx-shared`. Reproducers marked "read fr
 | SEC-08 | Low | `New-SalesforceRecord`, `Set-SalesforceRecord` (psfdx) | Fixed |
 | SEC-09 | Low | `Invoke-Salesforce` through a Windows `.cmd` shim (psfdx-shared) | Fixed |
 | SEC-10 | Low | `Invoke-Salesforce`, the `PSFDX_PERCENT` environment variable (psfdx-shared) | Fixed |
-| SEC-11 | Medium | `Connect-SalesforceApi` secrets as plain `[string]` (psfdx) | Open: [#233](https://github.com/tonygward/psfdx/issues/233) |
+| SEC-11 | Medium | `Connect-SalesforceApi` secrets as plain `[string]` (psfdx) | Fixed: [#233](https://github.com/tonygward/psfdx/issues/233) |
 | SEC-12 | Info | `Out-Notepad` (psfdx-logs) | Accepted |
 
 ### SEC-01 (High): credentials sent over plain http
@@ -75,7 +75,7 @@ Fix: a Windows `.cmd` shim call over 7800 characters (counted after `%` expansio
 On Windows `%` is passed through a variable named `PSFDX_PERCENT` that was set before the call and "restored" after it. Two calls running at the same time in one process (runspaces, jobs, `ForEach-Object -Parallel`) could unset it under each other, and the restore did not work: PowerShell turns `$null` into an empty string for `SetEnvironmentVariable`, so the variable stayed set (to empty) for the life of the process. The race was not reproduced in 150 parallel calls; it is a design flaw rather than a seen failure.
 Fix: each call uses its own variable name and removes it with `[NullString]::Value`. Test: six parallel runspaces make 90 calls with `%` and no variable is left behind.
 
-### SEC-11 (Medium, open): secrets as plain strings
+### SEC-11 (Medium, fixed): secrets as plain strings
 
 `Connect-SalesforceApi` takes `-Password`, `-Token` and `-ClientSecret` as `[string]`. SEC-01 means they now go only over https, but they stay readable in history and memory. Moving to `SecureString` changes the public signature, so it is tracked in [#233](https://github.com/tonygward/psfdx/issues/233).
 

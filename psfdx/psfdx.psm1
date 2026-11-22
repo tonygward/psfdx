@@ -2433,28 +2433,53 @@ function Assert-SalesforceHttpsUrl {
     }
 }
 
+function ConvertTo-SalesforcePlainSecret {
+    # Private: turns a SecureString into text at the moment of the request. A plain string is returned as is, with a warning.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)] $Value,
+        [Parameter(Mandatory = $true)][string] $Name
+    )
+
+    if ($Value -is [System.Security.SecureString]) {
+        $bstr = [IntPtr]::Zero
+        try {
+            $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($Value)
+            return [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)
+        }
+        finally {
+            if ($bstr -ne [IntPtr]::Zero) { [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
+        }
+    }
+    if ($Value -is [string]) {
+        Write-Warning "-$Name was given as a plain string, which stays readable in your session history and memory. Pass a SecureString instead, for example (Read-Host -AsSecureString). Plain strings still work for now."
+        return $Value
+    }
+    throw "-$Name must be a SecureString (or a string, which is deprecated). Got $($Value.GetType().FullName)."
+}
+
 function Connect-SalesforceApi {
     <#
     .SYNOPSIS
     Gets an access token for the Salesforce REST API with the username-password OAuth flow.
 
     .DESCRIPTION
-    Does not use the Salesforce CLI. It posts the user name, the password plus security token, and the connected app client ID and secret to the org's /services/oauth2/token endpoint with Invoke-RestMethod and returns the response, which holds the access token and instance URL. The request is sent only over https. The password, token and secret are plain strings here (issue 233 tracks SecureString support), so they stay in your session history and memory.
+    Does not use the Salesforce CLI. It posts the user name, the password plus security token, and the connected app client ID and secret to the org's /services/oauth2/token endpoint with Invoke-RestMethod and returns the response, which holds the access token and instance URL. The request is sent only over https. Pass the password, token and client secret as SecureString: they are converted to text only when the request is built and are never written to the verbose, debug or error output. Plain strings still work but write a warning, because they stay in your session history and memory.
 
     .PARAMETER TargetOrg
     The Salesforce user name to log in as (sent as the OAuth username). This is not an org alias. Required.
 
     .PARAMETER Password
-    The user's password. The security token is appended to it. Required.
+    The user's password, as a SecureString (preferred) or a plain string (deprecated, writes a warning). The security token is appended to it. Required.
 
     .PARAMETER Token
-    The user's security token, appended to the password. Required.
+    The user's security token, as a SecureString (preferred) or a plain string (deprecated, writes a warning). Appended to the password. Required.
 
     .PARAMETER ClientId
     Consumer key of the connected app used for the login. Required.
 
     .PARAMETER ClientSecret
-    Consumer secret of the connected app. Required.
+    Consumer secret of the connected app, as a SecureString (preferred) or a plain string (deprecated, writes a warning). Required.
 
     .PARAMETER Sandbox
     Use the sandbox login host https://test.salesforce.com instead of https://login.salesforce.com.
@@ -2480,10 +2505,10 @@ function Connect-SalesforceApi {
     [CmdletBinding()]
     Param(
         [Parameter(Mandatory = $true)][string] $TargetOrg,
-        [Parameter(Mandatory = $true)][string] $Password,
-        [Parameter(Mandatory = $true)][string] $Token,
+        [Parameter(Mandatory = $true)][object] $Password,
+        [Parameter(Mandatory = $true)][object] $Token,
         [Parameter(Mandatory = $true)][string] $ClientId,
-        [Parameter(Mandatory = $true)][string] $ClientSecret,
+        [Parameter(Mandatory = $true)][object] $ClientSecret,
         [Parameter(Mandatory = $false)][switch] $Sandbox,
         [Parameter(Mandatory = $false)][string] $CustomUrl
     )
@@ -2496,14 +2521,19 @@ function Connect-SalesforceApi {
         $loginUrl = $CustomUrl.TrimEnd('/') + '/services/oauth2/token'
     }
 
+    # Convert only now, so the secrets are plain text for as short a time as possible.
+    $plainPassword = ConvertTo-SalesforcePlainSecret -Value $Password -Name 'Password'
+    $plainToken = ConvertTo-SalesforcePlainSecret -Value $Token -Name 'Token'
+    $plainSecret = ConvertTo-SalesforcePlainSecret -Value $ClientSecret -Name 'ClientSecret'
+
     return Invoke-RestMethod -Uri $loginUrl `
         -Method Post `
         -Body @{
         grant_type    = "password"
         client_id     = "$ClientId"
-        client_secret = "$ClientSecret"
+        client_secret = $plainSecret
         username      = "$TargetOrg"
-        password      = ($Password + $Token)
+        password      = ($plainPassword + $plainToken)
     }
 }
 

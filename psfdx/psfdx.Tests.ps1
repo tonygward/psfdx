@@ -1435,6 +1435,38 @@ Describe 'Security regressions (issue 112)' {
             }
         }
 
+        Context 'Connect-SalesforceApi secrets as SecureString (issue 233)' {
+            BeforeAll {
+                $script:ss = { param($v) ConvertTo-SecureString $v -AsPlainText -Force }
+            }
+            It 'sends the plain text of SecureString values in the request body, with no warning' {
+                $pw = & $script:ss 'PW1'; $tok = & $script:ss 'TK2'; $sec = & $script:ss 'CS3'
+                Connect-SalesforceApi -TargetOrg u@x.com -Password $pw -Token $tok -ClientId c -ClientSecret $sec -WarningVariable w -WarningAction SilentlyContinue | Out-Null
+                Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -ParameterFilter { $Body.password -eq 'PW1TK2' -and $Body.client_secret -eq 'CS3' }
+                $w | Should -BeNullOrEmpty
+            }
+            It 'still accepts plain strings but warns once per secret, without echoing the value' {
+                Connect-SalesforceApi -TargetOrg u@x.com -Password 'PLAINPW' -Token 't' -ClientId c -ClientSecret 's' -WarningVariable w -WarningAction SilentlyContinue | Out-Null
+                Assert-MockCalled Invoke-RestMethod -Times 1 -Exactly -ParameterFilter { $Body.password -eq 'PLAINPWt' }
+                @($w).Count | Should -Be 3
+                ($w -join ' ') | Should -Not -BeLike '*PLAINPW*'
+            }
+            It 'never writes SecureString values to verbose, debug, warning or error output' {
+                $pw = & $script:ss 'TOPSECRETPW'; $tok = & $script:ss 'TOPSECRETTK'; $sec = & $script:ss 'TOPSECRETCS'
+                $out = Connect-SalesforceApi -TargetOrg u@x.com -Password $pw -Token $tok -ClientId c -ClientSecret $sec -Verbose 4>&1 3>&1 | Out-String
+                $out | Should -Not -BeLike '*TOPSECRET*'
+                Mock Invoke-RestMethod { throw 'request failed' }
+                $msg = $null
+                try { Connect-SalesforceApi -TargetOrg u@x.com -Password $pw -Token $tok -ClientId c -ClientSecret $sec } catch { $msg = ($_ | Out-String) }
+                $msg | Should -Not -BeNullOrEmpty
+                $msg | Should -Not -BeLike '*TOPSECRET*'
+            }
+            It 'rejects a value that is neither SecureString nor string, before sending' {
+                { Connect-SalesforceApi -TargetOrg u@x.com -Password 5 -Token 't' -ClientId c -ClientSecret 's' -WarningAction SilentlyContinue } | Should -Throw -ExpectedMessage '*must be a SecureString*'
+                Assert-MockCalled Invoke-RestMethod -Times 0 -Exactly
+            }
+        }
+
         Context 'field values stay out of the verbose stream' {
             It 'does not echo -FieldUpdates itself from New and Set' {
                 $v1 = New-SalesforceRecord -Type Account -FieldUpdates "Name='Acme' Secret__c='hunter2'" -Verbose 4>&1 | Out-String
