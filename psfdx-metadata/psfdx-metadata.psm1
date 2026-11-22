@@ -3383,3 +3383,391 @@ function Build-SalesforceQuery {
 }
 
 #endregion
+
+#region Custom Metadata Types
+
+# Wraps sf cmdt generate object, field, record, records and fromorg. They write metadata files into the current Salesforce DX project and return the CLI result as an object; only fromorg reads an org.
+
+function New-SalesforceCustomMetadataType {
+    <#
+    .SYNOPSIS
+    Creates the files of a new custom metadata type in the project.
+
+    .DESCRIPTION
+    Runs sf cmdt generate object, which writes the metadata file of a custom metadata type under a folder named <TypeName>__mdt. It works on local files and needs no org; run it inside a Salesforce DX project. Add fields with New-SalesforceCustomMetadataField and records with New-SalesforceCustomMetadataRecord. The result lists the type name, label, plural label and visibility.
+
+    .PARAMETER TypeName
+    Unique API name of the custom metadata type, without the __mdt suffix, for example MyCustomType. Letters, digits and underscores only. Passed to sf as --type-name. Required.
+
+    .PARAMETER Label
+    Label of the type. By default the CLI uses the type name. Passed to sf as --label.
+
+    .PARAMETER PluralLabel
+    Plural form of the label. By default the CLI uses the label. Passed to sf as --plural-label.
+
+    .PARAMETER Visibility
+    Who can see the type. Valid values: PackageProtected, Protected, Public. The CLI default is Public. Passed to sf as --visibility.
+
+    .PARAMETER OutputDirectory
+    Folder to write the type to, for example force-app/main/default/objects. By default the CLI writes to a <TypeName>__mdt folder in the current folder. Passed to sf as --output-directory.
+
+    .EXAMPLE
+    New-SalesforceCustomMetadataType -TypeName Feature_Flag -Label 'Feature Flag' -PluralLabel 'Feature Flags' -Visibility Protected -OutputDirectory force-app/main/default/objects
+    Create a protected type in the project's objects folder.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf cmdt generate object (plugin @salesforce/plugin-custom-metadata)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TypeName = --type-name; -Label = --label; -PluralLabel = --plural-label; -Visibility = --visibility; -OutputDirectory = --output-directory.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-custom-metadata
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $TypeName,
+        [Parameter(Mandatory = $false)][string] $Label,
+        [Parameter(Mandatory = $false)][string] $PluralLabel,
+        [Parameter(Mandatory = $false)][ValidateSet('PackageProtected', 'Protected', 'Public')][string] $Visibility,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory
+    )
+    $arguments = @('cmdt', 'generate', 'object', '--type-name', $TypeName)
+    if ($Label) { $arguments += @('--label', $Label) }
+    if ($PluralLabel) { $arguments += @('--plural-label', $PluralLabel) }
+    if ($Visibility) { $arguments += @('--visibility', $Visibility) }
+    if ($OutputDirectory) { $arguments += @('--output-directory', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceCustomMetadataField {
+    <#
+    .SYNOPSIS
+    Creates the file of a new field of a custom metadata type.
+
+    .DESCRIPTION
+    Runs sf cmdt generate field, which writes a field definition file. Point -OutputDirectory at the type's folder, for example force-app/main/default/objects/MyCmdt__mdt, so the file lands in its fields folder. It works on local files and needs no org. A Picklist field needs -PicklistValues; -DecimalPlaces is for Number and Percent fields.
+
+    .PARAMETER Name
+    Unique API name of the field, without the __c suffix. Letters, digits and underscores only. Passed to sf as --name. Required.
+
+    .PARAMETER Type
+    Type of the field. Valid values: Checkbox, Date, DateTime, Email, Number, Percent, Phone, Picklist, Text, TextArea, LongTextArea, Url. Passed to sf as --type. Required.
+
+    .PARAMETER Label
+    Label of the field. By default the CLI uses the name. Passed to sf as --label.
+
+    .PARAMETER DecimalPlaces
+    Number of decimal places, for a Number or Percent field. Passed to sf as --decimal-places.
+
+    .PARAMETER PicklistValues
+    Values of a Picklist field. Each value is passed as its own --picklist-values. Required for a Picklist field. Passed to sf as --picklist-values.
+
+    .PARAMETER OutputDirectory
+    Folder to write the field definition to. By default the CLI writes to a fields folder in the current folder. Passed to sf as --output-directory.
+
+    .EXAMPLE
+    New-SalesforceCustomMetadataField -Name Mode -Type Picklist -PicklistValues On, Off, Auto -OutputDirectory force-app/main/default/objects/Feature_Flag__mdt
+    Add a picklist field to a type.
+
+    .EXAMPLE
+    New-SalesforceCustomMetadataField -Name Threshold -Type Number -DecimalPlaces 2 -OutputDirectory force-app/main/default/objects/Feature_Flag__mdt
+    Add a number field with two decimal places.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf cmdt generate field (plugin @salesforce/plugin-custom-metadata)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Type = --type; -Label = --label; -DecimalPlaces = --decimal-places; -PicklistValues = --picklist-values; -OutputDirectory = --output-directory.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-custom-metadata
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateSet('Checkbox', 'Date', 'DateTime', 'Email', 'Number', 'Percent', 'Phone', 'Picklist', 'Text', 'TextArea', 'LongTextArea', 'Url')][string] $Type,
+        [Parameter(Mandatory = $false)][string] $Label,
+        [Parameter(Mandatory = $false)][ValidateRange(0, 18)][int] $DecimalPlaces,
+        [Parameter(Mandatory = $false)][string[]] $PicklistValues,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory
+    )
+    $values = @($PicklistValues | Where-Object { $_ })
+    if ($Type -eq 'Picklist' -and $values.Count -eq 0) { throw 'A Picklist field needs -PicklistValues.' }
+    if ($Type -ne 'Picklist' -and $values.Count -gt 0) { throw '-PicklistValues is only for a Picklist field.' }
+    if ($PSBoundParameters.ContainsKey('DecimalPlaces') -and $Type -notin 'Number', 'Percent') { throw '-DecimalPlaces is only for a Number or Percent field.' }
+    $arguments = @('cmdt', 'generate', 'field', '--name', $Name, '--type', $Type)
+    if ($Label) { $arguments += @('--label', $Label) }
+    if ($PSBoundParameters.ContainsKey('DecimalPlaces')) { $arguments += @('--decimal-places', $DecimalPlaces) }
+    foreach ($value in $values) { $arguments += @('--picklist-values', $value) }
+    if ($OutputDirectory) { $arguments += @('--output-directory', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceCustomMetadataRecord {
+    <#
+    .SYNOPSIS
+    Creates the file of a new record of a custom metadata type.
+
+    .DESCRIPTION
+    Runs sf cmdt generate record, which writes a record file. The type must already be in the project (-InputDirectory says where to read its definition from). Give the field values as a hashtable in -Values, for example @{ Color__c = 'Red'; Size__c = 32 }; each pair is passed to the CLI as Field=Value. It works on local files and needs no org.
+
+    .PARAMETER TypeName
+    API name of the custom metadata type. The CLI needs the __mdt suffix, for example MyCmdt__mdt. Passed to sf as --type-name. Required.
+
+    .PARAMETER RecordName
+    Name of the new record. Passed to sf as --record-name. Required.
+
+    .PARAMETER Label
+    Label of the record. By default the CLI uses the record name. Passed to sf as --label.
+
+    .PARAMETER Protected
+    Protect the record when it is in a managed package. The switch sends the value true; without it the CLI default, false, applies. Passed to sf as --protected.
+
+    .PARAMETER Values
+    Field values as field name and value pairs. Field names are checked; a value may not contain a double quote or a line break. Each pair is passed to sf as Field=Value.
+
+    .PARAMETER InputDirectory
+    Folder to read the type definition from. The CLI default is force-app/main/default/objects. The folder must exist. Passed to sf as --input-directory.
+
+    .PARAMETER OutputDirectory
+    Folder to write the record to. The CLI default is force-app/main/default/customMetadata. Passed to sf as --output-directory.
+
+    .EXAMPLE
+    New-SalesforceCustomMetadataRecord -TypeName Feature_Flag__mdt -RecordName Checkout -Label 'Checkout' -Values @{ Mode__c = 'On'; Threshold__c = 2.5 }
+    Create a record with two field values.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf cmdt generate record (plugin @salesforce/plugin-custom-metadata)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TypeName = --type-name; -RecordName = --record-name; -Label = --label; -Protected = --protected; -InputDirectory = --input-directory; -OutputDirectory = --output-directory.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-custom-metadata
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $TypeName,
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $RecordName,
+        [Parameter(Mandatory = $false)][string] $Label,
+        [Parameter(Mandatory = $false)][switch] $Protected,
+        [Parameter(Mandatory = $false)][System.Collections.IDictionary] $Values,
+        [Parameter(Mandatory = $false)][string] $InputDirectory,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory
+    )
+    if ($InputDirectory -and -not (Test-Path -LiteralPath $InputDirectory -PathType Container)) { throw "Input directory '$InputDirectory' does not exist." }
+    $pairs = @()
+    if ($null -ne $Values) {
+        foreach ($key in $Values.Keys) {
+            $field = [string] $key
+            if ($field -notmatch '^[A-Za-z][A-Za-z0-9_]*\z') { throw "'$field' is not a valid field name." }
+            $text = [System.Convert]::ToString($Values[$key], [System.Globalization.CultureInfo]::InvariantCulture)
+            if ($text -match '["\r\n]') { throw "The value of '$field' contains a double quote or a line break, which the CLI cannot take safely." }
+            $pairs += "$field=$text"
+        }
+    }
+    $arguments = @('cmdt', 'generate', 'record', '--type-name', $TypeName, '--record-name', $RecordName)
+    if ($Label) { $arguments += @('--label', $Label) }
+    if ($Protected) { $arguments += @('--protected', 'true') }
+    if ($InputDirectory) { $arguments += @('--input-directory', $InputDirectory) }
+    if ($OutputDirectory) { $arguments += @('--output-directory', $OutputDirectory) }
+    $arguments += $pairs
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceCustomMetadataRecordsFromCsv {
+    <#
+    .SYNOPSIS
+    Creates custom metadata record files from the rows of a CSV file.
+
+    .DESCRIPTION
+    Runs sf cmdt generate records, which writes one record file per CSV row. The type must already be in the project. The Name column gives each record its name unless you pick another with -NameColumn; the other columns are field names. It returns one object per record. It works on local files and needs no org.
+
+    .PARAMETER Csv
+    Path of the CSV file. The file must exist. Passed to sf as --csv. Required.
+
+    .PARAMETER TypeName
+    API name of the custom metadata type. The CLI adds the __mdt suffix when it is left off. Passed to sf as --type-name. Required.
+
+    .PARAMETER NameColumn
+    CSV column that gives each record its name. The CLI default is Name. Passed to sf as --name-column.
+
+    .PARAMETER InputDirectory
+    Folder to read the type definition from. The CLI default is force-app/main/default/objects. The folder must exist. Passed to sf as --input-directory.
+
+    .PARAMETER OutputDirectory
+    Folder to write the records to. The CLI default is force-app/main/default/customMetadata. Passed to sf as --output-directory.
+
+    .EXAMPLE
+    New-SalesforceCustomMetadataRecordsFromCsv -Csv .\flags.csv -TypeName Feature_Flag -NameColumn Key
+    One record per row, named from the Key column.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf cmdt generate records (plugin @salesforce/plugin-custom-metadata)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Csv = --csv; -TypeName = --type-name; -NameColumn = --name-column; -InputDirectory = --input-directory; -OutputDirectory = --output-directory.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-custom-metadata
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Csv,
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $TypeName,
+        [Parameter(Mandatory = $false)][string] $NameColumn,
+        [Parameter(Mandatory = $false)][string] $InputDirectory,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory
+    )
+    if (-not (Test-Path -LiteralPath $Csv -PathType Leaf)) { throw "CSV file '$Csv' does not exist." }
+    if ($InputDirectory -and -not (Test-Path -LiteralPath $InputDirectory -PathType Container)) { throw "Input directory '$InputDirectory' does not exist." }
+    $arguments = @('cmdt', 'generate', 'records', '--csv', $Csv, '--type-name', $TypeName)
+    if ($NameColumn) { $arguments += @('--name-column', $NameColumn) }
+    if ($InputDirectory) { $arguments += @('--input-directory', $InputDirectory) }
+    if ($OutputDirectory) { $arguments += @('--output-directory', $OutputDirectory) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceCustomMetadataTypeFromOrg {
+    <#
+    .SYNOPSIS
+    Creates a custom metadata type, and a record for every row, from an object in an org.
+
+    .DESCRIPTION
+    Runs sf cmdt generate fromorg. It reads the fields and the records of a custom object or custom setting in the org and writes a custom metadata type with those fields and one record per row into the project, so you can move the data to custom metadata. A field of a type that custom metadata does not support becomes a text field, unless you pass -IgnoreUnsupported. Only local files are written; nothing in the org changes.
+
+    .PARAMETER DevName
+    API name for the new custom metadata type, without the __mdt suffix. Passed to sf as --dev-name. Required.
+
+    .PARAMETER Sobject
+    API name of the object in the org to copy, for example My_Settings__c. Passed to sf as --sobject. Required.
+
+    .PARAMETER Label
+    Label of the type. By default the CLI uses the name. Passed to sf as --label.
+
+    .PARAMETER PluralLabel
+    Plural form of the label. By default the CLI uses the label. Passed to sf as --plural-label.
+
+    .PARAMETER Visibility
+    Who can see the type. Valid values: PackageProtected, Protected, Public. The CLI default is Public. Passed to sf as --visibility.
+
+    .PARAMETER IgnoreUnsupported
+    Leave out fields of an unsupported type instead of turning them into text fields. Adds --ignore-unsupported.
+
+    .PARAMETER TypeOutputDirectory
+    Folder to write the type to. The CLI default is force-app/main/default/objects. Passed to sf as --type-output-directory.
+
+    .PARAMETER RecordsOutputDir
+    Folder to write the records to. The CLI default is force-app/main/default/customMetadata. Passed to sf as --records-output-dir.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceCustomMetadataTypeFromOrg -DevName App_Config -Sobject App_Config__c -IgnoreUnsupported -TargetOrg dev1
+    Turn the App_Config__c custom setting into a custom metadata type.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf cmdt generate fromorg (plugin @salesforce/plugin-custom-metadata)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -DevName = --dev-name; -Sobject = --sobject; -Label = --label; -PluralLabel = --plural-label; -Visibility = --visibility; -IgnoreUnsupported = --ignore-unsupported; -TypeOutputDirectory = --type-output-directory; -RecordsOutputDir = --records-output-dir; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-custom-metadata
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $DevName,
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string] $Sobject,
+        [Parameter(Mandatory = $false)][string] $Label,
+        [Parameter(Mandatory = $false)][string] $PluralLabel,
+        [Parameter(Mandatory = $false)][ValidateSet('PackageProtected', 'Protected', 'Public')][string] $Visibility,
+        [Parameter(Mandatory = $false)][switch] $IgnoreUnsupported,
+        [Parameter(Mandatory = $false)][string] $TypeOutputDirectory,
+        [Parameter(Mandatory = $false)][string] $RecordsOutputDir,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('cmdt', 'generate', 'fromorg', '--dev-name', $DevName, '--sobject', $Sobject)
+    if ($Label) { $arguments += @('--label', $Label) }
+    if ($PluralLabel) { $arguments += @('--plural-label', $PluralLabel) }
+    if ($Visibility) { $arguments += @('--visibility', $Visibility) }
+    if ($IgnoreUnsupported) { $arguments += '--ignore-unsupported' }
+    if ($TypeOutputDirectory) { $arguments += @('--type-output-directory', $TypeOutputDirectory) }
+    if ($RecordsOutputDir) { $arguments += @('--records-output-dir', $RecordsOutputDir) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion

@@ -11,14 +11,14 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Core plugins (bundled with the CLI) | 214 | 114 | 16 | 66 | 3 | 15 | 66.3% of 196 |
-| Just-in-time plugins (installed on first use) | 65 | 15 | 4 | 37 | 0 | 9 | 33.9% of 56 |
-| Both | 279 | 129 | 20 | 103 | 3 | 24 | 59.1% of 252 |
+| Just-in-time plugins (installed on first use) | 65 | 20 | 4 | 32 | 0 | 9 | 42.9% of 56 |
+| Both | 279 | 134 | 20 | 98 | 3 | 24 | 61.1% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **195** cmdlets; **164** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **200** cmdlets; **169** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **149** commands psfdx runs, it passes **687 of 727** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **53** have a list of allowed values in the CLI, and psfdx can pass **215 of 235** of those values.
+**Flags and values.** Across the **154** commands psfdx runs, it passes **718 of 758** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **57** have a list of allowed values in the CLI, and psfdx can pass **235 of 255** of those values.
 
 ## By capability
 
@@ -29,7 +29,7 @@ psfdx exports **195** cmdlets; **164** of them run an sf command themselves. The
 | Apex (sf apex) | 10 | 6 | 3 | 1 | 0 | 0 | 90.0% of 10 |
 | REST API requests (sf api) | 2 | 0 | 1 | 1 | 0 | 0 | 50.0% of 2 |
 | Shell autocomplete (sf autocomplete) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
-| Custom metadata types (sf cmdt) | 5 | 0 | 0 | 5 | 0 | 0 | 0.0% of 5 |
+| Custom metadata types (sf cmdt) | 5 | 5 | 0 | 0 | 0 | 0 | 100.0% of 5 |
 | Code Analyzer (sf code-analyzer) | 4 | 0 | 2 | 2 | 0 | 0 | 50.0% of 4 |
 | CLI command list (sf commands) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Experience Cloud sites (sf community) | 3 | 0 | 0 | 3 | 0 | 0 | 0.0% of 3 |
@@ -118,16 +118,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
 | `sf autocomplete` | @oclif/plugin-autocomplete | 1 | not applicable | Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it. |
-
-### Custom metadata types (`sf cmdt`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf cmdt generate field` | @salesforce/plugin-custom-metadata | 6 (2 required) | missing |  |
-| `sf cmdt generate fromorg` | @salesforce/plugin-custom-metadata | 9 (3 required) | missing |  |
-| `sf cmdt generate object` | @salesforce/plugin-custom-metadata | 5 (1 required) | missing |  |
-| `sf cmdt generate record` | @salesforce/plugin-custom-metadata | 6 (2 required) | missing |  |
-| `sf cmdt generate records` | @salesforce/plugin-custom-metadata | 5 (2 required) | missing |  |
 
 ### Code Analyzer (`sf code-analyzer`)
 
@@ -358,6 +348,16 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf api request rest` | partially wrapped | `Get-SalesforceApiVersions`, `Get-SalesforceEventFile`, `Upsert-SalesforceRecord` | 3 of 7 | `--file` `--header` `--include` `--stream-to-file` | `--method`: `POST`, `PUT`, `HEAD`, `DELETE`, `OPTIONS`, `TRACE` |
 
+### Custom metadata types (`sf cmdt`)
+
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf cmdt generate field` | wrapped | `New-SalesforceCustomMetadataField` | 6 of 6 |  |  |
+| `sf cmdt generate fromorg` | wrapped | `New-SalesforceCustomMetadataTypeFromOrg` | 9 of 9 |  |  |
+| `sf cmdt generate object` | wrapped | `New-SalesforceCustomMetadataType` | 5 of 5 |  |  |
+| `sf cmdt generate record` | wrapped | `New-SalesforceCustomMetadataRecord` | 6 of 6 |  |  |
+| `sf cmdt generate records` | wrapped | `New-SalesforceCustomMetadataRecordsFromCsv` | 5 of 5 |  |  |
+
 ### Code Analyzer (`sf code-analyzer`)
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
@@ -557,9 +557,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 138 | 143 |
-| `--flags-dir` | 0 | 146 |
-| `--api-version` | 1 | 106 |
+| `--json` | 143 | 148 |
+| `--flags-dir` | 0 | 151 |
+| `--api-version` | 1 | 107 |
 
 ## How to read this
 

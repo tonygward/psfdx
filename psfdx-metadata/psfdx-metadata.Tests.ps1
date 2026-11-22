@@ -1037,3 +1037,128 @@ Describe 'psfdx-metadata sf org parity (issue 248)' {
         }
     }
 }
+
+Describe 'psfdx-metadata custom metadata type generators (issue 251)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"typename":"Cfg","label":"Cfg"},"warnings":[]}' }
+        }
+
+        Context 'New-SalesforceCustomMetadataType' {
+            It 'passes every option and returns the result object' {
+                $t = New-SalesforceCustomMetadataType -TypeName Feature_Flag -Label 'Feature Flag' -PluralLabel 'Feature Flags' -Visibility Protected -OutputDirectory 'force-app/main/default/objects'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|object|--type-name|Feature_Flag|--label|Feature Flag|--plural-label|Feature Flags|--visibility|Protected|--output-directory|force-app/main/default/objects|--json' }
+                $t.typename | Should -Be 'Cfg'
+            }
+            It 'needs only the type name' {
+                New-SalesforceCustomMetadataType -TypeName Cfg | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|object|--type-name|Cfg|--json' }
+            }
+            It 'rejects a name that is not an API name, a bad visibility, and a trailing line break' {
+                foreach ($bad in 'My Type', 'Type;calc', '1Type', "Type`n", '') { { New-SalesforceCustomMetadataType -TypeName $bad } | Should -Throw }
+                { New-SalesforceCustomMetadataType -TypeName Cfg -Visibility Hidden } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'throws the CLI message, for example outside a project' {
+                Mock Invoke-Salesforce { '{"status":1,"name":"RequiresProjectError","message":"This command is required to run from within a Salesforce project directory."}' }
+                { New-SalesforceCustomMetadataType -TypeName Cfg } | Should -Throw -ExpectedMessage '*Salesforce project directory*'
+            }
+        }
+
+        Context 'New-SalesforceCustomMetadataField' {
+            It 'passes each picklist value as its own flag' {
+                New-SalesforceCustomMetadataField -Name Mode -Type Picklist -PicklistValues 'On', 'Off', 'Auto mode' -Label 'Mode' -OutputDirectory 'objects/Cfg__mdt' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|field|--name|Mode|--type|Picklist|--label|Mode|--picklist-values|On|--picklist-values|Off|--picklist-values|Auto mode|--output-directory|objects/Cfg__mdt|--json' }
+            }
+            It 'passes decimal places for a number field, including zero' {
+                New-SalesforceCustomMetadataField -Name Threshold -Type Number -DecimalPlaces 0 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|field|--name|Threshold|--type|Number|--decimal-places|0|--json' }
+            }
+            It 'accepts every documented field type and rejects others' {
+                foreach ($type in 'Checkbox', 'Date', 'DateTime', 'Email', 'Number', 'Percent', 'Phone', 'Text', 'TextArea', 'LongTextArea', 'Url') {
+                    { New-SalesforceCustomMetadataField -Name F -Type $type } | Should -Not -Throw
+                }
+                { New-SalesforceCustomMetadataField -Name F -Type Currency } | Should -Throw
+            }
+            It 'checks the combinations before running sf' {
+                Mock Invoke-Salesforce { throw 'must not run' }
+                { New-SalesforceCustomMetadataField -Name F -Type Picklist } | Should -Throw -ExpectedMessage '*needs -PicklistValues*'
+                { New-SalesforceCustomMetadataField -Name F -Type Text -PicklistValues A } | Should -Throw -ExpectedMessage '*only for a Picklist*'
+                { New-SalesforceCustomMetadataField -Name F -Type Text -DecimalPlaces 2 } | Should -Throw -ExpectedMessage '*Number or Percent*'
+                { New-SalesforceCustomMetadataField -Name 'bad name' -Type Text } | Should -Throw
+            }
+        }
+
+        Context 'New-SalesforceCustomMetadataRecord' {
+            It 'passes the field values as Field=Value after the flags, with the invariant culture' {
+                $old = [System.Threading.Thread]::CurrentThread.CurrentCulture
+                try {
+                    [System.Threading.Thread]::CurrentThread.CurrentCulture = [System.Globalization.CultureInfo]::GetCultureInfo('de-DE')
+                    New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName Checkout -Label 'Check out' -Protected -Values ([ordered]@{ Mode__c = 'On mode'; Threshold__c = 2.5 }) | Out-Null
+                } finally { [System.Threading.Thread]::CurrentThread.CurrentCulture = $old }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|record|--type-name|Cfg__mdt|--record-name|Checkout|--label|Check out|--protected|true|Mode__c=On mode|Threshold__c=2.5|--json' }
+            }
+            It 'leaves --protected out by default and works without values' {
+                New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R1 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|record|--type-name|Cfg__mdt|--record-name|R1|--json' }
+            }
+            It 'passes the input and output folders, and checks the input folder exists' {
+                $in = Join-Path $TestDrive 'objects'; New-Item -ItemType Directory -Path $in | Out-Null
+                New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R1 -InputDirectory $in -OutputDirectory 'out dir' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "cmdt|generate|record|--type-name|Cfg__mdt|--record-name|R1|--input-directory|$in|--output-directory|out dir|--json" }
+                { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R1 -InputDirectory (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+            }
+            It 'refuses an unsafe field name or value before running sf' {
+                Mock Invoke-Salesforce { throw 'must not run' }
+                { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ 'Bad Field' = 'x' } } | Should -Throw -ExpectedMessage '*not a valid field name*'
+                { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ '--json' = 'x' } } | Should -Throw -ExpectedMessage '*not a valid field name*'
+                { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ A__c = 'say "hi"' } } | Should -Throw -ExpectedMessage '*double quote*'
+                { New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ A__c = "a`nb" } } | Should -Throw -ExpectedMessage '*line break*'
+            }
+            It 'does not treat a value that looks like a flag as one' {
+                New-SalesforceCustomMetadataRecord -TypeName Cfg__mdt -RecordName R -Values @{ A__c = '--json' } | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|record|--type-name|Cfg__mdt|--record-name|R|A__c=--json|--json' }
+            }
+        }
+
+        Context 'New-SalesforceCustomMetadataRecordsFromCsv' {
+            BeforeEach {
+                $script:csv = Join-Path $TestDrive 'my flags.csv'
+                Set-Content -LiteralPath $script:csv -Value "Name,Mode__c`nA,On`nB,Off"
+                Mock Invoke-Salesforce { '{"status":0,"result":[{"typename":"Cfg","recordname":"A","label":"A"},{"typename":"Cfg","recordname":"B","label":"B"}]}' }
+            }
+            It 'returns one object per record' {
+                $records = @(New-SalesforceCustomMetadataRecordsFromCsv -Csv $script:csv -TypeName Cfg -NameColumn Key -OutputDirectory 'out')
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "cmdt|generate|records|--csv|$($script:csv)|--type-name|Cfg|--name-column|Key|--output-directory|out|--json" }
+                $records.Count | Should -Be 2
+                $records[1].recordname | Should -Be 'B'
+            }
+            It 'checks the CSV and the input folder before running sf' {
+                { New-SalesforceCustomMetadataRecordsFromCsv -Csv (Join-Path $TestDrive 'missing.csv') -TypeName Cfg } | Should -Throw -ExpectedMessage '*does not exist*'
+                { New-SalesforceCustomMetadataRecordsFromCsv -Csv $script:csv -TypeName Cfg -InputDirectory (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'New-SalesforceCustomMetadataTypeFromOrg' {
+            It 'passes every option and reads the org' {
+                New-SalesforceCustomMetadataTypeFromOrg -DevName App_Config -Sobject App_Config__c -Label 'App Config' -PluralLabel 'App Configs' -Visibility PackageProtected -IgnoreUnsupported -TypeOutputDirectory 'types' -RecordsOutputDir 'records' -TargetOrg dev1 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|fromorg|--dev-name|App_Config|--sobject|App_Config__c|--label|App Config|--plural-label|App Configs|--visibility|PackageProtected|--ignore-unsupported|--type-output-directory|types|--records-output-dir|records|--target-org|dev1|--json' }
+            }
+            It 'needs only the names, and rejects a bad object name' {
+                New-SalesforceCustomMetadataTypeFromOrg -DevName X -Sobject Y__c | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'cmdt|generate|fromorg|--dev-name|X|--sobject|Y__c|--json' }
+                { New-SalesforceCustomMetadataTypeFromOrg -DevName X -Sobject 'Y; drop' } | Should -Throw
+            }
+            It 'throws the CLI message when the object does not exist' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"sObject type ''Nope__c'' is not supported."}' }
+                { New-SalesforceCustomMetadataTypeFromOrg -DevName X -Sobject Nope__c } | Should -Throw -ExpectedMessage '*not supported*'
+            }
+        }
+
+        It 'exports the five generators' {
+            $exports = (Get-Module psfdx-metadata).ExportedFunctions.Keys
+            foreach ($n in 'New-SalesforceCustomMetadataType', 'New-SalesforceCustomMetadataField', 'New-SalesforceCustomMetadataRecord', 'New-SalesforceCustomMetadataRecordsFromCsv', 'New-SalesforceCustomMetadataTypeFromOrg') { $exports | Should -Contain $n }
+        }
+    }
+}

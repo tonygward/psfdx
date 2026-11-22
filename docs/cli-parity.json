@@ -183,28 +183,28 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 149,
+    "commandsPsfdxRuns": 154,
     "flags": {
-      "total": 727,
-      "passed": 687
+      "total": 758,
+      "passed": 718
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 53,
+    "flagsWithAListOfValues": 57,
     "values": {
-      "total": 235,
-      "reachable": 215
+      "total": 255,
+      "reachable": 235
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 129,
+      "wrapped": 134,
       "partiallyWrapped": 20,
-      "missing": 103,
+      "missing": 98,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "59.1"
+      "coveredPercent": "61.1"
     },
     "core": {
       "commands": 214,
@@ -218,18 +218,18 @@
     },
     "jit": {
       "commands": 65,
-      "wrapped": 15,
+      "wrapped": 20,
       "partiallyWrapped": 4,
-      "missing": 37,
+      "missing": 32,
       "excluded": 0,
       "notApplicable": 9,
       "inScope": 56,
-      "coveredPercent": "33.9"
+      "coveredPercent": "42.9"
     }
   },
   "psfdx": {
-    "exportedFunctions": 195,
-    "runningTheCli": 164,
+    "exportedFunctions": 200,
+    "runningTheCli": 169,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -2169,13 +2169,13 @@
       "label": "Custom metadata types",
       "totals": {
         "commands": 5,
-        "wrapped": 0,
+        "wrapped": 5,
         "partiallyWrapped": 0,
-        "missing": 5,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 5,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -2185,32 +2185,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Generate a field for a custom metadata type based on the provided field type.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomMetadataField"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "decimal-places",
-            "label",
-            "name",
-            "output-directory",
-            "picklist-values",
-            "type"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "type"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 12,
+            "reachable": 12
           }
         },
         {
@@ -2220,36 +2212,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Generate a custom metadata type and all its records from a Salesforce object.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomMetadataTypeFromOrg"
+          ],
           "flags": {
             "total": 9,
-            "passed": 0,
+            "passed": 9,
             "required": 3
           },
-          "uncoveredFlags": [
-            "dev-name",
-            "ignore-unsupported",
-            "label",
-            "plural-label",
-            "records-output-dir",
-            "sobject",
-            "target-org",
-            "type-output-directory",
-            "visibility"
-          ],
-          "requiredFlagsNotPassed": [
-            "dev-name",
-            "sobject",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -2259,30 +2239,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Generate a new custom metadata type in the current project.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomMetadataType"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "label",
-            "output-directory",
-            "plural-label",
-            "type-name",
-            "visibility"
-          ],
-          "requiredFlagsNotPassed": [
-            "type-name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 3,
+            "reachable": 3
           }
         },
         {
@@ -2292,32 +2266,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Generate a new record for a given custom metadata type in the current project.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomMetadataRecord"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "input-directory",
-            "label",
-            "output-directory",
-            "protected",
-            "record-name",
-            "type-name"
-          ],
-          "requiredFlagsNotPassed": [
-            "record-name",
-            "type-name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -2327,26 +2293,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Generate new custom metadata type records from a CSV file.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCustomMetadataRecordsFromCsv"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "csv",
-            "input-directory",
-            "name-column",
-            "output-directory",
-            "type-name"
-          ],
-          "requiredFlagsNotPassed": [
-            "csv",
-            "type-name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -9134,18 +9093,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 138,
-        "commandsPsfdxRunsThatHaveIt": 143
+        "psfdxFunctionsPassingIt": 143,
+        "commandsPsfdxRunsThatHaveIt": 148
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 146
+        "commandsPsfdxRunsThatHaveIt": 151
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 106
+        "commandsPsfdxRunsThatHaveIt": 107
       }
     ]
   },
