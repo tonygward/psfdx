@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.43 - 2026-11-22
+
 - psfdx: `Connect-SalesforceApi` now accepts `-Password`, `-Token` and `-ClientSecret` as a SecureString, which is the recommended form: it is turned into text only when the login request is built and never appears in verbose, debug or error output. Plain strings still work, but each one now writes a warning because it stays readable in your session history. Nothing is removed yet.
 
 ## 0.8.42 - 2026-11-22
