@@ -4926,7 +4926,20 @@ function New-SalesforceLightningOutApp {
         if (-not $EcaCallbackUrl) { $missing += '-EcaCallbackUrl' }
         if ($missing.Count -gt 0) { throw "Without a -DefinitionFile the CLI needs $($missing -join ', ')." }
     }
-    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath @($AppName | Where-Object { $_ }) -What 'Lightning Out app' -Force:$Force
+    # The app and ECA names can come from the definition file when a parameter does not override them, so read them from there too.
+    $effectiveApp = $AppName
+    $effectiveEca = $EcaName
+    if ($DefinitionFile -and (-not $effectiveApp -or -not $effectiveEca)) {
+        try {
+            $definition = [System.IO.File]::ReadAllText((Resolve-Path -LiteralPath $DefinitionFile).ProviderPath) | ConvertFrom-Json -ErrorAction Stop
+            if (-not $effectiveApp -and $null -ne $definition.PSObject.Properties['appName']) { $effectiveApp = [string] $definition.appName }
+            if (-not $effectiveEca -and $null -ne $definition.PSObject.Properties['eca'] -and $null -ne $definition.eca -and $null -ne $definition.eca.PSObject.Properties['name']) { $effectiveEca = [string] $definition.eca.name }
+        } catch { Write-Verbose "Could not read app and ECA names from '$DefinitionFile': $($_.Exception.Message)" }
+    }
+    $targets = @()
+    if ($effectiveApp) { $targets += (Join-Path 'lightningOutApps' "$effectiveApp.lightningOutApp-meta.xml") }
+    if ($effectiveEca) { $targets += (Join-Path 'externalClientApps' "$effectiveEca.eca-meta.xml") }
+    Assert-SalesforceGeneratedPathFree -Directory $OutputDirectory -RelativePath $targets -What 'Lightning Out app' -Force:$Force
     $arguments = @('template', 'generate', 'lightning-out')
     if ($AppName) { $arguments += @('--app-name', $AppName) }
     foreach ($item in @($Components | Where-Object { $_ })) { $arguments += @('--components', $item) }

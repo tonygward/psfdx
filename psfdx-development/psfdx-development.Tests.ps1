@@ -1797,10 +1797,40 @@ Describe 'psfdx-development template generators (issue 254)' {
                 { New-SalesforceLightningOutApp -DefinitionFile $def -EcaCallbackUrl http://x.example.com/cb } | Should -Throw -ExpectedMessage '*https*'
                 { New-SalesforceLightningOutApp -DefinitionFile $def -Runtime OTHER } | Should -Throw
             }
-            It 'checks for an existing app of the same name' {
-                New-Item -ItemType Directory -Path (Join-Path $script:out 'Widget') | Out-Null
-                $def = Join-Path $TestDrive 'lo3.json'; Set-Content -LiteralPath $def -Value '{}'
-                { New-SalesforceLightningOutApp -AppName Widget -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*'
+            It 'checks for the app file the CLI writes, whether the name is a parameter or comes from the definition file' {
+                $apps = Join-Path $script:out 'lightningOutApps'
+                New-Item -ItemType Directory -Path $apps | Out-Null
+                Set-Content -LiteralPath (Join-Path $apps 'Widget.lightningOutApp-meta.xml') -Value 'mine'
+                $def = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def -Value '{ "appName": "Widget", "runtime": "LWR_CORE" }'
+                { New-SalesforceLightningOutApp -AppName Widget -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*Widget.lightningOutApp-meta.xml*'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*Widget.lightningOutApp-meta.xml*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                New-SalesforceLightningOutApp -AppName Widget -DefinitionFile $def -OutputDirectory $script:out -Force | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly
+            }
+            It 'also checks the External Client App file, from a parameter or the definition file' {
+                $ecas = Join-Path $script:out 'externalClientApps'
+                New-Item -ItemType Directory -Path $ecas | Out-Null
+                Set-Content -LiteralPath (Join-Path $ecas 'WidgetEca.eca-meta.xml') -Value 'mine'
+                $def = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def -Value '{ "appName": "Fresh", "eca": { "name": "WidgetEca" } }'
+                { New-SalesforceLightningOutApp -DefinitionFile $def -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*WidgetEca.eca-meta.xml*'
+                $def2 = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def2 -Value '{ "appName": "Fresh" }'
+                { New-SalesforceLightningOutApp -DefinitionFile $def2 -EcaName WidgetEca -OutputDirectory $script:out } | Should -Throw -ExpectedMessage '*already exists*WidgetEca.eca-meta.xml*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'a definition file it cannot read does not stop generation, and a parameter overrides the file name' {
+                $bad = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $bad -Value 'not json'
+                { New-SalesforceLightningOutApp -DefinitionFile $bad -OutputDirectory $script:out } | Should -Not -Throw
+                $apps = Join-Path $script:out 'lightningOutApps'
+                New-Item -ItemType Directory -Path $apps | Out-Null
+                Set-Content -LiteralPath (Join-Path $apps 'FromFile.lightningOutApp-meta.xml') -Value 'mine'
+                $def = Join-Path $TestDrive ('lo-' + [guid]::NewGuid().ToString('N') + '.json')
+                Set-Content -LiteralPath $def -Value '{ "appName": "FromFile" }'
+                { New-SalesforceLightningOutApp -AppName Other -DefinitionFile $def -OutputDirectory $script:out } | Should -Not -Throw
             }
         }
 
