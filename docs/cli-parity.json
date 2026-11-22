@@ -9518,57 +9518,7 @@
       ]
     }
   ],
-  "aliasUse": [
-    {
-      "function": "New-SalesforceApexClass",
-      "alias": "apex generate class",
-      "command": "template generate apex class",
-      "deprecated": true,
-      "kind": "alias"
-    },
-    {
-      "function": "New-SalesforceApexTrigger",
-      "alias": "apex generate trigger",
-      "command": "template generate apex trigger",
-      "deprecated": true,
-      "kind": "alias"
-    },
-    {
-      "function": "Get-SalesforceDebugLogs",
-      "alias": "apex log get",
-      "command": "apex get log",
-      "deprecated": false,
-      "kind": "word order"
-    },
-    {
-      "function": "Select-SalesforceDebugLogs",
-      "alias": "apex log list",
-      "command": "apex list log",
-      "deprecated": false,
-      "kind": "word order"
-    },
-    {
-      "function": "Watch-SalesforceDebugLogs",
-      "alias": "apex log tail",
-      "command": "apex tail log",
-      "deprecated": false,
-      "kind": "word order"
-    },
-    {
-      "function": "Get-SalesforceLimits",
-      "alias": "limits api display",
-      "command": "org list limits",
-      "deprecated": true,
-      "kind": "alias"
-    },
-    {
-      "function": "New-SalesforceProject",
-      "alias": "project generate",
-      "command": "template generate project",
-      "deprecated": true,
-      "kind": "alias"
-    }
-  ],
+  "aliasUse": [],
   "crossCutting": {
     "flags": [
       {

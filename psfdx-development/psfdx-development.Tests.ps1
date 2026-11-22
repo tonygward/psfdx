@@ -252,7 +252,7 @@ Describe 'New-SalesforceApexClass' {
             try {
                 Mock Invoke-Salesforce {}
                 New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $existing.FullName
-                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "apex|generate|class|--name|MyClass|--template|DefaultApexClass|--output-dir|$($existing.FullName)" }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "template|generate|apex|class|--name|MyClass|--template|DefaultApexClass|--output-dir|$($existing.FullName)" }
             }
             finally {
                 Remove-Item -LiteralPath $existing.FullName -Force -Recurse
@@ -263,14 +263,14 @@ Describe 'New-SalesforceApexClass' {
             Mock Invoke-Salesforce {}
             $dir = New-Item -Path (Join-Path $TestDrive 'my classes dir') -ItemType Directory
             New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $dir.FullName
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 9 -and $Arguments[8] -eq $dir.FullName }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 10 -and $Arguments[9] -eq $dir.FullName }
         }
 
         It 'omits output directory validation when not provided' {
             Mock Invoke-Salesforce {}
             Mock Test-Path { throw "Test-Path should not be called" }
             New-SalesforceApexClass -Name 'DefaultClass'
-            $expected = 'apex|generate|class|--name|DefaultClass|--template|DefaultApexClass'
+            $expected = 'template|generate|apex|class|--name|DefaultClass|--template|DefaultApexClass'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
         }
     }
@@ -298,7 +298,7 @@ Describe 'New-SalesforceApexTrigger' {
             try {
                 Mock Invoke-Salesforce {}
                 New-SalesforceApexTrigger -Name 'MyTrigger' -SObject 'Account' -OutputDirectory $existing.FullName
-                $expected = "apex|generate|trigger|--name|MyTrigger|--event|before insert|--sobject|Account|--output-dir|$($existing.FullName)"
+                $expected = "template|generate|apex|trigger|--name|MyTrigger|--event|before insert|--sobject|Account|--output-dir|$($existing.FullName)"
                 Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
             }
             finally {
@@ -310,14 +310,14 @@ Describe 'New-SalesforceApexTrigger' {
             Mock Invoke-Salesforce {}
             $dir = New-Item -Path (Join-Path $TestDrive 'my classes dir') -ItemType Directory
             New-SalesforceApexClass -Name 'MyClass' -OutputDirectory $dir.FullName
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 9 -and $Arguments[8] -eq $dir.FullName }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { $Arguments.Count -eq 10 -and $Arguments[9] -eq $dir.FullName }
         }
 
         It 'omits output directory validation when not provided' {
             Mock Invoke-Salesforce {}
             Mock Test-Path { throw "Test-Path should not be called" }
             New-SalesforceApexTrigger -Name 'DefaultTrigger'
-            $expected = 'apex|generate|trigger|--name|DefaultTrigger|--event|before insert'
+            $expected = 'template|generate|apex|trigger|--name|DefaultTrigger|--event|before insert'
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq $expected }
         }
     }
@@ -548,6 +548,12 @@ Describe 'New-SalesforceProject -DefaultUserName' {
             # -Value is the only parameter Set-SalesforceTargetOrg accepts; the old code
             # passed -DefaultUserName/-ProjectFolder and always failed to bind.
             Assert-MockCalled Set-SalesforceTargetOrg -Times 1 -ParameterFilter { $Value -eq 'me@example.com' }
+        }
+
+        It 'runs the current sf template generate project command' {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"outputDir":"x"}}' }
+            New-SalesforceProject -Name 'DemoProj' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -like 'template|generate|project|--name|DemoProj*' }
         }
     }
 }

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx, psfdx-development, psfdx-logs: the cmdlets now run the current Salesforce CLI command names instead of deprecated aliases and reordered words: `Get-SalesforceLimits` runs `sf org list limits`, `New-SalesforceProject` runs `sf template generate project`, `New-SalesforceApexClass` and `New-SalesforceApexTrigger` run `sf template generate apex class` and `trigger`, and the debug log cmdlets run `sf apex list log`, `get log` and `tail log`. Results are the same, but a CLI release that removes the old names no longer breaks them.
+
 ## 0.8.40 - 2026-11-21
 
 - All modules: every exported command now has complete help, shown by `Get-Help <command> -Full`, `-Examples` and `-Parameter *`: a synopsis, a description, one entry for every parameter (with its default, valid values and the CLI flag it feeds), examples and links. The notes have a "Salesforce CLI mapping" section that names the exact `sf` command or commands the cmdlet runs, the old name or word order it is run by when that differs from the current command, the flags and values it cannot pass, and says when a cmdlet does not run `sf` at all. The helpers that `psfdx-shared` exports are labelled as internal, and `Test-SalesforceApexTestReference` says it only reads a local file. A test checks all of this, and the Gallery install check now checks the help of the published package.

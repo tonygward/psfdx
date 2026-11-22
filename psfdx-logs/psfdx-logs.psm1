@@ -118,7 +118,7 @@ function Watch-SalesforceDebugLogs {
     Streams debug logs from an org to the terminal.
 
     .DESCRIPTION
-    Runs sf apex log tail with --color, which keeps running until you press Ctrl+C. Unless you pass -SkipTraceFlag the CLI first creates a trace flag for you, which stays after you stop.
+    Runs sf apex tail log with --color, which keeps running until you press Ctrl+C. Unless you pass -SkipTraceFlag the CLI first creates a trace flag for you, which stays after you stop.
 
     .PARAMETER DebugLevel
     Debug level to set on the DEVELOPER_LOG trace flag for your user. Passed to sf as --debug-level.
@@ -137,7 +137,6 @@ function Watch-SalesforceDebugLogs {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf apex tail log (plugin @salesforce/plugin-apex)
-      Invoked as: sf apex log tail - the words of sf apex tail log in another order, which the CLI accepts
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Parameter to flag: -DebugLevel = --debug-level; -SkipTraceFlag = --skip-trace-flag; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -160,7 +159,7 @@ function Watch-SalesforceDebugLogs {
         [Parameter(Mandatory = $false)][switch] $SkipTraceFlag,
         [Parameter(Mandatory = $false)][string] $TargetOrg
     )
-    $arguments = @('apex', 'log', 'tail')
+    $arguments = @('apex', 'tail', 'log')
     if ($DebugLevel) { $arguments += @('--debug-level', $DebugLevel) }
     if ($SkipTraceFlag) { $arguments += '--skip-trace-flag' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
@@ -175,7 +174,7 @@ function Select-SalesforceDebugLogs {
     Lists the debug logs in an org.
 
     .DESCRIPTION
-    Runs sf apex log list and returns one object per log (Id, Application, Operation, StartTime, LogLength, and so on), in the order the CLI returns them.
+    Runs sf apex list log and returns one object per log (Id, Application, Operation, StartTime, LogLength, and so on), in the order the CLI returns them.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -188,7 +187,6 @@ function Select-SalesforceDebugLogs {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf apex list log (plugin @salesforce/plugin-apex)
-      Invoked as: sf apex log list - the words of sf apex list log in another order, which the CLI accepts
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Parameter to flag: -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -207,7 +205,7 @@ function Select-SalesforceDebugLogs {
     #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
-    $arguments = @('apex', 'log', 'list')
+    $arguments = @('apex', 'list', 'log')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -221,7 +219,7 @@ function Get-SalesforceDebugLogs {
     Fetches one debug log, or the newest few, from an org.
 
     .DESCRIPTION
-    Runs sf apex log get with --log-id or --number. Give exactly one of -LogId and -Last. With -OutputDir the CLI saves the logs as files; with -Raw the text is returned as it is.
+    Runs sf apex get log with --log-id or --number. Give exactly one of -LogId and -Last. With -OutputDir the CLI saves the logs as files; with -Raw the text is returned as it is.
 
     .PARAMETER OutputDir
     Directory for saving the log files. Passed to sf as --output-dir.
@@ -246,7 +244,6 @@ function Get-SalesforceDebugLogs {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf apex get log (plugin @salesforce/plugin-apex)
-      Invoked as: sf apex log get - the words of sf apex get log in another order, which the CLI accepts
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Parameter to flag: -OutputDir = --output-dir; -LogId = --log-id; -Last = --number; -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -279,7 +276,7 @@ function Get-SalesforceDebugLogs {
         throw "Provide only one of -LogId or -Last, not both."
     }
 
-    $arguments = @('apex', 'log', 'get')
+    $arguments = @('apex', 'get', 'log')
     if ($OutputDir) {
         if ((Test-Path -Path $OutputDir) -eq $false) {
             throw "Folder $OutputDir does not exist"

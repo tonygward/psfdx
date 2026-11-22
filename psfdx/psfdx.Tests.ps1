@@ -459,6 +459,17 @@ Describe 'psfdx module' {
     }
 }
 
+Describe 'Get-SalesforceLimits' {
+    InModuleScope 'psfdx' {
+        It 'runs the current sf org list limits command' {
+            Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"DailyApiRequests","max":10,"remaining":5}]}' }
+            $r = @(Get-SalesforceLimits -TargetOrg me)
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|list|limits|--target-org|me|--json' }
+            $r[0].name | Should -Be 'DailyApiRequests'
+        }
+    }
+}
+
 Describe 'Get-SalesforceAlias' {
     It 'declares a Param block so common parameters are honoured' {
         # Without Param(), [CmdletBinding()] is inert and -Verbose is silently swallowed

@@ -566,20 +566,6 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf template generate apex trigger` | partially wrapped | `New-SalesforceApexTrigger` | 4 of 5 | `--template` |  |
 | `sf template generate project` | partially wrapped | `New-SalesforceProject` | 6 of 7 | `--lwc-language` | `--template`: `reactinternalapp`, `reactexternalapp`, `angularinternalapp`, `angularexternalapp`, `vueinternalapp`, `agent` |
 
-## Commands psfdx runs by another name
-
-These psfdx functions run a command by an old name (an alias) or with its words in another order. The CLI accepts both today. A deprecated alias prints a warning and may be removed, so moving to the current name is a follow-up for the module (the weekly check in issue 210 is where this is watched).
-
-| psfdx function | Runs | Current command | How | Deprecated |
-| :--- | :--- | :--- | :--- | :--- |
-| `New-SalesforceApexClass` | `sf apex generate class` | `sf template generate apex class` | alias | yes |
-| `New-SalesforceApexTrigger` | `sf apex generate trigger` | `sf template generate apex trigger` | alias | yes |
-| `Get-SalesforceDebugLogs` | `sf apex log get` | `sf apex get log` | word order | no |
-| `Select-SalesforceDebugLogs` | `sf apex log list` | `sf apex list log` | word order | no |
-| `Watch-SalesforceDebugLogs` | `sf apex log tail` | `sf apex tail log` | word order | no |
-| `Get-SalesforceLimits` | `sf limits api display` | `sf org list limits` | alias | yes |
-| `New-SalesforceProject` | `sf project generate` | `sf template generate project` | alias | yes |
-
 ## Flags left out of the per-command view
 
 These flags are on almost every command, so they are not counted against each one. Each is listed once here.
