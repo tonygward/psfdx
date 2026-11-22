@@ -183,53 +183,53 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 158,
+    "commandsPsfdxRuns": 161,
     "flags": {
-      "total": 766,
-      "passed": 726
+      "total": 778,
+      "passed": 748
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 57,
+    "flagsWithAListOfValues": 62,
     "values": {
-      "total": 255,
-      "reachable": 235
+      "total": 272,
+      "reachable": 255
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 138,
-      "partiallyWrapped": 20,
-      "missing": 94,
+      "wrapped": 146,
+      "partiallyWrapped": 15,
+      "missing": 91,
       "excluded": 3,
       "notApplicable": 24,
       "inScope": 252,
-      "coveredPercent": "62.7"
+      "coveredPercent": "63.9"
     },
     "core": {
       "commands": 214,
-      "wrapped": 118,
-      "partiallyWrapped": 16,
-      "missing": 62,
+      "wrapped": 122,
+      "partiallyWrapped": 13,
+      "missing": 61,
       "excluded": 3,
       "notApplicable": 15,
       "inScope": 196,
-      "coveredPercent": "68.4"
+      "coveredPercent": "68.9"
     },
     "jit": {
       "commands": 65,
-      "wrapped": 20,
-      "partiallyWrapped": 4,
-      "missing": 32,
+      "wrapped": 24,
+      "partiallyWrapped": 2,
+      "missing": 30,
       "excluded": 0,
       "notApplicable": 9,
       "inScope": 56,
-      "coveredPercent": "42.9"
+      "coveredPercent": "46.4"
     }
   },
   "psfdx": {
-    "exportedFunctions": 204,
-    "runningTheCli": 173,
+    "exportedFunctions": 207,
+    "runningTheCli": 176,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -1727,13 +1727,13 @@
       "label": "Apex",
       "totals": {
         "commands": 10,
-        "wrapped": 6,
-        "partiallyWrapped": 3,
-        "missing": 1,
+        "wrapped": 10,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 10,
-        "coveredPercent": "90.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -1743,21 +1743,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Fetches the compilation status for Apex classes that are currently invalid or have compilation warnings.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceApexCompileStatus"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1799,7 +1797,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Display test results for a specific asynchronous test run.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1812,20 +1810,11 @@
           },
           "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "result-format",
-              "values": [
-                "human",
-                "tap",
-                "junit"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 1,
             "total": 4,
-            "reachable": 1
+            "reachable": 4
           }
         },
         {
@@ -1862,7 +1851,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Execute anonymous Apex code entered on the command line or from a local file.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1870,19 +1859,16 @@
           ],
           "flags": {
             "total": 4,
-            "passed": 2,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "category-level",
-            "debug-level"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -1892,7 +1878,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Invoke Apex tests in an org.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1901,13 +1887,10 @@
           ],
           "flags": {
             "total": 13,
-            "passed": 11,
+            "passed": 13,
             "required": 1
           },
-          "uncoveredFlags": [
-            "poll-interval",
-            "synchronous"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -2320,13 +2303,13 @@
       "label": "Code Analyzer",
       "totals": {
         "commands": 4,
-        "wrapped": 0,
-        "partiallyWrapped": 2,
-        "missing": 2,
+        "wrapped": 4,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 4,
-        "coveredPercent": "50.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -2336,29 +2319,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Dump the Abstract Syntax Tree (AST) for a given source file.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceCodeAnalyzerAst"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "file",
-            "format",
-            "language",
-            "output-file"
-          ],
-          "requiredFlagsNotPassed": [
-            "file"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 2,
+            "total": 7,
+            "reachable": 7
           }
         },
         {
@@ -2368,24 +2346,18 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Output the current state of configuration for Code Analyzer.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceCodeAnalyzerConfig"
+          ],
           "flags": {
             "total": 7,
-            "passed": 0,
+            "passed": 7,
             "required": 0
           },
-          "uncoveredFlags": [
-            "config-file",
-            "include-unmodified-rules",
-            "no-suppressions",
-            "output-file",
-            "rule-selector",
-            "target",
-            "workspace"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -2401,7 +2373,7 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "List the rules that are available to analyze your code.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -2409,18 +2381,16 @@
           ],
           "flags": {
             "total": 6,
-            "passed": 5,
+            "passed": 6,
             "required": 0
           },
-          "uncoveredFlags": [
-            "view"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -2430,7 +2400,7 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Analyze your code with a selection of rules to ensure good coding practices.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -2438,22 +2408,16 @@
           ],
           "flags": {
             "total": 11,
-            "passed": 6,
+            "passed": 11,
             "required": 0
           },
-          "uncoveredFlags": [
-            "include-fixes",
-            "include-suggestions",
-            "no-suppressions",
-            "target-org",
-            "view"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         }
       ]
@@ -9079,18 +9043,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 144,
-        "commandsPsfdxRunsThatHaveIt": 149
+        "psfdxFunctionsPassingIt": 145,
+        "commandsPsfdxRunsThatHaveIt": 151
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 155
+        "commandsPsfdxRunsThatHaveIt": 158
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 107
+        "commandsPsfdxRunsThatHaveIt": 108
       }
     ]
   },

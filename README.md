@@ -359,8 +359,10 @@ Included in the `psfdx` package.
 | `New-SalesforceScratchOrg` | Create scratch org. `-Async` returns before the org is ready. |
 | `Resume-SalesforceScratchOrg` | Resume a scratch org creation by `-JobId` (2SR...) or `-UseMostRecent`. Returns the org with `Completed`. Assign permission sets afterwards with `Grant-SalesforcePermissionSet`. |
 | `New-SalesforceScratchOrg` | Create scratch org. |
-| `Invoke-SalesforceCodeAnalyzer` | Run Code Analyzer (`sf code-analyzer run`) over `-Workspace` and `-Target` with `-RuleSelector`, `-ConfigFile` and `-SeverityThreshold`. Returns findings as objects. A threshold failure is returned (`ThresholdExceeded`) rather than thrown, unless `-ThrowOnThreshold`; a plugin or engine failure always throws. |
-| `Get-SalesforceCodeAnalyzerRule` | List the rules a selector matches (`sf code-analyzer rules`). |
+| `Invoke-SalesforceCodeAnalyzer` | Run Code Analyzer (`sf code-analyzer run`) over `-Workspace` and `-Target` with `-RuleSelector`, `-ConfigFile` and `-SeverityThreshold`. Returns findings as objects. A threshold failure is returned (`ThresholdExceeded`) rather than thrown, unless `-ThrowOnThreshold`; a plugin or engine failure always throws. Also `-IncludeFixes`, `-IncludeSuggestions` (each violation then has `Fixes` and `Suggestions`), `-NoSuppressions`, `-TargetOrg`, `-View` and extra `-OutputFile` files. |
+| `Get-SalesforceCodeAnalyzerRule` | List the rules a selector matches (`sf code-analyzer rules`); `-View` sets the terminal display. |
+| `Get-SalesforceCodeAnalyzerConfig` | Show the current Code Analyzer configuration as YAML (`sf code-analyzer config`); `-OutputFile` also saves it, for example as `code-analyzer.yml`. |
+| `Get-SalesforceCodeAnalyzerAst` | Show the syntax tree PMD builds for a source file (`sf code-analyzer ast-dump`), as objects (`-Format json`) or an XML document. Needs Java. |
 | `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
 | `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
 
@@ -384,16 +386,17 @@ Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Test-SalesforceApex` | Run Apex tests and wait for the result in one call. |
+| `Test-SalesforceApex` | Run Apex tests and wait for the result in one call. `-Synchronous` runs one class synchronously; `-PollIntervalSeconds` sets the polling interval. |
 | `Start-SalesforceApexTest` | Start an Apex test run without waiting and return its `TestRunId` (`sf apex run test`). |
-| `Get-SalesforceApexTestResult` | Get a run's structured results by `-TestRunId`: summary, per-test outcome and run time, optional coverage (`sf apex get test`). |
+| `Get-SalesforceApexTestResult` | Get a run's structured results by `-TestRunId`: summary, per-test outcome and run time, optional coverage (`sf apex get test`). `-ResultFormat` junit, tap or human returns the CLI text instead. |
 | `Wait-SalesforceApexTest` | Poll a run until it finishes or `-TimeoutMinutes` pass. |
 | `Get-SalesforceCodeCoverage` | Compute coverage per class/test method. |
 | `Test-SalesforceFlow` | Run Flow tests (`sf flow run test`). Asynchronous by default, returning a `TestRunId`; `-Synchronous` waits for results. Failed tests and a command that could not run are different errors. |
 | `Get-SalesforceFlowTestResult` | Get the results of a Flow test run by `-TestRunId` (`sf flow get test`). |
 | `Test-SalesforceLogic` | Run Flow and Apex tests together (`sf logic run test`, beta in the CLI), by class, test, suite or `-TestCategory`. |
 | `Get-SalesforceLogicTestResult` | Get the results of a combined Flow and Apex test run by `-TestRunId` (`sf logic get test`). |
-| `Invoke-SalesforceApex` | Execute Apex from a file. |
+| `Invoke-SalesforceApex` | Execute Apex from a file, with `-DebugLevel` or `-CategoryLevel` for the debug log. |
+| `Get-SalesforceApexCompileStatus` | List the classes and triggers in an org that are invalid or have compile warnings (`sf apex get compile-status`). |
 | `Watch-SalesforceApex` | On-save deploy and test Apex. |
 | `Get-SalesforceApexClass` | Get Apex Class details from Org. |
 
