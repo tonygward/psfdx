@@ -12,7 +12,8 @@
         'Resume-SalesforceSandbox',
         'Get-SalesforceSandboxRefreshStatus',
         'Copy-SalesforceSandbox',
-        'Remove-SalesforceSandbox'
+        'Remove-SalesforceSandbox',
+        'Update-SalesforceSandbox'
     )
     CmdletsToExport = @()
     AliasesToExport = @()

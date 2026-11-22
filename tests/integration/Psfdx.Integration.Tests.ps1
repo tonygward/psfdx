@@ -35,6 +35,19 @@ AfterAll {
 
 Describe 'psfdx against a real scratch org' -Skip:(-not $script:Enabled) {
 
+    Context 'org details (read only)' {
+        It 'shows the org without a token, and lists the saved authorization' {
+            $org = Get-SalesforceOrgDetails -TargetOrg $script:Org
+            $org.username | Should -Not -BeNullOrEmpty
+            $org.PSObject.Properties.Name | Should -Not -Contain 'accessToken'
+            @(Get-SalesforceAuthorizations | Where-Object { $_.username -eq $org.username }).Count | Should -BeGreaterThan 0
+        }
+        It 'counts Account records and lists Apex classes' {
+            { Get-SalesforceSObjectRecordCount -SObject Account -TargetOrg $script:Org } | Should -Not -Throw
+            { Get-SalesforceMetadataComponents -MetadataType ApexClass -TargetOrg $script:Org } | Should -Not -Throw
+        }
+    }
+
     Context 'connection' {
         It 'reads the org limits' {
             $limits = @(Get-SalesforceLimits -TargetOrg $script:Org)

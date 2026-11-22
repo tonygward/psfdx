@@ -668,6 +668,21 @@ function New-SalesforceScratchOrg {
     .PARAMETER AdminUsername
     Username of the scratch org admin user. Overrides the value of the "username" option in the definition file, if set. Passed to sf as --username.
 
+    .PARAMETER Alias
+    Alias for the scratch org. Passed to sf as --alias.
+
+    .PARAMETER OAuthClientId
+    OAuth client ID (also called consumer key) of your connected app, used to log in to the new scratch org. Passed to sf as --client-id.
+
+    .PARAMETER NoAncestors
+    Don't include second-generation managed package (2GP) ancestors in the scratch org. Adds --no-ancestors.
+
+    .PARAMETER NoNamespace
+    Create the scratch org without the namespace of the Dev Hub or the project, even if the project has one. Adds --no-namespace.
+
+    .PARAMETER TrackSource
+    Turn source tracking on for the scratch org. Adds --track-source.
+
     .EXAMPLE
     New-SalesforceScratchOrg -DefinitionFile config/project-scratch-def.json -Name ci-1 -DurationDays 3 -SetDefault
     Create a three-day scratch org and make it the default.
@@ -678,8 +693,8 @@ function New-SalesforceScratchOrg {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org create scratch (plugin @salesforce/plugin-org)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --alias, --client-id, --no-ancestors, --no-namespace, --track-source
-    Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username; -Alias = --alias; -OAuthClientId = --client-id; -NoAncestors = --no-ancestors; -NoNamespace = --no-namespace; -TrackSource = --track-source.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -709,7 +724,12 @@ function New-SalesforceScratchOrg {
         [Parameter(Mandatory = $false)][string] $Name,
         [Parameter(Mandatory = $false)][string][ValidateSet('preview', 'previous')] $Release,
         [Parameter(Mandatory = $false)][string] $SourceOrgId,
-        [Parameter(Mandatory = $false)][string] $AdminUsername
+        [Parameter(Mandatory = $false)][string] $AdminUsername,
+        [Parameter(Mandatory = $false)][string] $Alias,
+        [Parameter(Mandatory = $false)][string] $OAuthClientId,
+        [Parameter(Mandatory = $false)][switch] $NoAncestors,
+        [Parameter(Mandatory = $false)][switch] $NoNamespace,
+        [Parameter(Mandatory = $false)][switch] $TrackSource
     )
     $arguments = @('org', 'create', 'scratch')
     if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
@@ -726,6 +746,11 @@ function New-SalesforceScratchOrg {
     if ($Release) { $arguments += @('--release', $Release) }
     if ($SourceOrgId) { $arguments += @('--source-org', $SourceOrgId) }
     if ($AdminUsername) { $arguments += @('--username', $AdminUsername) }
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($OAuthClientId) { $arguments += @('--client-id', $OAuthClientId) }
+    if ($NoAncestors) { $arguments += '--no-ancestors' }
+    if ($NoNamespace) { $arguments += '--no-namespace' }
+    if ($TrackSource) { $arguments += '--track-source' }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
@@ -909,6 +934,503 @@ function Remove-SalesforceScratchOrgs {
         foreach ($username in $usernames) {
             Remove-SalesforceScratchOrg -TargetOrg $username -NoPrompt -Confirm:$false
         }
+    }
+}
+
+#endregion
+
+#region Org Source Tracking
+
+function Enable-SalesforceSourceTracking {
+    <#
+    .SYNOPSIS
+    Turns source tracking on for an org that allows it.
+
+    .DESCRIPTION
+    Runs sf org enable tracking. Source tracking lets deploy and retrieve report what changed between your project and the org. It can be enabled only in an org that supports it, such as a sandbox that was created with source tracking turned off. Supports -WhatIf.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Enable-SalesforceSourceTracking -TargetOrg dev1
+    Turn source tracking on for dev1.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org enable tracking (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'enable', 'tracking')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $TargetOrg } else { 'default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Enable source tracking')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Disable-SalesforceSourceTracking {
+    <#
+    .SYNOPSIS
+    Turns source tracking off for an org.
+
+    .DESCRIPTION
+    Runs sf org disable tracking. After it, deploy and retrieve no longer report what changed between your project and the org, and source tracking may not be possible to turn on again for that org. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question.
+
+    .PARAMETER NoPrompt
+    Don't ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Disable-SalesforceSourceTracking -TargetOrg dev1 -WhatIf
+    Preview the change without making it.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org disable tracking (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'disable', 'tracking')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    $target = if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $TargetOrg } else { 'default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Disable source tracking')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+#endregion
+
+#region Org Shapes and Snapshots
+
+function New-SalesforceOrgShape {
+    <#
+    .SYNOPSIS
+    Creates an org shape from an org.
+
+    .DESCRIPTION
+    Runs sf org create shape. An org shape records the edition, features and settings of the source org, so that scratch orgs can be created to match it (see New-SalesforceScratchOrg -SourceOrgId). The org must have Scratch Org Shape turned on.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org to take the shape from. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceOrgShape -TargetOrg prod
+    Create a shape from the prod org.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org create shape (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'create', 'shape')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    $target = if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $TargetOrg } else { 'default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Create org shape')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Get-SalesforceOrgShapes {
+    <#
+    .SYNOPSIS
+    Lists the org shapes of the orgs this computer is logged in to.
+
+    .DESCRIPTION
+    Runs sf org list shape and returns one object per shape (the org it came from, the shape ID, its status and when it was created).
+
+    .EXAMPLE
+    Get-SalesforceOrgShapes | Format-Table
+    List every shape.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list shape (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param()
+    $arguments = @('org', 'list', 'shape', '--json')
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Remove-SalesforceOrgShape {
+    <#
+    .SYNOPSIS
+    Deletes the org shapes of an org.
+
+    .DESCRIPTION
+    Runs sf org delete shape. This cannot be undone, and scratch orgs can no longer be created from the deleted shape. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
+
+    .PARAMETER NoPrompt
+    Don't ask for confirmation. Skips the PowerShell confirmation; psfdx always passes --no-prompt to the CLI after it has confirmed.
+
+    .PARAMETER TargetOrg
+    Username or alias of the org whose shapes are deleted. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Remove-SalesforceOrgShape -TargetOrg prod -WhatIf
+    Preview the delete.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org delete shape (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org. psfdx always passes --no-prompt, because it asks first.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'delete', 'shape')
+    # psfdx asks first (or the caller said not to), so the CLI must not ask a second time.
+    $arguments += '--no-prompt'
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    $target = if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $TargetOrg } else { 'default target org' }
+    if ($PSCmdlet.ShouldProcess($target, 'Delete org shapes')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function New-SalesforceOrgSnapshot {
+    <#
+    .SYNOPSIS
+    Creates a scratch org snapshot from an org.
+
+    .DESCRIPTION
+    Runs sf org create snapshot. A snapshot is a copy of a scratch org that you can create new scratch orgs from (see New-SalesforceScratchOrg -Snapshot). The snapshot is made in the Dev Hub. Snapshots are a pilot feature of Salesforce. Creation is asynchronous: use Get-SalesforceOrgSnapshot to see when it is ready.
+
+    .PARAMETER SourceOrg
+    Username or alias of the scratch org to copy. Passed to sf as --source-org. Required.
+
+    .PARAMETER SnapshotName
+    Name of the snapshot. Passed to sf as --name. Required.
+
+    .PARAMETER Description
+    Description of the snapshot. Passed to sf as --description.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    New-SalesforceOrgSnapshot -SourceOrg my-scratch -SnapshotName Release1 -Description 'Before the upgrade' -TargetDevHub devhub
+    Take a snapshot of a scratch org.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org create snapshot (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SourceOrg = --source-org; -SnapshotName = --name; -Description = --description; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $SourceOrg,
+        [Parameter(Mandatory = $true)][string] $SnapshotName,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('org', 'create', 'snapshot', '--source-org', $SourceOrg, '--name', $SnapshotName)
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess($SnapshotName, "Create snapshot of $SourceOrg")) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
+    }
+}
+
+function Get-SalesforceOrgSnapshot {
+    <#
+    .SYNOPSIS
+    Shows one scratch org snapshot, including whether it is ready to use.
+
+    .DESCRIPTION
+    Runs sf org get snapshot for the snapshot name or ID. Use Get-SalesforceOrgSnapshots to list them all.
+
+    .PARAMETER Snapshot
+    Name or ID of the snapshot. Passed to sf as --snapshot. Required.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforceOrgSnapshot -Snapshot Release1 -TargetDevHub devhub
+    Show the status of the snapshot.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org get snapshot (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Snapshot = --snapshot; -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Snapshot,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('org', 'get', 'snapshot', '--snapshot', $Snapshot)
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceOrgSnapshots {
+    <#
+    .SYNOPSIS
+    Lists the scratch org snapshots of a Dev Hub.
+
+    .DESCRIPTION
+    Runs sf org list snapshot and returns one object per snapshot (name, ID, status, source org and when it was created).
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Get-SalesforceOrgSnapshots -TargetDevHub devhub | Format-Table
+    List the snapshots of the Dev Hub.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list snapshot (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetDevHub = --target-dev-hub.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('org', 'list', 'snapshot')
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Remove-SalesforceOrgSnapshot {
+    <#
+    .SYNOPSIS
+    Deletes a scratch org snapshot.
+
+    .DESCRIPTION
+    Runs sf org delete snapshot. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
+
+    .PARAMETER Snapshot
+    Name or ID of the snapshot to delete. Passed to sf as --snapshot. Required.
+
+    .PARAMETER NoPrompt
+    Don't ask for confirmation. Skips the PowerShell confirmation; psfdx always passes --no-prompt to the CLI after it has confirmed.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
+
+    .EXAMPLE
+    Remove-SalesforceOrgSnapshot -Snapshot Release1 -TargetDevHub devhub -WhatIf
+    Preview the delete.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org delete snapshot (plugin @salesforce/plugin-signups)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Snapshot = --snapshot; -TargetDevHub = --target-dev-hub. psfdx always passes --no-prompt, because it asks first.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-signups
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $Snapshot,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetDevHub
+    )
+    $arguments = @('org', 'delete', 'snapshot', '--snapshot', $Snapshot)
+    # psfdx asks first (or the caller said not to), so the CLI must not ask a second time.
+    $arguments += '--no-prompt'
+    if ($PSBoundParameters.ContainsKey('TargetDevHub') -and -not [string]::IsNullOrWhiteSpace($TargetDevHub)) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if ($PSCmdlet.ShouldProcess($Snapshot, 'Delete snapshot')) {
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        return Show-SalesforceResult -Result $result
     }
 }
 

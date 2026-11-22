@@ -3160,6 +3160,9 @@ function Describe-SalesforceMetadataTypes {
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
+    .PARAMETER OutputFile
+    Path of a file for the CLI to write the full result to (the type names with their suffix, directory and whether they have folders). Passed to sf as --output-file. The folder it goes in must exist. The cmdlet still returns the type names.
+
     .EXAMPLE
     Describe-SalesforceMetadataTypes -TargetOrg dev1
     Every metadata type the org supports.
@@ -3168,8 +3171,8 @@ function Describe-SalesforceMetadataTypes {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org list metadata-types (plugin @salesforce/plugin-org)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --output-file
-    Parameter to flag: -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org; -OutputFile = --output-file.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -3185,10 +3188,18 @@ function Describe-SalesforceMetadataTypes {
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding()]
-    Param([Parameter(Mandatory = $false)][string] $TargetOrg)
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][string] $OutputFile
+    )
     $arguments = @('org', 'list', 'metadata-types')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) {
         $arguments += @('--target-org', $TargetOrg)
+    }
+    if ($OutputFile) {
+        $outputParent = Split-Path -Path $OutputFile -Parent
+        if ($outputParent -and -not (Test-Path -LiteralPath $outputParent)) { throw "Output folder '$outputParent' does not exist." }
+        $arguments += @('--output-file', $OutputFile)
     }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -3201,6 +3212,76 @@ function Describe-SalesforceMetadataTypes {
     return $metadataObjects |
         ForEach-Object { $_.xmlName } |
         Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+}
+
+function Get-SalesforceMetadataComponents {
+    <#
+    .SYNOPSIS
+    Lists the metadata components of one type that exist in an org.
+
+    .DESCRIPTION
+    Runs sf org list metadata for a metadata type, for example ApexClass or CustomObject, and returns one object per component (fullName, fileName, type, id, createdDate, lastModifiedDate and who changed it). Use Describe-SalesforceMetadataTypes to see which types an org has. Types that live in folders, such as Report or EmailTemplate, need -Folder.
+
+    .PARAMETER MetadataType
+    Metadata type to list, for example ApexClass. Passed to sf as --metadata-type. Required. Tab completion offers the types of the org.
+
+    .PARAMETER Folder
+    Folder that holds the components, for types that are stored in folders. Passed to sf as --folder.
+
+    .PARAMETER OutputFile
+    Path of a file for the CLI to write the result to. Passed to sf as --output-file. The folder it goes in must exist. The cmdlet still returns the components.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceMetadataComponents -MetadataType ApexClass -TargetOrg dev1 | Select-Object fullName, lastModifiedDate
+    Every Apex class in dev1 and when it last changed.
+
+    .EXAMPLE
+    Get-SalesforceMetadataComponents -MetadataType Report -Folder Sales -TargetOrg dev1
+    The reports in the Sales folder.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list metadata (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -MetadataType = --metadata-type; -Folder = --folder; -OutputFile = --output-file; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ArgumentCompleter({ & (Get-Module psfdx-metadata -All | Select-Object -First 1) { Complete-SalesforceMetadataType @args } @args })][string] $MetadataType,
+        [Parameter(Mandatory = $false)][string] $Folder,
+        [Parameter(Mandatory = $false)][string] $OutputFile,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    Assert-SalesforceMetadataType -Type $MetadataType
+    if ($OutputFile) {
+        $outputParent = Split-Path -Path $OutputFile -Parent
+        if ($outputParent -and -not (Test-Path -LiteralPath $outputParent)) { throw "Output folder '$outputParent' does not exist." }
+    }
+    $arguments = @('org', 'list', 'metadata', '--metadata-type', $MetadataType)
+    if ($Folder) { $arguments += @('--folder', $Folder) }
+    if ($OutputFile) { $arguments += @('--output-file', $OutputFile) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
 }
 
 function Build-SalesforceQuery {

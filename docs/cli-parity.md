@@ -10,15 +10,15 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 66 | 33 | 100 | 0 | 15 | 49.7% of 199 |
-| Just-in-time plugins (installed on first use) | 65 | 8 | 4 | 44 | 0 | 9 | 21.4% of 56 |
-| Both | 279 | 74 | 37 | 144 | 0 | 24 | 43.5% of 255 |
+| Core plugins (bundled with the CLI) | 214 | 82 | 25 | 89 | 3 | 15 | 54.6% of 196 |
+| Just-in-time plugins (installed on first use) | 65 | 15 | 4 | 37 | 0 | 9 | 33.9% of 56 |
+| Both | 279 | 97 | 29 | 126 | 3 | 24 | 50.0% of 252 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **158** cmdlets; **127** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **173** cmdlets; **142** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **111** commands psfdx runs, it passes **506 of 589** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **46** have a list of allowed values in the CLI, and psfdx can pass **193 of 213** of those values.
+**Flags and values.** Across the **126** commands psfdx runs, it passes **562 of 626** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **46** have a list of allowed values in the CLI, and psfdx can pass **193 of 213** of those values.
 
 ## By capability
 
@@ -44,7 +44,7 @@ psfdx exports **158** cmdlets; **127** of them run an sf command themselves. The
 | CLI information (sf info) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Lightning development (sf lightning) | 3 | 1 | 2 | 0 | 0 | 0 | 100.0% of 3 |
 | Logic tests (sf logic) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
-| Orgs, users and sandboxes (sf org) | 40 | 12 | 8 | 20 | 0 | 0 | 50.0% of 40 |
+| Orgs, users and sandboxes (sf org) | 40 | 35 | 0 | 2 | 3 | 0 | 94.6% of 37 |
 | Packages (second generation) (sf package) | 25 | 8 | 3 | 14 | 0 | 0 | 44.0% of 25 |
 | Packages (first generation) (sf package1) | 4 | 0 | 0 | 4 | 0 | 0 | 0.0% of 4 |
 | CLI plugins (sf plugins) | 15 | 1 | 2 | 10 | 0 | 2 | 23.1% of 13 |
@@ -236,26 +236,11 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
-| `sf org auth show-access-token` | @salesforce/plugin-org | 2 (1 required) | missing |  |
-| `sf org auth show-sfdx-auth-url` | @salesforce/plugin-org | 2 (1 required) | missing |  |
-| `sf org auth show-user-password` | @salesforce/plugin-org | 2 (1 required) | missing |  |
-| `sf org create agent-user` | @salesforce/plugin-org | 4 (1 required) | missing |  |
-| `sf org create shape` | @salesforce/plugin-signups | 1 (1 required) | missing |  |
-| `sf org create snapshot` | @salesforce/plugin-signups | 4 (3 required) | missing |  |
-| `sf org delete shape` | @salesforce/plugin-signups | 2 (1 required) | missing |  |
-| `sf org delete snapshot` | @salesforce/plugin-signups | 3 (2 required) | missing |  |
-| `sf org disable tracking` | @salesforce/plugin-org | 1 (1 required) | missing |  |
-| `sf org display` | @salesforce/plugin-org | 2 (1 required) | missing |  |
-| `sf org enable tracking` | @salesforce/plugin-org | 1 (1 required) | missing |  |
-| `sf org get snapshot` | @salesforce/plugin-signups | 2 (2 required) | missing |  |
-| `sf org list auth` | @salesforce/plugin-auth | 0 | missing |  |
-| `sf org list metadata` | @salesforce/plugin-org | 4 (2 required) | missing |  |
-| `sf org list shape` | @salesforce/plugin-signups | 0 | missing |  |
-| `sf org list snapshot` | @salesforce/plugin-signups | 1 (1 required) | missing |  |
-| `sf org list sobject record-counts` | @salesforce/plugin-limits | 2 (1 required) | missing |  |
-| `sf org login access-token` | @salesforce/plugin-auth | 5 (1 required) | missing |  |
-| `sf org open agent` | @salesforce/plugin-org | 7 (1 required) | missing |  |
-| `sf org refresh sandbox` | @salesforce/plugin-org | 10 (1 required) | missing |  |
+| `sf org auth show-access-token` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints a live access token. psfdx keeps tokens out of its output; use Connect-SalesforceAccessToken to log in with a token you already have, or Open-Salesforce -UrlOnly for a login link. |
+| `sf org auth show-sfdx-auth-url` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints the Salesforce DX authorization URL, which holds a refresh token that gives anyone full access as that user. psfdx removes it from every result, including Get-SalesforceOrgDetails, unless -IncludeToken is given. |
+| `sf org auth show-user-password` | @salesforce/plugin-org | 2 (1 required) | deliberately excluded | Prints a user's password. psfdx generates one with New-SalesforceUserPassword and never reads it back from the CLI. |
+| `sf org create agent-user` | @salesforce/plugin-org | 4 (1 required) | missing | An Agentforce command; it is built with the other agent commands in PSF-61. [#255](https://github.com/tonygward/psfdx/issues/255) |
+| `sf org open agent` | @salesforce/plugin-org | 7 (1 required) | missing | An Agentforce command; it is built with the other agent commands in PSF-61. [#255](https://github.com/tonygward/psfdx/issues/255) |
 
 ### Packages (second generation) (`sf package`)
 
@@ -476,23 +461,38 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf org assign permset` | wrapped | `Grant-SalesforcePermissionSet` | 3 of 3 |  |  |
 | `sf org assign permsetlicense` | wrapped | `Grant-SalesforcePermissionSetLicense` | 3 of 3 |  |  |
-| `sf org create sandbox` | partially wrapped | `Copy-SalesforceSandbox`, `New-SalesforceSandbox` | 9 of 13 | `--async` `--poll-interval` `--set-default` `--source-id` |  |
-| `sf org create scratch` | partially wrapped | `New-SalesforceScratchOrg` | 14 of 19 | `--alias` `--client-id` `--no-ancestors` `--no-namespace` `--track-source` |  |
+| `sf org create sandbox` | wrapped | `Copy-SalesforceSandbox`, `New-SalesforceSandbox` | 13 of 13 |  |  |
+| `sf org create scratch` | wrapped | `New-SalesforceScratchOrg` | 19 of 19 |  |  |
+| `sf org create shape` | wrapped | `New-SalesforceOrgShape` | 1 of 1 |  |  |
+| `sf org create snapshot` | wrapped | `New-SalesforceOrgSnapshot` | 4 of 4 |  |  |
 | `sf org create user` | wrapped | `New-SalesforceUser` | 4 of 4 |  |  |
 | `sf org delete sandbox` | wrapped | `Remove-SalesforceSandbox` | 2 of 2 |  |  |
 | `sf org delete scratch` | wrapped | `Remove-SalesforceScratchOrg` | 2 of 2 |  |  |
+| `sf org delete shape` | wrapped | `Remove-SalesforceOrgShape` | 2 of 2 |  |  |
+| `sf org delete snapshot` | wrapped | `Remove-SalesforceOrgSnapshot` | 3 of 3 |  |  |
+| `sf org disable tracking` | wrapped | `Disable-SalesforceSourceTracking` | 1 of 1 |  |  |
+| `sf org display` | wrapped | `Get-SalesforceOrgDetails` | 2 of 2 |  |  |
 | `sf org display user` | wrapped | `Get-SalesforceOrgUser` | 1 of 1 |  |  |
+| `sf org enable tracking` | wrapped | `Enable-SalesforceSourceTracking` | 1 of 1 |  |  |
 | `sf org generate password` | wrapped | `New-SalesforceUserPassword` | 4 of 4 |  |  |
+| `sf org get snapshot` | wrapped | `Get-SalesforceOrgSnapshot` | 2 of 2 |  |  |
 | `sf org list` | wrapped | `Get-SalesforceConnections`, `Get-SalesforceSandboxes`, `Get-SalesforceScratchOrgs`, `Repair-SalesforceConnections` | 5 of 5 |  |  |
+| `sf org list auth` | wrapped | `Get-SalesforceAuthorizations` | 0 of 0 |  |  |
 | `sf org list limits` | wrapped | `Get-SalesforceLimits` | 1 of 1 |  |  |
-| `sf org list metadata-types` | partially wrapped | `Describe-SalesforceMetadataTypes` | 1 of 2 | `--output-file` |  |
+| `sf org list metadata` | wrapped | `Get-SalesforceMetadataComponents` | 4 of 4 |  |  |
+| `sf org list metadata-types` | wrapped | `Describe-SalesforceMetadataTypes` | 2 of 2 |  |  |
+| `sf org list shape` | wrapped | `Get-SalesforceOrgShapes` | 0 of 0 |  |  |
+| `sf org list snapshot` | wrapped | `Get-SalesforceOrgSnapshots` | 1 of 1 |  |  |
+| `sf org list sobject record-counts` | wrapped | `Get-SalesforceSObjectRecordCount` | 2 of 2 |  |  |
 | `sf org list users` | wrapped | `Get-SalesforceAuthenticatedUser` | 1 of 1 |  |  |
+| `sf org login access-token` | wrapped | `Connect-SalesforceAccessToken` | 5 of 5 |  |  |
 | `sf org login jwt` | wrapped | `Connect-SalesforceJwt` | 7 of 7 |  |  |
-| `sf org login sfdx-url` | partially wrapped | `Connect-SalesforceAuthUrl` | 4 of 5 | `--sfdx-url-stdin` |  |
-| `sf org login web` | partially wrapped | `Connect-Salesforce` | 6 of 9 | `--client-app` `--scopes` `--username` |  |
-| `sf org logout` | partially wrapped | `Disconnect-Salesforce` | 3 of 4 | `--client-app` |  |
-| `sf org open` | partially wrapped | `Open-Salesforce` | 4 of 6 | `--path` `--source-file` |  |
-| `sf org resume sandbox` | partially wrapped | `Resume-SalesforceSandbox` | 3 of 5 | `--job-id` `--use-most-recent` |  |
+| `sf org login sfdx-url` | wrapped | `Connect-SalesforceAuthUrl` | 4 of 4 |  |  |
+| `sf org login web` | wrapped | `Connect-Salesforce` | 9 of 9 |  |  |
+| `sf org logout` | wrapped | `Disconnect-Salesforce` | 4 of 4 |  |  |
+| `sf org open` | wrapped | `Open-Salesforce` | 6 of 6 |  |  |
+| `sf org refresh sandbox` | wrapped | `Update-SalesforceSandbox` | 10 of 10 |  |  |
+| `sf org resume sandbox` | wrapped | `Resume-SalesforceSandbox` | 5 of 5 |  |  |
 | `sf org resume scratch` | wrapped | `Resume-SalesforceScratchOrg` | 3 of 3 |  |  |
 
 ### Packages (second generation) (`sf package`)
@@ -567,9 +567,9 @@ These flags are on almost every command, so they are not counted against each on
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 101 | 105 |
-| `--flags-dir` | 0 | 108 |
-| `--api-version` | 1 | 74 |
+| `--json` | 116 | 120 |
+| `--flags-dir` | 0 | 123 |
+| `--api-version` | 1 | 83 |
 
 ## How to read this
 

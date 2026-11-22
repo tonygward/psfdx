@@ -141,6 +141,15 @@ function Connect-Salesforce {
     .PARAMETER OAuthClientId
     OAuth client ID (also called consumer key) of your custom connected app. Passed to sf as --client-id.
 
+    .PARAMETER ClientApp
+    Name that saves this login as a separate authorization for the same user, so you can log in to one org with more than one connected app. Passed to sf as --client-app. Use the same name with Disconnect-Salesforce -ClientApp to log it out.
+
+    .PARAMETER Scopes
+    OAuth scopes to request, separated by spaces, for example "api web refresh_token". Passed to sf as --scopes. Use it with your own connected app (-OAuthClientId).
+
+    .PARAMETER Username
+    User name to log in as, which pre-fills the login page. Passed to sf as --username.
+
     .EXAMPLE
     Connect-Salesforce -Alias prod -SetDefault
     Log in to production, give the org the alias prod and make it the default target org.
@@ -155,8 +164,8 @@ function Connect-Salesforce {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org login web (plugin @salesforce/plugin-auth)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --client-app, --scopes, --username
-    Parameter to flag: -Sandbox = --instance-url https://test.salesforce.com; -CustomUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -Browser = --browser; -OAuthClientId = --client-id.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Sandbox = --instance-url https://test.salesforce.com; -CustomUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -Browser = --browser; -OAuthClientId = --client-id; -ClientApp = --client-app; -Scopes = --scopes; -Username = --username.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -181,7 +190,10 @@ function Connect-Salesforce {
         [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub,
 
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser,
-        [Parameter(Mandatory = $false)][string] $OAuthClientId
+        [Parameter(Mandatory = $false)][string] $OAuthClientId,
+        [Parameter(Mandatory = $false)][string] $ClientApp,
+        [Parameter(Mandatory = $false)][string] $Scopes,
+        [Parameter(Mandatory = $false)][string] $Username
     )
 
     $arguments = @('org', 'login', 'web')
@@ -194,6 +206,9 @@ function Connect-Salesforce {
 
     if ($Browser) { $arguments += @('--browser', $Browser) }
     if ($OAuthClientId) { $arguments += @('--client-id', $OAuthClientId) }
+    if ($ClientApp) { $arguments += @('--client-app', $ClientApp) }
+    if ($Scopes) { $arguments += @('--scopes', $Scopes) }
+    if ($Username) { $arguments += @('--username', $Username) }
 
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
@@ -322,6 +337,9 @@ function Disconnect-Salesforce {
     .PARAMETER TargetOrg
     Username or alias of the target org. Passed to sf as --target-org. Required in the TargetOrg parameter set.
 
+    .PARAMETER ClientApp
+    Name of the client app login to log out of, the name given to Connect-Salesforce -ClientApp. Passed to sf as --client-app. Use it with -TargetOrg.
+
     .PARAMETER NoPrompt
     Don't prompt for confirmation. Adds --no-prompt.
 
@@ -339,8 +357,8 @@ function Disconnect-Salesforce {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org logout (plugin @salesforce/plugin-auth)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --client-app
-    Parameter to flag: -TargetOrg = --target-org; -NoPrompt = --no-prompt.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -All = --all; -TargetOrg = --target-org; -ClientApp = --client-app; -NoPrompt = --no-prompt.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -359,6 +377,7 @@ function Disconnect-Salesforce {
     Param(
         [Parameter(Mandatory = $true, ParameterSetName = 'All')][switch] $All,
         [Parameter(Mandatory = $true, ParameterSetName = 'TargetOrg')][string] $TargetOrg,
+        [Parameter(Mandatory = $false, ParameterSetName = 'TargetOrg')][string] $ClientApp,
         [Parameter(Mandatory = $false)][switch] $NoPrompt
     )
     $arguments = @('org', 'logout')
@@ -366,6 +385,7 @@ function Disconnect-Salesforce {
         $arguments += '--all'
     } else {
         $arguments += @('--target-org', $TargetOrg)
+        if ($ClientApp) { $arguments += @('--client-app', $ClientApp) }
     }
     if ($NoPrompt) { $arguments += '--no-prompt' }
     $arguments += '--json'
@@ -482,6 +502,12 @@ function Open-Salesforce {
     .PARAMETER BrowserPrivateMode
     Open the org in the browser's private (incognito) mode. A switch: adds --private, which takes no value.
 
+    .PARAMETER Path
+    Page to open, relative to the org, for example /lightning/setup/SetupOneHome/home. Passed to sf as --path.
+
+    .PARAMETER SourceFile
+    Path of a local file in the project. The CLI opens that component in the org, for example a Lightning page in the builder or an Apex class in the viewer. Passed to sf as --source-file. The file must exist.
+
     .EXAMPLE
     Open-Salesforce -TargetOrg dev1
     Open the org in the default browser.
@@ -494,8 +520,8 @@ function Open-Salesforce {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org open (plugin @salesforce/plugin-org)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --path, --source-file
-    Parameter to flag: -TargetOrg = --target-org; -UrlOnly = --url-only; -Browser = --browser; -BrowserPrivateMode = --private.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org; -UrlOnly = --url-only; -Browser = --browser; -BrowserPrivateMode = --private; -Path = --path; -SourceFile = --source-file.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -515,13 +541,18 @@ function Open-Salesforce {
         [Parameter(Mandatory = $false)][string] $TargetOrg,
         [Parameter(Mandatory = $false)][switch] $UrlOnly,
         [Parameter(Mandatory = $false)][string][ValidateSet('chrome', 'edge', 'firefox')] $Browser,
-        [Parameter(Mandatory = $false)][switch] $BrowserPrivateMode
+        [Parameter(Mandatory = $false)][switch] $BrowserPrivateMode,
+        [Parameter(Mandatory = $false)][string] $Path,
+        [Parameter(Mandatory = $false)][string] $SourceFile
     )
+    if ($SourceFile -and -not (Test-Path -LiteralPath $SourceFile)) { throw "Source file '$SourceFile' does not exist." }
     $arguments = @('org', 'open')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     if ($Browser) { $arguments += @('--browser', $Browser) }
     if ($BrowserPrivateMode) { $arguments += '--private' }
     if ($UrlOnly) { $arguments += '--url-only' }
+    if ($Path) { $arguments += @('--path', $Path) }
+    if ($SourceFile) { $arguments += @('--source-file', $SourceFile) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
@@ -636,6 +667,191 @@ function Repair-SalesforceConnections {
     if ($NoPrompt) { $arguments += '--no-prompt' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+}
+
+function Get-SalesforceOrgDetails {
+    <#
+    .SYNOPSIS
+    Shows the details of one org: its ID, instance URL, user name, status and API version.
+
+    .DESCRIPTION
+    Runs sf org display. The result has the access token and the Salesforce DX authorization URL removed, so the output is safe to log or share, unless you pass -IncludeToken. Anyone who has the token or the URL can act as that user, so only use -IncludeToken when you need it.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .PARAMETER ShowVerboseDetails
+    Include more details, such as the Salesforce DX authorization URL (removed again unless you pass -IncludeToken). Adds --verbose.
+
+    .PARAMETER IncludeToken
+    Return the CLI result as it is, with accessToken and sfdxAuthUrl. Without it psfdx removes accessToken, refreshToken, sfdxAuthUrl, password, clientSecret and privateKey from the result.
+
+    .EXAMPLE
+    Get-SalesforceOrgDetails -TargetOrg dev1
+    Show the org ID, instance URL and status of dev1, without any token.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org display (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org; -ShowVerboseDetails = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][switch] $ShowVerboseDetails,
+        [Parameter(Mandatory = $false)][switch] $IncludeToken
+    )
+    $arguments = @('org', 'display')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    if ($ShowVerboseDetails) { $arguments += '--verbose' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $details = Show-SalesforceResult -Result $result
+    if ($IncludeToken) { return $details }
+    return Remove-SalesforceSensitiveProperty -InputObject $details
+}
+
+function Get-SalesforceAuthorizations {
+    <#
+    .SYNOPSIS
+    Lists every authorization the Salesforce CLI has saved on this computer.
+
+    .DESCRIPTION
+    Runs sf org list auth and returns one object per saved authorization (user name, org ID, instance URL, aliases, how it was authorized and whether it has expired). Unlike Get-SalesforceConnections it does not contact the orgs, so it is quick and works offline. Tokens and authorization URLs are removed from the result.
+
+    .EXAMPLE
+    Get-SalesforceAuthorizations | Format-Table username, aliases, instanceUrl
+    A quick overview of the saved logins.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list auth (plugin @salesforce/plugin-auth)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-auth
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param()
+    $arguments = @('org', 'list', 'auth', '--json')
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $details = Show-SalesforceResult -Result $result
+    return Remove-SalesforceSensitiveProperty -InputObject $details
+}
+
+function Connect-SalesforceAccessToken {
+    <#
+    .SYNOPSIS
+    Logs in to an org with an access token you already have.
+
+    .DESCRIPTION
+    Runs sf org login access-token. Give the org's instance URL and the access token as a SecureString. The token is handed to the CLI in the SF_ACCESS_TOKEN environment variable of the sf process only, never on the command line, and the variable is put back to its earlier value afterwards. The login is saved on this computer so other psfdx cmdlets can use the org. The authorization cannot be refreshed, so it stops working when the token expires. The URL must be an absolute https URL, because the token is sent to it. Tokens and authorization URLs are removed from the result.
+
+    .PARAMETER InstanceUrl
+    URL of the org, for example https://mycompany.my.salesforce.com. Must be an absolute https:// URL. Passed to sf as --instance-url. Required.
+
+    .PARAMETER AccessToken
+    The access token, as a SecureString, for example (Read-Host -AsSecureString). Passed to sf in the SF_ACCESS_TOKEN environment variable. Required.
+
+    .PARAMETER Alias
+    Alias for the org. Passed to sf as --alias.
+
+    .PARAMETER SetDefault
+    Set the authenticated org as the default that all org-related commands run against. Adds --set-default.
+
+    .PARAMETER SetDefaultDevHub
+    Set the authenticated org as the default Dev Hub. Adds --set-default-dev-hub.
+
+    .PARAMETER NoPrompt
+    Don't prompt for confirmation, for example before overwriting an existing login. Adds --no-prompt.
+
+    .EXAMPLE
+    Connect-SalesforceAccessToken -InstanceUrl https://mycompany.my.salesforce.com -AccessToken (Read-Host -AsSecureString) -Alias ci -NoPrompt
+    Log in with a token that you type at the prompt.
+
+    .NOTES
+    Changes local files or local Salesforce CLI configuration on this computer.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org login access-token (plugin @salesforce/plugin-auth)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -InstanceUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -NoPrompt = --no-prompt. -AccessToken is not a flag: the CLI reads it from the SF_ACCESS_TOKEN environment variable.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-auth
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string] $InstanceUrl,
+        [Parameter(Mandatory = $true)][System.Security.SecureString] $AccessToken,
+        [Parameter(Mandatory = $false)][string] $Alias,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
+        [Parameter(Mandatory = $false)][switch] $SetDefaultDevHub,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )
+
+    # The token is sent to this URL, so it must be https.
+    Assert-SalesforceHttpsUrl -Url $InstanceUrl -What '-InstanceUrl'
+
+    $arguments = @('org', 'login', 'access-token', '--instance-url', $InstanceUrl)
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($SetDefaultDevHub) { $arguments += '--set-default-dev-hub' }
+    if ($NoPrompt) { $arguments += '--no-prompt' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+
+    # The token goes in the environment of the sf process only, so it is not in the argument list or in -Verbose output.
+    $variable = 'SF_ACCESS_TOKEN'
+    $previous = [Environment]::GetEnvironmentVariable($variable)
+    try {
+        [Environment]::SetEnvironmentVariable($variable, (ConvertTo-SalesforcePlainSecret -Value $AccessToken -Name 'AccessToken'))
+        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
+    finally {
+        [Environment]::SetEnvironmentVariable($variable, $previous)
+    }
+    $details = Show-SalesforceResult -Result $result
+    return Remove-SalesforceSensitiveProperty -InputObject $details
 }
 
 #endregion
@@ -815,6 +1031,58 @@ function Get-SalesforceLimits {
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
     $arguments = @('org', 'list', 'limits')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforceSObjectRecordCount {
+    <#
+    .SYNOPSIS
+    Shows how many records objects have in an org.
+
+    .DESCRIPTION
+    Runs sf org list sobject record-counts. Without -SObject the CLI counts the standard and custom objects that it can count; with -SObject it counts only the objects you name. It reads the counts the org already keeps, so they can differ a little from a SOQL COUNT().
+
+    .PARAMETER SObject
+    API names of the objects to count, for example Account, Contact or Invoice__c. Each name is passed as its own --sobject. Names may contain only letters, digits and underscores.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceSObjectRecordCount -SObject Account, Contact -TargetOrg dev1
+    Record counts of Account and Contact.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list sobject record-counts (plugin @salesforce/plugin-limits)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SObject = --sobject; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-limits
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z][A-Za-z0-9_]*\z')][string[]] $SObject,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('org', 'list', 'sobject', 'record-counts')
+    foreach ($name in @($SObject | Where-Object { $_ })) { $arguments += @('--sobject', $name) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters

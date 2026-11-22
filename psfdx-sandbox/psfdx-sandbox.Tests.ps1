@@ -279,3 +279,92 @@ Describe 'Get-SalesforceSandboxRefreshStatus SOQL regression' {
         }
     }
 }
+
+Describe 'psfdx-sandbox sf org parity (issue 248)' {
+    InModuleScope 'psfdx-sandbox' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+
+        Context 'New-SalesforceSandbox new flags' {
+            It 'passes -Async, -PollIntervalSeconds, -SetDefault and -SourceId' {
+                New-SalesforceSandbox -SandboxName dev2 -Async -PollIntervalSeconds 30 -SetDefault -SourceId 0GQ000000000001 -TargetOrg prod | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|sandbox|--name|dev2|--license-type|Developer|--async|--poll-interval|30|--set-default|--source-id|0GQ000000000001|--target-org|prod|--json' }
+            }
+            It 'rejects a poll interval below one second before running sf' {
+                { New-SalesforceSandbox -SandboxName dev2 -PollIntervalSeconds 0 } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Copy-SalesforceSandbox new flags' {
+            It 'keeps the existing command for -SourceSandboxName' {
+                Copy-SalesforceSandbox -SourceSandboxName dev1 -CloneSandboxName dev2 -TargetOrg prod | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|sandbox|--source-sandbox-name|dev1|--name|dev2|--target-org|prod|--json' }
+            }
+            It 'clones by ID and passes the async options' {
+                Copy-SalesforceSandbox -SourceId 0GQ000000000001 -CloneSandboxName dev2 -Async -PollIntervalSeconds 15 -SetDefault | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|sandbox|--source-id|0GQ000000000001|--name|dev2|--async|--poll-interval|15|--set-default|--json' }
+            }
+            It 'does not accept both a source name and a source ID' {
+                { Copy-SalesforceSandbox -SourceSandboxName dev1 -SourceId 0GQ000000000001 -CloneSandboxName dev2 } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Resume-SalesforceSandbox' {
+            It 'keeps resuming by name' {
+                Resume-SalesforceSandbox -SandboxName dev2 -WaitMinutes 30 -TargetOrg prod | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|sandbox|--name|dev2|--wait|30|--target-org|prod|--json' }
+            }
+            It 'resumes by job ID' {
+                Resume-SalesforceSandbox -JobId 0GR000000000001 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|sandbox|--job-id|0GR000000000001|--json' }
+            }
+            It 'resumes the most recent process' {
+                Resume-SalesforceSandbox -UseMostRecent -WaitMinutes 5 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|sandbox|--use-most-recent|--wait|5|--json' }
+            }
+            It 'does not accept a name together with a job ID' {
+                { Resume-SalesforceSandbox -SandboxName dev2 -JobId 0GR000000000001 } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+        }
+
+        Context 'Update-SalesforceSandbox' {
+            It 'builds the refresh command and always passes --no-prompt after confirming' {
+                Update-SalesforceSandbox -SandboxName dev1 -SourceSandboxName uat -NoAutoActivate -Async -WaitMinutes 20 -PollIntervalSeconds 10 -TargetOrg prod -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|refresh|sandbox|--name|dev1|--source-sandbox-name|uat|--no-auto-activate|--async|--wait|20|--poll-interval|10|--no-prompt|--target-org|prod|--json' }
+            }
+            It 'refreshes from a source ID' {
+                Update-SalesforceSandbox -SandboxName dev1 -SourceId 0GQ000000000001 -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|refresh|sandbox|--name|dev1|--source-id|0GQ000000000001|--no-prompt|--json' }
+            }
+            It 'takes the sandbox from a definition file' {
+                $file = Join-Path $TestDrive 'refresh def.json'
+                Set-Content -LiteralPath $file -Value '{"sandboxName":"dev1"}'
+                Update-SalesforceSandbox -DefinitionFile $file -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "org|refresh|sandbox|--definition-file|$file|--no-prompt|--json" }
+            }
+            It 'does nothing with -WhatIf, and -NoPrompt does not turn -WhatIf off' {
+                Update-SalesforceSandbox -SandboxName dev1 -WhatIf | Out-Null
+                Update-SalesforceSandbox -SandboxName dev1 -NoPrompt -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'needs a sandbox name or a definition file, and rejects both sources' {
+                { Update-SalesforceSandbox -Confirm:$false } | Should -Throw -ExpectedMessage '*Specify -SandboxName*'
+                { Update-SalesforceSandbox -SandboxName dev1 -SourceSandboxName a -SourceId 0GQ000000000001 -Confirm:$false } | Should -Throw -ExpectedMessage '*not both*'
+                { Update-SalesforceSandbox -DefinitionFile (Join-Path $TestDrive 'missing.json') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist*'
+                Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            }
+            It 'reports a CLI failure' {
+                Mock Invoke-Salesforce { '{"status":1,"message":"The sandbox is not refreshable."}' }
+                { Update-SalesforceSandbox -SandboxName dev1 -Confirm:$false } | Should -Throw -ExpectedMessage '*not refreshable*'
+            }
+            It 'is exported and asks for confirmation by default' {
+                (Get-Module psfdx-sandbox).ExportedFunctions.Keys | Should -Contain 'Update-SalesforceSandbox'
+                (Get-Command Update-SalesforceSandbox).Parameters.ContainsKey('WhatIf') | Should -BeTrue
+            }
+        }
+    }
+}
