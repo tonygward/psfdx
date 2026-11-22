@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.44 - 2026-11-22
+
 - psfdx: every applicable `sf org` command is now covered. New cmdlets: `Get-SalesforceOrgDetails` (tokens and auth URLs are removed unless `-IncludeToken`), `Get-SalesforceAuthorizations`, `Connect-SalesforceAccessToken` (the token is a SecureString and reaches `sf` through its environment, never the command line) and `Get-SalesforceSObjectRecordCount`. `Connect-Salesforce` gains `-ClientApp`, `-Scopes` and `-Username`, `Disconnect-Salesforce` gains `-ClientApp`, and `Open-Salesforce` gains `-Path` and `-SourceFile`. The three `sf org auth show-*` commands that print a token, an auth URL or a password are deliberately left out.
 - psfdx-sandbox: new `Update-SalesforceSandbox` refreshes a sandbox (asks for confirmation, supports `-WhatIf`). `New-SalesforceSandbox` and `Copy-SalesforceSandbox` gain `-Async`, `-PollIntervalSeconds` and `-SetDefault`; `New-SalesforceSandbox` gains `-SourceId` and `Copy-SalesforceSandbox` can clone by `-SourceId`. `Resume-SalesforceSandbox` can resume by `-JobId` or `-UseMostRecent` as well as by name.
 - psfdx-development: new `Enable-SalesforceSourceTracking` and `Disable-SalesforceSourceTracking`, org shape cmdlets (`New-SalesforceOrgShape`, `Get-SalesforceOrgShapes`, `Remove-SalesforceOrgShape`) and snapshot cmdlets (`New-SalesforceOrgSnapshot`, `Get-SalesforceOrgSnapshot`, `Get-SalesforceOrgSnapshots`, `Remove-SalesforceOrgSnapshot`). The ones that delete or turn something off ask for confirmation and support `-WhatIf`. `New-SalesforceScratchOrg` gains `-Alias`, `-OAuthClientId`, `-NoAncestors`, `-NoNamespace` and `-NoTrackSource`.
