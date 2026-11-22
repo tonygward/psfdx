@@ -1634,6 +1634,35 @@ Describe 'psfdx sf org parity (issue 248)' {
                 }
                 Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
             }
+            It 'lets only one login in the process use SF_ACCESS_TOKEN at a time, so tokens are never mixed' {
+                # A second runspace holds the process-wide lock, as a parallel login would while it runs sf.
+                $gate = [string]::Intern('psfdx.Connect-SalesforceAccessToken.SF_ACCESS_TOKEN')
+                $held = New-Object System.Threading.ManualResetEventSlim($false)
+                $release = New-Object System.Threading.ManualResetEventSlim($false)
+                $other = [powershell]::Create()
+                [void]$other.AddScript({
+                        param($g, $h, $r)
+                        [System.Threading.Monitor]::Enter($g)
+                        try { $h.Set(); [void]$r.Wait(15000) } finally { [System.Threading.Monitor]::Exit($g) }
+                    }).AddArgument($gate).AddArgument($held).AddArgument($release)
+                $pending = $other.BeginInvoke()
+                try {
+                    $held.Wait(10000) | Should -BeTrue
+                    $script:PsfdxAccessTokenLockTimeoutMs = 200
+                    { Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure } | Should -Throw -ExpectedMessage '*still running*'
+                    Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+                    [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN') | Should -BeNullOrEmpty
+                }
+                finally {
+                    $script:PsfdxAccessTokenLockTimeoutMs = 60000
+                    $release.Set()
+                    [void]$other.EndInvoke($pending)
+                    $other.Dispose()
+                }
+                # The lock is free again, so the next login runs.
+                Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure | Out-Null
+                $script:seenToken | Should -Be 'TOPSECRETTOKEN'
+            }
             It 'takes only a SecureString and never writes the token to verbose, warning or error output' {
                 (Get-Command Connect-SalesforceAccessToken).Parameters['AccessToken'].ParameterType | Should -Be ([System.Security.SecureString])
                 $out = Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure -Verbose 4>&1 3>&1 | Out-String

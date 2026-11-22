@@ -767,13 +767,16 @@ function Get-SalesforceAuthorizations {
     return Remove-SalesforceSensitiveProperty -InputObject $details
 }
 
+# How long Connect-SalesforceAccessToken waits for another login in the same process to finish. A login takes seconds.
+$script:PsfdxAccessTokenLockTimeoutMs = 60000
+
 function Connect-SalesforceAccessToken {
     <#
     .SYNOPSIS
     Logs in to an org with an access token you already have.
 
     .DESCRIPTION
-    Runs sf org login access-token. Give the org's instance URL and the access token as a SecureString. The token is handed to the CLI in the SF_ACCESS_TOKEN environment variable of the sf process only, never on the command line, and the variable is put back to its earlier value afterwards. The login is saved on this computer so other psfdx cmdlets can use the org. The authorization cannot be refreshed, so it stops working when the token expires. The URL must be an absolute https URL, because the token is sent to it. Tokens and authorization URLs are removed from the result.
+    Runs sf org login access-token. Give the org's instance URL and the access token as a SecureString. The token is handed to the CLI in the SF_ACCESS_TOKEN environment variable of the sf process only, never on the command line, and the variable is put back to its earlier value afterwards. The login is saved on this computer so other psfdx cmdlets can use the org. The authorization cannot be refreshed, so it stops working when the token expires. Because the environment belongs to the whole process, logins started at the same time in one PowerShell process run one after the other. The URL must be an absolute https URL, because the token is sent to it. Tokens and authorization URLs are removed from the result.
 
     .PARAMETER InstanceUrl
     URL of the org, for example https://mycompany.my.salesforce.com. Must be an absolute https:// URL. Passed to sf as --instance-url. Required.
@@ -841,14 +844,26 @@ function Connect-SalesforceAccessToken {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
 
     # The token goes in the environment of the sf process only, so it is not in the argument list or in -Verbose output.
+    # The environment is shared by every runspace in the process, so two logins at once (ForEach-Object -Parallel, jobs in
+    # one process) could start sf with each other's token and log in to the wrong org. One lock, shared by all runspaces
+    # because the interned string is one object per process, lets only one login set, use and restore the variable at a time.
     $variable = 'SF_ACCESS_TOKEN'
-    $previous = [Environment]::GetEnvironmentVariable($variable)
+    $gate = [string]::Intern('psfdx.Connect-SalesforceAccessToken.SF_ACCESS_TOKEN')
+    if (-not [System.Threading.Monitor]::TryEnter($gate, $script:PsfdxAccessTokenLockTimeoutMs)) {
+        throw 'Another Connect-SalesforceAccessToken call in this process is still running. Run the logins one after the other.'
+    }
     try {
-        [Environment]::SetEnvironmentVariable($variable, (ConvertTo-SalesforcePlainSecret -Value $AccessToken -Name 'AccessToken'))
-        $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        $previous = [Environment]::GetEnvironmentVariable($variable)
+        try {
+            [Environment]::SetEnvironmentVariable($variable, (ConvertTo-SalesforcePlainSecret -Value $AccessToken -Name 'AccessToken'))
+            $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+        }
+        finally {
+            [Environment]::SetEnvironmentVariable($variable, $previous)
+        }
     }
     finally {
-        [Environment]::SetEnvironmentVariable($variable, $previous)
+        [System.Threading.Monitor]::Exit($gate)
     }
     $details = Show-SalesforceResult -Result $result
     return Remove-SalesforceSensitiveProperty -InputObject $details
