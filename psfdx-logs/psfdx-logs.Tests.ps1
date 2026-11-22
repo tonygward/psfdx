@@ -15,19 +15,19 @@ Describe 'Watch-SalesforceDebugLogs' {
         BeforeEach { Mock Invoke-Salesforce {} }
         It 'builds base command with color' {
             Watch-SalesforceDebugLogs | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|tail|log|--color' }
         }
         It 'adds username when provided' {
             Watch-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--target-org|user@example|--color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|tail|log|--target-org|user@example|--color' }
         }
         It 'adds skip trace flag' {
             Watch-SalesforceDebugLogs -SkipTraceFlag | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--skip-trace-flag|--color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|tail|log|--skip-trace-flag|--color' }
         }
         It 'adds debug level when provided' {
             Watch-SalesforceDebugLogs -DebugLevel 'SFDC_DevConsole' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|tail|--debug-level|SFDC_DevConsole|--color' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|tail|log|--debug-level|SFDC_DevConsole|--color' }
         }
     }
 }
@@ -41,12 +41,12 @@ Describe 'Select-SalesforceDebugLogs' {
         It 'lists logs with json' {
             $out = Select-SalesforceDebugLogs
             $out | Should -Not -BeNullOrEmpty
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|list|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|list|log|--json' }
             Assert-MockCalled Show-SalesforceResult -Times 1
         }
         It 'adds username when provided' {
             Select-SalesforceDebugLogs -TargetOrg 'user@example' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|list|--target-org|user@example|--json' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|list|log|--target-org|user@example|--json' }
         }
     }
 }
@@ -67,11 +67,11 @@ Describe 'Get-SalesforceDebugLogs' {
         It 'builds command with log id and returns raw response' {
             $raw = Get-SalesforceDebugLogs -LogId '07Lxx0000000001' -TargetOrg 'user'
             $raw | Should -Be $script:JsonOk
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|get|--log-id|07Lxx0000000001|--target-org|user' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|log|--log-id|07Lxx0000000001|--target-org|user' }
         }
         It 'builds command using last number when requested' {
             $null = Get-SalesforceDebugLogs -Last 1 -TargetOrg 'user'
-            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|log|get|--number|1|--target-org|user' }
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|get|log|--number|1|--target-org|user' }
         }
         It 'surfaces sf error payload for callers to handle' {
             Mock Invoke-Salesforce { '{"status":1,"message":"failure"}' }

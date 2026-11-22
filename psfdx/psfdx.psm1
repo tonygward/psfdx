@@ -783,7 +783,7 @@ function Get-SalesforceLimits {
     Shows the org's limits and how much of each is left.
 
     .DESCRIPTION
-    Runs the sf limits api display command and returns one object per limit with its name, max and remaining values. Note that this is a deprecated alias of sf org list limits in current CLI versions (see the notes).
+    Runs sf org list limits and returns one object per limit with its name, max and remaining values.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -796,7 +796,6 @@ function Get-SalesforceLimits {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf org list limits (plugin @salesforce/plugin-limits)
-      Invoked as: sf limits api display - an old name (alias) of sf org list limits, deprecated, so the CLI may print a warning and remove it
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
     Parameter to flag: -TargetOrg = --target-org.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -815,7 +814,7 @@ function Get-SalesforceLimits {
     #>
     [CmdletBinding()]
     Param([Parameter(Mandatory = $false)][string] $TargetOrg)
-    $arguments = @('limits', 'api', 'display')
+    $arguments = @('org', 'list', 'limits')
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters

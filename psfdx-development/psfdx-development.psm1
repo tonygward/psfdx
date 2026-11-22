@@ -118,7 +118,7 @@ function New-SalesforceProject {
     Generates a new Salesforce DX project.
 
     .DESCRIPTION
-    Runs sf project generate (a deprecated alias of sf template generate project) and creates the project folder with sfdx-project.json and the standard layout.
+    Runs sf template generate project and creates the project folder with sfdx-project.json and the standard layout.
 
     .PARAMETER Name
     Name of the generated project. Passed to sf as --name. Required.
@@ -151,7 +151,6 @@ function New-SalesforceProject {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf template generate project (plugin @salesforce/plugin-templates)
-      Invoked as: sf project generate - an old name (alias) of sf template generate project, deprecated, so the CLI may print a warning and remove it
       Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --lwc-language
       Values psfdx cannot pass: --template reactinternalapp, reactexternalapp, angularinternalapp, angularexternalapp, vueinternalapp, agent
     Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir; -DefaultPackageDirectory = --default-package-dir; -Namespace = --namespace; -GenerateManifest = --manifest.
@@ -181,7 +180,7 @@ function New-SalesforceProject {
         [Parameter(Mandatory = $false)][string] $Namespace,
         [Parameter(Mandatory = $false)][switch] $GenerateManifest
     )
-    $arguments = @('project', 'generate', '--name', $Name)
+    $arguments = @('template', 'generate', 'project', '--name', $Name)
     if ($OutputDirectory) {
         if (-not (Test-Path -LiteralPath $OutputDirectory)) {
             throw "Output directory '$OutputDirectory' does not exist."
@@ -2665,7 +2664,7 @@ function New-SalesforceApexClass {
     Generates a new Apex class in the project.
 
     .DESCRIPTION
-    Runs sf apex generate class (a deprecated alias of sf template generate apex class) and writes the .cls and .cls-meta.xml files. The output folder must already exist.
+    Runs sf template generate apex class and writes the .cls and .cls-meta.xml files. The output folder must already exist.
 
     .PARAMETER Name
     Name of the generated Apex class. Passed to sf as --name. Required.
@@ -2686,7 +2685,6 @@ function New-SalesforceApexClass {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf template generate apex class (plugin @salesforce/plugin-templates)
-      Invoked as: sf apex generate class - an old name (alias) of sf template generate apex class, deprecated, so the CLI may print a warning and remove it
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
       Values psfdx cannot pass: --template ApexException, BasicUnitTest, Batchable, Queueable
     Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
@@ -2714,7 +2712,7 @@ function New-SalesforceApexClass {
         # project's own default package directory.
         [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
-    $arguments = @('apex', 'generate', 'class')
+    $arguments = @('template', 'generate', 'apex', 'class')
     $arguments += @('--name', $Name)
     $arguments += @('--template', $Template)
     if ($PSBoundParameters.ContainsKey('OutputDirectory') -and -not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
@@ -2733,7 +2731,7 @@ function New-SalesforceApexTrigger {
     Generates a new Apex trigger in the project.
 
     .DESCRIPTION
-    Runs sf apex generate trigger (a deprecated alias of sf template generate apex trigger) and writes the .trigger and .trigger-meta.xml files. The output folder must already exist.
+    Runs sf template generate apex trigger and writes the .trigger and .trigger-meta.xml files. The output folder must already exist.
 
     .PARAMETER Name
     Name of the generated Apex trigger. Passed to sf as --name. Required.
@@ -2757,7 +2755,6 @@ function New-SalesforceApexTrigger {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf template generate apex trigger (plugin @salesforce/plugin-templates)
-      Invoked as: sf apex generate trigger - an old name (alias) of sf template generate apex trigger, deprecated, so the CLI may print a warning and remove it
       Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --template
     Parameter to flag: -Name = --name; -Event = --event; -SObject = --sobject; -OutputDirectory = --output-dir.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -2785,7 +2782,7 @@ function New-SalesforceApexTrigger {
         # project's own default package directory.
         [Parameter(Mandatory = $false)][string] $OutputDirectory
     )
-    $arguments = @('apex', 'generate', 'trigger')
+    $arguments = @('template', 'generate', 'apex', 'trigger')
     $arguments += @('--name', $Name)
     $arguments += @('--event', $Event)
     if ($SObject) { $arguments += @('--sobject', $SObject) }
