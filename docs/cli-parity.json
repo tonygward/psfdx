@@ -183,53 +183,53 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 99,
+    "commandsPsfdxRuns": 111,
     "flags": {
-      "total": 519,
-      "passed": 406
+      "total": 589,
+      "passed": 506
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 36,
+    "flagsWithAListOfValues": 46,
     "values": {
-      "total": 143,
-      "reachable": 121
+      "total": 213,
+      "reachable": 193
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 54,
-      "partiallyWrapped": 45,
-      "missing": 156,
+      "wrapped": 74,
+      "partiallyWrapped": 37,
+      "missing": 144,
       "excluded": 0,
       "notApplicable": 24,
       "inScope": 255,
-      "coveredPercent": "38.8"
+      "coveredPercent": "43.5"
     },
     "core": {
       "commands": 214,
-      "wrapped": 51,
-      "partiallyWrapped": 41,
-      "missing": 107,
+      "wrapped": 66,
+      "partiallyWrapped": 33,
+      "missing": 100,
       "excluded": 0,
       "notApplicable": 15,
       "inScope": 199,
-      "coveredPercent": "46.2"
+      "coveredPercent": "49.7"
     },
     "jit": {
       "commands": 65,
-      "wrapped": 3,
+      "wrapped": 8,
       "partiallyWrapped": 4,
-      "missing": 49,
+      "missing": 44,
       "excluded": 0,
       "notApplicable": 9,
       "inScope": 56,
-      "coveredPercent": "12.5"
+      "coveredPercent": "21.4"
     }
   },
   "psfdx": {
-    "exportedFunctions": 145,
-    "runningTheCli": 114,
+    "exportedFunctions": 158,
+    "runningTheCli": 127,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -7718,13 +7718,13 @@
       "label": "Project, deploy and retrieve",
       "totals": {
         "commands": 22,
-        "wrapped": 2,
-        "partiallyWrapped": 8,
-        "missing": 12,
+        "wrapped": 22,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 22,
-        "coveredPercent": "45.5"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -7734,25 +7734,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Convert metadata retrieved via Metadata API into the source format used in Salesforce DX projects.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "ConvertTo-SalesforceSourceFormat"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "manifest",
-            "metadata",
-            "metadata-dir",
-            "output-dir",
-            "root-dir"
-          ],
-          "requiredFlagsNotPassed": [
-            "root-dir"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7767,23 +7761,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Convert source-formatted files into metadata that you can deploy using Metadata API.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "ConvertTo-SalesforceMdapiFormat"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 0
           },
-          "uncoveredFlags": [
-            "manifest",
-            "metadata",
-            "output-dir",
-            "package-name",
-            "root-dir",
-            "source-dir"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -7799,29 +7788,24 @@
           "pluginType": "core",
           "state": "beta",
           "summary": "Enable a behavior of your project source files, and then update your Salesforce DX project to implement the behavior.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Enable-SalesforceSourceBehavior"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 1
           },
-          "uncoveredFlags": [
-            "behavior",
-            "dry-run",
-            "preserve-temp-dir",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "behavior"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 7,
+            "reachable": 7
           }
         },
         {
@@ -7831,36 +7815,24 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Delete source from your project and from a non-source-tracked org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceSource"
+          ],
           "flags": {
             "total": 11,
-            "passed": 0,
+            "passed": 11,
             "required": 1
           },
-          "uncoveredFlags": [
-            "check-only",
-            "force-overwrite",
-            "metadata",
-            "no-prompt",
-            "source-dir",
-            "target-org",
-            "test-level",
-            "tests",
-            "track-source",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 5,
+            "reachable": 5
           }
         },
         {
@@ -7870,22 +7842,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Delete all local source tracking information.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforceSourceTracking"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "no-prompt",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7927,27 +7896,19 @@
           "pluginType": "jit",
           "state": "beta",
           "summary": "Quickly deploy a validated deployment to an org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Start-SalesforcePipelineQuickDeploy"
+          ],
           "flags": {
             "total": 7,
-            "passed": 0,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "async",
-            "concise",
-            "devops-center-username",
-            "job-id",
-            "use-most-recent",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "devops-center-username"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7962,23 +7923,19 @@
           "pluginType": "jit",
           "state": "beta",
           "summary": "Check the status of a pipeline deploy operation.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePipelineDeployStatus"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "devops-center-username",
-            "job-id",
-            "use-most-recent"
-          ],
-          "requiredFlagsNotPassed": [
-            "devops-center-username"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7993,26 +7950,19 @@
           "pluginType": "jit",
           "state": "beta",
           "summary": "Resume watching a pipeline deploy operation.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Resume-SalesforcePipelineDeploy"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "concise",
-            "devops-center-username",
-            "job-id",
-            "use-most-recent",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "devops-center-username"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8027,38 +7977,24 @@
           "pluginType": "jit",
           "state": "beta",
           "summary": "Deploy changes from a branch to the pipeline stage’s org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Start-SalesforcePipelineDeploy"
+          ],
           "flags": {
             "total": 11,
-            "passed": 0,
+            "passed": 11,
             "required": 3
           },
-          "uncoveredFlags": [
-            "async",
-            "branch-name",
-            "bundle-version-name",
-            "concise",
-            "deploy-all",
-            "devops-center-project-name",
-            "devops-center-username",
-            "test-level",
-            "tests",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "branch-name",
-            "devops-center-project-name",
-            "devops-center-username"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -8068,38 +8004,24 @@
           "pluginType": "jit",
           "state": "beta",
           "summary": "Perform a validate-only deployment from a branch to the pipeline stage’s org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Test-SalesforcePipelineDeploy"
+          ],
           "flags": {
             "total": 11,
-            "passed": 0,
+            "passed": 11,
             "required": 3
           },
-          "uncoveredFlags": [
-            "async",
-            "branch-name",
-            "bundle-version-name",
-            "concise",
-            "deploy-all",
-            "devops-center-project-name",
-            "devops-center-username",
-            "test-level",
-            "tests",
-            "verbose",
-            "wait"
-          ],
-          "requiredFlagsNotPassed": [
-            "branch-name",
-            "devops-center-project-name",
-            "devops-center-username"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -8109,7 +8031,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Preview a deployment to see what will deploy to the org, the potential conflicts, and the ignored files.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8117,12 +8039,10 @@
           ],
           "flags": {
             "total": 6,
-            "passed": 5,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "concise"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -8165,7 +8085,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Check or poll for the status of a deploy operation.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8173,20 +8093,16 @@
           ],
           "flags": {
             "total": 7,
-            "passed": 4,
+            "passed": 7,
             "required": 0
           },
-          "uncoveredFlags": [
-            "coverage-formatters",
-            "junit",
-            "results-dir"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 11,
+            "reachable": 11
           }
         },
         {
@@ -8196,7 +8112,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Resume watching a deploy operation and update source tracking when the deploy completes.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8204,20 +8120,16 @@
           ],
           "flags": {
             "total": 8,
-            "passed": 5,
+            "passed": 8,
             "required": 0
           },
-          "uncoveredFlags": [
-            "coverage-formatters",
-            "junit",
-            "results-dir"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 11,
+            "reachable": 11
           }
         },
         {
@@ -8227,7 +8139,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Deploy metadata to an org from your local project.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8237,31 +8149,16 @@
           ],
           "flags": {
             "total": 22,
-            "passed": 15,
+            "passed": 22,
             "required": 1
           },
-          "uncoveredFlags": [
-            "async",
-            "coverage-formatters",
-            "junit",
-            "post-destructive-changes",
-            "pre-destructive-changes",
-            "purge-on-delete",
-            "results-dir"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "test-level",
-              "values": [
-                "RunRelevantTests"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 1,
-            "total": 5,
-            "reachable": 4
+            "flagsWithAList": 2,
+            "total": 16,
+            "reachable": 16
           }
         },
         {
@@ -8271,7 +8168,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Validate a metadata deployment without actually executing it.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8279,24 +8176,16 @@
           ],
           "flags": {
             "total": 19,
-            "passed": 12,
+            "passed": 19,
             "required": 1
           },
-          "uncoveredFlags": [
-            "coverage-formatters",
-            "junit",
-            "metadata",
-            "post-destructive-changes",
-            "pre-destructive-changes",
-            "purge-on-delete",
-            "results-dir"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 1,
-            "total": 4,
-            "reachable": 4
+            "flagsWithAList": 2,
+            "total": 15,
+            "reachable": 15
           }
         },
         {
@@ -8306,36 +8195,25 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Create a project manifest that lists the metadata components you want to deploy or retrieve.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
+            "New-SalesforceManifest",
             "Retrieve-SalesforceOrg"
           ],
           "flags": {
             "total": 8,
-            "passed": 4,
+            "passed": 8,
             "required": 0
           },
-          "uncoveredFlags": [
-            "excluded-metadata",
-            "metadata",
-            "source-dir",
-            "type"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "include-packages",
-              "values": [
-                "managed"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 1,
-            "total": 2,
-            "reachable": 1
+            "flagsWithAList": 2,
+            "total": 6,
+            "reachable": 6
           }
         },
         {
@@ -8345,18 +8223,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Check your local project package directories for forceignored files.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceIgnoredFiles"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 0
           },
-          "uncoveredFlags": [
-            "source-dir"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -8372,23 +8250,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Reset local and remote source tracking.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Reset-SalesforceSourceTracking"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "no-prompt",
-            "revision",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8403,7 +8277,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Preview a retrieval to see what will be retrieved from the org, the potential conflicts, and the ignored files.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8411,12 +8285,10 @@
           ],
           "flags": {
             "total": 3,
-            "passed": 2,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "concise"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -8432,7 +8304,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Retrieve metadata from an org to your local project.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -8443,21 +8315,16 @@
           ],
           "flags": {
             "total": 13,
-            "passed": 9,
+            "passed": 13,
             "required": 1
           },
-          "uncoveredFlags": [
-            "root-type-with-dependencies",
-            "single-package",
-            "source-dir",
-            "zip-file-name"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         }
       ]
@@ -9523,18 +9390,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 88,
-        "commandsPsfdxRunsThatHaveIt": 93
+        "psfdxFunctionsPassingIt": 101,
+        "commandsPsfdxRunsThatHaveIt": 105
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 96
+        "commandsPsfdxRunsThatHaveIt": 108
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 69
+        "commandsPsfdxRunsThatHaveIt": 74
       }
     ]
   },

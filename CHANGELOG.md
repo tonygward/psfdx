@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- psfdx-metadata: every `sf project` command (project, deploy and retrieve) is now covered, with every flag. New cmdlets: `New-SalesforceManifest`, `ConvertTo-SalesforceSourceFormat`, `ConvertTo-SalesforceMdapiFormat`, `Enable-SalesforceSourceBehavior`, `Get-SalesforceIgnoredFiles`, `Remove-SalesforceSource`, `Remove-SalesforceSourceTracking` and `Reset-SalesforceSourceTracking`. The ones that delete or reset ask for confirmation and support `-WhatIf`; `-NoPrompt` skips the question, and `Remove-SalesforceSource -CheckOnly` validates without deleting.
+- psfdx-metadata: new beta DevOps Center pipeline cmdlets `Start-SalesforcePipelineDeploy`, `Test-SalesforcePipelineDeploy`, `Start-SalesforcePipelineQuickDeploy`, `Get-SalesforcePipelineDeployStatus` and `Resume-SalesforcePipelineDeploy`. They run the beta `sf project deploy pipeline` commands, need a DevOps Center org, and may change when the Salesforce CLI changes them.
+- psfdx-metadata: `Deploy-SalesforceMetadata` and `Deploy-SalesforceComponent` gain `-Async`, `-CoverageFormatters`, `-Junit` and `-ResultsDir`; `Deploy-SalesforceMetadata` also gains `-PreDestructiveChanges`, `-PostDestructiveChanges` and `-PurgeOnDelete`, and `Deploy-SalesforceComponent -TestLevel` accepts `RelevantTests`. `Test-SalesforceDeploy` gains `-Metadata` and the same destructive-changes and results options. `Get-SalesforceDeployStatus` and `Resume-SalesforceDeploy` gain `-CoverageFormatters`, `-Junit` and `-ResultsDir`. The deploy and retrieve previews gain `-ConciseResults`. `Retrieve-SalesforceComponent` gains `-SourceDir` and `-RootTypeWithDependencies`, and `Retrieve-SalesforceMetadata` gains `-SinglePackage` and `-ZipFileName`.
+- psfdx-metadata: two error messages changed because there are more ways to name what to deploy or retrieve: `Test-SalesforceDeploy` now says "Specify exactly one of -Manifest, -SourceDir, -InputDir, or -Metadata." and `Retrieve-SalesforceComponent` says "Specify -Type or -SourceDir when retrieving a component."
 ## 0.8.41 - 2026-11-22
 
 - psfdx, psfdx-development, psfdx-logs: the cmdlets now run the current Salesforce CLI command names instead of deprecated aliases and reordered words: `Get-SalesforceLimits` runs `sf org list limits`, `New-SalesforceProject` runs `sf template generate project`, `New-SalesforceApexClass` and `New-SalesforceApexTrigger` run `sf template generate apex class` and `trigger`, and the debug log cmdlets run `sf apex list log`, `get log` and `tail log`. Results are the same, but a CLI release that removes the old names no longer breaks them.
@@ -90,7 +94,6 @@
 - psfdx-packages: `Get-SalesforcePackagesInstalled` now returns the installed packages; it previously returned nothing because it looked for a `records` list the CLI does not send.
 
 ## 0.8.22 - 2026-11-19
-
 - psfdx, psfdx-development, psfdx-logs, psfdx-metadata: every cmdlet now passes each value to the Salesforce CLI as its own argument, so paths, names, queries, descriptions and tags with spaces, quotes or apostrophes reach `sf` exactly as typed. This covers authentication, aliases, queries, projects, scratch orgs, Apex tests and generators, LWC and Jest, debug logs, trace flags, event log files, and retrieve, deploy and describe. Together with the earlier psfdx-packages, psfdx-sandbox and psfdx-agentforce changes, no cmdlet builds a command string any more.
 - psfdx-development: `Test-SalesforceApex -TestsInProject` now says "No Apex test classes found in the project." when there are none, instead of a parameter validation error.
 - psfdx-shared: `Get-SalesforceApexCliTestParams` and `ConvertTo-SalesforceCliApexTestParams` (command-string helpers) are removed; use `Get-SalesforceApexCliTestArguments`.
@@ -119,7 +122,6 @@
 - psfdx-shared: new `ConvertTo-SalesforceSoqlDateTime` helper.
 
 ## 0.8.16 - 2026-11-18
-
 - psfdx, psfdx-development, psfdx-logs, psfdx-sandbox: values that cmdlets put into generated SOQL are now escaped the way SOQL requires. This covers `Get-SalesforceUsers -Username`, `Get-SalesforceRecordType -ObjectType`, `Get-SalesforceApexClass -Name`, `Select-SalesforceEventFiles` and `Export-SalesforceEventFiles -EventType`, `Get-SalesforceLoginHistory -Username`, `Get-SalesforceSandboxRefreshStatus -Name`, and the user, class and trigger lookups in `Enable-SalesforceDebugLogging`. A value with an apostrophe or a backslash no longer breaks the query or changes its meaning. Names such as `O'Brien` used to be rejected by Salesforce and now work. A value with a control character is refused with a clear message. Your own queries passed to `Select-SalesforceRecords -Query` are unchanged.
 - psfdx-metadata: `Build-SalesforceQuery` refuses an object name that is not a plain API name.
 - psfdx-shared: new `ConvertTo-SalesforceSoqlLiteral` and `ConvertTo-SalesforceSoqlIdentifier` helpers.

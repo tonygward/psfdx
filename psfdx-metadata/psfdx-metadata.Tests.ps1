@@ -292,7 +292,7 @@ Describe 'Deploy lifecycle cmdlets' {
             It 'rejects -InputDir combined with another source option' {
                 $zip = New-Item -Path (Join-Path $TestDrive 'excl.zip') -ItemType File
                 $dir = New-Item -Path (Join-Path $TestDrive 'excl-src') -ItemType Directory
-                { Test-SalesforceDeploy -InputDir $zip.FullName -SourceDir $dir.FullName } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
+                { Test-SalesforceDeploy -InputDir $zip.FullName -SourceDir $dir.FullName } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, -InputDir, or -Metadata.'
                 { Test-SalesforceDeploy -SourceDir $dir.FullName -ManifestPackage } | Should -Throw -ExpectedMessage '-ManifestPackage can only be used with -InputDir.'
                 Assert-MockCalled Invoke-Salesforce -Times 0
             }
@@ -318,8 +318,8 @@ Describe 'Deploy lifecycle cmdlets' {
                 Assert-MockCalled Invoke-Salesforce -Times 0
             }
             It 'throws unless exactly one source option is given' {
-                { Test-SalesforceDeploy } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
-                { Test-SalesforceDeploy -Manifest 'a.xml' -SourceDir 'b' } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, or -InputDir.'
+                { Test-SalesforceDeploy } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, -InputDir, or -Metadata.'
+                { Test-SalesforceDeploy -Manifest 'a.xml' -SourceDir 'b' } | Should -Throw -ExpectedMessage 'Specify exactly one of -Manifest, -SourceDir, -InputDir, or -Metadata.'
                 Assert-MockCalled Invoke-Salesforce -Times 0
             }
             It 'throws for conflicting or missing options' {
@@ -559,7 +559,7 @@ Describe 'Retrieve-SalesforceComponent without -Type' {
         It 'throws instead of emitting a dangling --metadata flag' {
             Mock Invoke-Salesforce {}
             { Retrieve-SalesforceComponent -Name 'MyClass' } |
-                Should -Throw -ExpectedMessage 'Specify -Type when retrieving a component.'
+                Should -Throw -ExpectedMessage 'Specify -Type or -SourceDir when retrieving a component.'
             Assert-MockCalled Invoke-Salesforce -Times 0
         }
     }
@@ -770,6 +770,216 @@ Describe 'Security regressions: deployments can be previewed (issue 112)' {
         It 'runs a validation-only deployment (-DryRun) even under -WhatIf, because it changes nothing' {
             Deploy-SalesforceComponent -SourceDir $TestDrive -DryRun -WhatIf | Out-Null
             Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { $Arguments -contains '--dry-run' }
+        }
+    }
+}
+
+Describe 'sf project parity: new flags on existing cmdlets (issue 244)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Clear-SalesforceMetadataTypeCache
+            Mock Describe-SalesforceMetadataTypes { @() }
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+            $script:manifest = Join-Path $TestDrive 'package.xml'
+            Set-Content -Path $script:manifest -Value '<Package/>'
+            $script:pre = Join-Path $TestDrive 'destructiveChangesPre.xml'
+            Set-Content -Path $script:pre -Value '<Package/>'
+        }
+        It 'Deploy-SalesforceMetadata passes destructive changes, async and result flags' {
+            Deploy-SalesforceMetadata -Manifest $script:manifest -PreDestructiveChanges $script:pre -PurgeOnDelete -Async -CoverageFormatters json, lcovonly -Junit -ResultsDir 'out dir' | Out-Null
+            $expected = "project|deploy|start|--manifest|$($script:manifest)|--pre-destructive-changes|$($script:pre)|--purge-on-delete|--async|--coverage-formatters|json|--coverage-formatters|lcovonly|--junit|--results-dir|out dir|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+        }
+        It 'Deploy-SalesforceMetadata refuses -PurgeOnDelete without a destructive changes file, and a missing file' {
+            { Deploy-SalesforceMetadata -Manifest $script:manifest -PurgeOnDelete } | Should -Throw -ExpectedMessage '-PurgeOnDelete needs*'
+            { Deploy-SalesforceMetadata -Manifest $script:manifest -PostDestructiveChanges (Join-Path $TestDrive 'nope.xml') } | Should -Throw -ExpectedMessage '*does not exist.'
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'Deploy-SalesforceMetadata rejects an unknown coverage formatter' {
+            { Deploy-SalesforceMetadata -Manifest $script:manifest -CoverageFormatters bogus } | Should -Throw
+        }
+        It 'Deploy-SalesforceComponent passes RunRelevantTests, async and result flags' {
+            Deploy-SalesforceComponent -Type ApexClass -Name Foo -TestLevel RelevantTests -Async -Junit -ResultsDir res | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|start|--metadata|ApexClass:Foo|--test-level|RunRelevantTests|--async|--junit|--results-dir|res|--json' }
+        }
+        It 'Deploy-SalesforceComponent refuses -Async with -Wait' {
+            { Deploy-SalesforceComponent -Type ApexClass -Name Foo -Async -Wait 5 } | Should -Throw -ExpectedMessage 'Specify only one of -Wait or -Async.'
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'Test-SalesforceDeploy accepts -Metadata with destructive changes and result flags' {
+            Test-SalesforceDeploy -Metadata ApexClass:A, ApexClass:B -PostDestructiveChanges $script:pre -CoverageFormatters clover -Junit -ResultsDir r | Out-Null
+            $expected = "project|deploy|validate|--metadata|ApexClass:A|--metadata|ApexClass:B|--post-destructive-changes|$($script:pre)|--coverage-formatters|clover|--junit|--results-dir|r|--test-level|RunLocalTests|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+        }
+        It 'Get-SalesforceDeployStatus and Resume-SalesforceDeploy pass the result flags' {
+            Get-SalesforceDeployStatus -UseMostRecent -CoverageFormatters text -Junit -ResultsDir r | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|report|--use-most-recent|--coverage-formatters|text|--junit|--results-dir|r|--json' }
+            Resume-SalesforceDeploy -JobId 0Af000000000001AAA -CoverageFormatters none -ResultsDir r | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|resume|--job-id|0Af000000000001AAA|--coverage-formatters|none|--results-dir|r|--json' }
+        }
+        It 'the previews pass --concise' {
+            Mock Get-SalesforcePreviewResult { 'ok' }
+            Get-SalesforceDeployPreview -ConciseResults -TargetOrg me | Out-Null
+            Get-SalesforceRetrievePreview -ConciseResults | Out-Null
+            Assert-MockCalled Get-SalesforcePreviewResult -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|preview|--concise|--target-org|me|--json' }
+            Assert-MockCalled Get-SalesforcePreviewResult -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|retrieve|preview|--concise|--json' }
+        }
+        It 'Retrieve-SalesforceComponent retrieves from -SourceDir with root types, without -Type' {
+            Retrieve-SalesforceComponent -SourceDir $TestDrive -RootTypeWithDependencies Bot, AiAgentDefinitionVersion | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "project|retrieve|start|--source-dir|$TestDrive|--root-type-with-dependencies|Bot|--root-type-with-dependencies|AiAgentDefinitionVersion" }
+            { Retrieve-SalesforceComponent } | Should -Throw -ExpectedMessage 'Specify -Type or -SourceDir when retrieving a component.'
+            { Retrieve-SalesforceComponent -SourceDir (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist.'
+        }
+        It 'Retrieve-SalesforceMetadata passes --single-package and --zip-file-name' {
+            Retrieve-SalesforceMetadata -Manifest $script:manifest -OutputDir $TestDrive -SinglePackage -ZipFileName pkg.zip | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "project|retrieve|start|--manifest|$($script:manifest)|--target-metadata-dir|$TestDrive|--single-package|--zip-file-name|pkg.zip" }
+        }
+    }
+}
+
+Describe 'sf project parity: manifest, conversion and ignored files (issue 244)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":["a.cls","b.cls"]}' }
+            $script:src = New-Item -ItemType Directory -Path (Join-Path $TestDrive 'src dir') -Force
+            $script:manifest = Join-Path $TestDrive 'package.xml'
+            Set-Content -Path $script:manifest -Value '<Package/>'
+        }
+        It 'New-SalesforceManifest passes every flag' {
+            New-SalesforceManifest -Metadata ApexClass:A -ExcludedMetadata Report -SourceDir $script:src.FullName -FromOrg dev -IncludePackages managed, unlocked -Name pkg -OutputDir $TestDrive -Type destroy | Out-Null
+            $expected = "project|generate|manifest|--metadata|ApexClass:A|--excluded-metadata|Report|--source-dir|$($script:src.FullName)|--from-org|dev|--include-packages|managed|--include-packages|unlocked|--name|pkg|--output-dir|$TestDrive|--type|destroy|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+        }
+        It 'New-SalesforceManifest rejects a bad type and a missing folder' {
+            { New-SalesforceManifest -Type bogus } | Should -Throw
+            { New-SalesforceManifest -OutputDir (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist.'
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'ConvertTo-SalesforceSourceFormat runs sf project convert mdapi' {
+            ConvertTo-SalesforceSourceFormat -RootDir $script:src.FullName -OutputDir out -Manifest $script:manifest -Metadata ApexClass:A -MetadataDir d1, d2 | Out-Null
+            $expected = "project|convert|mdapi|--root-dir|$($script:src.FullName)|--output-dir|out|--manifest|$($script:manifest)|--metadata|ApexClass:A|--metadata-dir|d1|--metadata-dir|d2|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+            { ConvertTo-SalesforceSourceFormat -RootDir (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist.'
+        }
+        It 'ConvertTo-SalesforceMdapiFormat runs sf project convert source' {
+            ConvertTo-SalesforceMdapiFormat -RootDir $script:src.FullName -SourceDir $script:src.FullName -OutputDir out -Manifest $script:manifest -Metadata ApexClass:A -PackageName pkg | Out-Null
+            $expected = "project|convert|source|--root-dir|$($script:src.FullName)|--source-dir|$($script:src.FullName)|--output-dir|out|--manifest|$($script:manifest)|--metadata|ApexClass:A|--package-name|pkg|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+        }
+        It 'Enable-SalesforceSourceBehavior previews with -WhatIf but still runs -DryRun' {
+            Enable-SalesforceSourceBehavior -Behavior decomposeWorkflowBeta -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            Enable-SalesforceSourceBehavior -Behavior decomposeWorkflowBeta -DryRun -PreserveTempDir -TargetOrg me -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|convert|source-behavior|--behavior|decomposeWorkflowBeta|--dry-run|--preserve-temp-dir|--target-org|me|--json' }
+            Enable-SalesforceSourceBehavior -Behavior decomposePermissionSetBeta2 -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|convert|source-behavior|--behavior|decomposePermissionSetBeta2|--json' }
+            { Enable-SalesforceSourceBehavior -Behavior nope } | Should -Throw
+        }
+        It 'Get-SalesforceIgnoredFiles returns the ignored paths' {
+            $files = @(Get-SalesforceIgnoredFiles -SourceDir $script:src.FullName)
+            $files.Count | Should -Be 2
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq "project|list|ignored|--source-dir|$($script:src.FullName)|--json" }
+            Get-SalesforceIgnoredFiles | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|list|ignored|--json' }
+        }
+    }
+}
+
+Describe 'sf project parity: delete source and source tracking (issue 244)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+            $script:cls = Join-Path $TestDrive 'Old Helper.cls'
+            Set-Content -Path $script:cls -Value 'public class OldHelper {}'
+        }
+        It 'Remove-SalesforceSource deletes nothing under -WhatIf' {
+            Remove-SalesforceSource -Metadata ApexClass:Old -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'Remove-SalesforceSource passes every flag and never lets the CLI prompt' {
+            Remove-SalesforceSource -SourceDir $script:cls -Metadata ApexClass:Old -ForceOverwrite -TrackSource -TestLevel SpecificTests -Tests T1, T2 -Wait 5 -DetailedResults -NoPrompt -TargetOrg me | Out-Null
+            $expected = "project|delete|source|--source-dir|$($script:cls)|--metadata|ApexClass:Old|--force-overwrite|--track-source|--test-level|RunSpecifiedTests|--tests|T1|--tests|T2|--wait|5|--verbose|--no-prompt|--target-org|me|--json"
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+        }
+        It 'Remove-SalesforceSource -CheckOnly runs without confirmation even under -WhatIf' {
+            Remove-SalesforceSource -Metadata ApexClass:Old -CheckOnly -TestLevel RelevantTests -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|delete|source|--metadata|ApexClass:Old|--check-only|--test-level|RunRelevantTests|--no-prompt|--json' }
+        }
+        It 'Remove-SalesforceSource validates its input' {
+            { Remove-SalesforceSource } | Should -Throw -ExpectedMessage 'Specify -SourceDir or -Metadata.'
+            { Remove-SalesforceSource -SourceDir (Join-Path $TestDrive 'nope') -Confirm:$false } | Should -Throw -ExpectedMessage '*does not exist.'
+            { Remove-SalesforceSource -Metadata ApexClass:Old -Tests T1 -Confirm:$false } | Should -Throw -ExpectedMessage '-Tests needs -TestLevel SpecificTests.'
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'Remove-SalesforceSourceTracking and Reset-SalesforceSourceTracking preview with -WhatIf and run with --no-prompt' {
+            Remove-SalesforceSourceTracking -TargetOrg me -WhatIf | Out-Null
+            Reset-SalesforceSourceTracking -Revision 0 -TargetOrg me -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            Remove-SalesforceSourceTracking -TargetOrg me -NoPrompt | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|delete|tracking|--no-prompt|--target-org|me|--json' }
+            Reset-SalesforceSourceTracking -Revision 12 -TargetOrg me -NoPrompt | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|reset|tracking|--revision|12|--no-prompt|--target-org|me|--json' }
+            Reset-SalesforceSourceTracking -NoPrompt | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|reset|tracking|--no-prompt|--json' }
+        }
+        It 'Reset-SalesforceSourceTracking rejects a negative revision' {
+            { Reset-SalesforceSourceTracking -Revision -1 -NoPrompt } | Should -Throw
+        }
+        It 'surfaces a CLI error as an exception' {
+            Mock Invoke-Salesforce { '{"status":1,"name":"NoSourceTracking","message":"This org does not use source tracking."}' }
+            { Remove-SalesforceSourceTracking -NoPrompt } | Should -Throw -ExpectedMessage '*source tracking*'
+        }
+    }
+}
+
+Describe 'sf project deploy pipeline commands (beta, issue 244)' {
+    InModuleScope 'psfdx-metadata' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"id":"3A0000000000001AAA"}}' }
+        }
+        It 'Start-SalesforcePipelineDeploy passes every flag and honours -WhatIf' {
+            Start-SalesforcePipelineDeploy -DevOpsCenterUsername doc -DevOpsCenterProjectName 'Sales App' -BranchName feature/x -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            Start-SalesforcePipelineDeploy -DevOpsCenterUsername doc -DevOpsCenterProjectName 'Sales App' -BranchName feature/x -BundleVersionName v1 -DeployAll -TestLevel SpecificTests -Tests A, B -Wait 20 -ConciseResults -Confirm:$false | Out-Null
+            $expected = 'project|deploy|pipeline|start|--devops-center-username|doc|--devops-center-project-name|Sales App|--branch-name|feature/x|--bundle-version-name|v1|--deploy-all|--test-level|RunSpecifiedTests|--tests|A|--tests|B|--wait|20|--concise|--json'
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq $expected }
+        }
+        It 'Start-SalesforcePipelineDeploy rejects -Async with -Wait, -Tests without a level, and an unsupported level' {
+            { Start-SalesforcePipelineDeploy -DevOpsCenterUsername d -DevOpsCenterProjectName p -BranchName b -Async -Wait 1 -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify only one of -Wait or -Async.'
+            { Start-SalesforcePipelineDeploy -DevOpsCenterUsername d -DevOpsCenterProjectName p -BranchName b -Tests T -Confirm:$false } | Should -Throw -ExpectedMessage '-Tests needs -TestLevel SpecificTests.'
+            { Start-SalesforcePipelineDeploy -DevOpsCenterUsername d -DevOpsCenterProjectName p -BranchName b -TestLevel RelevantTests -Confirm:$false } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'Test-SalesforcePipelineDeploy runs the validate command and needs no confirmation' {
+            Test-SalesforcePipelineDeploy -DevOpsCenterUsername doc -DevOpsCenterProjectName p -BranchName main -TestLevel TestsInOrg -Async -DetailedResults | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|pipeline|validate|--devops-center-username|doc|--devops-center-project-name|p|--branch-name|main|--test-level|RunLocalTests|--async|--verbose|--json' }
+        }
+        It 'Start-SalesforcePipelineQuickDeploy needs a job and asks first' {
+            { Start-SalesforcePipelineQuickDeploy -DevOpsCenterUsername doc -Confirm:$false } | Should -Throw -ExpectedMessage 'Specify -JobId or -UseMostRecent.'
+            { Start-SalesforcePipelineQuickDeploy -DevOpsCenterUsername doc -JobId '3A00000000000' -Confirm:$false } | Should -Throw -ExpectedMessage '*not a valid pipeline deploy job ID*'
+            Start-SalesforcePipelineQuickDeploy -DevOpsCenterUsername doc -UseMostRecent -WhatIf | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+            Start-SalesforcePipelineQuickDeploy -DevOpsCenterUsername doc -JobId 3A0000000000001AAA -Wait 5 -ConciseResults -Confirm:$false | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|pipeline|quick|--devops-center-username|doc|--job-id|3A0000000000001AAA|--wait|5|--concise|--json' }
+        }
+        It 'Get-SalesforcePipelineDeployStatus and Resume-SalesforcePipelineDeploy build their commands' {
+            Get-SalesforcePipelineDeployStatus -DevOpsCenterUsername doc -UseMostRecent | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|pipeline|report|--devops-center-username|doc|--use-most-recent|--json' }
+            Resume-SalesforcePipelineDeploy -DevOpsCenterUsername doc -JobId 3A0000000000001AAA -Wait 3 -DetailedResults | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'project|deploy|pipeline|resume|--devops-center-username|doc|--job-id|3A0000000000001AAA|--wait|3|--verbose|--json' }
+            { Resume-SalesforcePipelineDeploy -DevOpsCenterUsername doc -JobId 3A0000000000001AAA -UseMostRecent } | Should -Throw -ExpectedMessage 'Specify only one of -JobId or -UseMostRecent.'
+        }
+    }
+}
+
+Describe 'psfdx-metadata exports the sf project parity cmdlets (issue 244)' {
+    It 'exports the new cmdlets and keeps the helpers private' {
+        $exports = (Get-Module psfdx-metadata).ExportedFunctions.Keys
+        foreach ($n in 'New-SalesforceManifest', 'ConvertTo-SalesforceSourceFormat', 'ConvertTo-SalesforceMdapiFormat', 'Enable-SalesforceSourceBehavior', 'Get-SalesforceIgnoredFiles', 'Remove-SalesforceSource', 'Remove-SalesforceSourceTracking', 'Reset-SalesforceSourceTracking', 'Start-SalesforcePipelineDeploy', 'Test-SalesforcePipelineDeploy', 'Start-SalesforcePipelineQuickDeploy', 'Get-SalesforcePipelineDeployStatus', 'Resume-SalesforcePipelineDeploy') {
+            $exports | Should -Contain $n
+        }
+        foreach ($n in 'Get-SalesforceDeployReportArguments', 'Get-SalesforceDestructiveChangeArguments', 'Get-SalesforcePipelineJobArguments', 'Get-SalesforcePipelineStartArguments') {
+            $exports | Should -Not -Contain $n
         }
     }
 }
