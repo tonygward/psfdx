@@ -72,6 +72,23 @@ Describe 'Repository rules' {
         }
     }
 
+    It 'the private helpers psfdx-devops copies from psfdx-metadata are identical, so the two copies cannot drift apart' {
+        $text = {
+            param([string] $Module)
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Join-Path $script:Root $Module) "$Module.psm1"), [ref]$null, [ref]$null)
+            $found = @{}
+            foreach ($f in $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) { $found[$f.Name] = $f.Extent.Text.Replace("`r`n", "`n") }
+            return $found
+        }
+        $meta = & $text 'psfdx-metadata'
+        $devops = & $text 'psfdx-devops'
+        foreach ($name in 'Test-SalesforceDeployWaitParams', 'Test-SalesforceDeployResultOptions', 'Test-SalesforceValidDeployWait', 'Assert-SalesforceInteractiveSession') {
+            $meta.ContainsKey($name) | Should -BeTrue -Because "psfdx-metadata defines $name"
+            $devops.ContainsKey($name) | Should -BeTrue -Because "psfdx-devops copies $name"
+            $devops[$name] | Should -BeExactly $meta[$name] -Because "the copy of $name in psfdx-devops must match psfdx-metadata"
+        }
+    }
+
     It 'LICENSE is the MIT licence' {
         $text = Get-Content -Path (Join-Path $script:Root 'LICENSE') -Raw
         $text | Should -Match '^MIT License'

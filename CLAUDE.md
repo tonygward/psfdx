@@ -8,6 +8,7 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | :--- | :--- |
 | `psfdx/` | Core: auth, aliases, SOQL/records, limits, REST API, CLI/plugin install |
 | `psfdx-metadata/` | Retrieve / deploy / describe metadata |
+| `psfdx-devops/` | DevOps Center: the `sf devops` commands and the beta `sf project deploy pipeline` commands (every cmdlet that wraps a command of `@salesforce/plugin-devops-center`) |
 | `psfdx-development/` | Projects, config, scratch orgs, Apex tests, `Watch-SalesforceApex`, LWC/Jest |
 | `psfdx-logs/` | Debug logs, flow interviews, login history, event log files |
 | `psfdx-sandbox/` | Sandbox lifecycle |

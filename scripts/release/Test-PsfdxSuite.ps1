@@ -49,7 +49,8 @@ $representative = [ordered]@{
     'psfdx'             = @{ Command = 'Get-SalesforceDateTime'; Run = "Get-SalesforceDateTime -Datetime ([datetime]'2026-01-02T03:04:05Z')"; Expect = '2026-01-02T03:04:05Z' }
     'psfdx-shared'      = @{ Command = 'ConvertTo-SalesforceSoqlLiteral'; Run = 'ConvertTo-SalesforceSoqlLiteral -Value "O''Brien"'; Expect = "'O\'Brien'" }
     'psfdx-logs'        = @{ Command = 'Convert-SalesforceDebugLog'; Run = "Convert-SalesforceDebugLog -Log ('59.0 APEX_CODE,DEBUG' + [Environment]::NewLine + '12:00:00.1 (1000)|EXECUTION_STARTED')"; Expect = $null }
-    'psfdx-metadata'    = @{ Command = 'New-SalesforceDevOpsProject'; Run = "New-SalesforceDevOpsProject -Name 'x' -WhatIf"; Expect = $null }
+    'psfdx-metadata'    = @{ Command = 'Clear-SalesforceMetadataTypeCache'; Run = 'Clear-SalesforceMetadataTypeCache'; Expect = $null }
+    'psfdx-devops'      = @{ Command = 'New-SalesforceDevOpsProject'; Run = "New-SalesforceDevOpsProject -Name 'x' -WhatIf"; Expect = $null }
     'psfdx-development' = @{ Command = 'Remove-SalesforceScratchOrg'; Run = 'Remove-SalesforceScratchOrg -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-sandbox'     = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-packages'    = @{ Command = 'Uninstall-SalesforcePackage'; Run = 'Uninstall-SalesforcePackage -Package 04t000000000001 -TargetOrg nosuch -WhatIf'; Expect = $null }
