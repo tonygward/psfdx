@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.57 - 2026-11-23
+
 - psfdx-plugins: Breaking (a packaging change, not a removal): the Salesforce CLI plugin cmdlets are now their own module, `psfdx-plugins`, instead of part of `psfdx`: `Install-SalesforcePlugin`, `Get-SalesforcePlugins`, `Update-SalesforcePlugins`, `Uninstall-SalesforcePlugin`, `Get-SalesforcePluginDetails`, `Find-SalesforcePlugins`, `Reset-SalesforcePlugins`, `Test-SalesforcePluginSignature` and `Get-`, `Add-` and `Remove-SalesforcePluginAllowlist`. Every name, parameter, result, `-WhatIf` and confirmation, error and help text is unchanged, and `Install-Module psfdx` still installs everything in the one package, with `Import-Module psfdx` loading `psfdx-plugins` too. What differs is the module shown for these commands: `Get-Command -Module psfdx-plugins` lists them and `Get-Command -Module psfdx` no longer does. `Install-SalesforceCli` and `Update-SalesforceCli` stay in `psfdx`, because they install the CLI itself, not a plugin. If you install from a clone or the release zip, import `psfdx-plugins` as well as `psfdx` to keep these cmdlets. There is no separate `psfdx-plugins` package on the Gallery.
 
 ## 0.8.56 - 2026-11-23
