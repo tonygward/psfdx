@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>psfdx-sandbox — Sandbox lifecycle | psfdx</title><meta name="description" content="Create, inspect, refresh and manage Salesforce sandboxes.">
+<link rel="canonical" href="%SITE_URL%/modules/psfdx-sandbox/"><link rel="icon" href="/favicon.png" type="image/png"><link rel="stylesheet" href="/style.css"></head>
+<body><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="wrap header-row">
+<a class="brand" href="/" aria-label="psfdx home"><img src="/psfdx-logo.png" width="803" height="209" alt="psfdx"></a>
+<nav aria-label="Main"><ul class="nav-list"><li><a href="/">Home</a></li><li><a href="/#modules">Modules</a></li><li><a href="%GITHUB_URL%#readme">GitHub docs</a></li></ul></nav>
+</div></header><main id="main" class="section"><div class="wrap documentation">
+<p class="eyebrow">MODULE REFERENCE / psfdx-sandbox</p><h1>psfdx-sandbox</h1><p class="tagline">Sandbox lifecycle</p><p class="section-intro">Create, inspect, refresh and manage Salesforce sandboxes.</p>
+<h2>Get started</h2><div class="code-box"><pre><code>Install-Module psfdx
+Import-Module psfdx
+Get-Command -Module psfdx-sandbox</code></pre></div>
+<p>There is only one PowerShell Gallery package: <code>psfdx</code>. Importing it loads the entire module suite, while each command retains its owning module name.</p>
+<h2>Examples</h2><div class="code-box"><pre><code>Get-Command -Module psfdx-sandbox
+Get-Help (Get-Command -Module psfdx-sandbox | Select-Object -First 1).Name -Full</code></pre></div>
+<h2>Discover every command and parameter</h2><p>PowerShell's built-in help includes descriptions, parameter documentation and usage examples. For commands that invoke Salesforce CLI, the help also describes the corresponding <code>sf</code> command.</p>
+<div class="code-box"><pre><code>Get-Command -Module psfdx-sandbox
+Get-Help (Get-Command -Module psfdx-sandbox | Select-Object -First 1).Name -Full
+Update-Module psfdx</code></pre></div>
+<p>Further reference: <a href="%GITHUB_URL%#modules">repository command catalogue</a> · <a href="%GITHUB_URL%/blob/main/docs/cli-parity.md">Salesforce CLI parity report</a> · <a href="%GITHUB_URL%/blob/main/docs/install.md">installation and updates</a>.</p>
+<p><a href="/#modules">← All modules</a></p>
+</div></main><footer class="site-footer"><div class="wrap"><p>psfdx · <a href="%GITHUB_URL%">GitHub</a> · <a href="%GALLERY_URL%">PowerShell Gallery</a></p><p class="disclaimer">psfdx is an independent open-source project and is not affiliated with or endorsed by Salesforce.</p></div></footer></body></html>
