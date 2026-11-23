@@ -119,18 +119,6 @@
       "reason": "Prints a user's password. psfdx generates one with New-SalesforceUserPassword and never reads it back from the CLI."
     },
     {
-      "match": "org create agent-user",
-      "status": "missing",
-      "issue": 255,
-      "reason": "An Agentforce command; it is built with the other agent commands in PSF-61."
-    },
-    {
-      "match": "org open agent",
-      "status": "missing",
-      "issue": 255,
-      "reason": "An Agentforce command; it is built with the other agent commands in PSF-61."
-    },
-    {
       "match": "org create scratch",
       "reason": "--track-source switches on what a scratch org does by default; the CLI lists it as the negatable --[no-]track-source, and -NoTrackSource passes --no-track-source to turn it off.",
       "ignoreFlags": [

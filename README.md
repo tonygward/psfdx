@@ -467,6 +467,15 @@ Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Test-SalesforceAgentPlugin` | Check that the agent CLI plugin is installed. |
+| `New-SalesforceAgent` | Create an agent in the org from a spec file (`sf agent create`; `-Preview` creates nothing). |
+| `New-SalesforceAgentSpec` | Generate an agent spec, a YAML file with AI-suggested topics, from role and company details (`sf agent generate agent-spec`). `-FullInterview` asks questions. |
+| `New-SalesforceAgentTemplate` | Generate a template from an agent in the project, to package in a managed package. |
+| `New-SalesforceAgentTestSpec` | Generate a test spec YAML. Interactive unless `-FromDefinition` is given. |
+| `New-SalesforceAgentTest` | Create an agent test in the org from a test spec (`-Preview`, `-ForceOverwrite`). |
+| `Resume-SalesforceAgentTest` | Wait for a test run and return its results, by `-JobId` or `-UseMostRecent`. |
+| `Start-SalesforceAgentEvaluation` | Run evaluation tests from a spec file (`sf agent test run-eval`, beta). |
+| `New-SalesforceAgentUser` | Create the default user an agent runs as (`sf org create agent-user`). |
+| `Open-SalesforceAgent` | Open an agent in Agentforce Builder, or print the link with `-UrlOnly`. |
 | `Get-SalesforceAgentTests` | List agent test definitions in the org. |
 | `Start-SalesforceAgentTest` | Run an agent test by `-ApiName`; optional `-WaitMinutes`. Returns the job or results. |
 | `Get-SalesforceAgentTestResult` | Get the results of an agent test run by `-JobId`. |
@@ -475,6 +484,29 @@ Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with 
 | `New-SalesforceAgentAuthoringBundle` | Generate an Agent Script authoring bundle (`sf agent generate authoring-bundle`) from `-Spec` (or a blank one with `-NoSpec`; `-Name` is required); asks for confirmation, supports `-WhatIf`. |
 | `Test-SalesforceAgentAuthoringBundle` | Validate a bundle by `-ApiName`. Returns `Valid` and `Diagnostics` (message, line, column); `-ThrowOnInvalid` fails a CI step. |
 | `Publish-SalesforceAgentAuthoringBundle` | Publish a bundle to the org as an agent; asks for confirmation, supports `-WhatIf`. The authoring commands are newer upstream (possibly beta) and need a recent `@salesforce/plugin-agent`. |
+
+### Agent preview, traces and data libraries
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Start-SalesforceAgentPreview` / `Send-SalesforceAgentPreviewMessage` / `Stop-SalesforceAgentPreview` / `Get-SalesforceAgentPreviewSessions` | A programmatic preview session a script can drive: start it, send messages, end it (asks first), list the open ones. `-ContextVariables` takes a hashtable. |
+| `Invoke-SalesforceAgentPreview` | Chat with an agent in the terminal (`sf agent preview`). Interactive: run it as a plain command in a terminal. |
+| `Get-SalesforceAgentTraces` / `Read-SalesforceAgentTrace` / `Remove-SalesforceAgentTrace` | List, read and delete the trace files of preview sessions. Deleting needs a filter (`-Agent`, `-SessionId` or `-OlderThan`) and asks first. |
+| `New-SalesforceAgentDataLibrary` / `Update-` / `Remove-SalesforceAgentDataLibrary` | Create, change and delete an Agentforce Data Library (the delete asks first). |
+| `Get-SalesforceAgentDataLibrary` / `Get-SalesforceAgentDataLibraries` / `Get-SalesforceAgentDataLibraryStatus` | Read libraries and their indexing status. |
+| `Add-` / `Send-` / `Remove-` / `Get-SalesforceAgentDataLibraryFile(s)` | Add or upload files to a library, delete one (asks first), list them with their status. |
+
+### MCP servers (preview)
+
+These run the preview `sf agent mcp` commands, so their flags and output can change in a later CLI release.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `New-SalesforceMcpServer` / `Update-SalesforceMcpServer` / `Remove-SalesforceMcpServer` | Register, change and delete an MCP server in the API Catalog. The client secret is a `SecureString`; the URL must be https; the delete asks first. |
+| `Get-SalesforceMcpServer` / `Get-SalesforceMcpServers` | Read one server or list them. |
+| `Get-SalesforceMcpAssets` / `Get-SalesforceMcpServerLiveAssets` / `Set-SalesforceMcpAssets` | The allowed assets of a server, what the server offers now, and replacing the allowed set (JSON string, object or file). |
+
+The full mapping, and the reasons behind the interactive and secret handling, are in [docs/agentforce-parity.md](docs/agentforce-parity.md).
 
 ### psfdx-logs
 
