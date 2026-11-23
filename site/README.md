@@ -57,7 +57,7 @@ Every push to `main` redeploys the site, and pull requests get a preview URL. To
 
 ## Changing the content
 
-Edit `site/src/index.html` and `style.css`, then run the tests. Keep all eight module descriptions and their documentation pages in line with the README and the real cmdlets, and do not type a version number into the page: the release pill takes it from `VERSION` at build time. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
+Edit `site/src/index.html` and `style.css`, then run the tests. Keep all the module descriptions and their documentation pages in line with the README and the real cmdlets, and do not type a version number into the page: the release pill takes it from `VERSION` at build time. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
 
 ## Deployment troubleshooting
 
@@ -67,6 +67,13 @@ If a merge to `main` does not appear on psfdx.com, check the Cloudflare Pages `p
 
 ## Module documentation
 
-The homepage links to `/modules/<module-name>/` for each of the seven user-facing modules plus `psfdx-shared` (an internal helper module). Each reference page describes its scope, shows usable PowerShell examples, and explains how to discover all cmdlets and full command help through `Get-Command` and `Get-Help`. The build includes every page in `sitemap.xml`, and the site tests check that each page exists and is linked.
+The homepage links to `/modules/<module-name>/` for each module (the seven user-facing ones, plus `psfdx-devops`, `psfdx-bulk` and `psfdx-plugins`, and `psfdx-shared`, an internal helper module). The pages are a short introduction followed by a command reference. The introductions (definition and overview) are written by hand in `site/src/modules/<module>/index.html`; the main `psfdx` page also keeps its installation instructions and showcase examples.
 
-The homepage also demonstrates `Get-Help`, `Update-Module psfdx`, and `Select-SalesforceRecords ... | Export-Csv`. Import `psfdx` before querying individual module names, because the Gallery package contains the entire suite in one installation.
+**The command reference is generated, not written.** `site/Update-ModuleReference.ps1` reads the comment-based help and the parameter block of every command a module exports (the text `Get-Help` reads) and fills the part of each page between `<!-- reference:start -->` and `<!-- reference:end -->`:
+
+- an alphabetical index that links to every command;
+- one compact, expandable entry per command: synopsis, syntax (one line per parameter set), parameters, a practical example with the `PS>` prompt, and the Salesforce CLI command it runs.
+
+A command appears under the module that exports it, so moving a command to another module moves its entry. Run `pwsh ./site/Update-ModuleReference.ps1` after changing a command, its help, or its owning module, and commit the changed pages. The script parses the source and does not load the modules, so it gives the same result on Windows PowerShell 5.1 and PowerShell 7. `site/ModuleReference.Tests.ps1` fails when a page is stale, and also checks that every command is documented once under its owning module, that every `sf` command shown exists in the CLI inventory, and that every wrapped `sf` command appears on a page. `site/build.test.mjs` checks the structure of the pages and that every exported command has an entry.
+
+Never edit between the markers by hand: the next run replaces it. A small script, `reference.js`, opens the entry an index link points at; the pages work without it.
