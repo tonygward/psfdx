@@ -39,12 +39,6 @@
   },
   "rules": [
     {
-      "match": "devops *",
-      "status": "missing",
-      "issue": 256,
-      "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here."
-    },
-    {
       "match": "autocomplete",
       "status": "not applicable",
       "reason": "Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it."

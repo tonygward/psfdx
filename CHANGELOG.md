@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-metadata: every `sf devops` command is now covered, with 26 new cmdlets named `...SalesforceDevOps...`: projects (`Get-`, `New-`, `Update-SalesforceDevOpsProject`), work items (`Get-`, `New-`, `Update-`, `Initialize-` to prepare a one-off promotion, `Join-` to combine, and `New-SalesforceDevOpsReview` for a pull request), pipelines (`Get-SalesforceDevOpsPipeline`, `Get-SalesforceDevOpsPipelineDetails`, `New-`, `Update-` to rename, activate or deactivate), pipeline projects, stages, stage branches and stage environments (`Add-` and `Remove-`), and promotion (`Start-`, `Complete-`, `Test-SalesforceDevOpsPromotion` and `Get-SalesforceDevOpsRequestStatus`). They need a DevOps Center org. Deleting, deploying and activating ask for confirmation, and every change supports `-WhatIf`.
+
 ## 0.8.52 - 2026-11-23
 
 - psfdx: new cmdlets for the rest of the Salesforce CLI: `Get-SalesforceCommunityTemplates`, `New-SalesforceCommunity` and `Publish-SalesforceCommunity` (Experience Cloud sites; publishing asks first), `Invoke-SalesforceGraphQL` and `Invoke-SalesforceRestRequest` (call the API as the CLI's logged-in user; a mutation or a write asks first and supports `-WhatIf`, and an error response throws with the response text), and `Invoke-SalesforceDoctor` (`-CreateIssue` shares your diagnostics on GitHub, so it asks first). On Windows the CLI cannot take a double quote in an argument, so use `-QueryFile` or `-BodyFile` for JSON there.
