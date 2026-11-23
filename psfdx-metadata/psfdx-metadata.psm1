@@ -3024,7 +3024,7 @@ function Describe-SalesforceObjects {
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf sobject list (plugin @salesforce/plugin-schema)
       Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Category = --sobject; -TargetOrg = --target-org.
+    Parameter to flag: -TargetOrg = --target-org; -Category = --sobject.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -3041,8 +3041,8 @@ function Describe-SalesforceObjects {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][ValidateSet('all', 'standard', 'custom')][string] $Category,
-        [Parameter(Mandatory = $false)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][ValidateSet('all', 'standard', 'custom')][string] $Category
     )
     $arguments = @('sobject', 'list')
     if ($Category) { $arguments += @('--sobject', $Category.ToLowerInvariant()) }

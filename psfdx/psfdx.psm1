@@ -1021,7 +1021,10 @@ function Remove-SalesforceAlias {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     # One alias keeps the old behaviour (no question). Removing every alias cannot be undone, so it asks unless -NoPrompt is given.
-    if ($All) { if ($NoPrompt) { $ConfirmPreference = 'None' } else { $ConfirmPreference = 'Medium' } }
+    if ($All) {
+        if ($NoPrompt) { $ConfirmPreference = 'None' }
+        elseif (-not $PSBoundParameters.ContainsKey('Confirm')) { $ConfirmPreference = 'Medium' }
+    }
     $target = $Alias
     if ($All) { $target = 'every local alias' }
     if (-not $PSCmdlet.ShouldProcess($target, 'Remove alias')) { return }
@@ -4373,6 +4376,8 @@ function Invoke-SalesforceGraphQL {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     if ($statement -match '(?im)^\s*mutation\b') {
+        # A mutation asks by default. An explicit -Confirm:$false skips the question.
+        if (-not $PSBoundParameters.ContainsKey('Confirm')) { $ConfirmPreference = 'Medium' }
         if (-not $PSCmdlet.ShouldProcess($(if ($TargetOrg) { $TargetOrg } else { 'the default org' }), 'Run a GraphQL mutation (changes data)')) { return }
     }
     $hint = $null
@@ -4499,8 +4504,20 @@ function Invoke-SalesforceRestRequest {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
-    if ($Method -in 'POST', 'PUT', 'PATCH', 'DELETE') {
-        if (-not $PSCmdlet.ShouldProcess($(if ($Url) { $Url } else { $File }), "$Method request")) { return }
+    # The method may be in the request file. Read it, so a write there is confirmed too; a file that cannot be read is treated as a write.
+    $effectiveMethod = $Method
+    if (-not $effectiveMethod -and $File) {
+        $effectiveMethod = 'POST'
+        try {
+            $request = [System.IO.File]::ReadAllText((Resolve-Path -LiteralPath $File).ProviderPath) | ConvertFrom-Json
+            $effectiveMethod = 'GET'
+            if ($request -and $request.method) { $effectiveMethod = ([string] $request.method).ToUpperInvariant() }
+        } catch { }
+    }
+    if ($effectiveMethod -in 'POST', 'PUT', 'PATCH', 'DELETE') {
+        # A write asks by default. An explicit -Confirm:$false skips the question.
+        if (-not $PSBoundParameters.ContainsKey('Confirm')) { $ConfirmPreference = 'Medium' }
+        if (-not $PSCmdlet.ShouldProcess($(if ($Url) { $Url } else { $File }), "$effectiveMethod request")) { return }
     }
     $hint = $null
     if ($Body) { $hint = 'The body has a double quote or a line break, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely. Put it in a file and use -BodyFile instead.' }
@@ -5011,9 +5028,11 @@ function Invoke-SalesforceDoctor {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     if ($CreateIssue) {
+        # Sharing diagnostics outside this computer asks by default. An explicit -Confirm:$false skips the question.
+        if (-not $PSBoundParameters.ContainsKey('Confirm')) { $ConfirmPreference = 'Medium' }
         if (-not $PSCmdlet.ShouldProcess('the Salesforce CLI GitHub repository', 'Create an issue with your diagnostic results attached')) { return }
     } else {
-        $ConfirmPreference = 'None'
+        if (-not $PSBoundParameters.ContainsKey('Confirm')) { $ConfirmPreference = 'None' }
         if (-not $PSCmdlet.ShouldProcess('this computer', 'Run the Salesforce CLI diagnostics and write their files')) { return }
     }
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams

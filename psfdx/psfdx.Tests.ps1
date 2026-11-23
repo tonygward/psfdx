@@ -2021,6 +2021,82 @@ Describe 'psfdx: Experience Cloud, requests, plugins and diagnostics (issue 257)
             }
         }
 
+        Context 'what asks at the default confirmation level' {
+            # A prompt cannot be seen from a mock, so this runs the cmdlets in a child PowerShell with no terminal: a cmdlet that would ask fails there,
+            # and one that does not runs. The child replaces Invoke-Salesforce inside the module and counts its calls.
+            BeforeAll {
+                $dir = Join-Path $TestDrive ([guid]::NewGuid().ToString('N')); New-Item -ItemType Directory -Path $dir | Out-Null
+                Set-Content -LiteralPath (Join-Path $dir 'delete.json') -Value '{"url":"/services/data/v62.0/sobjects/Account/001","method":"DELETE"}'
+                Set-Content -LiteralPath (Join-Path $dir 'get.json') -Value '{"url":"/services/data/v62.0/limits","method":"GET"}'
+                Set-Content -LiteralPath (Join-Path $dir 'nomethod.json') -Value '{"url":"/services/data/v62.0/limits"}'
+                Set-Content -LiteralPath (Join-Path $dir 'broken.json') -Value 'not json'
+                $manifest = (Get-Module psfdx).Path -replace '\.psm1$', '.psd1'
+                $script = @"
+`$ErrorActionPreference = 'Stop'
+Import-Module '$manifest' -Force 3>`$null
+& (Get-Module psfdx) { function script:Invoke-Salesforce { `$global:psfdxCalls++; '{"status":0,"result":{}}' } }
+`$cases = [ordered]@{
+  'rest-post'      = { Invoke-SalesforceRestRequest -Url /x -Method POST }
+  'rest-post-no'   = { Invoke-SalesforceRestRequest -Url /x -Method POST -Confirm:`$false }
+  'rest-get'       = { Invoke-SalesforceRestRequest -Url /x }
+  'file-delete'    = { Invoke-SalesforceRestRequest -File '$dir\delete.json' }
+  'file-delete-no' = { Invoke-SalesforceRestRequest -File '$dir\delete.json' -Confirm:`$false }
+  'file-get'       = { Invoke-SalesforceRestRequest -File '$dir\get.json' }
+  'file-nomethod'  = { Invoke-SalesforceRestRequest -File '$dir\nomethod.json' }
+  'file-broken'    = { Invoke-SalesforceRestRequest -File '$dir\broken.json' }
+  'gql-mutation'   = { Invoke-SalesforceGraphQL -Query 'mutation { a }' }
+  'gql-mutation-no'= { Invoke-SalesforceGraphQL -Query 'mutation { a }' -Confirm:`$false }
+  'gql-query'      = { Invoke-SalesforceGraphQL -Query 'query { a }' }
+  'doctor-issue'   = { Invoke-SalesforceDoctor -CreateIssue }
+  'doctor-issue-no'= { Invoke-SalesforceDoctor -CreateIssue -Confirm:`$false }
+  'doctor'         = { Invoke-SalesforceDoctor }
+  'alias-all'      = { Remove-SalesforceAlias -All }
+  'alias-all-no'   = { Remove-SalesforceAlias -All -Confirm:`$false }
+  'alias-one'      = { Remove-SalesforceAlias -Alias dev1 }
+}
+`$out = [ordered]@{}
+foreach (`$k in `$cases.Keys) {
+  `$global:psfdxCalls = 0
+  try { & `$cases[`$k] | Out-Null } catch { }
+  `$out[`$k] = `$global:psfdxCalls
+}
+`$out | ConvertTo-Json -Compress
+"@
+                $file = Join-Path $dir 'child.ps1'
+                Set-Content -LiteralPath $file -Value $script
+                $exe = (Get-Process -Id $PID).Path
+                $raw = & $exe -NoProfile -NonInteractive -File $file 2>&1 | Where-Object { $_ -is [string] -and $_.StartsWith('{') } | Select-Object -Last 1
+                $script:calls = $raw | ConvertFrom-Json
+            }
+            It 'a REST write asks, a read does not, and -Confirm:$false skips the question' {
+                $script:calls.'rest-post' | Should -Be 0
+                $script:calls.'rest-post-no' | Should -Be 1
+                $script:calls.'rest-get' | Should -Be 1
+            }
+            It 'reads the method from the request file, and treats a file it cannot read as a write' {
+                $script:calls.'file-delete' | Should -Be 0
+                $script:calls.'file-delete-no' | Should -Be 1
+                $script:calls.'file-get' | Should -Be 1
+                $script:calls.'file-nomethod' | Should -Be 1
+                $script:calls.'file-broken' | Should -Be 0
+            }
+            It 'a GraphQL mutation asks and a query does not' {
+                $script:calls.'gql-mutation' | Should -Be 0
+                $script:calls.'gql-mutation-no' | Should -Be 1
+                $script:calls.'gql-query' | Should -Be 1
+            }
+            It 'sharing diagnostics asks, running them does not' {
+                $script:calls.'doctor-issue' | Should -Be 0
+                $script:calls.'doctor-issue-no' | Should -Be 1
+                $script:calls.'doctor' | Should -Be 1
+            }
+            It 'removing all aliases asks, one alias does not, and -Confirm:$false is respected' {
+                $script:calls.'alias-all' | Should -Be 0
+                $script:calls.'alias-all-no' | Should -Be 1
+                $script:calls.'alias-one' | Should -Be 1
+            }
+        }
+
         Context 'plugins' {
             It 'uninstalls after confirmation, -NoPrompt skips it, -WhatIf does nothing' {
                 Uninstall-SalesforcePlugin -Name @('@salesforce/plugin-agent', 'sfdx-hardis') -ExtendedDetails -NoPrompt | Out-Null
