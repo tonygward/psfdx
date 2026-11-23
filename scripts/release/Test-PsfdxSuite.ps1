@@ -50,6 +50,7 @@ $representative = [ordered]@{
     'psfdx-shared'      = @{ Command = 'ConvertTo-SalesforceSoqlLiteral'; Run = 'ConvertTo-SalesforceSoqlLiteral -Value "O''Brien"'; Expect = "'O\'Brien'" }
     'psfdx-logs'        = @{ Command = 'Convert-SalesforceDebugLog'; Run = "Convert-SalesforceDebugLog -Log ('59.0 APEX_CODE,DEBUG' + [Environment]::NewLine + '12:00:00.1 (1000)|EXECUTION_STARTED')"; Expect = $null }
     'psfdx-metadata'    = @{ Command = 'Clear-SalesforceMetadataTypeCache'; Run = 'Clear-SalesforceMetadataTypeCache'; Expect = $null }
+    'psfdx-bulk'        = @{ Command = 'Remove-SalesforceBulkData'; Run = "`$probe = Join-Path ([IO.Path]::GetTempPath()) 'psfdx-bulk-probe.csv'; Set-Content -LiteralPath `$probe -Value 'Id'; Remove-SalesforceBulkData -File `$probe -Object Account -WhatIf"; Expect = $null }
     'psfdx-devops'      = @{ Command = 'New-SalesforceDevOpsProject'; Run = "New-SalesforceDevOpsProject -Name 'x' -WhatIf"; Expect = $null }
     'psfdx-development' = @{ Command = 'Remove-SalesforceScratchOrg'; Run = 'Remove-SalesforceScratchOrg -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-sandbox'     = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }

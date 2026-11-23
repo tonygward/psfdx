@@ -43,7 +43,7 @@ Describe 'Salesforce CLI compatibility (offline)' {
     It 'finds the sf commands psfdx uses in every module' {
         @($script:Commands).Count | Should -BeGreaterThan 50
         $modules = @($script:Commands | ForEach-Object { ($_.File -split '/')[0] } | Sort-Object -Unique)
-        foreach ($name in 'psfdx', 'psfdx-development', 'psfdx-devops', 'psfdx-logs', 'psfdx-metadata', 'psfdx-packages', 'psfdx-sandbox') {
+        foreach ($name in 'psfdx', 'psfdx-bulk', 'psfdx-development', 'psfdx-devops', 'psfdx-logs', 'psfdx-metadata', 'psfdx-packages', 'psfdx-sandbox') {
             $modules | Should -Contain $name
         }
     }

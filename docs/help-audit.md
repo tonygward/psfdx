@@ -53,13 +53,13 @@ Not verified: nothing here was run against a real org. The help was checked agai
 | `Connect-SalesforceAuthUrl` | psfdx | sf command | `sf org login sfdx-url` |  |
 | `Connect-SalesforceJwt` | psfdx | sf command | `sf org login jwt` |  |
 | `Disconnect-Salesforce` | psfdx | sf command | `sf org logout` |  |
-| `Export-SalesforceBulkData` | psfdx | sf command | `sf data export bulk` |  |
+| `Export-SalesforceBulkData` | bulk | sf command | `sf data export bulk` |  |
 | `Export-SalesforceTreeData` | psfdx | sf command | `sf data export tree` |  |
 | `Get-SalesforceAlias` | psfdx | sf command | `sf alias list` |  |
 | `Get-SalesforceApiUsage` | psfdx | other psfdx cmdlets |  |  |
 | `Get-SalesforceApiVersions` | psfdx | sf command | `sf api request rest` |  |
 | `Get-SalesforceAuthenticatedUser` | psfdx | sf command | `sf org list users` |  |
-| `Get-SalesforceBulkResult` | psfdx | sf command | `sf data bulk results` |  |
+| `Get-SalesforceBulkResult` | bulk | sf command | `sf data bulk results` |  |
 | `Get-SalesforceConnections` | psfdx | sf command | `sf org list` |  |
 | `Get-SalesforceDataStorage` | psfdx | other psfdx cmdlets |  |  |
 | `Get-SalesforceDateTime` | psfdx | PowerShell and .NET only |  |  |
@@ -72,7 +72,7 @@ Not verified: nothing here was run against a real org. The help was checked agai
 | `Get-SalesforceUsers` | psfdx | other psfdx cmdlets |  |  |
 | `Grant-SalesforcePermissionSet` | psfdx | sf command | `sf org assign permset` |  |
 | `Grant-SalesforcePermissionSetLicense` | psfdx | sf command | `sf org assign permsetlicense` |  |
-| `Import-SalesforceBulkData` | psfdx | sf command | `sf data import bulk` |  |
+| `Import-SalesforceBulkData` | bulk | sf command | `sf data import bulk` |  |
 | `Import-SalesforceTreeData` | psfdx | sf command | `sf data import tree` |  |
 | `Install-SalesforceCli` | psfdx | npm |  |  |
 | `Install-SalesforcePlugin` | psfdx | sf command | `sf plugins install` |  |
@@ -84,13 +84,13 @@ Not verified: nothing here was run against a real org. The help was checked agai
 | `Remove-SalesforceAlias` | psfdx | sf command | `sf alias unset` |  |
 | `Remove-SalesforceRecord` | psfdx | sf command | `sf data delete record` |  |
 | `Repair-SalesforceConnections` | psfdx | sf command | `sf org list` |  |
-| `Resume-SalesforceBulkJob` | psfdx | sf command | `sf data export resume`<br>`sf data import resume`<br>`sf data update resume`<br>`sf data upsert resume` |  |
+| `Resume-SalesforceBulkJob` | bulk | sf command | `sf data export resume`<br>`sf data import resume`<br>`sf data update resume`<br>`sf data upsert resume` |  |
 | `Select-SalesforceRecords` | psfdx | sf command | `sf data query` |  |
 | `Set-SalesforceRecord` | psfdx | sf command | `sf data update record` |  |
-| `Update-SalesforceBulkData` | psfdx | sf command | `sf data update bulk` |  |
+| `Update-SalesforceBulkData` | bulk | sf command | `sf data update bulk` |  |
 | `Update-SalesforceCli` | psfdx | npm |  |  |
 | `Update-SalesforcePlugins` | psfdx | sf command | `sf plugins update` |  |
-| `Upsert-SalesforceBulkData` | psfdx | sf command | `sf data upsert bulk` |  |
+| `Upsert-SalesforceBulkData` | bulk | sf command | `sf data upsert bulk` |  |
 | `Upsert-SalesforceRecord` | psfdx | sf command | `sf api request rest` |  |
 | `Disable-SalesforceAgent` | agentforce | sf command | `sf agent deactivate` |  |
 | `Enable-SalesforceAgent` | agentforce | sf command | `sf agent activate` |  |
