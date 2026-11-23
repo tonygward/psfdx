@@ -105,6 +105,19 @@ Describe 'Repository rules' {
         $lines[1] | Should -Be '## Unreleased'
     }
 
+    It 'no workflow puts an expression in a step-level shell: (GitHub rejects the whole file; the matrix shell belongs in defaults.run)' {
+        # A workflow file GitHub cannot parse starts no jobs and shows up as a failed run named after its path, so catch it here.
+        foreach ($file in Get-ChildItem -Path (Join-Path (Join-Path $script:Root '.github') 'workflows') -Filter '*.yml') {
+            $lines = @([System.IO.File]::ReadAllText($file.FullName) -split "`r?`n")
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+                if ($lines[$i] -match '^\s+shell:\s*\$\{\{') {
+                    $previous = if ($i -gt 0) { $lines[$i - 1] } else { '' }
+                    $previous | Should -Match '^\s+run:\s*$' -Because "$($file.Name) line $($i + 1) uses an expression in a step's shell:, which GitHub does not allow; use defaults.run.shell at the job level"
+                }
+            }
+        }
+    }
+
     It 'every workflow name starts with a known prefix' {
         $workflows = Get-ChildItem -Path (Join-Path (Join-Path $script:Root '.github') 'workflows') -Filter '*.yml'
         foreach ($workflow in $workflows) {

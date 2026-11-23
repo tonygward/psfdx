@@ -26,6 +26,9 @@ jobs:
   install:
     name: Suite install (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     strategy:
       fail-fast: false
       matrix:
@@ -49,7 +52,6 @@ jobs:
           "NEW_VERSION=$($info.NewVersion)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Install from the repository and check the suite
-        shell: ${{ matrix.shell }}
         run: |
           $ErrorActionPreference = 'Stop'
           if ($PSVersionTable.PSEdition -eq 'Desktop') {
@@ -70,7 +72,6 @@ jobs:
           ./scripts/release/Test-PsfdxHelp.ps1 -ModulePath $dest -Version $env:OLD_VERSION -Quick
 
       - name: Upgrade, Update-Module and a missing dependency
-        shell: ${{ matrix.shell }}
         run: |
           $ErrorActionPreference = 'Stop'
           $scratch = Join-Path $env:RUNNER_TEMP 'psfdx-upgrade'

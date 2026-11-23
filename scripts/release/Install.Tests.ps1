@@ -75,13 +75,13 @@ Describe 'install.ps1 and uninstall.ps1 and the old psfdx core module' {
     It 'uninstalls the modules and the old core module, and leaves a Gallery install of psfdx alone' {
         $null = & $script:Run 'install.ps1' $script:Home1 $script:ModuleRoot @()
         & $script:AddLegacy $script:ModuleRoot
-        $run = & $script:Run 'uninstall.ps1' $script:Home1 $script:ModuleRoot @('-Confirm:$false')
+        $run = & $script:Run 'uninstall.ps1' $script:Home1 $script:ModuleRoot @()
         $run.ExitCode | Should -Be 0 -Because $run.Output
         foreach ($module in Get-PsfdxModules) { (Join-Path $script:ModuleRoot $module) | Should -Not -Exist }
         (Join-Path $script:ModuleRoot 'psfdx') | Should -Not -Exist
 
         & $script:AddGallery $script:ModuleRoot
-        $null = & $script:Run 'uninstall.ps1' $script:Home1 $script:ModuleRoot @('-Confirm:$false')
+        $null = & $script:Run 'uninstall.ps1' $script:Home1 $script:ModuleRoot @()
         (Join-Path (Join-Path (Join-Path $script:ModuleRoot 'psfdx') '0.9.0') 'psfdx.psd1') | Should -Exist
     }
 }
@@ -108,12 +108,12 @@ Describe 'install-windows.ps1 and uninstall-windows.ps1 and the old psfdx core m
     It 'uninstalls the modules and the old core module, and leaves a Gallery psfdx alone' {
         $null = & $script:Run 'install-windows.ps1' $script:Home1 $script:ModuleRoot @()
         & $script:AddLegacy $script:ModuleRoot
-        $run = & $script:Run 'uninstall-windows.ps1' $script:Home1 $script:ModuleRoot @('-Confirm:$false')
+        $run = & $script:Run 'uninstall-windows.ps1' $script:Home1 $script:ModuleRoot @()
         $run.ExitCode | Should -Be 0 -Because $run.Output
         foreach ($module in Get-PsfdxModules) { (Join-Path $script:ModuleRoot $module) | Should -Not -Exist }
         (Join-Path $script:ModuleRoot 'psfdx') | Should -Not -Exist
         & $script:AddGallery $script:ModuleRoot
-        $null = & $script:Run 'uninstall-windows.ps1' $script:Home1 $script:ModuleRoot @('-Confirm:$false')
+        $null = & $script:Run 'uninstall-windows.ps1' $script:Home1 $script:ModuleRoot @()
         (Join-Path (Join-Path (Join-Path $script:ModuleRoot 'psfdx') '0.9.0') 'psfdx.psd1') | Should -Exist
     }
 }
