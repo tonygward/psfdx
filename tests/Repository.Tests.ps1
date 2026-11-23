@@ -45,6 +45,33 @@ Describe 'Repository rules' {
         }
     }
 
+    It 'no module manifest asks for a prerelease, and every module has its own GUID' {
+        # The package is published at one exact version; a prerelease string in any manifest would make the Gallery list it as a prerelease.
+        $guids = @{}
+        foreach ($manifest in Get-ChildItem -Path $script:Root -Directory -Filter 'psfdx*' | ForEach-Object { Join-Path $_.FullName "$($_.Name).psd1" }) {
+            $data = Import-PowerShellDataFile -Path $manifest
+            if ($data.PrivateData -and $data.PrivateData.PSData) { $data.PrivateData.PSData.ContainsKey('Prerelease') | Should -BeFalse -Because (Split-Path -Leaf $manifest) }
+            $data.GUID | Should -Match '^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$'
+            $guids.ContainsKey($data.GUID) | Should -BeFalse -Because "$(Split-Path -Leaf $manifest) shares a GUID with $($guids[$data.GUID])"
+            $guids[$data.GUID] = Split-Path -Leaf $manifest
+        }
+        # The core module's GUID is the Gallery identity of the package psfdx.
+        $guids['2785d2bf-775f-4f2b-9d00-ee98f0163cf0'] | Should -Be 'psfdx.psd1'
+    }
+
+    It 'no workflow puts an expression in a step-level shell: (GitHub rejects the whole file; the matrix shell belongs in defaults.run)' {
+        # A workflow file GitHub cannot parse starts no jobs and shows up as a failed run named after its path, so catch it here.
+        foreach ($file in Get-ChildItem -Path (Join-Path (Join-Path $script:Root '.github') 'workflows') -Filter '*.yml') {
+            $lines = @([System.IO.File]::ReadAllText($file.FullName) -split "`r?`n")
+            for ($i = 0; $i -lt $lines.Count; $i++) {
+                if ($lines[$i] -match '^\s+shell:\s*\$\{\{') {
+                    $previous = if ($i -gt 0) { $lines[$i - 1] } else { '' }
+                    $previous | Should -Match '^\s+run:\s*$' -Because "$($file.Name) line $($i + 1) uses an expression in a step's shell:, which GitHub does not allow; use defaults.run.shell at the job level"
+                }
+            }
+        }
+    }
+
     It 'LICENSE is the MIT licence' {
         $text = Get-Content -Path (Join-Path $script:Root 'LICENSE') -Raw
         $text | Should -Match '^MIT License'

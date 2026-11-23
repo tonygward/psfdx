@@ -19,11 +19,23 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-## 3. See the commands
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
 
 ```
-Get-Command -Module psfdx
+Import-Module psfdx
 ```
+
+## 3. See the commands
+
+Each module keeps its own name, so every command is listed under the module that holds it:
+
+```
+Get-Command -Module psfdx          # the core commands only
+Get-Command -Module psfdx-logs     # only the commands the logs module owns
+Get-Command -Module 'psfdx*'       # every command, each attributed to its own module
+```
+
+Run `Import-Module psfdx` first in a new session: it loads every module, and until it has run, PowerShell can only see the core commands (details in [docs/install.md](docs/install.md)).
 
 Every command has full help:
 
@@ -40,6 +52,8 @@ The notes of each command have a **Salesforce CLI mapping** section. It names th
 ```
 Update-Module psfdx
 ```
+
+This moves every module to the same new version. How upgrades work, and what to do if a module goes missing, is in [docs/install.md](docs/install.md).
 
 ## 5. Salesforce CLI
 

@@ -1,8 +1,11 @@
 name: CI - Gallery install check
 
-# After CD - Publish to PowerShell Gallery has published a version, install psfdx from the Gallery into a temporary module path on
-# both PowerShell editions, import it, check that the exported commands match the module manifests in the repository, and check that
-# the help of every installed command works (scripts/release/Test-PsfdxHelp.ps1).
+# After CD - Publish to PowerShell Gallery has published a version, install psfdx from the Gallery (the one package, with one Save-Module
+# and nothing else) into a temporary module path on both PowerShell editions, and check it with scripts/release/Test-PsfdxSuite.ps1: the install
+# is the one package holding every module; Get-Command -Module psfdx shows only the core commands; once psfdx has loaded, Get-Command -Module
+# psfdx-logs shows exactly the logs commands and -Module 'psfdx*' shows every command attributed to its own module with none twice; a representative
+# command from each module runs. Then the help of every installed command is checked (scripts/release/Test-PsfdxHelp.ps1).
+# The evidence (command counts per module, ownership, representative runs) is uploaded with the run.
 # With "publish": false in scripts/release/gallery.json nothing was published, so this skips (with a notice).
 on:
   workflow_run:
@@ -47,11 +50,6 @@ jobs:
           $publish = (Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json).publish -eq $true
           if (-not $publish -and -not $env:INPUT_VERSION) { Write-Host "::notice::publish is false in scripts/release/gallery.json, so nothing was published; skipping."; return }
 
-          # Expected: the union of every module manifest's FunctionsToExport.
-          . ./modules.ps1
-          $expected = @()
-          foreach ($module in Get-PsfdxModules) { $expected += @((Import-PowerShellDataFile -Path (Join-Path (Join-Path '.' $module) "$module.psd1")).FunctionsToExport) }
-          $expected = @($expected | Sort-Object)
 
           if ($PSVersionTable.PSEdition -eq 'Desktop') {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -69,19 +67,22 @@ jobs:
           }
           if (-not $saved) { throw "psfdx $version could not be installed from the PowerShell Gallery" }
 
-          # A clean session that sees only the saved copy.
-          $separator = [IO.Path]::PathSeparator
-          $command = "`$ErrorActionPreference = 'Stop'; `$env:PSModulePath = '$temp' + '$separator' + `$env:PSModulePath; Import-Module psfdx -RequiredVersion $version -WarningAction SilentlyContinue; (Get-Command -Module psfdx | Where-Object { `$_.CommandType -eq 'Function' } | Sort-Object Name | ForEach-Object Name) -join ','"
+          # The acceptance checks, in fresh sessions that see only the saved copy: scripts/release/Test-PsfdxSuite.ps1.
           $shellPath = (Get-Process -Id $PID).Path
-          $output = & $shellPath -NoProfile -NonInteractive -Command $command
-          if ($LASTEXITCODE -ne 0) { throw "Import-Module psfdx failed: $output" }
-          $installed = @(($output | Select-Object -Last 1) -split ',')
-          $missing = @($expected | Where-Object { $_ -notin $installed })
-          $extra = @($installed | Where-Object { $_ -notin $expected })
-          if ($missing.Count -or $extra.Count) { throw "The installed commands differ from the manifests. Missing: $($missing -join ', '). Extra: $($extra -join ', ')" }
-          Write-Host "psfdx $version installed from the Gallery on PowerShell $($PSVersionTable.PSVersion) and exposes $($installed.Count) commands, as the manifests say."
-
+          $evidence = Join-Path ([IO.Path]::GetTempPath()) ("psfdx-evidence-" + $PSVersionTable.PSEdition + "-" + $PSVersionTable.PSVersion.Major + ".json")
+          $suiteOutput = & $shellPath -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/release/Test-PsfdxSuite.ps1 -ModulePath $temp -Version $version -EvidencePath $evidence 2>&1 | Out-String
+          if ($LASTEXITCODE -ne 0) { throw "The psfdx package installed from the Gallery is not right:`n$suiteOutput" }
+          Write-Host ($suiteOutput.Trim())
+          if (Test-Path $evidence) { Copy-Item $evidence (Join-Path $env:RUNNER_TEMP ([IO.Path]::GetFileName($evidence))) -Force }
           # The help must work from the installed package: Get-Help -Full, -Examples and -Parameter * for every command (issue 240).
           $helpOutput = & $shellPath -NoProfile -NonInteractive -File ./scripts/release/Test-PsfdxHelp.ps1 -ModulePath $temp -Version $version 2>&1 | Out-String
           if ($LASTEXITCODE -ne 0) { throw "The help of the installed package is incomplete:`n$helpOutput" }
           Write-Host ($helpOutput.Trim())
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-install-evidence-${{ matrix.name }}
+          path: ${{ runner.temp }}/psfdx-evidence-*.json
+          if-no-files-found: ignore

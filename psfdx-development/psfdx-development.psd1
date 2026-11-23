@@ -125,7 +125,6 @@
             # LicenseUri = ''
             # IconUri    = ''
             ReleaseNotes = 'Initial manifest for psfdx-development.'
-            Prerelease  = 'beta'
         }
     }
 }

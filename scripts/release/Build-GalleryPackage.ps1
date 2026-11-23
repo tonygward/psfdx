@@ -1,98 +1,157 @@
 [CmdletBinding()]
 Param(
-    # Where the bundle is assembled. out/psfdx is the folder that gets published.
+    # Where the package is assembled. This folder is the one package that gets published (default out/psfdx).
     [Parameter(Mandatory = $false)][string] $OutputFolder,
-    [Parameter(Mandatory = $false)][string] $Root = (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))
+    [Parameter(Mandatory = $false)][string] $Root
 )
 
-# Builds the one bundled `psfdx` package for the PowerShell Gallery. The repository keeps seven separate modules (one folder,
-# manifest, .psm1 and test file each) so development doesn't change; this script only assembles them into out/psfdx/ and
-# generates the bundle manifest. Works on Windows PowerShell 5.1 and PowerShell 7.
+# Builds the one `psfdx` package for the PowerShell Gallery. The repository keeps separate modules (one folder, manifest, .psm1 and test file
+# each) so development doesn't change; this script only assembles them into out/psfdx/ and generates the package manifest. Works on Windows
+# PowerShell 5.1 and PowerShell 7.
 #
-# GUIDs: the repository's core module (psfdx/) keeps its GUID 2785d2bf-775f-4f2b-9d00-ee98f0163cf0 for the BUNDLE, so the Gallery
-# identity is stable. Inside the bundle the core module becomes a nested module in the folder psfdx-core and gets the GUID below.
+# What the package is: ONE Gallery package, installed by the one command `Install-Module psfdx`, that holds every module.
+#   - `psfdx` is the core module and the package's root module. Its manifest exports only the core commands, so `Get-Command -Module psfdx` shows
+#     the core commands and nothing else, each with the Source `psfdx`.
+#   - Every other module sits in a folder of its own inside the package. When `psfdx` loads (Import-Module psfdx, or the first time any core command
+#     is used and PowerShell loads it), the end of psfdx.psm1 imports them with -Global, so each is a module in its own right: `Get-Module`,
+#     `Get-Command -Module psfdx-logs` and `Get-Command -Module 'psfdx*'` show every command under the module that really holds it, with no
+#     duplicates. The loader is generated here; it is not in the source psfdx.psm1.
+#   - PowerShell finds modules only as folders of their own on the module path, and one package installs one folder. So until `psfdx` has loaded, only
+#     `psfdx` is discoverable, and a non-core command is not found by name. Listing every command in the psfdx manifest would fix that but would
+#     label every command `psfdx` before the first import, so it is deliberately not done. docs/install.md explains this.
+#
+# GUIDs: the core module's GUID is the Gallery identity of the package `psfdx`, so the package keeps it. Every other module has its own.
 $ErrorActionPreference = 'Stop'
-$bundleGuid = '2785d2bf-775f-4f2b-9d00-ee98f0163cf0'
-$nestedCoreGuid = '5d3b1c7e-6a0e-4b8e-9f43-7c1a2e0d9b64'
+if (-not $Root) { $Root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) }
+$galleryGuid = '2785d2bf-775f-4f2b-9d00-ee98f0163cf0'
 
-if (-not $OutputFolder) { $OutputFolder = Join-Path (Join-Path $Root 'out') 'psfdx' }
 . (Join-Path $Root 'modules.ps1')
 $version = (Get-Content -Path (Join-Path $Root 'VERSION') -Raw).Trim()
 if ($version -notmatch '^\d+\.\d+\.\d+$') { throw "VERSION must be three numeric parts, got '$version'" }
+if (-not $OutputFolder) { $OutputFolder = Join-Path (Join-Path $Root 'out') 'psfdx' }
 
-# Order matters: the shared helpers load first, then the core module, then the rest as modules.ps1 lists them.
-$modules = @('psfdx-shared', 'psfdx') + @(Get-PsfdxModules | Where-Object { $_ -notin @('psfdx-shared', 'psfdx') })
-$folderFor = @{}
-foreach ($module in $modules) { $folderFor[$module] = if ($module -eq 'psfdx') { 'psfdx-core' } else { $module } }
+# ---- Checks: the module list, versions, exports and GUIDs ----
+$repoModules = @(Get-PsfdxModules)
+$coreName = 'psfdx'
+if ($repoModules -notcontains $coreName) { throw "Get-PsfdxModules must list the core module '$coreName'" }
+if ($repoModules -notcontains 'psfdx-shared') { throw "Get-PsfdxModules must list psfdx-shared" }
+# Load order: the shared helpers first, then the other modules as modules.ps1 lists them. (The core module is the package's root module.)
+$siblings = @('psfdx-shared') + @($repoModules | Where-Object { $_ -notin @($coreName, 'psfdx-shared') })
+
+$data = @{}
+$exports = @{}
+$guids = @{}
+foreach ($module in $repoModules) {
+    $manifestPath = Join-Path (Join-Path $Root $module) "$module.psd1"
+    $d = Import-PowerShellDataFile -Path $manifestPath
+    $data[$module] = $d
+    if ($d.ModuleVersion -ne $version) { throw "$module is $($d.ModuleVersion), expected $version" }
+    if ($d.RootModule -ne "$module.psm1") { throw "$module's RootModule is '$($d.RootModule)', expected $module.psm1" }
+    if (-not $d.GUID) { throw "$module has no GUID" }
+    if ($guids.ContainsKey($d.GUID)) { throw "$module's GUID $($d.GUID) is also used by $($guids[$d.GUID])" }
+    $guids[$d.GUID] = $module
+    if ($d.PrivateData -and $d.PrivateData.PSData -and $d.PrivateData.PSData.Prerelease) { throw "$module has Prerelease = '$($d.PrivateData.PSData.Prerelease)'; the package must not be a prerelease" }
+    foreach ($key in 'NestedModules', 'ScriptsToProcess', 'TypesToProcess', 'FormatsToProcess', 'RequiredAssemblies', 'FileList') {
+        if (@($d[$key] | Where-Object { $_ }).Count -gt 0) { throw "$module sets $key, which the package builder does not carry over" }
+    }
+    foreach ($name in @($d.FunctionsToExport)) {
+        if ($name -match '[*?]') { throw "$module exports a wildcard ('$name'); exports must be explicit" }
+        if ($exports.ContainsKey($name)) { throw "Function '$name' is exported by both $($exports[$name]) and $module" }
+        $exports[$name] = $module
+    }
+}
+$core = $data[$coreName]
+if ($core.GUID -ne $galleryGuid) { throw "The core module's GUID is $($core.GUID); it is the Gallery identity of the package psfdx and must stay $galleryGuid" }
+$psData = $core.PrivateData.PSData
+$projectUri = [string]$psData.ProjectUri
+$iconUri = [string]$psData.IconUri
+$licenseUri = [string]$psData.LicenseUri
+$releaseNotes = "$projectUri/releases/tag/v$version"
+$licenseFile = Join-Path $Root 'LICENSE'
+if (-not (Test-Path -LiteralPath $licenseFile)) { throw "LICENSE not found at $licenseFile" }
+
+function Q([string] $Text) { "'" + $Text.Replace("'", "''") + "'" }
+function Copy-ModuleFiles([string] $Source, [string] $Target) {
+    New-Item -ItemType Directory -Path $Target -Force | Out-Null
+    foreach ($item in Get-ChildItem -LiteralPath $Source -Recurse -File) {
+        if ($item.Name -like '*.Tests.ps1') { continue }
+        $relative = $item.FullName.Substring($Source.TrimEnd('\', '/').Length).TrimStart('\', '/')
+        $destination = Join-Path $Target $relative
+        $parent = Split-Path -Parent $destination
+        if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
+        Copy-Item -LiteralPath $item.FullName -Destination $destination
+    }
+}
 
 if (Test-Path -LiteralPath $OutputFolder) { Remove-Item -LiteralPath $OutputFolder -Recurse -Force }
 New-Item -ItemType Directory -Path $OutputFolder | Out-Null
 $outputFull = (Resolve-Path -LiteralPath $OutputFolder).Path
 
-# 1. Copy each module (without tests) and fix its manifest for life inside the bundle.
-$exports = @{}
-foreach ($module in $modules) {
-    $source = Join-Path $Root $module
-    $target = Join-Path $outputFull $folderFor[$module]
-    New-Item -ItemType Directory -Path $target | Out-Null
-    foreach ($item in Get-ChildItem -LiteralPath $source -Recurse -File) {
-        if ($item.Name -like '*.Tests.ps1') { continue }
-        $relative = $item.FullName.Substring($source.TrimEnd('\', '/').Length).TrimStart('\', '/')
-        $destination = Join-Path $target $relative
-        $parent = Split-Path -Parent $destination
-        if (-not (Test-Path -LiteralPath $parent)) { New-Item -ItemType Directory -Path $parent -Force | Out-Null }
-        Copy-Item -LiteralPath $item.FullName -Destination $destination
-    }
-    $manifestPath = Join-Path $source "$module.psd1"
-    $data = Import-PowerShellDataFile -Path $manifestPath
-    if ($data.ModuleVersion -ne $version) { throw "$module is $($data.ModuleVersion), expected $version" }
-    foreach ($name in @($data.FunctionsToExport)) {
-        if ($name -match '[*?]') { throw "$module exports a wildcard ('$name'); exports must be explicit" }
-        if ($exports.ContainsKey($name)) { throw "Function '$name' is exported by both $($exports[$name]) and $module" }
-        $exports[$name] = $module
-    }
-    # The nested copy of the manifest: the core module is renamed (the bundle takes the name psfdx), and RequiredModules is
-    # emptied because inside the bundle the modules load each other as siblings.
-    $text = Get-Content -LiteralPath $manifestPath -Raw
-    $newName = $folderFor[$module]
-    $text = [regex]::Replace($text, "(RootModule\s*=\s*)'$([regex]::Escape($module)).psm1'", "`$1'$newName.psm1'")
+# ---- The other modules, each in a folder of its own ----
+foreach ($module in $siblings) {
+    $target = Join-Path $outputFull $module
+    Copy-ModuleFiles (Join-Path $Root $module) $target
+    # RequiredModules is emptied: the modules are loaded by psfdx itself, in order, and a module that required `psfdx` would ask for the module that is
+    # still loading.
+    $manifestPath = Join-Path $target "$module.psd1"
+    $text = [System.IO.File]::ReadAllText($manifestPath)
     $text = [regex]::Replace($text, '(?m)^(\s*RequiredModules\s*=\s*)@\([^)]*\)', '$1@()')
-    if ($module -eq 'psfdx') { $text = [regex]::Replace($text, "(GUID\s*=\s*)'[0-9a-fA-F-]+'", "`$1'$nestedCoreGuid'") }
-    Set-Content -LiteralPath (Join-Path $target "$newName.psd1") -Value $text -Encoding UTF8
-    if ($module -eq 'psfdx') {
-        Move-Item -LiteralPath (Join-Path $target 'psfdx.psm1') -Destination (Join-Path $target 'psfdx-core.psm1')
-        Remove-Item -LiteralPath (Join-Path $target 'psfdx.psd1') -Force
-    }
+    [System.IO.File]::WriteAllText($manifestPath, $text, (New-Object System.Text.UTF8Encoding($false)))
 }
 
-# The licence text ships in the bundle root, next to the manifest.
-$licenseFile = Join-Path $Root 'LICENSE'
-if (-not (Test-Path -LiteralPath $licenseFile)) { throw "LICENSE not found at $licenseFile" }
-Copy-Item -LiteralPath $licenseFile -Destination (Join-Path $outputFull 'LICENSE')
+# ---- The core module: psfdx.psm1 gets a short start and a loader at the end ----
+Copy-ModuleFiles (Join-Path $Root $coreName) $outputFull
+Remove-Item -LiteralPath (Join-Path $outputFull "$coreName.psd1") -Force
+$sourcePsm1 = Join-Path (Join-Path $Root $coreName) "$coreName.psm1"
+$bytes = [System.IO.File]::ReadAllBytes($sourcePsm1)
+$hasBom = ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF)
+$coreText = [System.IO.File]::ReadAllText($sourcePsm1)
+$crlf = $coreText.Contains("`r`n")
+$coreText = $coreText.Replace("`r`n", "`n")
+if (-not $hasBom -and $coreText -match '[^\x00-\x7F]') { throw "$coreName.psm1 has characters outside ASCII and no byte order mark; Windows PowerShell 5.1 would misread it" }
 
-# 2. The Gallery metadata comes from one place: the core module's manifest (PrivateData.PSData).
-$core = Import-PowerShellDataFile -Path (Join-Path (Join-Path $Root 'psfdx') 'psfdx.psd1')
-$psData = $core.PrivateData.PSData
+$start = @'
+# psfdx Gallery package. This line and the loader at the end of this file are added by scripts/release/Build-GalleryPackage.ps1; they are not in the
+# repository's psfdx.psm1. The shared helpers sit in a folder of this package, not next to it, so they are loaded first and Import-PsfdxSharedModule
+# below finds them already loaded.
+Import-Module (Join-Path $PSScriptRoot 'psfdx-shared\psfdx-shared.psd1') -Global -DisableNameChecking -ErrorAction Stop
+
+'@
+$names = ($siblings | ForEach-Object { "'$_'" }) -join ', '
+$loader = @"
+
+#region psfdx Gallery package: the other modules of the suite
+# Added by scripts/release/Build-GalleryPackage.ps1; it is not in the repository's psfdx.psm1.
+# One Gallery package installs one module folder, so PowerShell only discovers psfdx. Loading psfdx loads the rest of the suite here, each module
+# under its own name (Get-Module, Get-Command -Module psfdx-logs), so every command is attributed to the module that holds it. They are imported
+# with -Global so their commands are visible to the caller, and removed again when psfdx is removed.
+`$psfdxSuiteModules = @($names)
+foreach (`$psfdxSuiteModule in `$psfdxSuiteModules) {
+    Import-Module (Join-Path `$PSScriptRoot (Join-Path `$psfdxSuiteModule "`$psfdxSuiteModule.psd1")) -Global -DisableNameChecking -ErrorAction Stop
+}
+`$ExecutionContext.SessionState.Module.OnRemove = {
+    foreach (`$psfdxSuiteModule in @('$(($siblings | Sort-Object -Descending) -join "', '")')) { Remove-Module -Name `$psfdxSuiteModule -Force -ErrorAction SilentlyContinue }
+}
+#endregion
+"@
+$newText = $start + $coreText.TrimEnd() + "`n" + $loader
+if ($crlf) { $newText = $newText.Replace("`n", "`r`n") }
+[System.IO.File]::WriteAllText((Join-Path $outputFull "$coreName.psm1"), $newText, (New-Object System.Text.UTF8Encoding($hasBom)))
+
+# ---- The package manifest: the core module's, with only the core commands exported ----
 $tags = @($psData.Tags)
-$projectUri = [string]$psData.ProjectUri
-$iconUri = [string]$psData.IconUri
-$licenseUri = [string]$psData.LicenseUri
-$releaseNotes = "$projectUri/releases/tag/v$version"
-
-# 3. Generate the bundle manifest. NestedModules lists the shared helpers first, then the core module and the others.
-$nested = @($modules | ForEach-Object { "'$($folderFor[$_])/$($folderFor[$_]).psd1'" })
-$functionList = @($exports.Keys | Sort-Object | ForEach-Object { "        '$_'" })
+$functionList = @(@($core.FunctionsToExport) | Sort-Object | ForEach-Object { "        '$_'" })
 $lines = @(
     '@{'
+    "    RootModule           = 'psfdx.psm1'"
     "    ModuleVersion        = '$version'"
-    "    GUID                 = '$bundleGuid'"
-    "    Author               = '$($core.Author)'"
+    "    GUID                 = '$galleryGuid'"
+    "    Author               = $(Q ([string]$core.Author))"
     "    CompanyName          = 'psfdx'"
     "    Copyright            = 'Copyright (c) 2020 Tony Ward.'"
-    "    Description          = '$(([string]$core.Description).Replace("'", "''"))'"
+    "    Description          = $(Q ([string]$core.Description))"
     "    PowerShellVersion    = '5.1'"
     "    CompatiblePSEditions = @('Desktop', 'Core')"
-    "    NestedModules        = @($($nested -join ', '))"
     '    FunctionsToExport    = @('
     ($functionList -join ",`n")
     '    )'
@@ -101,7 +160,7 @@ $lines = @(
     '    AliasesToExport      = @()'
     '    PrivateData          = @{'
     '        PSData = @{'
-    "            Tags         = @($(($tags | ForEach-Object { "'$_'" }) -join ', '))"
+    "            Tags         = @($(($tags | ForEach-Object { Q $_ }) -join ', '))"
     "            ProjectUri   = '$projectUri'"
 )
 if ($licenseUri) { $lines += "            LicenseUri   = '$licenseUri'" }
@@ -113,5 +172,6 @@ $lines += @(
     '}'
 )
 Set-Content -LiteralPath (Join-Path $outputFull 'psfdx.psd1') -Value ($lines -join "`n") -Encoding UTF8
+Copy-Item -LiteralPath $licenseFile -Destination (Join-Path $outputFull 'LICENSE')
 
 Write-Output $outputFull

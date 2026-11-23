@@ -2,7 +2,7 @@
 .SYNOPSIS
 Checks that the help of every command in an installed (or built) psfdx package works.
 .DESCRIPTION
-Imports the psfdx module from a module path and, for each exported function, runs Get-Help -Full, -Examples and -Parameter *.
+Imports psfdx from a module path (the bundle, or the umbrella and the modules it requires) and, for each function exported by the psfdx modules, runs Get-Help -Full, -Examples and -Parameter *.
 It fails when a command has no real synopsis or description, a parameter without a description, no written example, or no
 "Salesforce CLI mapping" note. Used by the Gallery install check, after the package has been installed from the Gallery, and by the
 repository tests on a package built from the source. Works on Windows PowerShell 5.1 and PowerShell 7; needs no Salesforce CLI.
@@ -22,8 +22,8 @@ $env:PSModulePath = $ModulePath + [IO.Path]::PathSeparator + $env:PSModulePath
 if ($Version) { Import-Module psfdx -RequiredVersion $Version -WarningAction SilentlyContinue } else { Import-Module psfdx -WarningAction SilentlyContinue }
 
 $common = @([System.Management.Automation.PSCmdlet]::CommonParameters) + @([System.Management.Automation.PSCmdlet]::OptionalCommonParameters)
-$commands = @(Get-Command -Module psfdx | Where-Object { $_.CommandType -eq 'Function' } | Sort-Object Name)
-if ($commands.Count -lt 100) { throw "Only $($commands.Count) functions were found in the psfdx module; expected well over 100." }
+$commands = @(Get-Command -Module 'psfdx*' | Where-Object { $_.CommandType -eq 'Function' } | Sort-Object Name)
+if ($commands.Count -lt 100) { throw "Only $($commands.Count) functions were found in the psfdx modules; expected well over 100." }
 
 $failures = New-Object System.Collections.Generic.List[string]
 $position = 0
