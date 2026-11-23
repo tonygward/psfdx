@@ -19,7 +19,7 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
 
 ```
 Import-Module psfdx
@@ -142,6 +142,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
 | `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
+| `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys. |
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
 | `psfdx-sandbox` | Salesforce sandbox lifecycle management. |
 | `psfdx-packages` | Salesforce packages: create, version, promote, install. |
@@ -334,6 +335,26 @@ These write metadata source files into the current Salesforce DX project and nee
 
 The three interactive cmdlets refuse to run in a session without a terminal, such as a script run with redirected input or output, and tell you so instead of waiting for answers that never come. Run them as a plain command: if you assign their output to a variable or pipe it, PowerShell captures the output and the questions are hidden.
 
+### Describe
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Describe-SalesforceObjects` | List Objects for a target org; `-Category` all, standard or custom. |
+| `Describe-SalesforceObject` | Describe a specific Object (supports tooling API). |
+| `Describe-SalesforceFields` | List fields for an Object. |
+| `Describe-SalesforceMetadataTypes` | List available metadata types. `-OutputFile` also writes the CLI's full result to a file. |
+| `Get-SalesforceMetadataComponents` | List the components of one metadata type in an org, with `-Folder` for folder types (`sf org list metadata`). |
+
+### Utilities
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Build-SalesforceQuery` | Build a SELECT for all fields on an Object. |
+
+### psfdx-devops
+
+Installed with `Install-Module psfdx`. Every cmdlet that runs a command of the Salesforce CLI DevOps Center plugin (`@salesforce/plugin-devops-center`) lives in this module: the 26 `sf devops` commands and the 5 beta `sf project deploy pipeline` commands. They were in `psfdx-metadata` before; the cmdlet names, parameters and behaviour are unchanged, only the module that holds them (the `Source` in `Get-Command`) is new.
+
 ### DevOps Center pipeline deploys (beta)
 
 These run the beta `sf project deploy pipeline` commands. They need a DevOps Center org you are logged in to (`-DevOpsCenterUsername`), and because the CLI commands are beta their names, flags and results can change in a later Salesforce CLI release; psfdx does not promise they stay stable. The cmdlets that change an org ask for confirmation and support `-WhatIf`.
@@ -390,22 +411,6 @@ $wi = Get-SalesforceDevOpsWorkItem -ProjectId 1Qg000000000001 -TargetOrg devops-
 Test-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org
 Start-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org -WhatIf
 ```
-### Describe
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Describe-SalesforceObjects` | List Objects for a target org; `-Category` all, standard or custom. |
-| `Describe-SalesforceObject` | Describe a specific Object (supports tooling API). |
-| `Describe-SalesforceFields` | List fields for an Object. |
-| `Describe-SalesforceMetadataTypes` | List available metadata types. `-OutputFile` also writes the CLI's full result to a file. |
-| `Get-SalesforceMetadataComponents` | List the components of one metadata type in an org, with `-Folder` for folder types (`sf org list metadata`). |
-
-### Utilities
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Build-SalesforceQuery` | Build a SELECT for all fields on an Object. |
-
 ### psfdx-development
 
 Included in the `psfdx` package.

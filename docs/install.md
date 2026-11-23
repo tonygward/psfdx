@@ -6,7 +6,7 @@ One command installs everything:
 Install-Module psfdx
 ```
 
-There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
+There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
 
 ## What you get
 
@@ -23,7 +23,8 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | Module | What it holds |
 | :--- | :--- |
 | `psfdx` | Authentication, orgs, aliases, records and SOQL, limits, REST and GraphQL requests, CLI and plugin management |
-| `psfdx-metadata` | Retrieve, deploy and describe metadata; DevOps Center |
+| `psfdx-metadata` | Retrieve, deploy and describe metadata |
+| `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys |
 | `psfdx-development` | Projects, scratch orgs, Apex tests, Code Analyzer, templates, LWC |
 | `psfdx-logs` | Debug logs, login history, event monitoring |
 | `psfdx-sandbox` | Sandbox lifecycle |
@@ -32,6 +33,8 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | `psfdx-shared` | Helpers the other modules use |
 
 No command is defined twice. `psfdx` exports only its own commands and does not re-export the others.
+
+**Which module holds a command.** A cmdlet belongs to the module for the family of Salesforce CLI commands it wraps, and a command family that comes from one CLI plugin stays together. For example every cmdlet that runs a command of the DevOps Center plugin (`@salesforce/plugin-devops-center`) is in `psfdx-devops`: the 26 `sf devops` commands and the 5 beta `sf project deploy pipeline` commands, even though the second group looks like a deploy. They were in `psfdx-metadata` until a release that moved them. A command keeps its name and parameters when its module changes; only the module shown in `Get-Command` (the `Source`) differs, so scripts that call it by name keep working.
 
 ## When the other modules load
 
