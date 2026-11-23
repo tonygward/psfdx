@@ -66,7 +66,7 @@ Not verified: nothing here was run against a real org. The help was checked agai
 | `Get-SalesforceLatestApiVersion` | psfdx | other psfdx cmdlets |  |  |
 | `Get-SalesforceLimits` | psfdx | sf command | `sf limits api display` | `sf org list limits` (deprecated alias) |
 | `Get-SalesforceOrgUser` | psfdx | sf command | `sf org display user` |  |
-| `Get-SalesforcePlugins` | psfdx | sf command | `sf plugins` |  |
+| `Get-SalesforcePlugins` | plugins | sf command | `sf plugins` |  |
 | `Get-SalesforceRecord` | psfdx | sf command | `sf data get record` |  |
 | `Get-SalesforceRecordType` | psfdx | other psfdx cmdlets |  |  |
 | `Get-SalesforceUsers` | psfdx | other psfdx cmdlets |  |  |
@@ -75,7 +75,7 @@ Not verified: nothing here was run against a real org. The help was checked agai
 | `Import-SalesforceBulkData` | bulk | sf command | `sf data import bulk` |  |
 | `Import-SalesforceTreeData` | psfdx | sf command | `sf data import tree` |  |
 | `Install-SalesforceCli` | psfdx | npm |  |  |
-| `Install-SalesforcePlugin` | psfdx | sf command | `sf plugins install` |  |
+| `Install-SalesforcePlugin` | plugins | sf command | `sf plugins install` |  |
 | `Invoke-SalesforceApi` | psfdx | REST API (Invoke-RestMethod) |  |  |
 | `New-SalesforceRecord` | psfdx | sf command | `sf data create record` |  |
 | `New-SalesforceUser` | psfdx | sf command | `sf org create user` |  |
@@ -89,7 +89,7 @@ Not verified: nothing here was run against a real org. The help was checked agai
 | `Set-SalesforceRecord` | psfdx | sf command | `sf data update record` |  |
 | `Update-SalesforceBulkData` | bulk | sf command | `sf data update bulk` |  |
 | `Update-SalesforceCli` | psfdx | npm |  |  |
-| `Update-SalesforcePlugins` | psfdx | sf command | `sf plugins update` |  |
+| `Update-SalesforcePlugins` | plugins | sf command | `sf plugins update` |  |
 | `Upsert-SalesforceBulkData` | bulk | sf command | `sf data upsert bulk` |  |
 | `Upsert-SalesforceRecord` | psfdx | sf command | `sf api request rest` |  |
 | `Disable-SalesforceAgent` | agentforce | sf command | `sf agent deactivate` |  |

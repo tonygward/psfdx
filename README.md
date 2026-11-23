@@ -19,7 +19,7 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
 
 ```
 Import-Module psfdx
@@ -144,6 +144,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys. |
 | `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume. |
+| `psfdx-plugins` | Salesforce CLI plugins: install, list, inspect, update, uninstall, discover, reset, signature checks and the allowlist. |
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
 | `psfdx-sandbox` | Salesforce sandbox lifecycle management. |
 | `psfdx-packages` | Salesforce packages: create, version, promote, install. |
@@ -220,23 +221,12 @@ Included in the `psfdx` package.
 | `Invoke-SalesforceRestRequest` | Any REST request as the CLI's logged-in user (`sf api request rest`): `-Url`, `-Method`, `-Body` / `-BodyFile` / `-File`, `-Header`, `-Include`, `-StreamToFile`, `-AsObject`. Writes ask first and support `-WhatIf`. |
 | `Invoke-SalesforceGraphQL` | Run a GraphQL query or mutation (`sf api request graphql`) from `-Query` or `-QueryFile`; a mutation asks first. |
 
-### Plugins
+### Salesforce CLI
 
 | Cmdlet | Description |
 | :--- | :--- |
 | `Install-SalesforceCli` | Install the Salesforce CLI. |
 | `Update-SalesforceCli` | Update the Salesforce CLI. |
-| `Install-SalesforcePlugin` | Install a Salesforce CLI plugin. |
-| `Get-SalesforcePlugins` | List installed plugins (optionally core). |
-| `Update-SalesforcePlugins` | Update installed plugins. |
-| `Uninstall-SalesforcePlugin` | Remove plugins (asks first). |
-| `Get-SalesforcePluginDetails` | Version and install details of plugins (`sf plugins inspect`). |
-| `Find-SalesforcePlugins` | List third-party plugins you can install (`sf plugins discover`). |
-| `Reset-SalesforcePlugins` | Remove every user-installed and linked plugin, optionally reinstalling (asks first). |
-| `Test-SalesforcePluginSignature` | Check the digital signature of an npm plugin package. |
-| `Get-SalesforcePluginAllowlist` | List the plugins allowed without a Salesforce signature. |
-| `Add-SalesforcePluginAllowlist` | Allow unsigned plugins (asks first). |
-| `Remove-SalesforcePluginAllowlist` | Take plugins off the allowlist (asks first). |
 
 ### Experience Cloud
 
@@ -427,6 +417,24 @@ $job = Remove-SalesforceBulkData -File .\old-accounts.csv -Object Account -Targe
 Get-SalesforceBulkJobStatus -JobId $job.JobId -TargetOrg dev1
 Get-SalesforceBulkResult -JobId $job.JobId -TargetOrg dev1
 ```
+
+### psfdx-plugins
+
+Installed with `Install-Module psfdx`. Every cmdlet that manages Salesforce CLI plugins (the `sf plugins` commands) is in this module: install, list, inspect, update, uninstall, discover and reset plugins, check plugin signatures, and manage the allowlist. They were in `psfdx` before; the cmdlet names, parameters and behaviour are unchanged, only the module that holds them (the `Source` in `Get-Command`) is new. `Install-SalesforceCli` and `Update-SalesforceCli`, which install the CLI itself rather than a plugin, stay in `psfdx`.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Install-SalesforcePlugin` | Install a Salesforce CLI plugin. |
+| `Get-SalesforcePlugins` | List installed plugins (optionally core). |
+| `Update-SalesforcePlugins` | Update installed plugins. |
+| `Uninstall-SalesforcePlugin` | Remove plugins (asks first). |
+| `Get-SalesforcePluginDetails` | Version and install details of plugins (`sf plugins inspect`). |
+| `Find-SalesforcePlugins` | List third-party plugins you can install (`sf plugins discover`). |
+| `Reset-SalesforcePlugins` | Remove every user-installed and linked plugin, optionally reinstalling (asks first). |
+| `Test-SalesforcePluginSignature` | Check the digital signature of an npm plugin package. |
+| `Get-SalesforcePluginAllowlist` | List the plugins allowed without a Salesforce signature. |
+| `Add-SalesforcePluginAllowlist` | Allow unsigned plugins (asks first). |
+| `Remove-SalesforcePluginAllowlist` | Take plugins off the allowlist (asks first). |
 
 ### psfdx-development
 
