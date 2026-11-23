@@ -217,3 +217,13 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
   .js-anim .results { opacity: 1; transition: none; }
   * { transition-duration: 0.01ms !important; }
 }
+
+/* Module reference pages and practical PowerShell examples */
+.documentation { max-width: 960px; padding-top: 20px; padding-bottom: 90px; }
+.documentation h1 { overflow-wrap: anywhere; }
+.documentation h2 { font-size: clamp(1.5rem, 2.8vw, 2.15rem); margin: 1.8em 0 .65em; }
+.documentation .section-intro { max-width: 72ch; }
+.documentation .code-box { margin: 18px 0 24px; max-width: 100%; }
+.documentation .code-box pre, #powershell-examples .card pre { overflow-x: auto; white-space: pre; }
+#powershell-examples .card pre { background: var(--bg); border: 1px solid var(--border); padding: 14px; border-radius: 8px; font-size: .78rem; line-height: 1.7; }
+#powershell-examples .card code { font-size: inherit; }
