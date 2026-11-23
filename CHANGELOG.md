@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.51 - 2026-11-23
+
 - psfdx-agentforce: every `sf agent` command is now covered, plus `sf org create agent-user` and `sf org open agent`: 35 new cmdlets. Create and describe agents (`New-SalesforceAgent`, `New-SalesforceAgentSpec`, `New-SalesforceAgentTemplate`, `New-SalesforceAgentTestSpec`, `New-SalesforceAgentUser`, `Open-SalesforceAgent`); more agent tests (`New-SalesforceAgentTest`, `Resume-SalesforceAgentTest`, `Start-SalesforceAgentEvaluation`); preview sessions a script can drive (`Start-`, `Send-`, `Stop-SalesforceAgentPreview`, `Get-SalesforceAgentPreviewSessions`) and the interactive `Invoke-SalesforceAgentPreview`; trace files (`Get-SalesforceAgentTraces`, `Read-SalesforceAgentTrace`, `Remove-SalesforceAgentTrace`); ten Agentforce Data Library cmdlets (`...SalesforceAgentDataLibrary...`); and eight MCP server cmdlets (`...SalesforceMcp...`, preview). Everything that deletes asks for confirmation and supports `-WhatIf`. The MCP client secret is a `SecureString`. The interactive commands need a terminal and stop with a clear message without one.
 - psfdx-agentforce: `Start-SalesforceAgentTest` and `Get-SalesforceAgentTestResult` gain `-ResultFormat` (junit, tap and human return the CLI text), `-OutputDir`, `-TestRunner` and `-ExtendedDetails`; `New-SalesforceAgentAuthoringBundle` gains `-ForceOverwrite`; `Publish-SalesforceAgentAuthoringBundle` gains `-Concise`, `-ExtendedDetails` and `-SourceType`.
 
