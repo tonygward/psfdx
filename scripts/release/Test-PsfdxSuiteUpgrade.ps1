@@ -105,7 +105,8 @@ if ($AllowInstall) {
         $expectedOld = @($names | ForEach-Object { "$_ $OldVersion" } | Sort-Object)
         if (($installed -join '|') -ne ($expectedOld -join '|')) { Add-Problem "Install-Module psfdx -RequiredVersion $OldVersion left [$($installed -join ', ')] installed, expected [$($expectedOld -join ', ')]" }
         Update-Module -Name psfdx -ErrorAction Stop
-        $updated = @(Get-InstalledModule -Name 'psfdx*' -AllVersions | Where-Object { [version]$_.Version -eq [version]$NewVersion } | ForEach-Object Name | Sort-Object)
+        # -AllVersions needs a single module name, so ask for each module on its own.
+        $updated = @($names | Where-Object { $module = $_; @(Get-InstalledModule -Name $module -AllVersions -ErrorAction SilentlyContinue | Where-Object { [version]$_.Version -eq [version]$NewVersion }).Count -gt 0 } | Sort-Object)
         if (($updated -join '|') -ne ($names -join '|')) { Add-Problem "Update-Module psfdx moved [$($updated -join ', ')] to $NewVersion, expected all of [$($names -join ', ')]" }
         $afterUpdate = Invoke-Fresh '' $importAll
         if ($afterUpdate.ExitCode -ne 0 -or -not $afterUpdate.Result) { Add-Problem "Import-Module psfdx failed after Update-Module:`n$($afterUpdate.Output)" }
