@@ -37,13 +37,13 @@ Describe 'Test-PsfdxSuite' {
         $evidence = Join-Path $TestDrive 'evidence.json'
         $run = & $script:Run @('-ModulePath', $script:Good, '-EvidencePath', $evidence)
         $run.ExitCode | Should -Be 0 -Because $run.Output
-        $run.Output | Should -BeLike '*one package holding 10 modules*only the * core commands*Get-Command -Module psfdx-logs shows exactly the * logs commands*no duplicate*one representative command from each of the 10 modules runs*'
+        $run.Output | Should -BeLike '*one package holding 11 modules*only the * core commands*Get-Command -Module psfdx-logs shows exactly the * logs commands*no duplicate*one representative command from each of the 11 modules runs*'
         $data = Get-Content -LiteralPath $evidence -Raw | ConvertFrom-Json
         $data.package | Should -Be 'psfdx'
         $data.version | Should -Be $script:Version
         $data.duplicateCommandNames | Should -Be 0
         $data.totalCommands | Should -BeGreaterThan 250
-        @($data.commandsPerModule.PSObject.Properties).Count | Should -Be 10
+        @($data.commandsPerModule.PSObject.Properties).Count | Should -Be 11
         @($data.representativeCommands.PSObject.Properties | Where-Object { -not $_.Value.ran }).Count | Should -Be 0
         $data.brandNewSession.note | Should -BeLike '*one package installs one folder*'
     }

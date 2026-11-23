@@ -49,22 +49,11 @@
         'Invoke-SalesforceApi',
         'Install-SalesforceCli',
         'Update-SalesforceCli',
-        'Install-SalesforcePlugin',
-        'Get-SalesforcePlugins',
-        'Update-SalesforcePlugins',
         'Get-SalesforceCommunityTemplates',
         'New-SalesforceCommunity',
         'Publish-SalesforceCommunity',
         'Invoke-SalesforceGraphQL',
         'Invoke-SalesforceRestRequest',
-        'Uninstall-SalesforcePlugin',
-        'Get-SalesforcePluginDetails',
-        'Find-SalesforcePlugins',
-        'Reset-SalesforcePlugins',
-        'Test-SalesforcePluginSignature',
-        'Get-SalesforcePluginAllowlist',
-        'Add-SalesforcePluginAllowlist',
-        'Remove-SalesforcePluginAllowlist',
         'Invoke-SalesforceDoctor'
     )
     CmdletsToExport = @()

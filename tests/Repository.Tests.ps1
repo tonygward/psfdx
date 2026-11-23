@@ -89,6 +89,23 @@ Describe 'Repository rules' {
         }
     }
 
+    It 'the private helper psfdx-plugins copies from psfdx is identical, so the two copies cannot drift apart' {
+        $text = {
+            param([string] $Module)
+            $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path (Join-Path $script:Root $Module) "$Module.psm1"), [ref]$null, [ref]$null)
+            $found = @{}
+            foreach ($f in $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) { $found[$f.Name] = $f.Extent.Text.Replace("`r`n", "`n") }
+            return $found
+        }
+        $core = & $text 'psfdx'
+        $plugins = & $text 'psfdx-plugins'
+        foreach ($name in 'Invoke-SalesforceText') {
+            $core.ContainsKey($name) | Should -BeTrue -Because "psfdx defines $name"
+            $plugins.ContainsKey($name) | Should -BeTrue -Because "psfdx-plugins copies $name"
+            $plugins[$name] | Should -BeExactly $core[$name] -Because "the copy of $name in psfdx-plugins must match psfdx"
+        }
+    }
+
     It 'LICENSE is the MIT licence' {
         $text = Get-Content -Path (Join-Path $script:Root 'LICENSE') -Raw
         $text | Should -Match '^MIT License'
