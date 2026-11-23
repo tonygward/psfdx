@@ -567,9 +567,9 @@ Describe 'psfdx-agentforce full sf agent parity (issue 255)' {
                 $err.Exception.Message | Should -Be 'The sf executable was not found.'
             }
             It 'the help says the JSON parameters do not work on Windows and names the alternative' {
-                $help = Get-Help Start-SalesforceAgentPreview -Parameter ContextVariablesJson | Out-String
-                $help | Should -BeLike '*Windows*use -ContextVariables*'
-                (Get-Help Set-SalesforceMcpAssets -Parameter Assets | Out-String) | Should -BeLike '*Windows*use -AssetsFile*'
+                $describe = { param($cmdlet, $parameter) $p = @((Get-Help -Name $cmdlet -Full).parameters.parameter | Where-Object { $_.name -eq $parameter })[0]; ($p.description | Out-String) }
+                (& $describe 'Start-SalesforceAgentPreview' 'ContextVariablesJson') | Should -BeLike '*Windows*use -ContextVariables*'
+                (& $describe 'Set-SalesforceMcpAssets' 'Assets') | Should -BeLike '*Windows*use -AssetsFile*'
             }
         }
 
