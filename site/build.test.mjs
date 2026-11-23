@@ -70,7 +70,7 @@ test('the eight sections are present, in order', () => {
 
 test('the header links work: Docs, Releases and the GitHub pill', () => {
   const nav = html.match(/<nav aria-label="Main">[\s\S]*?<\/nav>/)[0];
-  assert.match(nav, /href="https:\/\/github\.com\/tonygward\/psfdx#readme">Docs</);
+  assert.match(nav, /href="\/#modules">Docs</);
   assert.match(nav, /href="https:\/\/github\.com\/tonygward\/psfdx\/releases">Releases</);
   assert.match(nav, /class="nav-cta" href="https:\/\/github\.com\/tonygward\/psfdx">/);
   assert.match(nav, /GitHub/);
@@ -83,7 +83,7 @@ test('the hero: headline, tagline, copy command, docs link and release pill', ()
   assert.ok(html.includes('Powerful Salesforce tools. Familiar PowerShell commands. One <span class="pipe">|</span> away from anything.'));
   assert.match(html, /class="install" data-copy="Install-Module psfdx"/);
   assert.match(html, /<code>Install-Module psfdx<\/code>/);
-  assert.match(html, /class="button secondary" href="https:\/\/github\.com\/tonygward\/psfdx#readme">Read the docs</);
+  assert.match(html, /class="button secondary" href="\/#modules">Read the docs</);
 });
 
 test('the release pill shows the version in the VERSION file, never a typed-in number', () => {
@@ -115,14 +115,23 @@ test('the marquee lists real psfdx commands (and Export-Csv), twice, with the co
   assert.match(css, /animation: marquee 32s linear infinite/);
 });
 
-test('the three feature cards and the six modules use real content', () => {
-  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'Nothing hidden', 'A simpler, more intuitive way to work with Salesforce.', 'Six modules. Zero context switching.', 'Get-Module psfdx* -ListAvailable']) {
+test('the feature examples and all eight modules use real content', () => {
+  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'Nothing hidden', 'A simpler, more intuitive way to work with Salesforce.', 'One installation. Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
-  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-logs']);
+  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce', 'psfdx-shared']);
   for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
-  assert.equal((html.match(/class="module-row" href="https:\/\/github\.com\/tonygward\/psfdx#modules"/g) || []).length, 6, 'every module row links somewhere real');
+  for (const m of modules) assert.ok(html.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
+});
+
+test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
+  for (const command of ['Get-Help Deploy-SalesforceMetadata -Full', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv -Path ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
+  for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared']) {
+    const doc = path.join(dist, 'modules', m, 'index.html');
+    assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
+    assert.ok(fs.readFileSync(doc, 'utf8').includes('Get-Command -Module ' + m), `commands missing: ${m}`);
+  }
 });
 
 test('the closing panel and footer', () => {
