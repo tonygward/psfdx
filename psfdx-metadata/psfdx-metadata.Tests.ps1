@@ -462,6 +462,17 @@ Describe 'Describe-SalesforceObjects' {
             $out.Count | Should -Be 2
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'sobject|list|--target-org|me|--json' }
         }
+        It 'keeps the org as the first positional parameter, so existing calls still work' {
+            Describe-SalesforceObjects 'dev1' | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'sobject|list|--target-org|dev1|--json' }
+        }
+        It 'lists only one category, in the lower case the CLI expects' {
+            foreach ($c in 'all', 'standard', 'custom') {
+                Describe-SalesforceObjects -Category $c.ToUpperInvariant() -TargetOrg 'me' | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "sobject|list|--sobject|$c|--target-org|me|--json" }
+            }
+            { Describe-SalesforceObjects -Category tooling } | Should -Throw
+        }
     }
 }
 

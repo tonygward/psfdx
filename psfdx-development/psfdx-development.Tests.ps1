@@ -1895,3 +1895,30 @@ Describe 'psfdx-development template generators (issue 254)' {
         }
     }
 }
+
+Describe 'psfdx-development UI bundle dev server (issue 257)' {
+    InModuleScope 'psfdx-development' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '' }
+        }
+        It 'starts the dev server with only what it is given' {
+            Start-SalesforceUiBundleDevServer | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'ui-bundle|dev' }
+        }
+        It 'passes the name, url, port, open and org' {
+            Start-SalesforceUiBundleDevServer -Name 'my app' -Url https://localhost:5173 -Port 4000 -Open -TargetOrg me | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'ui-bundle|dev|--name|my app|--url|https://localhost:5173|--port|4000|--open|--target-org|me' }
+        }
+        It 'checks the url and the port before it runs anything' {
+            { Start-SalesforceUiBundleDevServer -Url 'localhost:5173' } | Should -Throw -ExpectedMessage '*absolute http:// or https:// URL*'
+            { Start-SalesforceUiBundleDevServer -Url 'ftp://localhost' } | Should -Throw -ExpectedMessage '*absolute http:// or https:// URL*'
+            { Start-SalesforceUiBundleDevServer -Port 0 } | Should -Throw
+            { Start-SalesforceUiBundleDevServer -Port 70000 } | Should -Throw
+            { Start-SalesforceUiBundleDevServer -Name '' } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+        It 'is exported' {
+            (Get-Module psfdx-development).ExportedFunctions.Keys | Should -Contain 'Start-SalesforceUiBundleDevServer'
+        }
+    }
+}

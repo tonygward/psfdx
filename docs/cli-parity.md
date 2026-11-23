@@ -10,34 +10,34 @@ This report compares the commands of Salesforce CLI **2.159.7** (the latest stab
 
 | Plugin set | Commands | Wrapped | Partially wrapped | Missing | Deliberately excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core plugins (bundled with the CLI) | 214 | 178 | 6 | 12 | 3 | 15 | 93.9% of 196 |
-| Just-in-time plugins (installed on first use) | 65 | 26 | 0 | 30 | 0 | 9 | 46.4% of 56 |
-| Both | 279 | 204 | 6 | 42 | 3 | 24 | 83.3% of 252 |
+| Core plugins (bundled with the CLI) | 214 | 194 | 0 | 0 | 3 | 17 | 100.0% of 194 |
+| Just-in-time plugins (installed on first use) | 65 | 30 | 0 | 26 | 0 | 9 | 53.6% of 56 |
+| Both | 279 | 224 | 0 | 26 | 3 | 26 | 89.6% of 250 |
 
 "Covered of in scope" is (wrapped + partially wrapped) out of the commands that are neither deliberately excluded nor not applicable. It is only meaningful for the plugin set on its row; a command from a plugin that is not installed is not counted anywhere else.
 
-psfdx exports **256** cmdlets; **225** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
+psfdx exports **271** cmdlets; **240** of them run an sf command themselves. The other **31** are conveniences built on those, or run other programs (npm, Jest) or call the REST API directly, and add no CLI coverage of their own.
 
-**Flags and values.** Across the **210** commands psfdx runs, it passes **1004 of 1018** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **100** have a list of allowed values in the CLI, and psfdx can pass **367 of 373** of those values.
+**Flags and values.** Across the **224** commands psfdx runs, it passes **1044 of 1044** of their flags (not counting the universal ones listed below). 0 of the flags it does not pass are required by the CLI. For the flags it does pass, **100** have a list of allowed values in the CLI, and psfdx can pass **373 of 373** of those values.
 
 ## By capability
 
 | Capability | Commands | Wrapped | Partially wrapped | Missing | Excluded | Not applicable | Covered of in scope |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Agentforce agents (sf agent) | 41 | 41 | 0 | 0 | 0 | 0 | 100.0% of 41 |
-| Aliases (sf alias) | 3 | 2 | 1 | 0 | 0 | 0 | 100.0% of 3 |
+| Aliases (sf alias) | 3 | 3 | 0 | 0 | 0 | 0 | 100.0% of 3 |
 | Apex (sf apex) | 10 | 10 | 0 | 0 | 0 | 0 | 100.0% of 10 |
-| REST API requests (sf api) | 2 | 0 | 1 | 1 | 0 | 0 | 50.0% of 2 |
+| REST API requests (sf api) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
 | Shell autocomplete (sf autocomplete) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | Custom metadata types (sf cmdt) | 5 | 5 | 0 | 0 | 0 | 0 | 100.0% of 5 |
 | Code Analyzer (sf code-analyzer) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI command list (sf commands) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
-| Experience Cloud sites (sf community) | 3 | 0 | 0 | 3 | 0 | 0 | 0.0% of 3 |
-| CLI configuration (sf config) | 4 | 3 | 1 | 0 | 0 | 0 | 100.0% of 4 |
+| Experience Cloud sites (sf community) | 3 | 3 | 0 | 0 | 0 | 0 | 100.0% of 3 |
+| CLI configuration (sf config) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | Data and records (sf data) | 21 | 21 | 0 | 0 | 0 | 0 | 100.0% of 21 |
 | CLI plugin development (sf dev) | 6 | 0 | 0 | 0 | 0 | 6 | n/a of 0 |
 | DevOps Center (sf devops) | 26 | 0 | 0 | 26 | 0 | 0 | 0.0% of 26 |
-| CLI diagnostics (sf doctor) | 1 | 0 | 0 | 1 | 0 | 0 | 0.0% of 1 |
+| CLI diagnostics (sf doctor) | 1 | 1 | 0 | 0 | 0 | 0 | 100.0% of 1 |
 | Flow (sf flow) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
 | Legacy force commands (sf force) | 7 | 0 | 0 | 0 | 0 | 7 | n/a of 0 |
 | CLI help (sf help) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
@@ -47,13 +47,13 @@ psfdx exports **256** cmdlets; **225** of them run an sf command themselves. The
 | Orgs, users and sandboxes (sf org) | 40 | 37 | 0 | 0 | 3 | 0 | 100.0% of 37 |
 | Packages (second generation) (sf package) | 25 | 25 | 0 | 0 | 0 | 0 | 100.0% of 25 |
 | Packages (first generation) (sf package1) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
-| CLI plugins (sf plugins) | 15 | 1 | 2 | 10 | 0 | 2 | 23.1% of 13 |
+| CLI plugins (sf plugins) | 15 | 11 | 0 | 0 | 0 | 4 | 100.0% of 11 |
 | Project, deploy and retrieve (sf project) | 22 | 22 | 0 | 0 | 0 | 0 | 100.0% of 22 |
 | Schema (sf schema) | 4 | 4 | 0 | 0 | 0 | 0 | 100.0% of 4 |
 | CLI search (sf search) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
-| Objects (sf sobject) | 2 | 1 | 1 | 0 | 0 | 0 | 100.0% of 2 |
+| Objects (sf sobject) | 2 | 2 | 0 | 0 | 0 | 0 | 100.0% of 2 |
 | Templates and generators (sf template) | 17 | 17 | 0 | 0 | 0 | 0 | 100.0% of 17 |
-| UI bundles (sf ui-bundle) | 1 | 0 | 0 | 1 | 0 | 0 | 0.0% of 1 |
+| UI bundles (sf ui-bundle) | 1 | 1 | 0 | 0 | 0 | 0 | 100.0% of 1 |
 | CLI update (sf update) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | CLI version (sf version) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
 | CLI release notes (sf whatsnew) | 1 | 0 | 0 | 0 | 0 | 1 | n/a of 0 |
@@ -62,12 +62,6 @@ psfdx exports **256** cmdlets; **225** of them run an sf command themselves. The
 ## Not covered
 
 Commands psfdx does not run, grouped by capability. A reason or an issue link means the gap was reviewed; no reason means it has not been decided.
-
-### REST API requests (`sf api`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf api request graphql` | @salesforce/plugin-api | 4 (2 required) | missing |  |
 
 ### Shell autocomplete (`sf autocomplete`)
 
@@ -80,14 +74,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
 | `sf commands` | @oclif/plugin-commands | 7 | not applicable | Lists the sf commands. psfdx reads it only to build this report. |
-
-### Experience Cloud sites (`sf community`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf community create` | @salesforce/plugin-community | 5 (3 required) | missing |  |
-| `sf community list template` | @salesforce/plugin-community | 1 (1 required) | missing |  |
-| `sf community publish` | @salesforce/plugin-community | 2 (2 required) | missing |  |
 
 ### CLI plugin development (`sf dev`)
 
@@ -104,38 +90,32 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
-| `sf devops pipeline create` | @salesforce/plugin-devops-center | 10 (3 required) | missing |  |
-| `sf devops pipeline get` | @salesforce/plugin-devops-center | 2 (2 required) | missing |  |
-| `sf devops pipeline list` | @salesforce/plugin-devops-center | 1 (1 required) | missing |  |
-| `sf devops pipeline project add` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops pipeline project delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops pipeline stage add` | @salesforce/plugin-devops-center | 4 (4 required) | missing |  |
-| `sf devops pipeline stage delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops pipeline stage update` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops pipeline update` | @salesforce/plugin-devops-center | 5 (2 required) | missing |  |
-| `sf devops project create` | @salesforce/plugin-devops-center | 3 (2 required) | missing |  |
-| `sf devops project list` | @salesforce/plugin-devops-center | 1 (1 required) | missing |  |
-| `sf devops project update` | @salesforce/plugin-devops-center | 5 (2 required) | missing |  |
-| `sf devops promote` | @salesforce/plugin-devops-center | 9 (2 required) | missing |  |
-| `sf devops promotion complete` | @salesforce/plugin-devops-center | 6 (2 required) | missing |  |
-| `sf devops promotion validate` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops request status` | @salesforce/plugin-devops-center | 2 (2 required) | missing |  |
-| `sf devops review create` | @salesforce/plugin-devops-center | 3 (1 required) | missing |  |
-| `sf devops stage branch add` | @salesforce/plugin-devops-center | 6 (4 required) | missing |  |
-| `sf devops stage branch delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops stage environment add` | @salesforce/plugin-devops-center | 7 (5 required) | missing |  |
-| `sf devops stage environment delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops work-item combine` | @salesforce/plugin-devops-center | 4 (4 required) | missing |  |
-| `sf devops work-item create` | @salesforce/plugin-devops-center | 4 (3 required) | missing |  |
-| `sf devops work-item list` | @salesforce/plugin-devops-center | 2 (2 required) | missing |  |
-| `sf devops work-item prepare` | @salesforce/plugin-devops-center | 3 (3 required) | missing |  |
-| `sf devops work-item update` | @salesforce/plugin-devops-center | 6 (1 required) | missing |  |
-
-### CLI diagnostics (`sf doctor`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf doctor` | @salesforce/plugin-info | 4 | missing |  |
+| `sf devops pipeline create` | @salesforce/plugin-devops-center | 10 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline get` | @salesforce/plugin-devops-center | 2 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline list` | @salesforce/plugin-devops-center | 1 (1 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline project add` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline project delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline stage add` | @salesforce/plugin-devops-center | 4 (4 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline stage delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline stage update` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops pipeline update` | @salesforce/plugin-devops-center | 5 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops project create` | @salesforce/plugin-devops-center | 3 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops project list` | @salesforce/plugin-devops-center | 1 (1 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops project update` | @salesforce/plugin-devops-center | 5 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops promote` | @salesforce/plugin-devops-center | 9 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops promotion complete` | @salesforce/plugin-devops-center | 6 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops promotion validate` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops request status` | @salesforce/plugin-devops-center | 2 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops review create` | @salesforce/plugin-devops-center | 3 (1 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops stage branch add` | @salesforce/plugin-devops-center | 6 (4 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops stage branch delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops stage environment add` | @salesforce/plugin-devops-center | 7 (5 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops stage environment delete` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops work-item combine` | @salesforce/plugin-devops-center | 4 (4 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops work-item create` | @salesforce/plugin-devops-center | 4 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops work-item list` | @salesforce/plugin-devops-center | 2 (2 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops work-item prepare` | @salesforce/plugin-devops-center | 3 (3 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
+| `sf devops work-item update` | @salesforce/plugin-devops-center | 6 (1 required) | missing | Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here. [#256](https://github.com/tonygward/psfdx/issues/256) |
 
 ### Legacy force commands (`sf force`)
 
@@ -173,17 +153,9 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
-| `sf plugins add` | @oclif/plugin-plugins | 4 | missing |  |
-| `sf plugins discover` | @salesforce/plugin-marketplace | 0 | missing |  |
-| `sf plugins inspect` | @oclif/plugin-plugins | 2 | missing |  |
+| `sf plugins add` | @oclif/plugin-plugins | 4 | not applicable | Another name for plugins install, which Install-SalesforcePlugin wraps. |
 | `sf plugins link` | @oclif/plugin-plugins | 3 | not applicable | Links a local plugin under development, which only plugin authors do. |
-| `sf plugins remove` | @oclif/plugin-plugins | 2 | missing |  |
-| `sf plugins reset` | @oclif/plugin-plugins | 2 | missing |  |
-| `sf plugins trust allowlist add` | @salesforce/plugin-trust | 1 (1 required) | missing |  |
-| `sf plugins trust allowlist list` | @salesforce/plugin-trust | 0 | missing |  |
-| `sf plugins trust allowlist remove` | @salesforce/plugin-trust | 1 (1 required) | missing |  |
-| `sf plugins trust verify` | @salesforce/plugin-trust | 2 (1 required) | missing |  |
-| `sf plugins uninstall` | @oclif/plugin-plugins | 2 | missing |  |
+| `sf plugins remove` | @oclif/plugin-plugins | 2 | not applicable | Another name for plugins uninstall, which Uninstall-SalesforcePlugin wraps. |
 | `sf plugins unlink` | @oclif/plugin-plugins | 2 | not applicable | Unlinks a local plugin under development, which only plugin authors do. |
 
 ### CLI search (`sf search`)
@@ -191,12 +163,6 @@ Commands psfdx does not run, grouped by capability. A reason or an issue link me
 | Command | Plugin | Flags | Status | Why, or issue |
 | :--- | :--- | :--- | :--- | :--- |
 | `sf search` | @oclif/plugin-search | 0 | not applicable | Interactive search of the CLI command list. |
-
-### UI bundles (`sf ui-bundle`)
-
-| Command | Plugin | Flags | Status | Why, or issue |
-| :--- | :--- | :--- | :--- | :--- |
-| `sf ui-bundle dev` | @salesforce/plugin-ui-bundle-dev | 5 (1 required) | missing |  |
 
 ### CLI update (`sf update`)
 
@@ -278,7 +244,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf alias list` | wrapped | `Get-SalesforceAlias` | 0 of 0 |  |  |
 | `sf alias set` | wrapped | `Add-SalesforceAlias` | 0 of 0 |  |  |
-| `sf alias unset` | partially wrapped | `Remove-SalesforceAlias` | 0 of 2 | `--all` `--no-prompt` |  |
+| `sf alias unset` | wrapped | `Remove-SalesforceAlias` | 2 of 2 |  |  |
 
 ### Apex (`sf apex`)
 
@@ -299,7 +265,8 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
-| `sf api request rest` | partially wrapped | `Get-SalesforceApiVersions`, `Get-SalesforceEventFile`, `Upsert-SalesforceRecord` | 3 of 7 | `--file` `--header` `--include` `--stream-to-file` | `--method`: `POST`, `PUT`, `HEAD`, `DELETE`, `OPTIONS`, `TRACE` |
+| `sf api request graphql` | wrapped | `Invoke-SalesforceGraphQL` | 4 of 4 |  |  |
+| `sf api request rest` | wrapped | `Get-SalesforceApiVersions`, `Get-SalesforceEventFile`, `Invoke-SalesforceRestRequest`, `Upsert-SalesforceRecord` | 7 of 7 |  |  |
 
 ### Custom metadata types (`sf cmdt`)
 
@@ -320,11 +287,19 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf code-analyzer rules` | wrapped | `Get-SalesforceCodeAnalyzerRule` | 6 of 6 |  |  |
 | `sf code-analyzer run` | wrapped | `Invoke-SalesforceCodeAnalyzer` | 11 of 11 |  |  |
 
+### Experience Cloud sites (`sf community`)
+
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf community create` | wrapped | `New-SalesforceCommunity` | 5 of 5 |  |  |
+| `sf community list template` | wrapped | `Get-SalesforceCommunityTemplates` | 1 of 1 |  |  |
+| `sf community publish` | wrapped | `Publish-SalesforceCommunity` | 2 of 2 |  |  |
+
 ### CLI configuration (`sf config`)
 
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
-| `sf config get` | partially wrapped | `Get-SalesforceTargetDevHub`, `Get-SalesforceTargetOrg` | 0 of 1 | `--verbose` |  |
+| `sf config get` | wrapped | `Get-SalesforceTargetDevHub`, `Get-SalesforceTargetOrg` | 0 of 0 |  |  |
 | `sf config list` | wrapped | `Get-SalesforceConfig` | 0 of 0 |  |  |
 | `sf config set` | wrapped | `Set-SalesforceTargetDevHub`, `Set-SalesforceTargetOrg` | 1 of 1 |  |  |
 | `sf config unset` | wrapped | `Remove-SalesforceTargetDevHub`, `Remove-SalesforceTargetOrg` | 1 of 1 |  |  |
@@ -354,6 +329,12 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf data update resume` | wrapped | `Resume-SalesforceBulkJob` | 3 of 3 |  |  |
 | `sf data upsert bulk` | wrapped | `Upsert-SalesforceBulkData` | 7 of 7 |  |  |
 | `sf data upsert resume` | wrapped | `Resume-SalesforceBulkJob` | 4 of 4 |  |  |
+
+### CLI diagnostics (`sf doctor`)
+
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf doctor` | wrapped | `Invoke-SalesforceDoctor` | 4 of 4 |  |  |
 
 ### Flow (`sf flow`)
 
@@ -463,8 +444,16 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf plugins` | wrapped | `Get-SalesforcePlugins`, `Test-SalesforceAgentPlugin`, Test-SalesforceLightningDevPluginInstalled (internal) | 1 of 1 |  |  |
-| `sf plugins install` | partially wrapped | `Install-SalesforceLwcDevServer`, `Install-SalesforcePlugin` | 0 of 4 | `--force` `--help` `--silent` `--verbose` |  |
-| `sf plugins update` | partially wrapped | `Update-SalesforcePlugins` | 0 of 2 | `--help` `--verbose` |  |
+| `sf plugins discover` | wrapped | `Find-SalesforcePlugins` | 0 of 0 |  |  |
+| `sf plugins inspect` | wrapped | `Get-SalesforcePluginDetails` | 1 of 1 |  |  |
+| `sf plugins install` | wrapped | `Install-SalesforceLwcDevServer`, `Install-SalesforcePlugin` | 3 of 3 |  |  |
+| `sf plugins reset` | wrapped | `Reset-SalesforcePlugins` | 2 of 2 |  |  |
+| `sf plugins trust allowlist add` | wrapped | `Add-SalesforcePluginAllowlist` | 1 of 1 |  |  |
+| `sf plugins trust allowlist list` | wrapped | `Get-SalesforcePluginAllowlist` | 0 of 0 |  |  |
+| `sf plugins trust allowlist remove` | wrapped | `Remove-SalesforcePluginAllowlist` | 1 of 1 |  |  |
+| `sf plugins trust verify` | wrapped | `Test-SalesforcePluginSignature` | 2 of 2 |  |  |
+| `sf plugins uninstall` | wrapped | `Uninstall-SalesforcePlugin` | 1 of 1 |  |  |
+| `sf plugins update` | wrapped | `Update-SalesforcePlugins` | 1 of 1 |  |  |
 
 ### Project, deploy and retrieve (`sf project`)
 
@@ -507,7 +496,7 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
 | :--- | :--- | :--- | ---: | :--- | :--- |
 | `sf sobject describe` | wrapped | `Describe-SalesforceObject` | 3 of 3 |  |  |
-| `sf sobject list` | partially wrapped | `Describe-SalesforceObjects` | 1 of 2 | `--sobject` |  |
+| `sf sobject list` | wrapped | `Describe-SalesforceObjects` | 2 of 2 |  |  |
 
 ### Templates and generators (`sf template`)
 
@@ -531,15 +520,21 @@ Commands psfdx runs, with the cmdlets that run them. "Flags passed" counts the c
 | `sf template generate visualforce component` | wrapped | `New-SalesforceVisualforceComponent` | 4 of 4 |  |  |
 | `sf template generate visualforce page` | wrapped | `New-SalesforceVisualforcePage` | 3 of 3 |  |  |
 
+### UI bundles (`sf ui-bundle`)
+
+| Command | Status | psfdx cmdlets | Flags passed | Flags not passed | Values not reachable |
+| :--- | :--- | :--- | ---: | :--- | :--- |
+| `sf ui-bundle dev` | wrapped | `Start-SalesforceUiBundleDevServer` | 5 of 5 |  |  |
+
 ## Flags left out of the per-command view
 
 These flags are on almost every command, so they are not counted against each one. Each is listed once here.
 
 | Flag | psfdx functions that pass it | Commands psfdx runs that have it |
 | :--- | ---: | ---: |
-| `--json` | 191 | 198 |
-| `--flags-dir` | 0 | 207 |
-| `--api-version` | 1 | 150 |
+| `--json` | 201 | 210 |
+| `--flags-dir` | 0 | 218 |
+| `--api-version` | 1 | 154 |
 
 ## How to read this
 

@@ -39,6 +39,12 @@
   },
   "rules": [
     {
+      "match": "devops *",
+      "status": "missing",
+      "issue": 256,
+      "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here."
+    },
+    {
       "match": "autocomplete",
       "status": "not applicable",
       "reason": "Shell tab completion for the sf program itself; PowerShell has its own, and a module does not wrap it."
@@ -103,6 +109,52 @@
       "status": "not applicable",
       "reason": "Unlinks a local plugin under development, which only plugin authors do."
     },
+    {
+      "match": "plugins add",
+      "status": "not applicable",
+      "reason": "Another name for plugins install, which Install-SalesforcePlugin wraps."
+    },
+    {
+      "match": "plugins remove",
+      "status": "not applicable",
+      "reason": "Another name for plugins uninstall, which Uninstall-SalesforcePlugin wraps."
+    },
+    {
+      "match": "plugins install",
+      "reason": "--help only prints the command's help, which Get-Help does for the cmdlet.",
+      "ignoreFlags": [
+        "help"
+      ]
+    },
+    {
+      "match": "plugins uninstall",
+      "reason": "--help only prints the command's help, which Get-Help does for the cmdlet.",
+      "ignoreFlags": [
+        "help"
+      ]
+    },
+    {
+      "match": "plugins inspect",
+      "reason": "--help only prints the command's help, which Get-Help does for the cmdlet.",
+      "ignoreFlags": [
+        "help"
+      ]
+    },
+    {
+      "match": "plugins update",
+      "reason": "--help only prints the command's help, which Get-Help does for the cmdlet.",
+      "ignoreFlags": [
+        "help"
+      ]
+    },
+    {
+      "match": "config get",
+      "reason": "--verbose adds whether each variable is set locally or globally. The JSON result already carries that for every entry (its location field), and Get-SalesforceTargetOrg -Global filters on it.",
+      "ignoreFlags": [
+        "verbose"
+      ]
+    },
+
     {
       "match": "org auth show-access-token",
       "status": "deliberately excluded",

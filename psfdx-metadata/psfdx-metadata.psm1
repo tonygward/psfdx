@@ -3005,6 +3005,9 @@ function Describe-SalesforceObjects {
     .DESCRIPTION
     Runs sf sobject list and returns the object names. With no category the CLI lists all objects.
 
+    .PARAMETER Category
+    Which objects to list. Valid values: all, standard, custom. The CLI default is all. Passed to sf as --sobject.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -3012,12 +3015,16 @@ function Describe-SalesforceObjects {
     Describe-SalesforceObjects -TargetOrg dev1
     Every object name.
 
+    .EXAMPLE
+    Describe-SalesforceObjects -Category custom -TargetOrg dev1
+    Only the custom objects.
+
     .NOTES
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf sobject list (plugin @salesforce/plugin-schema)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --sobject
-    Parameter to flag: -TargetOrg = --target-org.
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org; -Category = --sobject.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -3034,9 +3041,11 @@ function Describe-SalesforceObjects {
     #>
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory = $false)][string] $TargetOrg
+        [Parameter(Mandatory = $false)][string] $TargetOrg,
+        [Parameter(Mandatory = $false)][ValidateSet('all', 'standard', 'custom')][string] $Category
     )
     $arguments = @('sobject', 'list')
+    if ($Category) { $arguments += @('--sobject', $Category.ToLowerInvariant()) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
