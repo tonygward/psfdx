@@ -5027,3 +5027,78 @@ function New-SalesforceExperienceSite {
 }
 
 #endregion
+
+#region UI bundles
+
+# Wraps sf ui-bundle dev. The files of a UI bundle come from New-SalesforceUiBundle (template generators).
+
+function Start-SalesforceUiBundleDevServer {
+    <#
+    .SYNOPSIS
+    Previews a UI bundle on your computer, live, without deploying it to the org.
+
+    .DESCRIPTION
+    Runs sf ui-bundle dev, which starts a local proxy in front of your own development server (such as a Vite server on https://localhost:5173). Pages, static files and hot updates are sent to your server, and Salesforce data and API requests go to the org with your login, so you can work on a UI bundle against real data before you deploy it. It keeps running until you stop it (Ctrl+C), so run it in its own terminal. Nothing is deployed and no org data changes. The command comes from the @salesforce/plugin-ui-bundle-dev plugin, which the CLI installs when it first needs it; if it is missing, install it with Install-SalesforcePlugin.
+
+    .PARAMETER Name
+    Name of the UI bundle to preview. If you leave it out the CLI looks in the project. Passed to sf as --name.
+
+    .PARAMETER Url
+    URL where your development server runs, for example https://localhost:5173. It must be an absolute http:// or https:// URL. UI, static and hot update requests are forwarded to it. Passed to sf as --url.
+
+    .PARAMETER Port
+    Local port the proxy listens on. Valid values: 1 to 65535. Passed to sf as --port.
+
+    .PARAMETER Open
+    Open the proxy URL in your default browser once the server is ready. Adds --open.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Start-SalesforceUiBundleDevServer -Name myApp -Url https://localhost:5173 -Open -TargetOrg dev1
+    Proxy a local Vite server, with the org's data, and open the browser.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf ui-bundle dev (plugin @salesforce/plugin-ui-bundle-dev)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -Url = --url; -Port = --port; -Open = --open; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-ui-bundle-dev
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][ValidateNotNullOrEmpty()][string] $Name,
+        [Parameter(Mandatory = $false)][string] $Url,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 65535)][int] $Port,
+        [Parameter(Mandatory = $false)][switch] $Open,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    if ($Url) {
+        $parsed = $null
+        if (-not [System.Uri]::TryCreate($Url, [System.UriKind]::Absolute, [ref]$parsed) -or ($parsed.Scheme -ne 'http' -and $parsed.Scheme -ne 'https')) { throw "-Url must be an absolute http:// or https:// URL. Got '$Url'." }
+    }
+    $arguments = @('ui-bundle', 'dev')
+    if ($Name) { $arguments += @('--name', $Name) }
+    if ($Url) { $arguments += @('--url', $Url) }
+    if ($PSBoundParameters.ContainsKey('Port')) { $arguments += @('--port', [string] $Port) }
+    if ($Open) { $arguments += '--open' }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+}
+
+#endregion

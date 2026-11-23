@@ -104,7 +104,8 @@
         'Invoke-SalesforceApex',
         'New-SalesforceApexClass',
         'New-SalesforceApexTrigger',
-        'Get-SalesforceTargetDevHub'
+        'Get-SalesforceTargetDevHub',
+        'Start-SalesforceUiBundleDevServer'
     )
 
     # Cmdlets to export from this module

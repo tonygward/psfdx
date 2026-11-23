@@ -183,53 +183,53 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 210,
+    "commandsPsfdxRuns": 224,
     "flags": {
-      "total": 1018,
-      "passed": 1004
+      "total": 1044,
+      "passed": 1044
     },
     "requiredFlagsNotPassed": 0,
     "flagsWithAListOfValues": 100,
     "values": {
       "total": 373,
-      "reachable": 367
+      "reachable": 373
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 204,
-      "partiallyWrapped": 6,
-      "missing": 42,
+      "wrapped": 224,
+      "partiallyWrapped": 0,
+      "missing": 26,
       "excluded": 3,
-      "notApplicable": 24,
-      "inScope": 252,
-      "coveredPercent": "83.3"
+      "notApplicable": 26,
+      "inScope": 250,
+      "coveredPercent": "89.6"
     },
     "core": {
       "commands": 214,
-      "wrapped": 178,
-      "partiallyWrapped": 6,
-      "missing": 12,
+      "wrapped": 194,
+      "partiallyWrapped": 0,
+      "missing": 0,
       "excluded": 3,
-      "notApplicable": 15,
-      "inScope": 196,
-      "coveredPercent": "93.9"
+      "notApplicable": 17,
+      "inScope": 194,
+      "coveredPercent": "100.0"
     },
     "jit": {
       "commands": 65,
-      "wrapped": 26,
+      "wrapped": 30,
       "partiallyWrapped": 0,
-      "missing": 30,
+      "missing": 26,
       "excluded": 0,
       "notApplicable": 9,
       "inScope": 56,
-      "coveredPercent": "46.4"
+      "coveredPercent": "53.6"
     }
   },
   "psfdx": {
-    "exportedFunctions": 256,
-    "runningTheCli": 225,
+    "exportedFunctions": 271,
+    "runningTheCli": 240,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -1393,8 +1393,8 @@
       "label": "Aliases",
       "totals": {
         "commands": 3,
-        "wrapped": 2,
-        "partiallyWrapped": 1,
+        "wrapped": 3,
+        "partiallyWrapped": 0,
         "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
@@ -1463,7 +1463,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Unset one or more aliases that are currently set on your local computer.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -1471,13 +1471,10 @@
           ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 0
           },
-          "uncoveredFlags": [
-            "all",
-            "no-prompt"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -1780,13 +1777,13 @@
       "label": "REST API requests",
       "totals": {
         "commands": 2,
-        "wrapped": 0,
-        "partiallyWrapped": 1,
-        "missing": 1,
+        "wrapped": 2,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 2,
-        "coveredPercent": "50.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -1796,25 +1793,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Execute a GraphQL statement.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Invoke-SalesforceGraphQL"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 2
           },
-          "uncoveredFlags": [
-            "body",
-            "include",
-            "stream-to-file",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "body",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -1829,43 +1820,27 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Make an authenticated HTTP request using the Salesforce REST API.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
             "Get-SalesforceApiVersions",
             "Get-SalesforceEventFile",
+            "Invoke-SalesforceRestRequest",
             "Upsert-SalesforceRecord"
           ],
           "flags": {
             "total": 7,
-            "passed": 3,
+            "passed": 7,
             "required": 1
           },
-          "uncoveredFlags": [
-            "file",
-            "header",
-            "include",
-            "stream-to-file"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
-          "valuesNotReachable": [
-            {
-              "flag": "method",
-              "values": [
-                "POST",
-                "PUT",
-                "HEAD",
-                "DELETE",
-                "OPTIONS",
-                "TRACE"
-              ]
-            }
-          ],
+          "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 1,
             "total": 8,
-            "reachable": 2
+            "reachable": 8
           }
         }
       ]
@@ -2242,13 +2217,13 @@
       "label": "Experience Cloud sites",
       "totals": {
         "commands": 3,
-        "wrapped": 0,
+        "wrapped": 3,
         "partiallyWrapped": 0,
-        "missing": 3,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 3,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -2258,27 +2233,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create an Experience Cloud site using a template.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "New-SalesforceCommunity"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 3
           },
-          "uncoveredFlags": [
-            "description",
-            "name",
-            "target-org",
-            "template-name",
-            "url-path-prefix"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "target-org",
-            "template-name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -2293,21 +2260,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Retrieve the list of templates available in your org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforceCommunityTemplates"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -2322,23 +2287,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Publish an Experience Builder site to make it live.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Publish-SalesforceCommunity"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "name",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -2353,8 +2314,8 @@
       "label": "CLI configuration",
       "totals": {
         "commands": 4,
-        "wrapped": 3,
-        "partiallyWrapped": 1,
+        "wrapped": 4,
+        "partiallyWrapped": 0,
         "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
@@ -2369,7 +2330,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Get the value of a configuration variable.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -2377,13 +2338,11 @@
             "Get-SalesforceTargetOrg"
           ],
           "flags": {
-            "total": 1,
+            "total": 0,
             "passed": 0,
             "required": 0
           },
-          "uncoveredFlags": [
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -3278,8 +3237,8 @@
           "state": "ga",
           "summary": "Create a DevOps Center pipeline.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 10,
@@ -3318,8 +3277,8 @@
           "state": "ga",
           "summary": "Get details of a DevOps Center pipeline including its stages, repositories, and connected projects.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 2,
@@ -3349,8 +3308,8 @@
           "state": "ga",
           "summary": "List DevOps Center pipelines with their stages, repositories, and connected projects.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 1,
@@ -3378,8 +3337,8 @@
           "state": "ga",
           "summary": "Attach a DevOps Center project to a pipeline.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3411,8 +3370,8 @@
           "state": "ga",
           "summary": "Remove a DevOps Center project's connection to a pipeline.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3444,8 +3403,8 @@
           "state": "ga",
           "summary": "Add a stage to a DevOps Center pipeline.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 4,
@@ -3479,8 +3438,8 @@
           "state": "ga",
           "summary": "Delete a stage from a DevOps Center pipeline.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3512,8 +3471,8 @@
           "state": "ga",
           "summary": "Update a DevOps Center pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3545,8 +3504,8 @@
           "state": "ga",
           "summary": "Update a DevOps Center pipeline.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 5,
@@ -3579,8 +3538,8 @@
           "state": "ga",
           "summary": "Create a DevOps Center project in a DevOps Center org.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3611,8 +3570,8 @@
           "state": "ga",
           "summary": "List all DevOps Center projects in a Salesforce org.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 1,
@@ -3640,8 +3599,8 @@
           "state": "ga",
           "summary": "Update a DevOps Center project.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 5,
@@ -3674,8 +3633,8 @@
           "state": "ga",
           "summary": "Promote work items or a pipeline stage to a target pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 9,
@@ -3712,8 +3671,8 @@
           "state": "ga",
           "summary": "Deploy undeployed work items to a pipeline stage org.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 6,
@@ -3747,8 +3706,8 @@
           "state": "ga",
           "summary": "Validate work item promotion for a pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3780,8 +3739,8 @@
           "state": "ga",
           "summary": "Get the status of a request.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 2,
@@ -3811,8 +3770,8 @@
           "state": "ga",
           "summary": "Create a pull request for a work item branch.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3842,8 +3801,8 @@
           "state": "ga",
           "summary": "Add a source code repository branch to a pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 6,
@@ -3879,8 +3838,8 @@
           "state": "ga",
           "summary": "Delete the source code repository branch associated with a pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3912,8 +3871,8 @@
           "state": "ga",
           "summary": "Add a Salesforce environment to a pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 7,
@@ -3951,8 +3910,8 @@
           "state": "ga",
           "summary": "Delete an environment from a DevOps Center pipeline stage.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -3984,8 +3943,8 @@
           "state": "ga",
           "summary": "Prepare work items to be combined for custom promotion.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 4,
@@ -4019,8 +3978,8 @@
           "state": "ga",
           "summary": "Create a new work item in a DevOps Center project.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 4,
@@ -4053,8 +4012,8 @@
           "state": "ga",
           "summary": "List all work items for a DevOps Center project.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 2,
@@ -4084,8 +4043,8 @@
           "state": "ga",
           "summary": "Prepare a work item for one-off promotion between pipeline stages.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 3,
@@ -4117,8 +4076,8 @@
           "state": "ga",
           "summary": "Update a work item in DevOps Center.",
           "status": "missing",
-          "reason": null,
-          "issue": null,
+          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
+          "issue": 256,
           "psfdx": [],
           "flags": {
             "total": 6,
@@ -4150,13 +4109,13 @@
       "label": "CLI diagnostics",
       "totals": {
         "commands": 1,
-        "wrapped": 0,
+        "wrapped": 1,
         "partiallyWrapped": 0,
-        "missing": 1,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 1,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -4166,21 +4125,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Gather CLI configuration data and run diagnostic tests to discover and report potential problems in your environment.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Invoke-SalesforceDoctor"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 0
           },
-          "uncoveredFlags": [
-            "command",
-            "create-issue",
-            "output-dir",
-            "plugin"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6682,13 +6638,13 @@
       "label": "CLI plugins",
       "totals": {
         "commands": 15,
-        "wrapped": 1,
-        "partiallyWrapped": 2,
-        "missing": 10,
+        "wrapped": 11,
+        "partiallyWrapped": 0,
+        "missing": 0,
         "excluded": 0,
-        "notApplicable": 2,
-        "inScope": 13,
-        "coveredPercent": "23.1"
+        "notApplicable": 4,
+        "inScope": 11,
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -6727,8 +6683,8 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Installs a plugin into sf.",
-          "status": "missing",
-          "reason": null,
+          "status": "not applicable",
+          "reason": "Another name for plugins install, which Install-SalesforcePlugin wraps.",
           "issue": null,
           "psfdx": [],
           "flags": {
@@ -6757,10 +6713,12 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "See a list of 3rd-party sf plugins you can install.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Find-SalesforcePlugins"
+          ],
           "flags": {
             "total": 0,
             "passed": 0,
@@ -6782,19 +6740,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePluginDetails"
+          ],
           "flags": {
-            "total": 2,
-            "passed": 0,
+            "total": 1,
+            "passed": 1,
             "required": 0
           },
-          "uncoveredFlags": [
-            "help",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6810,7 +6767,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Installs a plugin into sf.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -6818,16 +6775,11 @@
             "Install-SalesforcePlugin"
           ],
           "flags": {
-            "total": 4,
-            "passed": 0,
+            "total": 3,
+            "passed": 3,
             "required": 0
           },
-          "uncoveredFlags": [
-            "force",
-            "help",
-            "silent",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6872,8 +6824,8 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "",
-          "status": "missing",
-          "reason": null,
+          "status": "not applicable",
+          "reason": "Another name for plugins uninstall, which Uninstall-SalesforcePlugin wraps.",
           "issue": null,
           "psfdx": [],
           "flags": {
@@ -6900,19 +6852,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Remove all user-installed and linked plugins.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Reset-SalesforcePlugins"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 0
           },
-          "uncoveredFlags": [
-            "hard",
-            "reinstall"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -6928,21 +6879,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Add plugins to the plugin allowlist.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Add-SalesforcePluginAllowlist"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -6957,10 +6906,12 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List the plugins on the plugin allowlist.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Get-SalesforcePluginAllowlist"
+          ],
           "flags": {
             "total": 0,
             "passed": 0,
@@ -6982,21 +6933,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Remove plugins from the plugin allowlist.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Remove-SalesforcePluginAllowlist"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name"
-          ],
-          "requiredFlagsNotPassed": [
-            "name"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7011,22 +6960,19 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "Validate a digital signature.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Test-SalesforcePluginSignature"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "npm",
-            "registry"
-          ],
-          "requiredFlagsNotPassed": [
-            "npm"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -7041,19 +6987,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Uninstall-SalesforcePlugin"
+          ],
           "flags": {
-            "total": 2,
-            "passed": 0,
+            "total": 1,
+            "passed": 1,
             "required": 0
           },
-          "uncoveredFlags": [
-            "help",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -7097,21 +7042,18 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
             "Update-SalesforcePlugins"
           ],
           "flags": {
-            "total": 2,
-            "passed": 0,
+            "total": 1,
+            "passed": 1,
             "required": 0
           },
-          "uncoveredFlags": [
-            "help",
-            "verbose"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -7908,8 +7850,8 @@
       "label": "Objects",
       "totals": {
         "commands": 2,
-        "wrapped": 1,
-        "partiallyWrapped": 1,
+        "wrapped": 2,
+        "partiallyWrapped": 0,
         "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
@@ -7951,7 +7893,7 @@
           "pluginType": "core",
           "state": "ga",
           "summary": "List all Salesforce objects of a specified category.",
-          "status": "partially wrapped",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
           "psfdx": [
@@ -7959,12 +7901,10 @@
           ],
           "flags": {
             "total": 2,
-            "passed": 1,
+            "passed": 2,
             "required": 1
           },
-          "uncoveredFlags": [
-            "sobject"
-          ],
+          "uncoveredFlags": [],
           "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
@@ -8455,13 +8395,13 @@
       "label": "UI bundles",
       "totals": {
         "commands": 1,
-        "wrapped": 0,
+        "wrapped": 1,
         "partiallyWrapped": 0,
-        "missing": 1,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 1,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -8471,25 +8411,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Preview a UI bundle locally and in real-time, without deploying it to your org.",
-          "status": "missing",
+          "status": "wrapped",
           "reason": null,
           "issue": null,
-          "psfdx": [],
+          "psfdx": [
+            "Start-SalesforceUiBundleDevServer"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 1
           },
-          "uncoveredFlags": [
-            "name",
-            "open",
-            "port",
-            "target-org",
-            "url"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -8679,18 +8613,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 191,
-        "commandsPsfdxRunsThatHaveIt": 198
+        "psfdxFunctionsPassingIt": 201,
+        "commandsPsfdxRunsThatHaveIt": 210
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 207
+        "commandsPsfdxRunsThatHaveIt": 218
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 150
+        "commandsPsfdxRunsThatHaveIt": 154
       }
     ]
   },

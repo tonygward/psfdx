@@ -159,7 +159,7 @@ Included in the `psfdx` package.
 | :--- | :--- |
 | `Get-SalesforceAlias` | List Salesforce aliases. |
 | `Add-SalesforceAlias` | Create/update an alias. |
-| `Remove-SalesforceAlias` | Remove an alias. |
+| `Remove-SalesforceAlias` | Remove an alias, or every alias with `-All` (asks first; `-NoPrompt` skips the question, `-WhatIf` works). |
 
 ### Limits & Usage
 
@@ -209,6 +209,8 @@ Included in the `psfdx` package.
 | `Invoke-SalesforceApi` | Invoke REST API with bearer token. |
 | `Get-SalesforceApiVersions` | Current Salesforce API versions. |
 | `Get-SalesforceApiVersions` | Latest Salesforce API version. |
+| `Invoke-SalesforceRestRequest` | Any REST request as the CLI's logged-in user (`sf api request rest`): `-Url`, `-Method`, `-Body` / `-BodyFile` / `-File`, `-Header`, `-Include`, `-StreamToFile`, `-AsObject`. Writes ask first and support `-WhatIf`. |
+| `Invoke-SalesforceGraphQL` | Run a GraphQL query or mutation (`sf api request graphql`) from `-Query` or `-QueryFile`; a mutation asks first. |
 
 ### Plugins
 
@@ -219,6 +221,28 @@ Included in the `psfdx` package.
 | `Install-SalesforcePlugin` | Install a Salesforce CLI plugin. |
 | `Get-SalesforcePlugins` | List installed plugins (optionally core). |
 | `Update-SalesforcePlugins` | Update installed plugins. |
+| `Uninstall-SalesforcePlugin` | Remove plugins (asks first). |
+| `Get-SalesforcePluginDetails` | Version and install details of plugins (`sf plugins inspect`). |
+| `Find-SalesforcePlugins` | List third-party plugins you can install (`sf plugins discover`). |
+| `Reset-SalesforcePlugins` | Remove every user-installed and linked plugin, optionally reinstalling (asks first). |
+| `Test-SalesforcePluginSignature` | Check the digital signature of an npm plugin package. |
+| `Get-SalesforcePluginAllowlist` | List the plugins allowed without a Salesforce signature. |
+| `Add-SalesforcePluginAllowlist` | Allow unsigned plugins (asks first). |
+| `Remove-SalesforcePluginAllowlist` | Take plugins off the allowlist (asks first). |
+
+### Experience Cloud
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Get-SalesforceCommunityTemplates` | List the Experience Cloud site templates of an org. |
+| `New-SalesforceCommunity` | Create a site from a template (`-UrlPathPrefix`, `-Description`). |
+| `Publish-SalesforceCommunity` | Publish a site to make it live (asks first). |
+
+### Diagnostics
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Invoke-SalesforceDoctor` | Run `sf doctor`: gather the CLI's configuration and run diagnostics. `-CreateIssue` shares the results on GitHub, so it asks first. |
 
 ### Utilities
 
@@ -323,7 +347,7 @@ Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Describe-SalesforceObjects` | List Objects for a target org. |
+| `Describe-SalesforceObjects` | List Objects for a target org; `-Category` all, standard or custom. |
 | `Describe-SalesforceObject` | Describe a specific Object (supports tooling API). |
 | `Describe-SalesforceFields` | List fields for an Object. |
 | `Describe-SalesforceMetadataTypes` | List available metadata types. `-OutputFile` also writes the CLI's full result to a file. |
@@ -433,6 +457,12 @@ The CLI replaces a generated file that differs from the template **without askin
 | :--- | :--- |
 | `Install-SalesforceLwcDevServer` | Install the `@salesforce/plugin-lightning-dev` CLI plugin. |
 | `Start-SalesforceLwcDevServer` | Start Lightning dev (`sf lightning dev app`, `component` or `site` via `-Mode`; optional `-Name`, `-DeviceType` desktop, ios or android, `-DeviceId`, `-ClientSelect`, `-TargetOrg`). Fails with install guidance if the plugin is missing. |
+
+### UI bundles
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Start-SalesforceUiBundleDevServer` | Preview a UI bundle locally in front of your own dev server (`sf ui-bundle dev`): `-Name`, `-Url`, `-Port`, `-Open`. Keeps running until you stop it. |
 
 ### LWC/Jest Testing
 

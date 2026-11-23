@@ -964,17 +964,27 @@ function Add-SalesforceAlias {
 function Remove-SalesforceAlias {
     <#
     .SYNOPSIS
-    Removes one org alias from this computer.
+    Removes one org alias, or all of them, from this computer.
 
     .DESCRIPTION
-    Runs sf alias unset. Only the local alias is removed; the org is not touched.
+    Runs sf alias unset. Only the local aliases are removed; the orgs are not touched. Give -Alias to remove one, or -All to remove every alias, which asks for confirmation first because it cannot be undone. Supports -WhatIf. -NoPrompt skips the question so a script can run unattended; psfdx always passes --no-prompt to the CLI itself after it has asked, so the CLI never waits for an answer.
 
     .PARAMETER Alias
-    The alias to remove. Required.
+    The alias to remove. Required unless -All is given.
+
+    .PARAMETER All
+    Remove all the aliases that are set. Cannot be used with -Alias. Adds --all.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation when removing all the aliases. Adds --no-prompt.
 
     .EXAMPLE
     Remove-SalesforceAlias -Alias dev1
     Remove the alias dev1.
+
+    .EXAMPLE
+    Remove-SalesforceAlias -All -WhatIf
+    Show that every alias would be removed.
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
@@ -982,7 +992,8 @@ function Remove-SalesforceAlias {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf alias unset (plugin @salesforce/plugin-settings)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --all, --no-prompt
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -All = --all; -NoPrompt = --no-prompt.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -997,10 +1008,23 @@ function Remove-SalesforceAlias {
     .LINK
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
-    [CmdletBinding()]
-    Param([Parameter(Mandatory = $true)][string] $Alias)
-    $arguments = @('alias', 'unset', $Alias)
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][ValidateNotNullOrEmpty()][string] $Alias,
+        [Parameter(Mandatory = $false)][switch] $All,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )
+    if ($Alias -and $All) { throw 'Use -Alias or -All, not both.' }
+    if (-not $Alias -and -not $All) { throw 'Give the -Alias to remove, or -All to remove every alias.' }
+    $arguments = @('alias', 'unset')
+    if ($All) { $arguments += @('--all', '--no-prompt') } else { $arguments += $Alias }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    # One alias keeps the old behaviour (no question). Removing every alias cannot be undone, so it asks unless -NoPrompt is given.
+    if ($All) { if ($NoPrompt) { $ConfirmPreference = 'None' } else { $ConfirmPreference = 'Medium' } }
+    $target = $Alias
+    if ($All) { $target = 'every local alias' }
+    if (-not $PSCmdlet.ShouldProcess($target, 'Remove alias')) { return }
     Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
 }
 
@@ -3857,6 +3881,15 @@ function Install-SalesforcePlugin {
     .PARAMETER Name
     The plugin to install: an npm package name such as @salesforce/plugin-agent, optionally with a version, or a GitHub URL. A value that starts with a dash or contains spaces or control characters is refused, so it cannot be read as a CLI option. Required.
 
+    .PARAMETER Force
+    Make npm fetch the plugin again even if a copy is already on disk. Adds --force.
+
+    .PARAMETER Silent
+    Silence the output of npm. Adds --silent.
+
+    .PARAMETER ExtendedDetails
+    Show the verbose output of npm. Adds --verbose.
+
     .EXAMPLE
     Install-SalesforcePlugin -Name @salesforce/plugin-agent -WhatIf
 
@@ -3864,7 +3897,8 @@ function Install-SalesforcePlugin {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf plugins install (plugin @oclif/plugin-plugins)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --force, --help, --silent, --verbose
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --help
+    Parameter to flag: -Force = --force; -Silent = --silent; -ExtendedDetails = --verbose.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -3881,12 +3915,18 @@ function Install-SalesforcePlugin {
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
     Param(
-        [Parameter(Mandatory = $true)][string] $Name
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $false)][switch] $Force,
+        [Parameter(Mandatory = $false)][switch] $Silent,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails
     )
     if ($Name -notmatch '^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z') {
         throw "Plugin name '$Name' is not valid. Use an npm package name such as @salesforce/plugin-agent, or a GitHub URL; it must not start with a dash or contain spaces."
     }
     $arguments = @('plugins', 'install', $Name)
+    if ($Force) { $arguments += '--force' }
+    if ($Silent) { $arguments += '--silent' }
+    if ($ExtendedDetails) { $arguments += '--verbose' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     if ($PSCmdlet.ShouldProcess($Name, 'Install Salesforce CLI plugin')) {
@@ -3947,6 +3987,9 @@ function Update-SalesforcePlugins {
     .DESCRIPTION
     Runs sf plugins update. Supports -WhatIf and -Confirm.
 
+    .PARAMETER ExtendedDetails
+    Show the verbose output of the update. Adds --verbose.
+
     .EXAMPLE
     Update-SalesforcePlugins -WhatIf
     Show what would be updated.
@@ -3957,7 +4000,8 @@ function Update-SalesforcePlugins {
     Salesforce CLI mapping
     Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
     Command run: sf plugins update (plugin @oclif/plugin-plugins)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --help, --verbose
+      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --help
+    Parameter to flag: -ExtendedDetails = --verbose.
     psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
@@ -3973,8 +4017,11 @@ function Update-SalesforcePlugins {
     https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
     #>
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
-    Param()
+    Param(
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails
+    )
     $arguments = @('plugins', 'update')
+    if ($ExtendedDetails) { $arguments += '--verbose' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     if ($PSCmdlet.ShouldProcess('installed Salesforce CLI plugins', 'Update')) {
@@ -4016,6 +4063,961 @@ function Get-SalesforceDateTime {
     Param([Parameter(Mandatory = $false)][datetime] $Datetime)
     if ($null -eq $Datetime) { $Datetime = Get-Date }
     return ConvertTo-SalesforceSoqlDateTime -Value $Datetime
+}
+
+#endregion
+
+#region Experience Cloud
+
+# Wraps sf community: list the site templates, create a site and publish it. New-SalesforceExperienceSite (psfdx-development) writes site files into a project instead.
+
+function Get-SalesforceCommunityTemplates {
+    <#
+    .SYNOPSIS
+    Lists the Experience Cloud site templates available in an org.
+
+    .DESCRIPTION
+    Runs sf community list template and returns one object per template. Use a template name with New-SalesforceCommunity. It only reads.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Get-SalesforceCommunityTemplates -TargetOrg dev1
+    The templates the org offers.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf community list template (plugin @salesforce/plugin-community)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-community
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('community', 'list', 'template')
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function New-SalesforceCommunity {
+    <#
+    .SYNOPSIS
+    Creates an Experience Cloud site in an org from a template.
+
+    .DESCRIPTION
+    Runs sf community create. The site is created in the org, as a draft that is not live yet; make it live with Publish-SalesforceCommunity. Digital Experiences must be turned on in the org. Supports -WhatIf and -Confirm; it does not prompt by default. To write the files of a site into a project instead, use New-SalesforceExperienceSite.
+
+    .PARAMETER Name
+    Name of the site. Passed to sf as --name. Required.
+
+    .PARAMETER TemplateName
+    Template to build the site from, as listed by Get-SalesforceCommunityTemplates. Passed to sf as --template-name. Required.
+
+    .PARAMETER UrlPathPrefix
+    URL path prefix of the site, appended to the domain of the org. Letters and digits only. Passed to sf as --url-path-prefix.
+
+    .PARAMETER Description
+    Description of the site. Passed to sf as --description.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    New-SalesforceCommunity -Name 'Partner Portal' -TemplateName 'Customer Service' -UrlPathPrefix partners -TargetOrg dev1 -WhatIf
+    Preview creating a site.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf community create (plugin @salesforce/plugin-community)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -TemplateName = --template-name; -UrlPathPrefix = --url-path-prefix; -Description = --description; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-community
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Name,
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $TemplateName,
+        [Parameter(Mandatory = $false)][ValidatePattern('^[A-Za-z0-9]+\z')][string] $UrlPathPrefix,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('community', 'create', '--name', $Name, '--template-name', $TemplateName)
+    if ($UrlPathPrefix) { $arguments += @('--url-path-prefix', $UrlPathPrefix) }
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if (-not $PSCmdlet.ShouldProcess($Name, 'Create Experience Cloud site')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Publish-SalesforceCommunity {
+    <#
+    .SYNOPSIS
+    Publishes an Experience Builder site to make its changes live.
+
+    .DESCRIPTION
+    Runs sf community publish. Publishing makes the current draft of the site visible to its visitors, and it cannot be taken back with one command. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
+
+    .PARAMETER Name
+    Name of the site to publish. Passed to sf as --name. Required.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Publish-SalesforceCommunity -Name 'Partner Portal' -TargetOrg dev1 -WhatIf
+    Preview publishing the site.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf community publish (plugin @salesforce/plugin-community)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-community
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidateNotNullOrEmpty()][string] $Name,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $arguments = @('community', 'publish', '--name', $Name)
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if (-not $PSCmdlet.ShouldProcess($Name, 'Publish Experience Cloud site (makes it live)')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+#region GraphQL and REST requests
+
+# Wraps sf api request graphql and rest. They call the API as the CLI's logged-in user, so no token is handled here.
+
+function Invoke-SalesforceText {
+    # Private: runs an sf command whose result is text (a response body, plugin output). Invoke-Salesforce only checks the exit code in JSON mode,
+    # so a failure would otherwise come back as if it had worked. The text goes in the error's message and in its TargetObject. When the Windows
+    # .cmd launcher refuses an argument, the Hint says what to do instead.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Arguments,
+        [Parameter(Mandatory = $false)][hashtable] $CommonParams = @{},
+        [Parameter(Mandatory = $false)][string] $Hint
+    )
+    $global:LASTEXITCODE = 0
+    try { $output = Invoke-Salesforce -FilePath 'sf' -Arguments $Arguments @CommonParams }
+    catch {
+        if ($Hint -and $_.Exception.Message -like '*cannot be passed safely*') { throw "$Hint ($($_.Exception.Message))" }
+        throw
+    }
+    $exitCode = $global:LASTEXITCODE
+    $text = [string]::Join([Environment]::NewLine, @($output | ForEach-Object { [string] $_ })).Trim()
+    if ($exitCode -ne 0) {
+        $shown = $text
+        if ($shown.Length -gt 4000) { $shown = $shown.Substring(0, 4000) + '...' }
+        $command = ($Arguments | Where-Object { $_ -and -not $_.StartsWith('-') } | Select-Object -First 3) -join ' '
+        $message = "sf $command exited with code $exitCode."
+        if ($shown) { $message += " $shown" }
+        $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $message), 'PsfdxRequestFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $text)
+        throw $record
+    }
+    return $text
+}
+
+function Invoke-SalesforceGraphQL {
+    <#
+    .SYNOPSIS
+    Runs a GraphQL statement against an org with the CLI's login.
+
+    .DESCRIPTION
+    Runs sf api request graphql, which sends a GraphQL query or mutation to the Salesforce GraphQL API as the user you are logged in as. Give the statement as -Query, or put it in a file and give -QueryFile. The response is returned as text, or as an object with -AsObject. A mutation changes data, so a statement that starts with mutation asks for confirmation and supports -WhatIf; a query does not. A response the server marks as an error makes the cmdlet throw (PsfdxRequestFailed). On Windows the CLI's .cmd launcher cannot take a statement with a double quote or a line break, so use -QueryFile there.
+
+    .PARAMETER Query
+    The GraphQL statement. Use it or -QueryFile. Passed to sf as --body.
+
+    .PARAMETER QueryFile
+    Path of a file that holds the GraphQL statement. It must exist. Use it or -Query. Passed to sf as --body.
+
+    .PARAMETER Include
+    Include the HTTP status and headers in the output. Adds --include.
+
+    .PARAMETER StreamToFile
+    Write the response to this file instead of returning it. Cannot be used with -Include or -AsObject. Passed to sf as --stream-to-file.
+
+    .PARAMETER AsObject
+    Return the response converted from JSON instead of text. Not with -Include or -StreamToFile.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Invoke-SalesforceGraphQL -Query 'query { uiapi { query { Account { edges { node { Id Name { value } } } } } } }' -AsObject -TargetOrg dev1
+    Query accounts and get an object.
+
+    .EXAMPLE
+    Invoke-SalesforceGraphQL -QueryFile .\accounts.graphql -StreamToFile .\accounts.json -TargetOrg dev1
+    Run a statement from a file and save the response.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf api request graphql (plugin @salesforce/plugin-api)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Query = --body; -Include = --include; -StreamToFile = --stream-to-file; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-api
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $Query,
+        [Parameter(Mandatory = $false)][string] $QueryFile,
+        [Parameter(Mandatory = $false)][switch] $Include,
+        [Parameter(Mandatory = $false)][string] $StreamToFile,
+        [Parameter(Mandatory = $false)][switch] $AsObject,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $given = 0
+    if ($Query) { $given++ }
+    if ($QueryFile) { $given++ }
+    if ($given -ne 1) { throw 'Give exactly one of -Query and -QueryFile.' }
+    if ($QueryFile -and -not (Test-Path -LiteralPath $QueryFile -PathType Leaf)) { throw "Query file '$QueryFile' does not exist." }
+    if ($Include -and $StreamToFile) { throw 'Use -Include or -StreamToFile, not both.' }
+    if ($AsObject -and ($Include -or $StreamToFile)) { throw '-AsObject needs the plain response, so it cannot be used with -Include or -StreamToFile.' }
+    if ($StreamToFile) {
+        $parent = Split-Path -Path $StreamToFile -Parent
+        if ($parent -and -not (Test-Path -LiteralPath $parent -PathType Container)) { throw "Output folder '$parent' does not exist." }
+    }
+    $statement = $Query
+    $bodyPath = $null
+    if ($QueryFile) {
+        $bodyPath = (Resolve-Path -LiteralPath $QueryFile).ProviderPath
+        $statement = [System.IO.File]::ReadAllText($bodyPath)
+    }
+    $arguments = @('api', 'request', 'graphql')
+    if ($bodyPath) { $arguments += @('--body', $bodyPath) } else { $arguments += @('--body', $Query) }
+    if ($Include) { $arguments += '--include' }
+    if ($StreamToFile) { $arguments += @('--stream-to-file', $PSCmdlet.GetUnresolvedProviderPathFromPSPath($StreamToFile)) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($statement -match '(?im)^\s*mutation\b') {
+        if (-not $PSCmdlet.ShouldProcess($(if ($TargetOrg) { $TargetOrg } else { 'the default org' }), 'Run a GraphQL mutation (changes data)')) { return }
+    }
+    $hint = $null
+    if ($Query) { $hint = 'The statement has a double quote or a line break, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely. Put it in a file and use -QueryFile instead.' }
+    $text = Invoke-SalesforceText -Arguments $arguments -CommonParams $commonParams -Hint $hint
+    if ($AsObject) { return ($text | ConvertFrom-Json) }
+    return $text
+}
+
+function Invoke-SalesforceRestRequest {
+    <#
+    .SYNOPSIS
+    Makes an authenticated Salesforce REST API request with the CLI's login.
+
+    .DESCRIPTION
+    Runs sf api request rest, which calls any REST endpoint as the user you are logged in as, so you need no token. The response is returned as text, or as an object with -AsObject. A request that changes data (POST, PUT, PATCH or DELETE) asks for confirmation and supports -WhatIf; a read does not. An error response makes the cmdlet throw (PsfdxRequestFailed). Give the body as -Body, as a file with -BodyFile, or give the whole request (URL, method, headers and body) in a JSON -File. On Windows the CLI's .cmd launcher cannot take a body with a double quote, which JSON always has, so use -BodyFile or -File there. For the other psfdx REST helpers see Invoke-SalesforceApi, which uses an access token instead.
+
+    .PARAMETER Url
+    The endpoint, for example /services/data/v62.0/limits. Not needed if -File holds it. It is an argument of the command, not a flag.
+
+    .PARAMETER Method
+    HTTP method. Valid values: GET, POST, PUT, PATCH, HEAD, DELETE, OPTIONS, TRACE. The CLI default is GET. Passed to sf as --method.
+
+    .PARAMETER Body
+    The request body as text. Use one of -Body, -BodyFile and -File. Passed to sf as --body.
+
+    .PARAMETER BodyFile
+    Path of a file that holds the request body. It must exist. The cmdlet sends it as --body @path. Use one of -Body, -BodyFile and -File.
+
+    .PARAMETER File
+    Path of a JSON file that holds the URL, method, headers and body. It must exist. Use one of -Body, -BodyFile and -File. Passed to sf as --file.
+
+    .PARAMETER Header
+    HTTP headers as name and value pairs. Each is passed to sf as its own --header name:value. Names are checked and a value may not contain a line break. Passed to sf as --header.
+
+    .PARAMETER Include
+    Include the HTTP status and headers in the output. Cannot be used with -StreamToFile or -AsObject. Adds --include.
+
+    .PARAMETER StreamToFile
+    Write the response to this file instead of returning it. Cannot be used with -Include or -AsObject. Passed to sf as --stream-to-file.
+
+    .PARAMETER AsObject
+    Return the response converted from JSON instead of text.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
+
+    .EXAMPLE
+    Invoke-SalesforceRestRequest -Url /services/data/v62.0/limits -AsObject -TargetOrg dev1
+    Read the org limits as an object.
+
+    .EXAMPLE
+    Invoke-SalesforceRestRequest -Url /services/data/v62.0/sobjects/Account -Method POST -BodyFile .\account.json -TargetOrg dev1 -WhatIf
+    Preview creating an account from a file.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf api request rest (plugin @salesforce/plugin-api)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Method = --method; -Body = --body; -File = --file; -Header = --header; -Include = --include; -StreamToFile = --stream-to-file; -TargetOrg = --target-org.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-api
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][ValidatePattern('^[^\s]+\z')][string] $Url,
+        [Parameter(Mandatory = $false)][ValidateSet('GET', 'POST', 'PUT', 'PATCH', 'HEAD', 'DELETE', 'OPTIONS', 'TRACE')][string] $Method,
+        [Parameter(Mandatory = $false)][string] $Body,
+        [Parameter(Mandatory = $false)][string] $BodyFile,
+        [Parameter(Mandatory = $false)][string] $File,
+        [Parameter(Mandatory = $false)][System.Collections.IDictionary] $Header,
+        [Parameter(Mandatory = $false)][switch] $Include,
+        [Parameter(Mandatory = $false)][string] $StreamToFile,
+        [Parameter(Mandatory = $false)][switch] $AsObject,
+        [Parameter(Mandatory = $false)][string] $TargetOrg
+    )
+    $given = 0
+    if ($Body) { $given++ }
+    if ($BodyFile) { $given++ }
+    if ($File) { $given++ }
+    if ($given -gt 1) { throw 'Use only one of -Body, -BodyFile and -File.' }
+    if (-not $Url -and -not $File) { throw 'Give -Url, or a -File that holds the URL.' }
+    if ($BodyFile -and -not (Test-Path -LiteralPath $BodyFile -PathType Leaf)) { throw "Body file '$BodyFile' does not exist." }
+    if ($File -and -not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "Request file '$File' does not exist." }
+    if ($Include -and $StreamToFile) { throw 'Use -Include or -StreamToFile, not both.' }
+    if ($AsObject -and ($Include -or $StreamToFile)) { throw '-AsObject needs the plain response, so it cannot be used with -Include or -StreamToFile.' }
+    if ($StreamToFile) {
+        $parent = Split-Path -Path $StreamToFile -Parent
+        if ($parent -and -not (Test-Path -LiteralPath $parent -PathType Container)) { throw "Output folder '$parent' does not exist." }
+    }
+    $headerPairs = @()
+    if ($null -ne $Header) {
+        foreach ($key in $Header.Keys) {
+            $name = [string] $key
+            $value = [System.Convert]::ToString($Header[$key], [System.Globalization.CultureInfo]::InvariantCulture)
+            if ($name -notmatch '^[A-Za-z0-9][A-Za-z0-9-]*\z') { throw "'$name' is not a valid header name." }
+            if ($value -match '[\r\n]') { throw "The value of header '$name' contains a line break." }
+            $headerPairs += "${name}:$value"
+        }
+    }
+    $arguments = @('api', 'request', 'rest')
+    if ($Url) { $arguments += $Url }
+    if ($Method) { $arguments += @('--method', $Method) }
+    if ($Body) { $arguments += @('--body', $Body) }
+    if ($BodyFile) { $arguments += @('--body', ('@' + (Resolve-Path -LiteralPath $BodyFile).ProviderPath)) }
+    if ($File) { $arguments += @('--file', (Resolve-Path -LiteralPath $File).ProviderPath) }
+    foreach ($pair in $headerPairs) { $arguments += @('--header', $pair) }
+    if ($Include) { $arguments += '--include' }
+    if ($StreamToFile) { $arguments += @('--stream-to-file', $PSCmdlet.GetUnresolvedProviderPathFromPSPath($StreamToFile)) }
+    if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($Method -in 'POST', 'PUT', 'PATCH', 'DELETE') {
+        if (-not $PSCmdlet.ShouldProcess($(if ($Url) { $Url } else { $File }), "$Method request")) { return }
+    }
+    $hint = $null
+    if ($Body) { $hint = 'The body has a double quote or a line break, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely. Put it in a file and use -BodyFile instead.' }
+    $text = Invoke-SalesforceText -Arguments $arguments -CommonParams $commonParams -Hint $hint
+    if ($AsObject) { return ($text | ConvertFrom-Json) }
+    return $text
+}
+
+#endregion
+
+#region Plugin management
+
+# The rest of sf plugins: uninstall, inspect, discover, reset and the trust commands. Install-SalesforcePlugin, Update-SalesforcePlugins and Get-SalesforcePlugins are in the Plugins region.
+
+function Uninstall-SalesforcePlugin {
+    <#
+    .SYNOPSIS
+    Removes plugins from the Salesforce CLI.
+
+    .DESCRIPTION
+    Runs sf plugins uninstall for each name. Commands the plugin provided stop working, and psfdx cmdlets that need it (for example the agent cmdlets need @salesforce/plugin-agent) will say it is missing. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
+
+    .PARAMETER Name
+    Plugins to remove, as npm package names such as @salesforce/plugin-agent. Each must be a plain name: it must not start with a dash or contain spaces. Required.
+
+    .PARAMETER ExtendedDetails
+    Show more detail of what the CLI does. Adds --verbose.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .EXAMPLE
+    Uninstall-SalesforcePlugin -Name @salesforce/plugin-agent -WhatIf
+    Preview removing a plugin.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins uninstall (plugin @oclif/plugin-plugins)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ExtendedDetails = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/@oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z')][string[]] $Name,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )
+    $names = @($Name | Where-Object { $_ })
+    if ($names.Count -eq 0) { throw 'Give at least one plugin -Name.' }
+    $arguments = @('plugins', 'uninstall')
+    $arguments += $names
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if (-not $PSCmdlet.ShouldProcess(($names -join ', '), 'Uninstall Salesforce CLI plugin')) { return }
+    return Invoke-SalesforceText -Arguments $arguments -CommonParams $commonParams
+}
+
+function Get-SalesforcePluginDetails {
+    <#
+    .SYNOPSIS
+    Shows the installation details of plugins.
+
+    .DESCRIPTION
+    Runs sf plugins inspect for each plugin and returns what the CLI knows about it, such as its version and where it is installed. It only reads. For the list of installed plugins see Get-SalesforcePlugins.
+
+    .PARAMETER Name
+    Plugins to inspect, as npm package names such as @salesforce/plugin-agent. Required.
+
+    .PARAMETER ExtendedDetails
+    Show more detail. Adds --verbose.
+
+    .EXAMPLE
+    Get-SalesforcePluginDetails -Name @salesforce/plugin-agent
+    Version and location of one plugin.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins inspect (plugin @oclif/plugin-plugins)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -ExtendedDetails = --verbose.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/@oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z')][string[]] $Name,
+        [Parameter(Mandatory = $false)][switch] $ExtendedDetails
+    )
+    $names = @($Name | Where-Object { $_ })
+    if ($names.Count -eq 0) { throw 'Give at least one plugin -Name.' }
+    $arguments = @('plugins', 'inspect')
+    $arguments += $names
+    if ($ExtendedDetails) { $arguments += '--verbose' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    # sf plugins inspect is an oclif command, not an sf one: with --json it prints a bare array of plugins, with no status wrapper.
+    $text = ([string]::Join([Environment]::NewLine, @($result | ForEach-Object { [string] $_ }))).Trim()
+    if ($text.StartsWith('[')) { return @($text | ConvertFrom-Json) }
+    return Show-SalesforceResult -Result $result
+}
+
+function Find-SalesforcePlugins {
+    <#
+    .SYNOPSIS
+    Lists third-party plugins you can install.
+
+    .DESCRIPTION
+    Runs sf plugins discover and returns the third-party plugins that Salesforce lists. It reads a list on the internet and changes nothing. Install one with Install-SalesforcePlugin.
+
+    .EXAMPLE
+    Find-SalesforcePlugins
+    The plugins you can add.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins discover (plugin @salesforce/plugin-marketplace)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-marketplace
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+
+    )
+    $arguments = @('plugins', 'discover', '--json')
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Reset-SalesforcePlugins {
+    <#
+    .SYNOPSIS
+    Removes every plugin you installed or linked in the Salesforce CLI.
+
+    .DESCRIPTION
+    Runs sf plugins reset. All user-installed and linked plugins are uninstalled, so commands that came from them stop working until you install them again (or use -Reinstall). Plugins that ship with the CLI stay. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
+
+    .PARAMETER Hard
+    Also delete node_modules and the package manager files, not only uninstall the plugins. Adds --hard.
+
+    .PARAMETER Reinstall
+    Install all the plugins again after removing them. Adds --reinstall.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .EXAMPLE
+    Reset-SalesforcePlugins -Reinstall -WhatIf
+    Preview a clean reinstall of the plugins.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins reset (plugin @oclif/plugin-plugins)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Hard = --hard; -Reinstall = --reinstall.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/@oclif/plugin-plugins
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $Hard,
+        [Parameter(Mandatory = $false)][switch] $Reinstall,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )
+    $arguments = @('plugins', 'reset')
+    if ($Hard) { $arguments += '--hard' }
+    if ($Reinstall) { $arguments += '--reinstall' }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if (-not $PSCmdlet.ShouldProcess('every user-installed and linked Salesforce CLI plugin', 'Remove')) { return }
+    return Invoke-SalesforceText -Arguments $arguments -CommonParams $commonParams
+}
+
+function Test-SalesforcePluginSignature {
+    <#
+    .SYNOPSIS
+    Checks the digital signature of an npm plugin package.
+
+    .DESCRIPTION
+    Runs sf plugins trust verify, which checks that the signature of the npm package matches the signature and key stored at the URLs the CLI expects. It tells you whether the plugin is signed by Salesforce before you install it. It only reads.
+
+    .PARAMETER Npm
+    The npm package name, which can include a tag or version, for example @salesforce/plugin-agent@latest. Passed to sf as --npm. Required.
+
+    .PARAMETER Registry
+    The npm registry to use. It must be an absolute https:// URL. The CLI default is the registry npm uses. Passed to sf as --registry.
+
+    .EXAMPLE
+    Test-SalesforcePluginSignature -Npm @salesforce/plugin-agent
+    Is the package signed?
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins trust verify (plugin @salesforce/plugin-trust)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Npm = --npm; -Registry = --registry.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-trust
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z')][string] $Npm,
+        [Parameter(Mandatory = $false)][string] $Registry
+    )
+    if ($Registry -and (-not [System.Uri]::TryCreate($Registry, [System.UriKind]::Absolute, [ref]$null) -or -not $Registry.StartsWith('https://', [System.StringComparison]::OrdinalIgnoreCase))) { throw "-Registry must be an absolute https:// URL. Got '$Registry'." }
+    $arguments = @('plugins', 'trust', 'verify', '--npm', $Npm)
+    if ($Registry) { $arguments += @('--registry', $Registry) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Get-SalesforcePluginAllowlist {
+    <#
+    .SYNOPSIS
+    Lists the plugins the CLI is allowed to install without a Salesforce signature.
+
+    .DESCRIPTION
+    Runs sf plugins trust allowlist list. Plugins on the allowlist can be installed even though they are not signed by Salesforce. It only reads.
+
+    .EXAMPLE
+    Get-SalesforcePluginAllowlist
+    The allowed unsigned plugins.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins trust allowlist list (plugin @salesforce/plugin-trust)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-trust
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+
+    )
+    $arguments = @('plugins', 'trust', 'allowlist', 'list', '--json')
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Add-SalesforcePluginAllowlist {
+    <#
+    .SYNOPSIS
+    Allows plugins that Salesforce has not signed to be installed.
+
+    .DESCRIPTION
+    Runs sf plugins trust allowlist add. This lowers a safety check of the CLI: a plugin on the allowlist installs without a Salesforce signature, so only add a plugin whose code you trust. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
+
+    .PARAMETER Name
+    Plugins to allow, as npm package names. Each is passed to sf as its own --name. Passed to sf as --name. Required.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .EXAMPLE
+    Add-SalesforcePluginAllowlist -Name my-company-plugin -WhatIf
+    Preview allowing a plugin.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins trust allowlist add (plugin @salesforce/plugin-trust)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-trust
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z')][string[]] $Name,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )
+    $names = @($Name | Where-Object { $_ })
+    if ($names.Count -eq 0) { throw 'Give at least one plugin -Name.' }
+    $arguments = @('plugins', 'trust', 'allowlist', 'add')
+    foreach ($item in $names) { $arguments += @('--name', $item) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if (-not $PSCmdlet.ShouldProcess(($names -join ', '), 'Allow without a Salesforce signature')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+function Remove-SalesforcePluginAllowlist {
+    <#
+    .SYNOPSIS
+    Takes plugins off the allowlist of unsigned plugins.
+
+    .DESCRIPTION
+    Runs sf plugins trust allowlist remove. The plugins can no longer be installed without a Salesforce signature. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
+
+    .PARAMETER Name
+    Plugins to remove from the allowlist. Each is passed to sf as its own --name. Passed to sf as --name. Required.
+
+    .PARAMETER NoPrompt
+    Do not ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
+
+    .EXAMPLE
+    Remove-SalesforcePluginAllowlist -Name my-company-plugin -WhatIf
+    Preview taking a plugin off the list.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf plugins trust allowlist remove (plugin @salesforce/plugin-trust)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Name = --name.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-trust
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9@][A-Za-z0-9@._~/:+#-]*\z')][string[]] $Name,
+        [Parameter(Mandatory = $false)][switch] $NoPrompt
+    )
+    $names = @($Name | Where-Object { $_ })
+    if ($names.Count -eq 0) { throw 'Give at least one plugin -Name.' }
+    $arguments = @('plugins', 'trust', 'allowlist', 'remove')
+    foreach ($item in $names) { $arguments += @('--name', $item) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($NoPrompt) { $ConfirmPreference = 'None' }
+    if (-not $PSCmdlet.ShouldProcess(($names -join ', '), 'Remove from the allowlist')) { return }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
+}
+
+#endregion
+
+#region Diagnostics
+
+# Wraps sf doctor.
+
+function Invoke-SalesforceDoctor {
+    <#
+    .SYNOPSIS
+    Runs the Salesforce CLI diagnostics and writes a report of its setup and problems.
+
+    .DESCRIPTION
+    Runs sf doctor, which gathers the CLI's configuration and runs checks to find problems in your environment. The results are written to files in the output folder. With -Command it also runs that command in debug mode and logs it. -CreateIssue goes further: it opens a new issue on the Salesforce CLI's GitHub repository with the diagnostic results attached, which shares information about your machine outside it, so it asks for confirmation first. Supports -WhatIf and -Confirm.
+
+    .PARAMETER Command
+    A CLI command to run in debug mode, for example 'org list'. Its results go to a log file. Passed to sf as --command.
+
+    .PARAMETER Plugin
+    Only run the diagnostics of this plugin. Passed to sf as --plugin.
+
+    .PARAMETER OutputDirectory
+    Folder to save the created files in, instead of the current folder. It must exist. Passed to sf as --output-dir.
+
+    .PARAMETER CreateIssue
+    Create a new issue on the Salesforce CLI's GitHub repository with the diagnostic results attached. Asks for confirmation first. Adds --create-issue.
+
+    .EXAMPLE
+    Invoke-SalesforceDoctor -OutputDirectory .\doctor
+    Run the diagnostics and keep the files in a folder.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf doctor (plugin @salesforce/plugin-info)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -Command = --command; -Plugin = --plugin; -OutputDirectory = --output-dir; -CreateIssue = --create-issue.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-info
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'Medium')]
+    Param(
+        [Parameter(Mandatory = $false)][string] $Command,
+        [Parameter(Mandatory = $false)][string] $Plugin,
+        [Parameter(Mandatory = $false)][string] $OutputDirectory,
+        [Parameter(Mandatory = $false)][switch] $CreateIssue
+    )
+    if ($OutputDirectory -and -not (Test-Path -LiteralPath $OutputDirectory -PathType Container)) { throw "Output folder '$OutputDirectory' does not exist." }
+    $arguments = @('doctor')
+    if ($Command) { $arguments += @('--command', $Command) }
+    if ($Plugin) { $arguments += @('--plugin', $Plugin) }
+    if ($OutputDirectory) { $arguments += @('--output-dir', (Resolve-Path -LiteralPath $OutputDirectory).ProviderPath) }
+    if ($CreateIssue) { $arguments += '--create-issue' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($CreateIssue) {
+        if (-not $PSCmdlet.ShouldProcess('the Salesforce CLI GitHub repository', 'Create an issue with your diagnostic results attached')) { return }
+    } else {
+        $ConfirmPreference = 'None'
+        if (-not $PSCmdlet.ShouldProcess('this computer', 'Run the Salesforce CLI diagnostics and write their files')) { return }
+    }
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Show-SalesforceResult -Result $result
 }
 
 #endregion

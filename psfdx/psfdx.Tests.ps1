@@ -1877,3 +1877,257 @@ Describe 'psfdx sf data parity (issue 249)' {
         }
     }
 }
+
+Describe 'psfdx: Experience Cloud, requests, plugins and diagnostics (issue 257)' {
+    InModuleScope 'psfdx' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+
+        Context 'Experience Cloud' {
+            It 'lists templates' {
+                Get-SalesforceCommunityTemplates -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'community|list|template|--target-org|me|--json' }
+            }
+            It 'creates a site with every option and does not prompt' {
+                New-SalesforceCommunity -Name 'Partner Portal' -TemplateName 'Customer Service' -UrlPathPrefix partners -Description 'For partners' -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'community|create|--name|Partner Portal|--template-name|Customer Service|--url-path-prefix|partners|--description|For partners|--target-org|me|--json' }
+            }
+            It 'checks the path prefix and the mandatory parameters' {
+                { New-SalesforceCommunity -Name n -TemplateName t -UrlPathPrefix 'a b' } | Should -Throw
+                { New-SalesforceCommunity -Name n -TemplateName t -UrlPathPrefix ('abc' + "`n") } | Should -Throw
+                foreach ($p in 'Name', 'TemplateName') { (Get-Command New-SalesforceCommunity).Parameters[$p].Attributes.Where({ $_ -is [System.Management.Automation.ParameterAttribute] }).Mandatory | Should -BeTrue }
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'does nothing under -WhatIf for a create and a publish' {
+                New-SalesforceCommunity -Name n -TemplateName t -WhatIf | Out-Null
+                Publish-SalesforceCommunity -Name n -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'publishes, and -NoPrompt skips the confirmation without turning WhatIf off' {
+                Publish-SalesforceCommunity -Name 'Partner Portal' -NoPrompt -TargetOrg me | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'community|publish|--name|Partner Portal|--target-org|me|--json' }
+                Publish-SalesforceCommunity -Name n -NoPrompt -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1
+            }
+            It 'publish is a High impact cmdlet and the creation is Medium' {
+                (Get-Command Publish-SalesforceCommunity).ScriptBlock.Attributes.Where({ $_ -is [System.Management.Automation.CmdletBindingAttribute] }).ConfirmImpact | Should -Be 'High'
+                (Get-Command New-SalesforceCommunity).ScriptBlock.Attributes.Where({ $_ -is [System.Management.Automation.CmdletBindingAttribute] }).ConfirmImpact | Should -Be 'Medium'
+            }
+        }
+
+        Context 'Invoke-SalesforceGraphQL' {
+            BeforeEach {
+                $script:gql = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+                New-Item -ItemType Directory -Path $script:gql | Out-Null
+                Set-Content -LiteralPath (Join-Path $script:gql 'q.graphql') -Value 'query { uiapi { query { Account { edges { node { Id } } } } } }'
+                Set-Content -LiteralPath (Join-Path $script:gql 'm.graphql') -Value 'mutation { uiapi { AccountCreate(input: { Account: { Name: "x" } }) { Record { Id } } } }'
+                Mock Invoke-Salesforce { '{"data":{"uiapi":{}}}' }
+            }
+            It 'sends a query as text and returns the response text' {
+                $out = Invoke-SalesforceGraphQL -Query 'query { a }' -TargetOrg me
+                $out | Should -Be '{"data":{"uiapi":{}}}'
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'api|request|graphql|--body|query { a }|--target-org|me' }
+            }
+            It 'returns an object with -AsObject' {
+                (Invoke-SalesforceGraphQL -Query 'query { a }' -AsObject).data | Should -Not -BeNullOrEmpty
+            }
+            It 'passes a file by its full path' {
+                $file = Join-Path $script:gql 'q.graphql'
+                $out = Join-Path $script:gql 'out.json'
+                Invoke-SalesforceGraphQL -QueryFile $file -StreamToFile $out | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "api|request|graphql|--body|$file|--stream-to-file|$out" }
+                Invoke-SalesforceGraphQL -QueryFile $file -Include | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "api|request|graphql|--body|$file|--include" }
+            }
+            It 'runs a query without confirmation but asks before a mutation and honours -WhatIf' {
+                Invoke-SalesforceGraphQL -Query 'query { a }' -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1
+                Invoke-SalesforceGraphQL -QueryFile (Join-Path $script:gql 'm.graphql') -WhatIf | Out-Null
+                Invoke-SalesforceGraphQL -Query 'mutation { a }' -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1
+                Invoke-SalesforceGraphQL -Query 'mutation { a }' -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 2
+            }
+            It 'checks its inputs' {
+                { Invoke-SalesforceGraphQL } | Should -Throw -ExpectedMessage '*exactly one of -Query and -QueryFile*'
+                { Invoke-SalesforceGraphQL -Query a -QueryFile (Join-Path $script:gql 'q.graphql') } | Should -Throw -ExpectedMessage '*exactly one*'
+                { Invoke-SalesforceGraphQL -QueryFile (Join-Path $script:gql 'missing.graphql') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Invoke-SalesforceGraphQL -Query a -Include -StreamToFile (Join-Path $script:gql 'o') } | Should -Throw -ExpectedMessage '*not both*'
+                { Invoke-SalesforceGraphQL -Query a -AsObject -Include } | Should -Throw -ExpectedMessage '*-AsObject*'
+                { Invoke-SalesforceGraphQL -Query a -StreamToFile (Join-Path $script:gql 'nofolder/o.json') } | Should -Throw -ExpectedMessage '*Output folder*'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws with the response text when sf exits with an error' {
+                Mock Invoke-Salesforce { $global:LASTEXITCODE = 1; '{"errors":[{"message":"bad field"}]}' }
+                $err = $null
+                try { Invoke-SalesforceGraphQL -Query 'query { a }' } catch { $err = $_ }
+                $err.Exception.Message | Should -BeLike '*exited with code 1*bad field*'
+                $err.FullyQualifiedErrorId | Should -BeLike 'PsfdxRequestFailed*'
+                $err.TargetObject | Should -BeLike '*bad field*'
+            }
+            It 'says to use -QueryFile when the Windows launcher refuses the statement' {
+                Mock Invoke-Salesforce { throw "Argument contains a character that cannot be passed safely to 'sf' on Windows (double quote or line break)." }
+                { Invoke-SalesforceGraphQL -Query 'query { a(x: "1") }' } | Should -Throw -ExpectedMessage '*use -QueryFile instead*'
+            }
+        }
+
+        Context 'Invoke-SalesforceRestRequest' {
+            BeforeEach {
+                $script:rest = Join-Path $TestDrive ([guid]::NewGuid().ToString('N'))
+                New-Item -ItemType Directory -Path $script:rest | Out-Null
+                Set-Content -LiteralPath (Join-Path $script:rest 'body.json') -Value '{"Name":"x"}'
+                Mock Invoke-Salesforce { '{"limits":1}' }
+            }
+            It 'reads an endpoint without a method or confirmation' {
+                (Invoke-SalesforceRestRequest -Url /services/data/v62.0/limits -AsObject -TargetOrg me).limits | Should -Be 1
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'api|request|rest|/services/data/v62.0/limits|--target-org|me' }
+            }
+            It 'passes the method, the body and each header as its own argument' {
+                Invoke-SalesforceRestRequest -Url /services/data/v62.0/sobjects/Account -Method POST -Body 'a=b' -Header ([ordered]@{ 'Content-Type' = 'text/plain'; 'X-Trace' = 'a:b' }) -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'api|request|rest|/services/data/v62.0/sobjects/Account|--method|POST|--body|a=b|--header|Content-Type:text/plain|--header|X-Trace:a:b' }
+            }
+            It 'sends a body file with an at sign and a full path, and a request file as --file' {
+                $b = Join-Path $script:rest 'body.json'
+                Invoke-SalesforceRestRequest -Url /x -Method PATCH -BodyFile $b -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "api|request|rest|/x|--method|PATCH|--body|@$b" }
+                Invoke-SalesforceRestRequest -File $b -Include | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "api|request|rest|--file|$b|--include" }
+            }
+            It 'asks before a write and does nothing under -WhatIf, but a read runs' {
+                foreach ($m in 'POST', 'PUT', 'PATCH', 'DELETE') { Invoke-SalesforceRestRequest -Url /x -Method $m -WhatIf | Out-Null }
+                Assert-MockCalled Invoke-Salesforce -Times 0
+                foreach ($m in 'GET', 'HEAD', 'OPTIONS') { Invoke-SalesforceRestRequest -Url /x -Method $m -WhatIf | Out-Null }
+                Assert-MockCalled Invoke-Salesforce -Times 3
+            }
+            It 'checks its inputs' {
+                { Invoke-SalesforceRestRequest } | Should -Throw -ExpectedMessage '*Give -Url*'
+                { Invoke-SalesforceRestRequest -Url /x -Body a -BodyFile (Join-Path $script:rest 'body.json') } | Should -Throw -ExpectedMessage '*only one of*'
+                { Invoke-SalesforceRestRequest -Url /x -BodyFile (Join-Path $script:rest 'nope.json') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Invoke-SalesforceRestRequest -Url /x -File (Join-Path $script:rest 'nope.json') } | Should -Throw -ExpectedMessage '*does not exist*'
+                { Invoke-SalesforceRestRequest -Url /x -Method FETCH } | Should -Throw
+                { Invoke-SalesforceRestRequest -Url '/x --json' } | Should -Throw
+                { Invoke-SalesforceRestRequest -Url /x -Header @{ 'Bad Name' = 'v' } } | Should -Throw -ExpectedMessage '*not a valid header name*'
+                { Invoke-SalesforceRestRequest -Url /x -Header @{ 'X-A' = "a`nb" } } | Should -Throw -ExpectedMessage '*line break*'
+                { Invoke-SalesforceRestRequest -Url /x -Include -AsObject } | Should -Throw -ExpectedMessage '*-AsObject*'
+                { Invoke-SalesforceRestRequest -Url /x -Include -StreamToFile (Join-Path $script:rest 'o') } | Should -Throw -ExpectedMessage '*not both*'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws with the response text on an error and names -BodyFile when the launcher refuses a quote' {
+                Mock Invoke-Salesforce { $global:LASTEXITCODE = 1; '[{"errorCode":"NOT_FOUND"}]' }
+                { Invoke-SalesforceRestRequest -Url /x } | Should -Throw -ExpectedMessage '*NOT_FOUND*'
+                Mock Invoke-Salesforce { throw "Argument contains a character that cannot be passed safely to 'sf' on Windows (double quote or line break)." }
+                { Invoke-SalesforceRestRequest -Url /x -Method POST -Body '{"a":1}' -Confirm:$false } | Should -Throw -ExpectedMessage '*use -BodyFile instead*'
+            }
+        }
+
+        Context 'plugins' {
+            It 'uninstalls after confirmation, -NoPrompt skips it, -WhatIf does nothing' {
+                Uninstall-SalesforcePlugin -Name @('@salesforce/plugin-agent', 'sfdx-hardis') -ExtendedDetails -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|uninstall|@salesforce/plugin-agent|sfdx-hardis|--verbose' }
+                Uninstall-SalesforcePlugin -Name x -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1
+            }
+            It 'refuses a plugin name that looks like an option or has a line break' {
+                { Uninstall-SalesforcePlugin -Name '--all' -NoPrompt } | Should -Throw
+                { Get-SalesforcePluginDetails -Name '--json' } | Should -Throw
+                { Get-SalesforcePluginDetails -Name ('a' + "`n") } | Should -Throw
+                { Add-SalesforcePluginAllowlist -Name '-x' -NoPrompt } | Should -Throw
+                { Test-SalesforcePluginSignature -Npm '--x' } | Should -Throw
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+            It 'throws when sf plugins uninstall fails' {
+                Mock Invoke-Salesforce { $global:LASTEXITCODE = 2; 'not installed' }
+                { Uninstall-SalesforcePlugin -Name nope -NoPrompt } | Should -Throw -ExpectedMessage '*exited with code 2*not installed*'
+            }
+            It 'inspects, discovers and verifies as read-only json commands' {
+                Get-SalesforcePluginDetails -Name '@salesforce/plugin-agent' -ExtendedDetails | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|inspect|@salesforce/plugin-agent|--verbose|--json' }
+                Find-SalesforcePlugins | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|discover|--json' }
+                Test-SalesforcePluginSignature -Npm '@salesforce/plugin-agent@latest' -Registry https://registry.npmjs.org | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|trust|verify|--npm|@salesforce/plugin-agent@latest|--registry|https://registry.npmjs.org|--json' }
+            }
+            It 'reads the bare array that sf plugins inspect prints, and still reports an error result' {
+                Mock Invoke-Salesforce { '[{"name":"@salesforce/plugin-agent","version":"1.2.3"}]' }
+                $out = @(Get-SalesforcePluginDetails -Name '@salesforce/plugin-agent')
+                $out.Count | Should -Be 1
+                $out[0].version | Should -Be '1.2.3'
+                Mock Invoke-Salesforce { '{"status":1,"message":"plugin not found"}' }
+                { Get-SalesforcePluginDetails -Name nope } | Should -Throw -ExpectedMessage '*plugin not found*'
+            }
+            It 'only accepts an https registry' {
+                { Test-SalesforcePluginSignature -Npm a -Registry http://registry.example.com } | Should -Throw -ExpectedMessage '*https*'
+                { Test-SalesforcePluginSignature -Npm a -Registry 'registry' } | Should -Throw -ExpectedMessage '*https*'
+            }
+            It 'resets with its options, asks first, and does nothing under -WhatIf' {
+                Reset-SalesforcePlugins -Hard -Reinstall -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|reset|--hard|--reinstall' }
+                Reset-SalesforcePlugins -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1
+            }
+            It 'lists, adds and removes allowlist entries, one --name each' {
+                Get-SalesforcePluginAllowlist | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|trust|allowlist|list|--json' }
+                Add-SalesforcePluginAllowlist -Name a, b -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|trust|allowlist|add|--name|a|--name|b|--json' }
+                Remove-SalesforcePluginAllowlist -Name a -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|trust|allowlist|remove|--name|a|--json' }
+                Add-SalesforcePluginAllowlist -Name c -WhatIf | Out-Null
+                Remove-SalesforcePluginAllowlist -Name c -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 3
+            }
+            It 'the install and update cmdlets pass the new flags' {
+                Install-SalesforcePlugin -Name '@salesforce/plugin-agent' -Force -Silent -ExtendedDetails -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|install|@salesforce/plugin-agent|--force|--silent|--verbose' }
+                Update-SalesforcePlugins -ExtendedDetails -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'plugins|update|--verbose' }
+            }
+        }
+
+        Context 'Invoke-SalesforceDoctor' {
+            It 'runs the diagnostics, with its options, without a question when nothing leaves the machine' {
+                $dir = Join-Path $TestDrive ([guid]::NewGuid().ToString('N')); New-Item -ItemType Directory -Path $dir | Out-Null
+                Invoke-SalesforceDoctor -Command 'org list' -Plugin '@salesforce/plugin-org' -OutputDirectory $dir | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq "doctor|--command|org list|--plugin|@salesforce/plugin-org|--output-dir|$dir|--json" }
+            }
+            It 'asks before it creates a GitHub issue, and -WhatIf does nothing' {
+                Invoke-SalesforceDoctor -CreateIssue -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 0
+                Invoke-SalesforceDoctor -CreateIssue -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'doctor|--create-issue|--json' }
+                Invoke-SalesforceDoctor -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1
+            }
+            It 'needs an existing output folder' {
+                { Invoke-SalesforceDoctor -OutputDirectory (Join-Path $TestDrive 'nope') } | Should -Throw -ExpectedMessage '*does not exist*'
+            }
+        }
+
+        Context 'Remove-SalesforceAlias' {
+            It 'keeps one alias working without a question' {
+                Remove-SalesforceAlias -Alias dev1 | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'alias|unset|dev1' }
+            }
+            It 'removes all aliases after confirmation, always telling the CLI not to ask' {
+                Remove-SalesforceAlias -All -NoPrompt | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'alias|unset|--all|--no-prompt' }
+                Remove-SalesforceAlias -All -Confirm:$false | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 2
+                Remove-SalesforceAlias -All -WhatIf | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 2
+            }
+            It 'needs exactly one of -Alias and -All' {
+                { Remove-SalesforceAlias } | Should -Throw -ExpectedMessage '*-Alias*-All*'
+                { Remove-SalesforceAlias -Alias a -All } | Should -Throw -ExpectedMessage '*not both*'
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+        }
+
+        It 'exports the new cmdlets and none of the private helper' {
+            $exports = (Get-Module psfdx).ExportedFunctions.Keys
+            foreach ($n in 'Get-SalesforceCommunityTemplates', 'New-SalesforceCommunity', 'Publish-SalesforceCommunity', 'Invoke-SalesforceGraphQL', 'Invoke-SalesforceRestRequest', 'Uninstall-SalesforcePlugin', 'Get-SalesforcePluginDetails', 'Find-SalesforcePlugins', 'Reset-SalesforcePlugins', 'Test-SalesforcePluginSignature', 'Get-SalesforcePluginAllowlist', 'Add-SalesforcePluginAllowlist', 'Remove-SalesforcePluginAllowlist', 'Invoke-SalesforceDoctor') { $exports | Should -Contain $n }
+            $exports | Should -Not -Contain 'Invoke-SalesforceText'
+        }
+    }
+}
