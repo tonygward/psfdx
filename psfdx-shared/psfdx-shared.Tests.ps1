@@ -642,7 +642,7 @@ foreach ($q in $queries) {
 }
 ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath $OutFile -Encoding utf8
 '@
-            $script:manifest = Join-Path (Split-Path -Parent $PSScriptRoot) (Join-Path 'psfdx' 'psfdx.psd1')
+            $script:manifest = Join-Path (Split-Path -Parent $PSScriptRoot) (Join-Path 'psfdx-core' 'psfdx-core.psd1')
         }
     }
 
@@ -871,13 +871,13 @@ Describe 'generated SOQL never labels local time as UTC' {
 }
 
 # Import-PsfdxSharedModule is copied into every module .psm1 (it has to run before psfdx-shared exists), so these tests
-# take the copy out of psfdx/psfdx.psm1 and run it against fake modules named psfdx-fake-shared in $TestDrive.
+# take the copy out of psfdx-core/psfdx-core.psm1 and run it against fake modules named psfdx-fake-shared in $TestDrive.
 Describe 'Import-PsfdxSharedModule resolution' {
     BeforeAll {
         $repoRoot = Split-Path -Path $PSScriptRoot -Parent
-        $text = [System.IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot 'psfdx') 'psfdx.psm1'))
+        $text = [System.IO.File]::ReadAllText((Join-Path (Join-Path $repoRoot 'psfdx-core') 'psfdx-core.psm1'))
         $match = [regex]::Match($text, '(?s)function Import-PsfdxSharedModule \{.*?\r?\n\}\r?\n\r?\nImport-PsfdxSharedModule')
-        if (-not $match.Success) { throw 'Import-PsfdxSharedModule not found in psfdx.psm1' }
+        if (-not $match.Success) { throw 'Import-PsfdxSharedModule not found in psfdx-core.psm1' }
         $functionText = $match.Value.Substring(0, $match.Value.LastIndexOf('Import-PsfdxSharedModule')).TrimEnd()
         . ([scriptblock]::Create($functionText))
 

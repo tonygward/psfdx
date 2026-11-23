@@ -3,3 +3,4 @@ testResults.xml
 
 # Website build output
 site/dist/
+out/

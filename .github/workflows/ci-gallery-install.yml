@@ -13,6 +13,9 @@ on:
       version:
         description: Version to check (for example 0.8.1)
         required: true
+      layout:
+        description: Layout that version was published with, bundle or suite (leave empty for the one in scripts/release/gallery.json)
+        required: false
 
 permissions:
   contents: read
@@ -41,10 +44,15 @@ jobs:
       - name: Install from the Gallery and compare the commands
         env:
           INPUT_VERSION: ${{ inputs.version }}
+          INPUT_LAYOUT: ${{ inputs.layout }}
         run: |
           $ErrorActionPreference = 'Stop'
           $version = if ($env:INPUT_VERSION) { $env:INPUT_VERSION.TrimStart('v') } else { (Get-Content -Path VERSION -Raw).Trim() }
-          $publish = (Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json).publish -eq $true
+          $gallery = Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json
+          $publish = $gallery.publish -eq $true
+          $layout = if ($gallery.layout) { $gallery.layout } else { 'bundle' }
+          # A manual run for a version published before the layout was switched can say which layout that version had.
+          if ($env:INPUT_LAYOUT) { $layout = $env:INPUT_LAYOUT }
           if (-not $publish -and -not $env:INPUT_VERSION) { Write-Host "::notice::publish is false in scripts/release/gallery.json, so nothing was published; skipping."; return }
 
           # Expected: the union of every module manifest's FunctionsToExport.
@@ -69,6 +77,18 @@ jobs:
           }
           if (-not $saved) { throw "psfdx $version could not be installed from the PowerShell Gallery" }
 
+          $shellPath = (Get-Process -Id $PID).Path
+          if ($layout -eq 'suite') {
+            # One Save-Module psfdx must have brought every module (it needs no follow-up install), and a module saved on its own brings its own
+            # dependencies. scripts/release/Test-PsfdxSuite.ps1 then checks listing, discovery with no import, Import-Module psfdx and the standalone module
+            # in fresh sessions that see only these folders.
+            $alone = Join-Path ([IO.Path]::GetTempPath()) ("psfdx-gallery-alone-" + [guid]::NewGuid().ToString('N'))
+            New-Item -ItemType Directory -Path $alone | Out-Null
+            Save-Module -Name psfdx-logs -RequiredVersion $version -Repository PSGallery -Path $alone -Force -ErrorAction Stop
+            $suiteOutput = & $shellPath -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ./scripts/release/Test-PsfdxSuite.ps1 -ModulePath $temp -Version $version -StandalonePath $alone -StandaloneModule psfdx-logs 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "The installed psfdx suite is not right:`n$suiteOutput" }
+            Write-Host ($suiteOutput.Trim())
+          } else {
           # A clean session that sees only the saved copy.
           $separator = [IO.Path]::PathSeparator
           $command = "`$ErrorActionPreference = 'Stop'; `$env:PSModulePath = '$temp' + '$separator' + `$env:PSModulePath; Import-Module psfdx -RequiredVersion $version -WarningAction SilentlyContinue; (Get-Command -Module psfdx | Where-Object { `$_.CommandType -eq 'Function' } | Sort-Object Name | ForEach-Object Name) -join ','"
@@ -80,6 +100,8 @@ jobs:
           $extra = @($installed | Where-Object { $_ -notin $expected })
           if ($missing.Count -or $extra.Count) { throw "The installed commands differ from the manifests. Missing: $($missing -join ', '). Extra: $($extra -join ', ')" }
           Write-Host "psfdx $version installed from the Gallery on PowerShell $($PSVersionTable.PSVersion) and exposes $($installed.Count) commands, as the manifests say."
+
+          }
 
           # The help must work from the installed package: Get-Help -Full, -Examples and -Parameter * for every command (issue 240).
           $helpOutput = & $shellPath -NoProfile -NonInteractive -File ./scripts/release/Test-PsfdxHelp.ps1 -ModulePath $temp -Version $version 2>&1 | Out-String

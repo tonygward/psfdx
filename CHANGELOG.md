@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx-core: Breaking: the core module is now named `psfdx-core` (its folder, `Import-Module psfdx-core`, and the module name in `Get-Command` output); it was `psfdx`. This only affects installs from a clone or the release zip: `install.ps1` and `install-windows.ps1` now remove an old `psfdx` copy of the core module (it would define every command twice next to `psfdx-core`) and leave a PowerShell Gallery install of `psfdx` alone, and `uninstall.ps1` and `uninstall-windows.ps1` remove it too. With the Gallery, `Install-Module psfdx` and `Import-Module psfdx` are unchanged.
+
 ## 0.8.53 - 2026-11-23
 
 - psfdx-metadata: every `sf devops` command is now covered, with 26 new cmdlets named `...SalesforceDevOps...`: projects (`Get-`, `New-`, `Update-SalesforceDevOpsProject`), work items (`Get-`, `New-`, `Update-`, `Initialize-` to prepare a one-off promotion, `Join-` to combine, and `New-SalesforceDevOpsReview` for a pull request), pipelines (`Get-SalesforceDevOpsPipeline`, `Get-SalesforceDevOpsPipelineDetails`, `New-`, `Update-` to rename, activate or deactivate), pipeline projects, stages, stage branches and stage environments (`Add-` and `Remove-`), and promotion (`Start-`, `Complete-`, `Test-SalesforceDevOpsPromotion` and `Get-SalesforceDevOpsRequestStatus`). They need a DevOps Center org. Deleting, deploying and activating ask for confirmation, and every change supports `-WhatIf`.

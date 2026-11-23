@@ -19,11 +19,16 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
+That is the only command you need. It installs `psfdx` and the modules it requires (`psfdx-core`, `psfdx-metadata`, `psfdx-development` and the rest), each under its own name so you can see where a command comes from. To install only some of them, see [docs/install.md](docs/install.md).
+
 ## 3. See the commands
 
 ```
-Get-Command -Module psfdx
+Get-Module -ListAvailable 'psfdx*'   # the modules you have
+Get-Command -Module 'psfdx*'         # every command, with its module in the Source column
 ```
+
+Neither needs an import first. `Import-Module psfdx` loads them all.
 
 Every command has full help:
 
@@ -40,6 +45,8 @@ The notes of each command have a **Salesforce CLI mapping** section. It names th
 ```
 Update-Module psfdx
 ```
+
+This moves every module to the same new version. How upgrades work, and what to do if a module goes missing, is in [docs/install.md](docs/install.md).
 
 ## 5. Salesforce CLI
 
@@ -125,7 +132,8 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 ## Modules
 | Module | Description |
 | :--- | :--- |
-| `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
+| `psfdx` | The package you install: `Install-Module psfdx`. It holds no commands; it brings every module below. |
+| `psfdx-core` | Core cmdlets for authentication, record operations, org management, and utilities. |
 | `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
@@ -134,9 +142,9 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-agentforce` | Agentforce agent tests and activation through the Salesforce CLI agent plugin. |
 
 
-### psfdx
+### psfdx-core
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 ### Authentication & Orgs
 
@@ -253,7 +261,7 @@ Included in the `psfdx` package.
 
 ### psfdx-metadata
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 ### Retrieve
 
@@ -394,7 +402,7 @@ Start-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV00000000
 
 ### psfdx-development
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 ### Projects & Config
 
@@ -509,7 +517,7 @@ The CLI replaces a generated file that differs from the template **without askin
 
 ### psfdx-sandbox
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -523,7 +531,7 @@ Included in the `psfdx` package.
 
 ### psfdx-agentforce
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with recent CLI versions; otherwise `sf plugins install @salesforce/plugin-agent`). Each cmdlet stops with install guidance if it is missing. Beta and developer-preview commands (authoring bundles, preview, agent creation) are not wrapped. See [docs/agentforce-parity.md](docs/agentforce-parity.md).
 
@@ -573,7 +581,7 @@ The full mapping, and the reasons behind the interactive and secret handling, ar
 
 ### psfdx-logs
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 ### Debug Logs
 
@@ -623,7 +631,7 @@ Included in the `psfdx` package.
 
 ### psfdx-packages
 
-Included in the `psfdx` package.
+Installed with `Install-Module psfdx`.
 
 ### Packages
 

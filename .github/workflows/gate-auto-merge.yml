@@ -7,7 +7,7 @@ name: Gate - Matrix auto-merge
 # (it must be 'true' for the gate to run at all).
 on:
   workflow_run:
-    workflows: ["CI - Pester tests", "CI - Matrix orchestration tests", "CI - Matrix gate tests", "CI - Release scripts", "CI - Salesforce CLI compatibility"]
+    workflows: ["CI - Pester tests", "CI - Matrix orchestration tests", "CI - Matrix gate tests", "CI - Release scripts", "CI - Suite install", "CI - Salesforce CLI compatibility"]
     types: [completed]
 
 permissions:

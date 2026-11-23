@@ -15,10 +15,10 @@ BeforeAll {
     $script:Root = Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent
     $script:Org = $env:PSFDX_INTEGRATION_ORG
     if ($env:PSFDX_INTEGRATION -eq '1') {
-        foreach ($name in 'psfdx-shared', 'psfdx', 'psfdx-metadata', 'psfdx-development') {
+        foreach ($name in 'psfdx-shared', 'psfdx-core', 'psfdx-metadata', 'psfdx-development') {
             Get-Module -Name $name -All | ForEach-Object { try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { } }
         }
-        foreach ($name in 'psfdx', 'psfdx-metadata', 'psfdx-development') {
+        foreach ($name in 'psfdx-core', 'psfdx-metadata', 'psfdx-development') {
             Import-Module (Join-Path (Join-Path $script:Root $name) "$name.psd1") -Force -ErrorAction Stop | Out-Null
         }
     }

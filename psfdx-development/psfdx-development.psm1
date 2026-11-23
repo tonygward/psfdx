@@ -775,7 +775,7 @@ function Resume-SalesforceScratchOrg {
     The CLI keeps a local record of the job, so there is no -TargetOrg; resume from the machine that started it.
     Returns the CLI result (org ID, username, instance URL) with Completed: true once the org is ready. A creation that is still running
     when -WaitMinutes ends (the CLI's StillInProgressError) returns Completed: false with Status InProgress, so a script can poll; a failed creation throws the CLI message.
-    Permission sets are assigned afterwards with Grant-SalesforcePermissionSet (psfdx), which asks for confirmation.
+    Permission sets are assigned afterwards with Grant-SalesforcePermissionSet (psfdx-core), which asks for confirmation.
 
     .PARAMETER JobId
     Job ID of the incomplete scratch org create that you want to resume. Passed to sf as --job-id.

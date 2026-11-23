@@ -1,3 +1,4 @@
 {
-  "publish": true
+  "publish": true,
+  "layout": "bundle"
 }

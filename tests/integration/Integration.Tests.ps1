@@ -78,7 +78,7 @@ Describe 'Integration tests are opt-in and well-formed' {
         $ast = [System.Management.Automation.Language.Parser]::ParseFile($file, [ref] $null, [ref] $null)
         $called = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true) |
             ForEach-Object { $_.GetCommandName() } | Where-Object { $_ -match '^(Get|New|Set|Select|Deploy|Retrieve|Test|Start|Wait|Upsert)-Salesforce' } | Sort-Object -Unique
-        $exported = foreach ($name in 'psfdx', 'psfdx-metadata', 'psfdx-development') {
+        $exported = foreach ($name in 'psfdx-core', 'psfdx-metadata', 'psfdx-development') {
             (Import-PowerShellDataFile -Path (Join-Path (Join-Path $script:Root $name) "$name.psd1")).FunctionsToExport
         }
         @($called).Count | Should -BeGreaterThan 5

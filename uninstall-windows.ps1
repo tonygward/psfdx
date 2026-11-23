@@ -42,6 +42,17 @@ foreach ($m in $modules) {
     }
 }
 
+foreach ($legacy in Get-PsfdxLegacyModules) {
+    $old = Join-Path -Path $dest -ChildPath $legacy
+    # An old install of the core module as `psfdx` has psfdx.psm1 directly in the folder; a Gallery install keeps its files in a version folder and is left alone.
+    if (Test-Path -Path (Join-Path -Path $old -ChildPath "$legacy.psm1")) {
+        if ($PSCmdlet.ShouldProcess($old, 'Remove module directory')) {
+            try { Remove-Item -Path $old -Recurse -Force -ErrorAction Stop; $removed += $old }
+            catch { $failed += $old; Write-Verbose ("Failed to remove {0}: {1}" -f $old, $_.Exception.Message) }
+        }
+    }
+}
+
 if ($removed.Count -gt 0) {
     Write-Host "Removed modules from: $dest" -ForegroundColor Green
     $removed | Sort-Object -Unique | ForEach-Object { Write-Host "  $_" }

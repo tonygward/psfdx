@@ -6,21 +6,23 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 
 | Path | Purpose |
 | :--- | :--- |
-| `psfdx/` | Core: auth, aliases, SOQL/records, limits, REST API, CLI/plugin install |
+| `psfdx-core/` | Core: auth, aliases, SOQL/records, limits, REST and GraphQL requests, CLI/plugin install |
 | `psfdx-metadata/` | Retrieve / deploy / describe metadata |
 | `psfdx-development/` | Projects, config, scratch orgs, Apex tests, `Watch-SalesforceApex`, LWC/Jest |
 | `psfdx-logs/` | Debug logs, flow interviews, login history, event log files |
 | `psfdx-sandbox/` | Sandbox lifecycle |
 | `psfdx-packages/` | Packages and package versions |
 | `psfdx-shared/` | Internal helpers (`Invoke-Salesforce`, `Show-SalesforceResult`, Apex test-param helpers, `Get-PsfdxCommonParameterSplat`) |
-| `modules.ps1` | Canonical module list used by the install/uninstall scripts |
+| `modules.ps1` | Canonical module list used by the install/uninstall scripts, the dependency map between modules (`Get-PsfdxModuleDependencies`), and the umbrella name |
+
+There is no `psfdx/` folder: **`psfdx` is the Gallery umbrella package**, built by `scripts/release/Build-GalleryPackage.ps1 -Layout Suite`. It holds no code and requires every module above at the exact release version, so `Install-Module psfdx` installs the suite and each module keeps its own name ([docs/install.md](docs/install.md)). The core module is `psfdx-core`. If a module starts calling another module's commands, add that module to `Get-PsfdxModuleDependencies`; `tests/Repository.Tests.ps1` fails when the map and the code disagree. A module that depends on another must not be depended on by it.
 
 **Everything above, plus `install*.ps1`, `uninstall*.ps1` and `VERSION`, is the product** (what users install). **Everything below is infrastructure** (how the product is built, tested and released). Keep the two apart:
 
 | Path | Purpose |
 | :--- | :--- |
 | `.github/workflows/` | CI, gate, release and housekeeping pipelines ([docs/pipelines.md](docs/pipelines.md)) |
-| `scripts/release/` | Version bump, release zip, Gallery bundle, and the shared "does this change ship / need tests" rule (`changes.mjs`) |
+| `scripts/release/` | Version bump, release zip, Gallery packages (bundle and suite layouts), and the shared "does this change ship / need tests" rule (`changes.mjs`) |
 | `scripts/matrix/` | The merge gate and prompt archiving |
 | `scripts/parity/` | The Salesforce CLI to psfdx parity report generator ([docs/cli-parity.md](docs/cli-parity.md)) |
 | `site/` | The public website (psfdx.com): static HTML and CSS, built by `site/build.mjs`, deployed by Cloudflare Pages ([site/README.md](site/README.md)). Not part of the product; it never releases |
