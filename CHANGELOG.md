@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.54 - 2026-11-23
+
 - psfdx: every module now keeps its own identity after `Install-Module psfdx`, which is still one package and one command. Once `psfdx` has loaded (`Import-Module psfdx`, a first core command, or `Get-Command -Module psfdx`), `Get-Command -Module psfdx` shows only the core commands, `Get-Command -Module psfdx-logs` (and `psfdx-metadata`, `psfdx-development`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce`) shows only that module's commands, and `Get-Command -Module 'psfdx*'` shows all of them with the right module in the `Source` column and no command twice. Before, every command showed `psfdx` as its module. Every command still works as before after `Import-Module psfdx`. PowerShell can only discover one module per installed package, so until `psfdx` has loaded a non-core command is not found by name; start with `Import-Module psfdx` (see docs/install.md). Existing installs update with `Update-Module psfdx`.
 
 ## 0.8.53 - 2026-11-23
