@@ -34,7 +34,7 @@
       <a class="brand" href="/" aria-label="psfdx home"><img src="/psfdx-logo.png" width="803" height="209" alt="psfdx"></a>
       <nav aria-label="Main">
         <ul class="nav-list">
-          <li><a href="%GITHUB_URL%#readme">Docs</a></li>
+          <li><a href="/#modules">Docs</a></li>
           <li><a href="%GITHUB_URL%/releases">Releases</a></li>
           <li><a class="nav-cta" href="%GITHUB_URL%"><span aria-hidden="true">★</span> GitHub</a></li>
         </ul>
@@ -51,7 +51,7 @@
           <p class="tagline">Powerful Salesforce tools. Familiar PowerShell commands. One <span class="pipe">|</span> away from anything.</p>
           <div class="cta-row">
             <div class="install" data-copy="Install-Module psfdx"><span class="install-prompt" aria-hidden="true">PS&gt;</span><code>Install-Module psfdx</code></div>
-            <a class="button secondary" href="%GITHUB_URL%#readme">Read the docs</a>
+            <a class="button secondary" href="/#modules">Read the docs</a>
           </div>
           <p class="fine">PowerShell 7 on Windows, macOS and Linux, or Windows PowerShell 5.1. You also need the <a href="https://developer.salesforce.com/tools/salesforcecli">Salesforce CLI</a>, which psfdx can install for you.</p>
         </div>
@@ -116,19 +116,35 @@
       </div>
     </section>
 
+    <section id="powershell-examples" class="section" aria-labelledby="powershell-examples-title">
+      <div class="wrap">
+        <p class="eyebrow">BUILT FOR POWERSHELL</p>
+        <h2 id="powershell-examples-title">The little things that make a big difference.</h2>
+        <p class="section-intro">Detailed help built into every cmdlet, one-command upgrades, and real Salesforce objects flowing straight into standard PowerShell tools.</p>
+        <ul class="cards">
+          <li class="card"><p class="card-tag">Get-Help</p><h3>Every command explained</h3><p>Discover parameters, examples and exactly which Salesforce CLI operation each psfdx cmdlet invokes.</p><pre><code>Get-Help Deploy-SalesforceMetadata -Full</code></pre></li>
+          <li class="card"><p class="card-tag">Update-Module</p><h3>One update, every module</h3><p>Install and update the complete suite with one PowerShell Gallery package.</p><pre><code>Update-Module psfdx</code></pre></li>
+          <li class="card"><p class="card-tag">| Export-Csv</p><h3>Salesforce data, native pipelines</h3><p>Query records as PowerShell objects, then export them with the built-in CSV command.</p><pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg myorg |
+  Export-Csv -Path ./accounts.csv -NoTypeInformation</code></pre></li>
+        </ul>
+      </div>
+    </section>
+
     <section id="modules" class="section modules" aria-labelledby="modules-title">
       <div class="wrap">
-        <p class="eyebrow"><span class="prompt">PS&gt;</span> Get-Module psfdx* -ListAvailable</p>
-        <h2 id="modules-title">Six modules. Zero context switching.</h2>
+        <p class="eyebrow"><span class="prompt">PS&gt;</span> Get-Command -Module 'psfdx*'</p>
+        <h2 id="modules-title">One installation. Every Salesforce workflow.</h2>
         <ul class="module-list">
-          <li><a class="module-row" href="%GITHUB_URL%#modules"><span class="module-name">psfdx</span><span class="module-desc">Connection, query and records</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="%GITHUB_URL%#modules"><span class="module-name">psfdx-metadata</span><span class="module-desc">Retrieve, deploy and describe metadata</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="%GITHUB_URL%#modules"><span class="module-name">psfdx-development</span><span class="module-desc">Projects, scratch orgs, tests and deploys</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="%GITHUB_URL%#modules"><span class="module-name">psfdx-sandbox</span><span class="module-desc">Sandbox lifecycle</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="%GITHUB_URL%#modules"><span class="module-name">psfdx-packages</span><span class="module-desc">Create, version, promote and install packages</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="%GITHUB_URL%#modules"><span class="module-name">psfdx-logs</span><span class="module-desc">Debug logs</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx/"><span class="module-name">psfdx</span><span class="module-desc">Connection, query and records</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-metadata/"><span class="module-name">psfdx-metadata</span><span class="module-desc">Retrieve, deploy and describe metadata</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-development/"><span class="module-name">psfdx-development</span><span class="module-desc">Projects, scratch orgs, tests and deploys</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-sandbox/"><span class="module-name">psfdx-sandbox</span><span class="module-desc">Sandbox lifecycle</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-packages/"><span class="module-name">psfdx-packages</span><span class="module-desc">Create, version, promote and install packages</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-logs/"><span class="module-name">psfdx-logs</span><span class="module-desc">Debug logs</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-agentforce/"><span class="module-name">psfdx-agentforce</span><span class="module-desc">Agents, Agentforce tests, Data Libraries and MCP</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
+          <li><a class="module-row" href="/modules/psfdx-shared/"><span class="module-name">psfdx-shared</span><span class="module-desc">Shared internal PowerShell helpers</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
         </ul>
-        <p class="fine">See every command in the <a href="%GITHUB_URL%#modules">README</a>, or run <code>Get-Command -Module 'psfdx*'</code> after <code>Import-Module psfdx</code>.</p>
+        <p class="fine">Explore each module above or see the full command catalogue in the <a href="%GITHUB_URL%#modules">README</a>, or run <code>Get-Command -Module 'psfdx*'</code> after <code>Import-Module psfdx</code>.</p>
       </div>
     </section>
 
