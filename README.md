@@ -19,16 +19,23 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-That is the only command you need. It installs `psfdx` and the modules it requires (`psfdx-core`, `psfdx-metadata`, `psfdx-development` and the rest), each under its own name so you can see where a command comes from. To install only some of them, see [docs/install.md](docs/install.md).
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
+
+```
+Import-Module psfdx
+```
 
 ## 3. See the commands
 
+Each module keeps its own name, so every command is listed under the module that holds it:
+
 ```
-Get-Module -ListAvailable 'psfdx*'   # the modules you have
-Get-Command -Module 'psfdx*'         # every command, with its module in the Source column
+Get-Command -Module psfdx          # the core commands only
+Get-Command -Module psfdx-logs     # only the commands the logs module owns
+Get-Command -Module 'psfdx*'       # every command, each attributed to its own module
 ```
 
-Neither needs an import first. `Import-Module psfdx` loads them all.
+Run `Import-Module psfdx` first in a new session: it loads every module, and until it has run, PowerShell can only see the core commands (details in [docs/install.md](docs/install.md)).
 
 Every command has full help:
 
@@ -132,8 +139,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 ## Modules
 | Module | Description |
 | :--- | :--- |
-| `psfdx` | The package you install: `Install-Module psfdx`. It holds no commands; it brings every module below. |
-| `psfdx-core` | Core cmdlets for authentication, record operations, org management, and utilities. |
+| `psfdx` | Core cmdlets for authentication, record operations, org management, and utilities. |
 | `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
@@ -142,9 +148,9 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-agentforce` | Agentforce agent tests and activation through the Salesforce CLI agent plugin. |
 
 
-### psfdx-core
+### psfdx
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 ### Authentication & Orgs
 
@@ -261,7 +267,7 @@ Installed with `Install-Module psfdx`.
 
 ### psfdx-metadata
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 ### Retrieve
 
@@ -402,7 +408,7 @@ Start-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV00000000
 
 ### psfdx-development
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 ### Projects & Config
 
@@ -517,7 +523,7 @@ The CLI replaces a generated file that differs from the template **without askin
 
 ### psfdx-sandbox
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -531,7 +537,7 @@ Installed with `Install-Module psfdx`.
 
 ### psfdx-agentforce
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 Needs the Salesforce CLI agent plugin (`@salesforce/plugin-agent`, bundled with recent CLI versions; otherwise `sf plugins install @salesforce/plugin-agent`). Each cmdlet stops with install guidance if it is missing. Beta and developer-preview commands (authoring bundles, preview, agent creation) are not wrapped. See [docs/agentforce-parity.md](docs/agentforce-parity.md).
 
@@ -581,7 +587,7 @@ The full mapping, and the reasons behind the interactive and secret handling, ar
 
 ### psfdx-logs
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 ### Debug Logs
 
@@ -631,7 +637,7 @@ Installed with `Install-Module psfdx`.
 
 ### psfdx-packages
 
-Installed with `Install-Module psfdx`.
+Included in the `psfdx` package.
 
 ### Packages
 

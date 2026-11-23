@@ -7,10 +7,10 @@ pwsh -NoLogo -NoProfile -Command "Invoke-Pester -Path . -CI"
 #>
 
 $here = $PSScriptRoot
-$moduleManifest = Join-Path $here 'psfdx-core.psd1'
+$moduleManifest = Join-Path $here 'psfdx.psd1'
 
 # Ensure no duplicate 'psfdx' modules are loaded before importing this test instance
-Get-Module -Name 'psfdx-core' -All | ForEach-Object {
+Get-Module -Name 'psfdx' -All | ForEach-Object {
     try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
 }
 
@@ -393,7 +393,7 @@ Describe 'psfdx module' {
             }
 
             It 'is exported by the module manifest' {
-                (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-core).ModuleBase 'psfdx-core.psd1')).FunctionsToExport | Should -Contain 'Upsert-SalesforceRecord'
+                (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport | Should -Contain 'Upsert-SalesforceRecord'
                 Get-Command -Module $module.Name -Name Upsert-SalesforceRecord | Should -Not -BeNullOrEmpty
             }
         }
@@ -460,7 +460,7 @@ Describe 'psfdx module' {
 }
 
 Describe 'Get-SalesforceLimits' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         It 'runs the current sf org list limits command' {
             Mock Invoke-Salesforce { '{"status":0,"result":[{"name":"DailyApiRequests","max":10,"remaining":5}]}' }
             $r = @(Get-SalesforceLimits -TargetOrg me)
@@ -479,7 +479,7 @@ Describe 'Get-SalesforceAlias' {
 
 Describe 'Invoke-Salesforce' {
     # Resolved inside the module scope: psfdx-shared is imported there, not into the session
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         It 'does not declare SupportsShouldProcess' {
             # Suppressing the call would return $null into Show-SalesforceResult -Result,
             # which is Mandatory, breaking every cmdlet under -WhatIf.
@@ -502,7 +502,7 @@ Describe 'Invoke-Salesforce' {
 }
 
 Describe 'Disconnect-Salesforce safety' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' } }
 
         It 'runs nothing under -WhatIf' {
@@ -529,7 +529,7 @@ Describe 'Disconnect-Salesforce safety' {
 # SOQL builder and `sf data query --json` regression coverage (#172).
 # Fixtures are sanitised copies of real `sf data query --json` output shapes: no tokens, no real org data.
 Describe 'SOQL query regression' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeAll {
             $script:Success = '{"status":0,"result":{"records":[{"attributes":{"type":"User","url":"/services/data/v62.0/sobjects/User/005000000000001AAA"},"Id":"005000000000001AAA","Username":"a@example.com"}],"totalSize":1,"done":true},"warnings":[]}'
             $script:Empty = '{"status":0,"result":{"records":[],"totalSize":0,"done":true},"warnings":[]}'
@@ -641,7 +641,7 @@ Describe 'SOQL query regression' {
 }
 
 Describe 'Bulk API 2.0 commands' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeAll {
             $script:JobId = '750xx0000000001'
             $script:Async = '{"status":0,"result":{"jobId":"750xx0000000001AAA"}}'
@@ -905,7 +905,7 @@ Describe 'Bulk API 2.0 commands' {
 
         Context 'module surface' {
             It 'exports the six commands and keeps the helpers private' {
-                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-core).ModuleBase 'psfdx-core.psd1')).FunctionsToExport
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
                 foreach ($name in 'Export-SalesforceBulkData', 'Import-SalesforceBulkData', 'Update-SalesforceBulkData', 'Upsert-SalesforceBulkData', 'Resume-SalesforceBulkJob', 'Get-SalesforceBulkResult') {
                     $exports | Should -Contain $name
                 }
@@ -923,7 +923,7 @@ Describe 'Bulk API 2.0 commands' {
 }
 
 Describe 'User administration commands' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeAll {
             $script:Secret = 'S3cr3t-Pa55word-Value'
             $script:Token = '00Dxx!AQEAQtokenvalue'
@@ -1097,7 +1097,7 @@ Describe 'User administration commands' {
 
         Context 'module surface' {
             It 'exports the six commands and keeps the helpers private' {
-                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-core).ModuleBase 'psfdx-core.psd1')).FunctionsToExport
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
                 foreach ($name in 'Get-SalesforceAuthenticatedUser', 'Get-SalesforceOrgUser', 'New-SalesforceUser', 'New-SalesforceUserPassword', 'Grant-SalesforcePermissionSet', 'Grant-SalesforcePermissionSetLicense') {
                     $exports | Should -Contain $name
                 }
@@ -1113,7 +1113,7 @@ Describe 'User administration commands' {
 }
 
 Describe 'Data tree export and import' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             $script:Reply = '{"status":0,"result":[]}'
             Mock Invoke-Salesforce { $script:Reply }
@@ -1231,7 +1231,7 @@ Describe 'Data tree export and import' {
 
         Context 'module surface' {
             It 'exports both commands, keeps the helper private, and has help examples' {
-                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-core).ModuleBase 'psfdx-core.psd1')).FunctionsToExport
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
                 $exports | Should -Contain 'Export-SalesforceTreeData'
                 $exports | Should -Contain 'Import-SalesforceTreeData'
                 $exports | Should -Not -Contain 'ConvertFrom-SalesforceTreeOutput'
@@ -1242,7 +1242,7 @@ Describe 'Data tree export and import' {
 }
 
 Describe 'Single-record get and delete' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             $script:Reply = '{"status":0,"result":{"attributes":{"type":"Account","url":"/services/data/v62.0/sobjects/Account/001xx000003DGb2AAG"},"Id":"001xx000003DGb2AAG","Name":"Acme Corporation"}}'
             Mock Invoke-Salesforce { $script:Reply }
@@ -1314,7 +1314,7 @@ Describe 'Single-record get and delete' {
 
         Context 'module surface' {
             It 'exports both, keeps the selector helper private, and has help examples' {
-                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-core).ModuleBase 'psfdx-core.psd1')).FunctionsToExport
+                $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx).ModuleBase 'psfdx.psd1')).FunctionsToExport
                 $exports | Should -Contain 'Get-SalesforceRecord'
                 $exports | Should -Contain 'Remove-SalesforceRecord'
                 $exports | Should -Not -Contain 'ConvertTo-SalesforceRecordSelector'
@@ -1325,7 +1325,7 @@ Describe 'Single-record get and delete' {
 }
 
 Describe 'Record pipelines' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             $script:Accounts = '{"status":0,"result":{"records":[{"attributes":{"type":"Account"},"Id":"001xx000003DGb1AAG","Name":"A"},{"attributes":{"type":"Account"},"Id":"001xx000003DGb2AAG","Name":"B"}],"totalSize":2}}'
             Mock Invoke-Salesforce {
@@ -1397,7 +1397,7 @@ Describe 'Record pipelines' {
 }
 
 Describe 'Security regressions (issue 112)' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
             Mock Invoke-RestMethod { [pscustomobject]@{ access_token = 'x' } }
@@ -1504,7 +1504,7 @@ Describe 'Security regressions (issue 112)' {
 }
 
 Describe 'ID parameters reject a trailing line break (issue 112)' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach { Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' } }
         It 'refuses a record ID or Bulk job ID that ends in a line feed, before any call' {
             $lf = [string][char]10
@@ -1522,7 +1522,7 @@ Describe 'ID parameters reject a trailing line break (issue 112)' {
 }
 
 Describe 'Open-Salesforce private mode' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach { Mock Invoke-Salesforce { 'https://example.my.salesforce.com' } }
         It 'passes --private as a flag with no value' {
             Open-Salesforce -TargetOrg me -BrowserPrivateMode -UrlOnly | Out-Null
@@ -1537,7 +1537,7 @@ Describe 'Open-Salesforce private mode' {
 }
 
 Describe 'psfdx sf org parity (issue 248)' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
         }
@@ -1692,14 +1692,14 @@ Describe 'psfdx sf org parity (issue 248)' {
         }
 
         It 'exports the new cmdlets' {
-            $exports = (Get-Module psfdx-core).ExportedFunctions.Keys
+            $exports = (Get-Module psfdx).ExportedFunctions.Keys
             foreach ($n in 'Get-SalesforceOrgDetails', 'Get-SalesforceAuthorizations', 'Connect-SalesforceAccessToken', 'Get-SalesforceSObjectRecordCount') { $exports | Should -Contain $n }
         }
     }
 }
 
 Describe 'psfdx sf data parity (issue 249)' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
         }
@@ -1872,14 +1872,14 @@ Describe 'psfdx sf data parity (issue 249)' {
         }
 
         It 'exports the new cmdlets' {
-            $exports = (Get-Module psfdx-core).ExportedFunctions.Keys
+            $exports = (Get-Module psfdx).ExportedFunctions.Keys
             foreach ($n in 'Search-SalesforceRecords', 'New-SalesforceFile', 'Remove-SalesforceBulkData', 'Get-SalesforceBulkJobStatus') { $exports | Should -Contain $n }
         }
     }
 }
 
 Describe 'psfdx: Experience Cloud, requests, plugins and diagnostics (issue 257)' {
-    InModuleScope 'psfdx-core' {
+    InModuleScope 'psfdx' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
         }
@@ -2030,11 +2030,11 @@ Describe 'psfdx: Experience Cloud, requests, plugins and diagnostics (issue 257)
                 Set-Content -LiteralPath (Join-Path $dir 'get.json') -Value '{"url":"/services/data/v62.0/limits","method":"GET"}'
                 Set-Content -LiteralPath (Join-Path $dir 'nomethod.json') -Value '{"url":"/services/data/v62.0/limits"}'
                 Set-Content -LiteralPath (Join-Path $dir 'broken.json') -Value 'not json'
-                $manifest = (Get-Module psfdx-core).Path -replace '\.psm1$', '.psd1'
+                $manifest = (Get-Module psfdx).Path -replace '\.psm1$', '.psd1'
                 $script = @"
 `$ErrorActionPreference = 'Stop'
 Import-Module '$manifest' -Force 3>`$null
-& (Get-Module psfdx-core) { function script:Invoke-Salesforce { `$global:psfdxCalls++; '{"status":0,"result":{}}' } }
+& (Get-Module psfdx) { function script:Invoke-Salesforce { `$global:psfdxCalls++; '{"status":0,"result":{}}' } }
 `$cases = [ordered]@{
   'rest-post'      = { Invoke-SalesforceRestRequest -Url /x -Method POST }
   'rest-post-no'   = { Invoke-SalesforceRestRequest -Url /x -Method POST -Confirm:`$false }
@@ -2201,7 +2201,7 @@ foreach (`$k in `$cases.Keys) {
         }
 
         It 'exports the new cmdlets and none of the private helper' {
-            $exports = (Get-Module psfdx-core).ExportedFunctions.Keys
+            $exports = (Get-Module psfdx).ExportedFunctions.Keys
             foreach ($n in 'Get-SalesforceCommunityTemplates', 'New-SalesforceCommunity', 'Publish-SalesforceCommunity', 'Invoke-SalesforceGraphQL', 'Invoke-SalesforceRestRequest', 'Uninstall-SalesforcePlugin', 'Get-SalesforcePluginDetails', 'Find-SalesforcePlugins', 'Reset-SalesforcePlugins', 'Test-SalesforcePluginSignature', 'Get-SalesforcePluginAllowlist', 'Add-SalesforcePluginAllowlist', 'Remove-SalesforcePluginAllowlist', 'Invoke-SalesforceDoctor') { $exports | Should -Contain $n }
             $exports | Should -Not -Contain 'Invoke-SalesforceText'
         }

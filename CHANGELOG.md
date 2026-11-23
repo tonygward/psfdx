@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- psfdx-core: Breaking: the core module is now named `psfdx-core` (its folder, `Import-Module psfdx-core`, and the module name in `Get-Command` output); it was `psfdx`. This only affects installs from a clone or the release zip: `install.ps1` and `install-windows.ps1` now remove an old `psfdx` copy of the core module (it would define every command twice next to `psfdx-core`) and leave a PowerShell Gallery install of `psfdx` alone, and `uninstall.ps1` and `uninstall-windows.ps1` remove it too. With the Gallery, `Install-Module psfdx` and `Import-Module psfdx` are unchanged.
+- psfdx: every module now keeps its own identity after `Install-Module psfdx`, which is still one package and one command. Once `psfdx` has loaded (`Import-Module psfdx`, a first core command, or `Get-Command -Module psfdx`), `Get-Command -Module psfdx` shows only the core commands, `Get-Command -Module psfdx-logs` (and `psfdx-metadata`, `psfdx-development`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce`) shows only that module's commands, and `Get-Command -Module 'psfdx*'` shows all of them with the right module in the `Source` column and no command twice. Before, every command showed `psfdx` as its module. Every command still works as before after `Import-Module psfdx`. PowerShell can only discover one module per installed package, so until `psfdx` has loaded a non-core command is not found by name; start with `Import-Module psfdx` (see docs/install.md). Existing installs update with `Update-Module psfdx`.
 
 ## 0.8.53 - 2026-11-23
 

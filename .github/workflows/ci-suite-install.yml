@@ -1,18 +1,21 @@
 name: CI - Suite install
 
-# Builds the Gallery suite (the umbrella `psfdx` plus one package per module), publishes it to a local folder repository (nothing goes near the
-# PowerShell Gallery), then installs from that repository the way a user would, on Ubuntu (PowerShell 7), Windows (PowerShell 7) and Windows
-# PowerShell 5.1 with PowerShellGet:
-#   - Save-Module psfdx must bring every module with no other command;
-#   - Get-Module -ListAvailable 'psfdx*' and Get-Command -Module 'psfdx*' must see all of them with no import, each command from its own module;
-#   - Import-Module psfdx must load them all and define no command twice, and a module saved on its own must work with its dependencies;
-#   - an upgrade (a newer version next to an older one, Update-Module) and a missing dependency must behave (scripts/release/Test-PsfdxSuiteUpgrade.ps1).
-# The checks live in scripts/release, so the release workflow runs the same ones against the real Gallery after publishing the suite.
+# Builds the Gallery package (scripts/release/Build-GalleryPackage.ps1: ONE package, `psfdx`, that holds every module), publishes it to a local folder
+# repository as a real NuGet package (nothing goes near the PowerShell Gallery), then installs it from that repository the way a user would, on Ubuntu
+# (PowerShell 7), Windows (PowerShell 7) and Windows PowerShell 5.1 with PowerShellGet, and checks it in fresh sessions that see only the installed copy
+# (scripts/release/Test-PsfdxSuite.ps1):
+#   - one Save-Module psfdx must bring the whole suite and nothing else is needed, and it is one package;
+#   - Get-Command -Module psfdx shows only the core commands; once psfdx has loaded, Get-Command -Module psfdx-logs shows exactly the logs commands and
+#     Get-Command -Module 'psfdx*' shows every command attributed to its own module, with none twice;
+#   - a representative command from every module runs;
+#   - an upgrade (a newer version next to an older one, then Update-Module) and a module folder lost from the install behave and can be repaired.
+# The release workflow runs the same checks against the real Gallery after it publishes. The evidence (command counts per module, ownership,
+# representative runs) is uploaded with each run.
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'psfdx-*/**'
+      - 'psfdx*/**'
       - 'modules.ps1'
       - 'VERSION'
       - 'scripts/release/**'
@@ -40,18 +43,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build the packages and publish them to a local repository
+      - name: Build the package and publish it to a local repository
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           # Two versions: the repository's, and one patch higher, so the upgrade can be tested.
           $info = ./scripts/release/New-PsfdxSuiteRepository.ps1 -RepositoryFolder (Join-Path $env:RUNNER_TEMP 'psfdx-repo') -RepositoryName psfdx-local -IncludeUpgrade
-          Write-Host "Published $($info.Packages.Count) packages at $($info.OldVersion) and $($info.NewVersion): $($info.Packages -join ', ')"
+          Write-Host "Published $($info.Packages -join ', ')"
           "REPO=$($info.Folder)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "OLD_VERSION=$($info.OldVersion)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "NEW_VERSION=$($info.NewVersion)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Install from the repository and check the suite
+      - name: Install from the repository and check the package
         run: |
           $ErrorActionPreference = 'Stop'
           if ($PSVersionTable.PSEdition -eq 'Desktop') {
@@ -60,20 +63,26 @@ jobs:
           }
           Register-PSRepository -Name psfdx-local -SourceLocation $env:REPO -InstallationPolicy Trusted
           $dest = Join-Path $env:RUNNER_TEMP 'psfdx-installed'
-          $alone = Join-Path $env:RUNNER_TEMP 'psfdx-alone'
-          New-Item -ItemType Directory -Path $dest, $alone | Out-Null
+          New-Item -ItemType Directory -Path $dest | Out-Null
 
-          # One command, nothing else: every module must arrive with it.
+          # One command, nothing else: every module must arrive with it, because they are all in the one package.
           Save-Module -Name psfdx -RequiredVersion $env:OLD_VERSION -Repository psfdx-local -Path $dest -Force -ErrorAction Stop
-          # A module on its own brings only its own dependencies.
-          Save-Module -Name psfdx-logs -RequiredVersion $env:OLD_VERSION -Repository psfdx-local -Path $alone -Force -ErrorAction Stop
 
-          ./scripts/release/Test-PsfdxSuite.ps1 -ModulePath $dest -Version $env:OLD_VERSION -StandalonePath $alone -StandaloneModule psfdx-logs
+          $evidence = Join-Path $env:RUNNER_TEMP "psfdx-evidence-$($PSVersionTable.PSEdition)-$($PSVersionTable.PSVersion.Major).json"
+          ./scripts/release/Test-PsfdxSuite.ps1 -ModulePath $dest -Version $env:OLD_VERSION -EvidencePath $evidence
           ./scripts/release/Test-PsfdxHelp.ps1 -ModulePath $dest -Version $env:OLD_VERSION -Quick
 
-      - name: Upgrade, Update-Module and a missing dependency
+      - name: Upgrade, Update-Module and a missing module folder
         run: |
           $ErrorActionPreference = 'Stop'
           $scratch = Join-Path $env:RUNNER_TEMP 'psfdx-upgrade'
           # -AllowInstall also runs Install-Module and Update-Module for the current user, which is fine on a runner that is thrown away.
           ./scripts/release/Test-PsfdxSuiteUpgrade.ps1 -RepositoryName psfdx-local -OldVersion $env:OLD_VERSION -NewVersion $env:NEW_VERSION -WorkPath $scratch -AllowInstall
+
+      - name: Upload the evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: suite-install-evidence-${{ matrix.name }}
+          path: ${{ runner.temp }}/psfdx-evidence-*.json
+          if-no-files-found: ignore

@@ -1,19 +1,19 @@
 <#
 .SYNOPSIS
-Builds the suite packages and publishes them to a local folder repository, for the CI install and upgrade tests.
+Builds the psfdx Gallery package and publishes it to a local folder repository, for the CI install and upgrade tests.
 .DESCRIPTION
-Builds Build-GalleryPackage.ps1 -Layout Suite from the repository and publishes the nine packages to a folder, in dependency order, with
-Publish-PsfdxSuite.ps1, so the packages are real NuGet packages that PowerShellGet (Install-Module, Save-Module, Update-Module) and PSResourceGet can
-install from. This is how CI checks an install without the PowerShell Gallery and without publishing anything.
+Builds Build-GalleryPackage.ps1 from the repository and publishes the package with Publish-PSResource to a folder, so it is a real NuGet package that
+PowerShellGet (Install-Module, Save-Module, Update-Module) and PSResourceGet install from, exactly as they install it from the PowerShell Gallery. This
+is how CI checks an install of the actual packaged artifact without the Gallery and without publishing anything.
 With -IncludeUpgrade it also builds and publishes a second version, one patch higher, from a temporary copy of the modules with only the version
 numbers changed, so an upgrade (Update-Module) can be tested.
-The folder repository is registered with PSResourceGet only while the packages are published; register it for PowerShellGet yourself:
+The folder repository is registered with PSResourceGet only while the package is published; register it for PowerShellGet yourself:
 Register-PSRepository -Name <name> -SourceLocation <folder> -InstallationPolicy Trusted.
 Returns an object with the folder, the repository name and the old and new versions. Needs Microsoft.PowerShell.PSResourceGet.
 #>
 [CmdletBinding()]
 Param(
-    # The folder that becomes the repository. Created if it does not exist; must be empty or hold only earlier .nupkg files.
+    # The folder that becomes the repository. Created if it does not exist.
     [Parameter(Mandatory = $true)][string] $RepositoryFolder,
     [Parameter(Mandatory = $false)][string] $RepositoryName = 'psfdx-local',
     [Parameter(Mandatory = $false)][switch] $IncludeUpgrade,
@@ -22,26 +22,25 @@ Param(
 
 $ErrorActionPreference = 'Stop'
 if (-not $Root) { $Root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) }
-$scripts = Join-Path (Join-Path $Root 'scripts') 'release'
+$build = Join-Path (Join-Path (Join-Path $Root 'scripts') 'release') 'Build-GalleryPackage.ps1'
 Import-Module Microsoft.PowerShell.PSResourceGet -ErrorAction Stop
 if (-not (Test-Path -LiteralPath $RepositoryFolder)) { New-Item -ItemType Directory -Path $RepositoryFolder -Force | Out-Null }
 $folder = (Resolve-Path -LiteralPath $RepositoryFolder).Path
-$work = Join-Path ([IO.Path]::GetTempPath()) ('psfdx-suite-repo-' + [guid]::NewGuid().ToString('N'))
+$work = Join-Path ([IO.Path]::GetTempPath()) ('psfdx-repo-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 
 $oldVersion = (Get-Content -Path (Join-Path $Root 'VERSION') -Raw).Trim()
 $newVersion = $null
-$savedModulePath = $env:PSModulePath
 if (Get-PSResourceRepository -Name $RepositoryName -ErrorAction SilentlyContinue) { Unregister-PSResourceRepository -Name $RepositoryName }
 Register-PSResourceRepository -Name $RepositoryName -Uri $folder -Trusted
 try {
-    $packages = @(& (Join-Path $scripts 'Build-GalleryPackage.ps1') -Layout Suite -Root $Root -OutputFolder (Join-Path (Join-Path $work 'old') 'suite'))
-    & (Join-Path $scripts 'Publish-PsfdxSuite.ps1') -Packages $packages -Repository $RepositoryName -WaitSeconds 0 | Out-Null
+    $package = & $build -Root $Root -OutputFolder (Join-Path (Join-Path $work 'old') 'psfdx')
+    Publish-PSResource -Path $package -Repository $RepositoryName -ErrorAction Stop
 
     if ($IncludeUpgrade) {
         $parts = $oldVersion.Split('.')
         $newVersion = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
-        # A copy of the modules with only the version numbers changed. Nothing else about the packages differs.
+        # A copy of the modules with only the version numbers changed. Nothing else about the package differs.
         $copy = Join-Path $work 'next'
         New-Item -ItemType Directory -Path $copy | Out-Null
         foreach ($item in 'modules.ps1', 'LICENSE') { Copy-Item -LiteralPath (Join-Path $Root $item) -Destination $copy }
@@ -55,12 +54,11 @@ try {
             if ($changed -eq $text) { throw "Could not change the version in $manifest" }
             [IO.File]::WriteAllText($manifest, $changed)
         }
-        $nextPackages = @(& (Join-Path $scripts 'Build-GalleryPackage.ps1') -Layout Suite -Root $copy -OutputFolder (Join-Path (Join-Path $work 'new') 'suite'))
-        & (Join-Path $scripts 'Publish-PsfdxSuite.ps1') -Packages $nextPackages -Repository $RepositoryName -WaitSeconds 0 | Out-Null
+        $nextPackage = & $build -Root $copy -OutputFolder (Join-Path (Join-Path $work 'new') 'psfdx')
+        Publish-PSResource -Path $nextPackage -Repository $RepositoryName -ErrorAction Stop
     }
 } finally {
-    $env:PSModulePath = $savedModulePath
     Unregister-PSResourceRepository -Name $RepositoryName -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
 }
-[pscustomobject]@{ Folder = $folder; Name = $RepositoryName; OldVersion = $oldVersion; NewVersion = $newVersion; Packages = @($packages | ForEach-Object { Split-Path -Leaf $_ }) }
+[pscustomobject]@{ Folder = $folder; Name = $RepositoryName; OldVersion = $oldVersion; NewVersion = $newVersion; Packages = @(Get-ChildItem -LiteralPath $folder -Filter '*.nupkg' | ForEach-Object Name | Sort-Object) }

@@ -1,17 +1,20 @@
 <#
 .SYNOPSIS
-Checks that an installed copy of the psfdx suite behaves as one install of several modules.
+Checks that an installed copy of the psfdx package behaves as one install of several modules, and records the evidence.
 .DESCRIPTION
-Run it against a folder that Save-Module or Install-Module filled from a package repository (the PowerShell Gallery, or the local repository
-the CI builds). It never imports anything from the source tree: every check runs in a fresh PowerShell process whose module path is that folder
-alone, so it sees what a new user sees. It checks that:
-  1. one install brought the umbrella `psfdx` and every module, each at the expected version;
-  2. Get-Module -ListAvailable 'psfdx*' lists all of them;
-  3. Get-Command -Module 'psfdx*' finds every exported command with no import at all, and each command's Source is the module that really
-     holds it (psfdx-metadata, psfdx-development, psfdx-agentforce and so on), not the umbrella;
-  4. Import-Module psfdx loads the whole suite, the umbrella exports nothing, and no command name exists twice;
-  5. optionally, a standalone module installed on its own (with the dependencies the Gallery gives it) imports and exports its commands,
-     without loading the rest of the suite.
+Run it against a folder that Save-Module or Install-Module filled from a package repository (the PowerShell Gallery, or the local repository the CI
+builds). It never imports anything from the source tree: every check runs in a fresh PowerShell process whose module path is that folder alone, so it
+sees what a new user sees after `Install-Module psfdx` and nothing else. It checks that:
+  1. the install is the one package `psfdx`, at the expected version, holding every module (no separate psfdx-* package beside it);
+  2. in a fresh session, Get-Command -Module psfdx shows only the core commands, each with the Source `psfdx`;
+  3. in one fresh session, in this order: Get-Command -Module psfdx, then -Module psfdx-logs, then -Module 'psfdx*' give the core commands, exactly
+     the commands the logs module owns (Source psfdx-logs), and every command of the suite with each one attributed to the module that holds it,
+     with nothing missing, nothing twice and nothing falsely attributed (asking for psfdx is what loads the package, and loading it loads the rest);
+  4. the same holds after Import-Module psfdx, and after the first use of a core command with no import at all (PowerShell loads psfdx by itself);
+  5. a representative command from every module runs.
+What a brand-new session cannot do is recorded, not hidden: PowerShell discovers modules only as folders of their own on the module path and one package
+installs one folder, so before psfdx has loaded, `-Module psfdx-logs` and `-Module 'psfdx*'` show no non-core command and a non-core command is not found
+by name. The report says so (see docs/install.md).
 What each module should export comes from the manifests in the repository (-Root). Works on Windows PowerShell 5.1 and PowerShell 7, needs no
 Salesforce CLI and no org. Throws, listing every problem, when anything is wrong.
 #>
@@ -22,107 +25,191 @@ Param(
     # The version that was installed. Defaults to the repository's VERSION.
     [Parameter(Mandatory = $false)][string] $Version,
     [Parameter(Mandatory = $false)][string] $Root,
-    # A second folder that holds only one module saved on its own, with its dependencies.
-    [Parameter(Mandatory = $false)][string] $StandalonePath,
-    # The module saved in -StandalonePath.
-    [Parameter(Mandatory = $false)][string] $StandaloneModule = 'psfdx-logs'
+    # Where to write the evidence as JSON (command counts per module, representative runs, what a brand-new session shows).
+    [Parameter(Mandatory = $false)][string] $EvidencePath
 )
 
 $ErrorActionPreference = 'Stop'
 if (-not $Root) { $Root = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)) }
 . (Join-Path $Root 'modules.ps1')
 if (-not $Version) { $Version = (Get-Content -Path (Join-Path $Root 'VERSION') -Raw).Trim() }
-$umbrella = Get-PsfdxUmbrellaModule
 $modules = @(Get-PsfdxModules)
-$dependencies = Get-PsfdxModuleDependencies
+$core = 'psfdx'
+$others = @($modules | Where-Object { $_ -ne $core })
 $expectedExports = @{}
 foreach ($module in $modules) { $expectedExports[$module] = @((Import-PowerShellDataFile -Path (Join-Path (Join-Path $Root $module) "$module.psd1")).FunctionsToExport | Sort-Object) }
-$expectedNames = @(@($umbrella) + $modules | Sort-Object)
+$expectedTotal = 0; foreach ($module in $modules) { $expectedTotal += $expectedExports[$module].Count }
 $shell = (Get-Process -Id $PID).Path
 $problems = New-Object System.Collections.Generic.List[string]
-
-# Runs a script in a fresh PowerShell whose module path is only $Path, and returns what it printed as an object.
-function Invoke-FreshSession([string] $Path, [string] $Script) {
-    $header = "`$ErrorActionPreference = 'Stop'; `$WarningPreference = 'SilentlyContinue'; `$env:PSModulePath = `$env:PSFDX_SUITE_PATH; "
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($header + $Script))
-    $previous = $env:PSFDX_SUITE_PATH
-    $env:PSFDX_SUITE_PATH = $Path
-    try { $output = & $shell -NoProfile -NonInteractive -EncodedCommand $encoded 2>&1 | Out-String } finally { $env:PSFDX_SUITE_PATH = $previous }
-    if ($LASTEXITCODE -ne 0) { throw "A fresh PowerShell session failed:`n$output" }
-    $json = @($output -split "`r?`n" | Where-Object { $_.TrimStart().StartsWith('{') } | Select-Object -Last 1)
-    if ($json.Count -eq 0) { throw "A fresh PowerShell session printed no result:`n$output" }
-    return ($json[0] | ConvertFrom-Json)
-}
 function Add-Problem([string] $Text) { $problems.Add($Text) }
 function Same([object[]] $A, [object[]] $B) { (@($A | Sort-Object) -join '|') -eq (@($B | Sort-Object) -join '|') }
 
-# ---- 1. One install brought everything, at the right version ----
-$folders = @(Get-ChildItem -LiteralPath $ModulePath -Directory | Where-Object { $_.Name -like 'psfdx*' } | ForEach-Object Name | Sort-Object)
-if (-not (Same $folders $expectedNames)) { Add-Problem "The install folder holds [$($folders -join ', ')] but the suite is [$($expectedNames -join ', ')]" }
-foreach ($name in $expectedNames) {
-    $versionFolder = Join-Path (Join-Path $ModulePath $name) $Version
-    if (-not (Test-Path -LiteralPath (Join-Path $versionFolder "$name.psd1"))) { Add-Problem "$name $Version is not installed (no $name.psd1 in $versionFolder)" }
+# One command that runs from every module without a Salesforce CLI or an org. Each must run (not throw) and be owned by the module named.
+$representative = [ordered]@{
+    'psfdx'             = @{ Command = 'Get-SalesforceDateTime'; Run = "Get-SalesforceDateTime -Datetime ([datetime]'2026-01-02T03:04:05Z')"; Expect = '2026-01-02T03:04:05Z' }
+    'psfdx-shared'      = @{ Command = 'ConvertTo-SalesforceSoqlLiteral'; Run = 'ConvertTo-SalesforceSoqlLiteral -Value "O''Brien"'; Expect = "'O\'Brien'" }
+    'psfdx-logs'        = @{ Command = 'Convert-SalesforceDebugLog'; Run = "Convert-SalesforceDebugLog -Log ('59.0 APEX_CODE,DEBUG' + [Environment]::NewLine + '12:00:00.1 (1000)|EXECUTION_STARTED')"; Expect = $null }
+    'psfdx-metadata'    = @{ Command = 'New-SalesforceDevOpsProject'; Run = "New-SalesforceDevOpsProject -Name 'x' -WhatIf"; Expect = $null }
+    'psfdx-development' = @{ Command = 'Remove-SalesforceScratchOrg'; Run = 'Remove-SalesforceScratchOrg -TargetOrg nosuch -WhatIf'; Expect = $null }
+    'psfdx-sandbox'     = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }
+    'psfdx-packages'    = @{ Command = 'Uninstall-SalesforcePackage'; Run = 'Uninstall-SalesforcePackage -Package 04t000000000001 -TargetOrg nosuch -WhatIf'; Expect = $null }
+    'psfdx-agentforce'  = @{ Command = 'Remove-SalesforceMcpServer'; Run = 'Remove-SalesforceMcpServer -McpServerId 0Xxxx0000000001 -WhatIf'; Expect = $null }
 }
 
-# ---- 2 and 3. Listing and discovery in a clean session, with no import ----
-$discover = @'
-$listed = @(Get-Module -ListAvailable 'psfdx*' | ForEach-Object { $_.Name + ' ' + $_.Version })
-$loadedBefore = @(Get-Module 'psfdx*' | ForEach-Object Name)
-$commands = @(Get-Command -Module 'psfdx*' | Where-Object { $_.CommandType -eq 'Function' })
-$bySource = @{}
-foreach ($g in ($commands | Group-Object Source)) { $bySource[$g.Name] = @($g.Group | ForEach-Object Name | Sort-Object) }
-[pscustomobject]@{ listed = $listed; loadedBefore = $loadedBefore; bySource = $bySource } | ConvertTo-Json -Compress -Depth 4
-'@
-$found = Invoke-FreshSession $ModulePath $discover
-$listedExpected = @($expectedNames | ForEach-Object { "$_ $Version" })
-if (-not (Same @($found.listed) $listedExpected)) { Add-Problem "Get-Module -ListAvailable 'psfdx*' lists [$(@($found.listed) -join ', ')], expected [$($listedExpected -join ', ')]" }
-if (@($found.loadedBefore).Count -ne 0) { Add-Problem "The clean session already had psfdx modules loaded: $(@($found.loadedBefore) -join ', ')" }
-foreach ($module in $modules) {
-    $names = @($found.bySource.$module)
-    if (-not (Same $names $expectedExports[$module])) {
-        $missing = @($expectedExports[$module] | Where-Object { $_ -notin $names }); $extra = @($names | Where-Object { $_ -and $_ -notin $expectedExports[$module] })
-        Add-Problem "Get-Command -Module 'psfdx*' (no import) shows $($names.Count) commands from $module, expected $($expectedExports[$module].Count). Missing: $($missing -join ', '). Extra: $($extra -join ', ')"
+# Runs a script in a fresh PowerShell whose module path is only $Path. Returns the exit code, the text and the last JSON line it printed.
+function Invoke-FreshSession([string] $Script) {
+    $header = "`$ErrorActionPreference = 'Stop'; `$WarningPreference = 'SilentlyContinue'; `$env:PSModulePath = `$env:PSFDX_SUITE_PATH; "
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($header + $Script))
+    $previous = $env:PSFDX_SUITE_PATH
+    $env:PSFDX_SUITE_PATH = $ModulePath
+    $saved = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { $output = & $shell -NoProfile -NonInteractive -EncodedCommand $encoded 2>&1 | Out-String; $code = $LASTEXITCODE }
+    finally { $env:PSFDX_SUITE_PATH = $previous; $ErrorActionPreference = $saved }
+    $json = @($output -split "`r?`n" | Where-Object { $_.TrimStart().StartsWith('{') } | Select-Object -Last 1)
+    $result = $null
+    if ($json.Count -gt 0) { $result = $json[0] | ConvertFrom-Json }
+    if ($code -ne 0 -or -not $result) { throw "A fresh PowerShell session failed (exit $code):`n$output" }
+    return $result
+}
+
+# A script fragment that lists what Get-Command -Module <pattern> shows, as name and source, and puts it in $r.<key>.
+$collect = {
+    param([string] $Key, [string] $Pattern)
+    "`$c = @(Get-Command -Module '$Pattern' -ErrorAction SilentlyContinue | Where-Object { `$_.CommandType -eq 'Function' }); `$r['$Key'] = @(`$c | ForEach-Object { `$_.Name + '@' + `$_.Source }); "
+}
+function BySource([object[]] $Items) {
+    $by = @{}
+    foreach ($item in @($Items | Where-Object { $_ })) { $name, $source = $item -split '@', 2; if (-not $by.ContainsKey($source)) { $by[$source] = New-Object System.Collections.Generic.List[string] }; $by[$source].Add($name) }
+    return $by
+}
+
+# ---- 1. One package, every module in it ----
+$packageFolders = @(Get-ChildItem -LiteralPath $ModulePath -Directory | ForEach-Object Name | Sort-Object)
+if (-not (Same $packageFolders @('psfdx'))) { Add-Problem "The install folder holds [$($packageFolders -join ', ')], expected the one package [psfdx] and no separate psfdx-* package" }
+$packageFolder = Join-Path (Join-Path $ModulePath 'psfdx') $Version
+if (-not (Test-Path -LiteralPath (Join-Path $packageFolder 'psfdx.psd1'))) { Add-Problem "psfdx $Version is not installed (no psfdx.psd1 in $packageFolder)" }
+foreach ($module in $others) {
+    if (-not (Test-Path -LiteralPath (Join-Path (Join-Path $packageFolder $module) "$module.psd1"))) { Add-Problem "The package does not hold the module $module (no $module.psd1 in $packageFolder)" }
+}
+
+# ---- 2. A brand-new session: what is discoverable before anything has loaded ----
+$fresh = Invoke-FreshSession @"
+`$r = [ordered]@{}
+`$r['listed'] = @(Get-Module -ListAvailable 'psfdx*' | ForEach-Object { `$_.Name + ' ' + `$_.Version })
+`$r['loadedBefore'] = @(Get-Module 'psfdx*' | ForEach-Object Name)
+$(& $collect 'core' 'psfdx')
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+if (-not (Same @($fresh.listed) @("psfdx $Version"))) { Add-Problem "Get-Module -ListAvailable 'psfdx*' lists [$(@($fresh.listed) -join ', ')], expected [psfdx $Version]" }
+if (@($fresh.loadedBefore).Count -ne 0) { Add-Problem "The clean session already had psfdx modules loaded: $(@($fresh.loadedBefore) -join ', ')" }
+$bySource = BySource @($fresh.core)
+if (-not (Same @($bySource['psfdx']) $expectedExports[$core]) -or @($bySource.Keys | Where-Object { $_ -ne 'psfdx' }).Count) {
+    Add-Problem "In a fresh session Get-Command -Module psfdx shows $(@($fresh.core).Count) commands from [$(@($bySource.Keys) -join ', ')], expected the $($expectedExports[$core].Count) core commands, every one with the Source psfdx"
+}
+
+# ---- 3. The ticket's three Get-Command checks, in order, in one fresh session ----
+$perModule = ($others | ForEach-Object { & $collect "m_$_" $_ }) -join ''
+$ordered = Invoke-FreshSession @"
+`$r = [ordered]@{}
+$(& $collect 'g1' 'psfdx')
+$(& $collect 'g2' 'psfdx-logs')
+$(& $collect 'g3' 'psfdx*')
+$perModule
+`$r['loaded'] = @(Get-Module 'psfdx*' | ForEach-Object { `$_.Name + ' ' + `$_.Version })
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+$expectedLoaded = @($modules | ForEach-Object { "$_ $Version" })
+function Test-Ownership([object] $Result, [string] $When) {
+    $g1 = BySource @($Result.g1)
+    if (-not (Same @($g1['psfdx']) $expectedExports[$core]) -or @($g1.Keys | Where-Object { $_ -ne 'psfdx' }).Count) { Add-Problem "$When Get-Command -Module psfdx does not show only the core commands with the Source psfdx (it shows $(@($Result.g1).Count) from [$(@($g1.Keys) -join ', ')])" }
+    $g2 = BySource @($Result.g2)
+    if (-not (Same @($g2['psfdx-logs']) $expectedExports['psfdx-logs']) -or @($g2.Keys | Where-Object { $_ -ne 'psfdx-logs' }).Count) { Add-Problem "$When Get-Command -Module psfdx-logs does not show exactly the logs commands with the Source psfdx-logs (it shows $(@($Result.g2).Count) from [$(@($g2.Keys) -join ', ')], expected $($expectedExports['psfdx-logs'].Count))" }
+    $g3 = BySource @($Result.g3)
+    foreach ($module in $modules) {
+        if (-not (Same @($g3[$module]) $expectedExports[$module])) {
+            $have = @($g3[$module]); $missing = @($expectedExports[$module] | Where-Object { $_ -notin $have }); $extra = @($have | Where-Object { $_ -and $_ -notin $expectedExports[$module] })
+            Add-Problem "$When Get-Command -Module 'psfdx*' shows $($have.Count) commands from $module, expected $($expectedExports[$module].Count). Missing: $($missing -join ', '). Extra: $($extra -join ', ')"
+        }
     }
+    if (@($g3.Keys | Where-Object { $_ -notin $modules }).Count) { Add-Problem "$When Get-Command -Module 'psfdx*' attributes commands to unknown modules: $(@($g3.Keys | Where-Object { $_ -notin $modules }) -join ', ')" }
+    $names = @(@($Result.g3) | ForEach-Object { ($_ -split '@', 2)[0] })
+    $dups = @($names | Group-Object | Where-Object { $_.Count -gt 1 } | ForEach-Object Name)
+    if ($dups.Count) { Add-Problem "$When these command names appear more than once: $($dups -join ', ')" }
+    if (@($Result.g3).Count -ne $expectedTotal) { Add-Problem "$When Get-Command -Module 'psfdx*' shows $(@($Result.g3).Count) commands, expected $expectedTotal" }
+    foreach ($module in $others) {
+        $own = BySource @($Result."m_$module")
+        if (-not (Same @($own[$module]) $expectedExports[$module]) -or @($own.Keys | Where-Object { $_ -ne $module }).Count) { Add-Problem "$When Get-Command -Module $module does not show exactly its $($expectedExports[$module].Count) commands with the Source $module" }
+    }
+    if (-not (Same @($Result.loaded) $expectedLoaded)) { Add-Problem "$When the loaded modules are [$(@($Result.loaded) -join ', ')], expected [$($expectedLoaded -join ', ')]" }
 }
-if (@($found.bySource.PSObject.Properties.Name | Where-Object { $_ -eq $umbrella }).Count -gt 0) { Add-Problem "Commands show $umbrella as their source; the umbrella must hold none, the modules own them" }
+Test-Ownership $ordered 'In one fresh session (psfdx, then psfdx-logs, then psfdx*):'
 
-# ---- 4. Import-Module psfdx: the whole suite, nothing twice ----
-$import = @'
-Import-Module psfdx -RequiredVersion '__VERSION__'
-$loaded = @(Get-Module 'psfdx*' | ForEach-Object { $_.Name + ' ' + $_.Version })
-$commands = @(Get-Command -Module 'psfdx*' | Where-Object { $_.CommandType -eq 'Function' })
-$bySource = @{}
-foreach ($g in ($commands | Group-Object Source)) { $bySource[$g.Name] = @($g.Group | ForEach-Object Name | Sort-Object) }
-$duplicates = @($commands | Group-Object Name | Where-Object { $_.Count -gt 1 } | ForEach-Object Name)
-$umbrellaExports = @((Get-Module psfdx).ExportedFunctions.Keys)
-[pscustomobject]@{ loaded = $loaded; bySource = $bySource; duplicates = $duplicates; umbrellaExports = $umbrellaExports; total = $commands.Count } | ConvertTo-Json -Compress -Depth 4
-'@.Replace('__VERSION__', $Version)
-$imported = Invoke-FreshSession $ModulePath $import
-if (-not (Same @($imported.loaded) $listedExpected)) { Add-Problem "Import-Module psfdx loaded [$(@($imported.loaded) -join ', ')], expected [$($listedExpected -join ', ')]" }
-if (@($imported.duplicates).Count -gt 0) { Add-Problem "These command names exist more than once after Import-Module psfdx: $(@($imported.duplicates) -join ', ')" }
-if (@($imported.umbrellaExports).Count -gt 0) { Add-Problem "The umbrella psfdx exports $(@($imported.umbrellaExports).Count) commands; it must export none" }
-foreach ($module in $modules) {
-    if (-not (Same @($imported.bySource.$module) $expectedExports[$module])) { Add-Problem "After Import-Module psfdx the commands of $module are not the ones its manifest lists" }
+# ---- 4. After Import-Module psfdx, and after the first use of a core command with no import ----
+$viaImport = Invoke-FreshSession @"
+Import-Module psfdx -RequiredVersion '$Version'
+`$r = [ordered]@{}
+$(& $collect 'g1' 'psfdx')
+$(& $collect 'g2' 'psfdx-logs')
+$(& $collect 'g3' 'psfdx*')
+$perModule
+`$r['loaded'] = @(Get-Module 'psfdx*' | ForEach-Object { `$_.Name + ' ' + `$_.Version })
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+Test-Ownership $viaImport 'After Import-Module psfdx:'
+$viaFirstUse = Invoke-FreshSession @"
+`$null = Get-SalesforceDateTime
+`$r = [ordered]@{}
+$(& $collect 'g1' 'psfdx')
+$(& $collect 'g2' 'psfdx-logs')
+$(& $collect 'g3' 'psfdx*')
+$perModule
+`$r['loaded'] = @(Get-Module 'psfdx*' | ForEach-Object { `$_.Name + ' ' + `$_.Version })
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+Test-Ownership $viaFirstUse 'After the first use of a core command, with no import:'
+
+# ---- 5. A representative command from every module runs, and belongs to its module ----
+$runs = ($representative.Keys | ForEach-Object {
+    $m = $_; $spec = $representative[$m]
+    "try { `$out = @($($spec.Run)) | Out-String; `$ok = `$true; `$err = '' } catch { `$out = ''; `$ok = `$false; `$err = `$_.Exception.Message }; `$r['run_$m'] = [pscustomobject]@{ ok = `$ok; out = `$out.Trim(); err = `$err; source = (Get-Command '$($spec.Command)' -ErrorAction SilentlyContinue | Select-Object -First 1).Source }; "
+}) -join ''
+$ran = Invoke-FreshSession @"
+Import-Module psfdx -RequiredVersion '$Version'
+`$r = [ordered]@{}
+$runs
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+$runEvidence = [ordered]@{}
+foreach ($m in $representative.Keys) {
+    $spec = $representative[$m]
+    $got = $ran."run_$m"
+    $runEvidence[$m] = [ordered]@{ command = $spec.Command; source = $got.source; ran = [bool]$got.ok }
+    if (-not $got.ok) { Add-Problem "The representative command $($spec.Command) of $m did not run: $($got.err)" }
+    elseif ($got.source -ne $m) { Add-Problem "$($spec.Command) reports the Source '$($got.source)', expected $m" }
+    elseif ($spec.Expect -and $got.out -ne $spec.Expect) { Add-Problem "$($spec.Command) returned '$($got.out)', expected '$($spec.Expect)'" }
 }
-$expectedTotal = 0; foreach ($module in $modules) { $expectedTotal += $expectedExports[$module].Count }
-if ($imported.total -ne $expectedTotal) { Add-Problem "After Import-Module psfdx there are $($imported.total) commands, expected $expectedTotal" }
 
-# ---- 5. A standalone module with its own dependencies ----
-if ($StandalonePath) {
-    $needed = @(@($StandaloneModule) + @($dependencies[$StandaloneModule]) | Sort-Object)
-    $standaloneScript = @'
-Import-Module '__MODULE__' -RequiredVersion '__VERSION__'
-$loaded = @(Get-Module 'psfdx*' | ForEach-Object Name)
-$exports = @((Get-Module '__MODULE__').ExportedFunctions.Keys | Sort-Object)
-$listed = @(Get-Module -ListAvailable 'psfdx*' | ForEach-Object Name)
-[pscustomobject]@{ loaded = $loaded; exports = $exports; listed = $listed } | ConvertTo-Json -Compress -Depth 4
-'@.Replace('__MODULE__', $StandaloneModule).Replace('__VERSION__', $Version)
-    $alone = Invoke-FreshSession $StandalonePath $standaloneScript
-    if (-not (Same @($alone.listed) $needed)) { Add-Problem "Installing $StandaloneModule alone left [$(@($alone.listed) -join ', ')] available, expected [$($needed -join ', ')]" }
-    if (-not (Same @($alone.exports) $expectedExports[$StandaloneModule])) { Add-Problem "$StandaloneModule installed alone does not export what its manifest lists" }
-    $extraLoaded = @($alone.loaded | Where-Object { $_ -notin $needed })
-    if ($extraLoaded.Count) { Add-Problem "Importing $StandaloneModule alone also loaded: $($extraLoaded -join ', ')" }
+# ---- The evidence ----
+$counts = [ordered]@{}
+foreach ($module in $modules) { $counts[$module] = $expectedExports[$module].Count }
+$evidence = [ordered]@{
+    version = $Version
+    powershell = [string]$PSVersionTable.PSVersion
+    edition = [string]$PSVersionTable.PSEdition
+    package = 'psfdx'
+    totalCommands = $expectedTotal
+    commandsPerModule = $counts
+    duplicateCommandNames = 0
+    brandNewSession = [ordered]@{
+        listedModules = @($fresh.listed)
+        coreCommandsShown = @($fresh.core).Count
+        note = 'Before psfdx has loaded only psfdx is discoverable: PowerShell finds modules as folders of their own on the module path, and one package installs one folder. Asking for psfdx, importing it or using a core command loads the rest.'
+    }
+    representativeCommands = $runEvidence
 }
+if ($EvidencePath) { ($evidence | ConvertTo-Json -Depth 6) | Set-Content -LiteralPath $EvidencePath -Encoding UTF8 }
 
-if ($problems.Count) { throw ("The installed psfdx suite is not right (PowerShell $($PSVersionTable.PSVersion)):`n - " + ($problems -join "`n - ")) }
-"The psfdx suite $Version installs as $($expectedNames.Count) modules on PowerShell $($PSVersionTable.PSVersion): Get-Module -ListAvailable and Get-Command -Module 'psfdx*' see all of them with no import ($expectedTotal commands, each from its own module), Import-Module psfdx loads them with no duplicate command$(if ($StandalonePath) { ", and $StandaloneModule works on its own with $(@($dependencies[$StandaloneModule]).Count) dependencies" })."
+if ($problems.Count) { throw ("The installed psfdx package is not right (PowerShell $($PSVersionTable.PSVersion)):`n - " + ($problems -join "`n - ")) }
+$summary = ($modules | ForEach-Object { "$_=$($counts[$_])" }) -join ', '
+"psfdx $Version is one package holding $($modules.Count) modules, checked on PowerShell $($PSVersionTable.PSVersion): in a fresh session Get-Command -Module psfdx shows only the $($counts[$core]) core commands; once psfdx has loaded (Get-Command -Module psfdx, Import-Module psfdx or a first core command) Get-Command -Module psfdx-logs shows exactly the $($counts['psfdx-logs']) logs commands and -Module 'psfdx*' shows all $expectedTotal with each attributed to its own module ($summary) and no duplicate; one representative command from each of the $($modules.Count) modules runs."

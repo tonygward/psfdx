@@ -7,7 +7,7 @@
 
 BeforeDiscovery {
     $root = Split-Path -Parent $PSScriptRoot
-    $moduleNames = 'psfdx-shared', 'psfdx-core', 'psfdx-metadata', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce'
+    $moduleNames = 'psfdx-shared', 'psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce'
     $parity = [System.IO.File]::ReadAllText((Join-Path $root 'docs/cli-parity.json')) | ConvertFrom-Json
     $runs = @{}
     foreach ($capability in $parity.capabilities) {
@@ -49,7 +49,7 @@ BeforeDiscovery {
 BeforeAll {
     $script:root = Split-Path -Parent $PSScriptRoot
     Get-Module -Name 'psfdx*' -All | ForEach-Object { try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { } }
-    foreach ($module in 'psfdx-shared', 'psfdx-core', 'psfdx-metadata', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce') {
+    foreach ($module in 'psfdx-shared', 'psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce') {
         Import-Module (Join-Path $script:root (Join-Path $module ($module + '.psd1'))) -Force -WarningAction SilentlyContinue
     }
     $script:common = @([System.Management.Automation.PSCmdlet]::CommonParameters) + @([System.Management.Automation.PSCmdlet]::OptionalCommonParameters)

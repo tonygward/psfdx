@@ -1,7 +1,7 @@
 @{
-    RootModule = 'psfdx-core.psm1'
+    RootModule = 'psfdx.psm1'
     ModuleVersion = '0.8.53'
-    GUID = '5d3b1c7e-6a0e-4b8e-9f43-7c1a2e0d9b64'
+    GUID = '2785d2bf-775f-4f2b-9d00-ee98f0163cf0'
     Author = 'Tony Ward'
     Description = 'PowerShell module that wraps Salesforce SFDX command line interface'
     PowerShellVersion = '5.1'

@@ -74,34 +74,17 @@ jobs:
           echo "Pull request #$pr, head $head, CI: ${result:-none}"
           [ "$result" = "completed success" ] || { echo "::error::CI - Pester tests did not pass on $head; publishing nothing."; exit 1; }
 
-      - name: Build the packages and check their manifests
+      - name: Build the bundle and check its manifest
         shell: pwsh
         run: |
-          # scripts/release/gallery.json says which layout is published: "bundle" is one psfdx package with every module inside it;
-          # "suite" is the umbrella psfdx plus one package per module, tied together with RequiredModules.
-          $layout = (Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json).layout
-          if (-not $layout) { $layout = 'bundle' }
-          if ($layout -notin 'bundle', 'suite') { throw "gallery.json layout must be bundle or suite, got '$layout'" }
-          "LAYOUT=$layout" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          if ($layout -eq 'bundle') {
-            $out = ./scripts/release/Build-GalleryPackage.ps1
-            Test-ModuleManifest -Path (Join-Path $out 'psfdx.psd1') -ErrorAction Stop | Out-Null
-            "BUNDLE=$out" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            $manifest = Import-PowerShellDataFile -Path (Join-Path $out 'psfdx.psd1')
-            Write-Host "Bundle psfdx $($manifest.ModuleVersion): $(@($manifest.FunctionsToExport).Count) functions from $(@($manifest.NestedModules).Count) modules"
-          } else {
-            $packages = @(./scripts/release/Build-GalleryPackage.ps1 -Layout Suite)
-            # Test-ModuleManifest has to find the modules a manifest requires, so the built folder is on the module path while it runs.
-            $env:PSModulePath = (Split-Path -Parent $packages[0]) + [IO.Path]::PathSeparator + $env:PSModulePath
-            foreach ($package in $packages) { $name = Split-Path -Leaf $package; Test-ModuleManifest -Path (Join-Path $package "$name.psd1") -ErrorAction Stop | Out-Null }
-            $packages | Set-Content -Path (Join-Path (Split-Path -Parent $packages[0]) 'packages.txt') -Encoding utf8
-            "PACKAGES_FILE=$(Join-Path (Split-Path -Parent $packages[0]) 'packages.txt')" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            Write-Host "Suite: $($packages.Count) packages in publish order: $(($packages | ForEach-Object { Split-Path -Leaf $_ }) -join ', ')"
-          }
+          $out = ./scripts/release/Build-GalleryPackage.ps1
+          Test-ModuleManifest -Path (Join-Path $out 'psfdx.psd1') -ErrorAction Stop | Out-Null
+          "BUNDLE=$out" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $manifest = Import-PowerShellDataFile -Path (Join-Path $out 'psfdx.psd1')
+          Write-Host "Bundle psfdx $($manifest.ModuleVersion): $(@($manifest.FunctionsToExport).Count) functions from $(@($manifest.NestedModules).Count) modules"
 
       - name: Is this version already on the Gallery?
         id: exists
-        if: env.LAYOUT == 'bundle'
         shell: pwsh
         run: |
           $version = (Get-Content -Path VERSION -Raw).Trim()
@@ -112,8 +95,8 @@ jobs:
           elseif ($status -eq 404) { "exists=false" >> $env:GITHUB_OUTPUT }
           else { throw "The Gallery answered $status; not publishing" }
 
-      - name: Publish (or dry-run) the bundle with Publish-PSResource
-        if: env.LAYOUT == 'bundle' && steps.exists.outputs.exists == 'false'
+      - name: Publish (or dry-run) with Publish-PSResource
+        if: steps.exists.outputs.exists == 'false'
         shell: pwsh
         env:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
@@ -130,24 +113,3 @@ jobs:
           Write-Host "::add-mask::$env:PSGALLERY_API_KEY"
           Publish-PSResource -Path $env:BUNDLE -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY -ErrorAction Stop
           Write-Host 'Published.'
-
-      - name: Publish the suite (or dry-run) with Publish-PsfdxSuite
-        if: env.LAYOUT == 'suite'
-        shell: pwsh
-        env:
-          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
-        run: |
-          # Every package goes up in dependency order, the umbrella last, and each is waited for until the Gallery lists it, because the next
-          # one requires it. A package whose version is already on the Gallery is skipped, so a run that stopped half way can be run again
-          # (workflow_dispatch with the same version). Gallery versions are permanent; nothing is ever replaced.
-          $publish = (Get-Content -Path scripts/release/gallery.json -Raw | ConvertFrom-Json).publish -eq $true
-          if (-not (Get-Command Publish-PSResource -ErrorAction SilentlyContinue)) { Install-Module Microsoft.PowerShell.PSResourceGet -Force -Scope CurrentUser }
-          $packages = @(Get-Content -Path $env:PACKAGES_FILE)
-          if (-not $publish) {
-            Write-Host 'publish is false in scripts/release/gallery.json: dry run only. Nothing is uploaded.'
-            ./scripts/release/Publish-PsfdxSuite.ps1 -Packages $packages -Repository PSGallery -DryRun | Format-Table -AutoSize | Out-String | Write-Host
-            return
-          }
-          if ([string]::IsNullOrEmpty($env:PSGALLERY_API_KEY)) { throw 'PSGALLERY_API_KEY is not available in the psgallery environment' }
-          Write-Host "::add-mask::$env:PSGALLERY_API_KEY"
-          ./scripts/release/Publish-PsfdxSuite.ps1 -Packages $packages -Repository PSGallery -ApiKey $env:PSGALLERY_API_KEY -WaitSeconds 900 | Format-Table -AutoSize | Out-String | Write-Host

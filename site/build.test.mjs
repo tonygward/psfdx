@@ -115,14 +115,14 @@ test('the marquee lists real psfdx commands (and Export-Csv), twice, with the co
   assert.match(css, /animation: marquee 32s linear infinite/);
 });
 
-test('the three feature cards and the seven modules use real content', () => {
-  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'Nothing hidden', 'A simpler, more intuitive way to work with Salesforce.', 'Seven modules. One install.', 'Get-Module psfdx* -ListAvailable']) {
+test('the three feature cards and the six modules use real content', () => {
+  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'Nothing hidden', 'A simpler, more intuitive way to work with Salesforce.', 'Six modules. Zero context switching.', 'Get-Module psfdx* -ListAvailable']) {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
-  assert.deepEqual(modules, ['psfdx-core', 'psfdx-metadata', 'psfdx-development', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce']);
+  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-logs']);
   for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
-  assert.equal((html.match(/class="module-row" href="https:\/\/github\.com\/tonygward\/psfdx#modules"/g) || []).length, 7, 'every module row links somewhere real');
+  assert.equal((html.match(/class="module-row" href="https:\/\/github\.com\/tonygward\/psfdx#modules"/g) || []).length, 6, 'every module row links somewhere real');
 });
 
 test('the closing panel and footer', () => {

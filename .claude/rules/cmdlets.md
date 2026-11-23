@@ -34,7 +34,7 @@ function Verb-SalesforceNoun {
 
 - `--target-org` uses the `ContainsKey(...) -and -not IsNullOrWhiteSpace(...)` guard shown above. Almost every cmdlet does this, so wrappers can pass `-TargetOrg $TargetOrg` through even when it's empty. `--target-dev-hub` uses a plain `if ($TargetDevHub)`.
 - `--json` goes last.
-- For SOQL, run `sf data query ... --result-format json` and call `Show-SalesforceResult -Result $raw -ReturnRecords`, which strips `attributes`. Or call `Select-SalesforceRecords` (psfdx-core).
+- For SOQL, run `sf data query ... --result-format json` and call `Show-SalesforceResult -Result $raw -ReturnRecords`, which strips `attributes`. Or call `Select-SalesforceRecords` (psfdx).
 - `Show-SalesforceResult` throws on a non-zero `status`, with deploy and test failures folded into the message.
 
 ### Preferred form: structured argv
@@ -76,7 +76,7 @@ Run non-`sf` commands through `Invoke-Salesforce` too, so tests can mock them an
   ```
   The better long-term fix is to stop the helper forwarding them.
 - Anchor every validation pattern with `\z`, not `$`. In .NET `$` also matches before a final line feed, so `'0AT000000000001' + "`n"` passes `'^[A-Za-z0-9]{15}$'`. This applies to `-match`, `-notmatch`, `-cnotmatch` and `[ValidatePattern()]` on IDs, names and anything else that reaches a command, a path or a query.
-- Send a password, token or client secret only to an https URL: call `Assert-SalesforceHttpsUrl` (psfdx-core) before any request that carries one. Build file names from validated IDs, never from raw input.
+- Send a password, token or client secret only to an https URL: call `Assert-SalesforceHttpsUrl` (psfdx) before any request that carries one. Build file names from validated IDs, never from raw input.
 - A cmdlet that deletes, releases or deploys needs `SupportsShouldProcess`: ConfirmImpact `High` when it cannot be undone, `Medium` for a change that can be (no prompt by default, but `-WhatIf` works). If the CLI has its own `--no-prompt`, let it skip the PowerShell prompt too, so existing unattended scripts keep working. The findings register is docs/security-findings.md.
 - Every exported function needs comment-based help inside the function, before `Param()`: `.SYNOPSIS`, `.DESCRIPTION`, a `.PARAMETER` for every parameter (default, valid values, whether it is required, and the CLI flag it feeds), at least one written `.EXAMPLE`, and `.NOTES` that open with a "Salesforce CLI mapping" section, then a `.LINK`. For a cmdlet that runs `sf`, the mapping names every `sf` command it runs, written as `sf <words>`, and the old name (alias or word order) it is run by when that differs. For one that does not, it says "does not run an sf command" and how it works. Describe only what the code does; never describe a flag or value the parity report lists as unsupported as available. Keep the text ASCII (a BOM-less file with other characters breaks Windows PowerShell 5.1). `tests/Help.Tests.ps1` enforces this, using `docs/cli-parity.json`, so regenerate the parity report first when a cmdlet starts running a different command.
 - Group cmdlets in `#region` / `#endregion` blocks.

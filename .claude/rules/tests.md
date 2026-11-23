@@ -10,9 +10,9 @@ Every bug fix and new cmdlet needs a test. The tests never call a real org or ne
 ## Loading
 
 - At the top of the file, remove any loaded copies (`Get-Module -Name ... -All | Remove-Module`), then `Import-Module` the manifest by path from `$PSScriptRoot`.
-- If the module under test calls another module's cmdlets, import that module's manifest first. `psfdx-logs.Tests.ps1` and `psfdx-development.Tests.ps1` import `psfdx-core` this way.
+- If the module under test calls another module's cmdlets, import that module's manifest first. `psfdx-logs.Tests.ps1` and `psfdx-development.Tests.ps1` import `psfdx` this way.
 - Run tests inside `InModuleScope '<module>'`, so private functions and mocks resolve in the module's scope.
-- Add `-ModuleName <module>` to `Mock` and `Assert-MockCalled` whenever the mocked function is called from a different module than the one in scope. `psfdx-core.Tests.ps1` also passes `-ModuleName $module.Name` inside its own scope. That's redundant but harmless; follow whatever the file you're editing does.
+- Add `-ModuleName <module>` to `Mock` and `Assert-MockCalled` whenever the mocked function is called from a different module than the one in scope. `psfdx.Tests.ps1` also passes `-ModuleName $module.Name` inside its own scope. That's redundant but harmless; follow whatever the file you're editing does.
 
 ## Mocking and asserting
 
@@ -21,7 +21,7 @@ Every bug fix and new cmdlet needs a test. The tests never call a real org or ne
   Fall back to several `-like` clauses only when part of the string is unpredictable, such as a temp path. A `-like` check on the start of the query alone once let a clobbered SELECT clause through.
 - Inside a *single-quoted* expected string, write a literal SOQL quote as `''`: `'... WHERE EventType = ''Login'' ...'`. Inside a *double-quoted* one, write quoted paths as `` `"$($dir.FullName)`" ``.
 - Have the mock return realistic JSON (`'{"status":0,"result":{...}}'`) rather than mocking `Show-SalesforceResult`. Then the real result handling runs too. Mock `Show-SalesforceResult` only when the shape is beside the point.
-- If the cmdlet delegates to another module (e.g. `Get-SalesforceApexClass` → `Select-SalesforceRecords` in psfdx-core), mock in that module: `Mock Invoke-Salesforce { $json } -ModuleName 'psfdx-core'`.
+- If the cmdlet delegates to another module (e.g. `Get-SalesforceApexClass` → `Select-SalesforceRecords` in psfdx), mock in that module: `Mock Invoke-Salesforce { $json } -ModuleName 'psfdx'`.
 - psfdx-metadata validates `-Type` against the org's metadata types (cached per session). Describe blocks that pass `-Type` call `Clear-SalesforceMetadataTypeCache` and `Mock Describe-SalesforceMetadataTypes { @() }` in `BeforeEach`, so validation falls back to the built-in type list.
 - For input validation, use `{ ... } | Should -Throw -ExpectedMessage '...'` and then `Assert-MockCalled Invoke-Salesforce -Times 0`. Don't use try/catch with a `$threw` flag.
 - Wrap results in `@(...)` before checking `.Count` or indexing. A single result unrolls to a scalar, and a single hashtable's `.Count` is its number of keys, not 1. Several mocks return `@{...}`.

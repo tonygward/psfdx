@@ -11,7 +11,7 @@ paths:
 
 Module code and the Windows install scripts should run on Windows PowerShell 5.1 as well as PowerShell 7. CI only runs `pwsh` on Ubuntu, so it won't catch 5.1 breakage. `install.ps1` and `uninstall.ps1` are the Mac/Linux scripts and only need `pwsh`.
 
-The development, logs, metadata and packages manifests declare `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Desktop','Core')`. `psfdx-core.psd1`, `psfdx-sandbox.psd1` and `psfdx-shared.psd1` declare neither, but the same rules apply to them.
+The development, logs, metadata and packages manifests declare `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Desktop','Core')`. `psfdx.psd1`, `psfdx-sandbox.psd1` and `psfdx-shared.psd1` declare neither, but the same rules apply to them.
 
 ## Don't use
 

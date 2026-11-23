@@ -25,17 +25,6 @@ if (-not (Test-Path -Path $dest)) {
     New-Item -Path $dest -ItemType Directory -Force | Out-Null
 }
 
-# The core module used to be installed as `psfdx`. That name now belongs to the Gallery umbrella package and the core module is psfdx-core, so an old
-# copy of it would define every command twice next to the new one. It is recognised by psfdx.psm1 sitting directly in the folder (a Gallery install
-# keeps its files in a version folder instead, and is left alone).
-foreach ($legacy in Get-PsfdxLegacyModules) {
-    $old = Join-Path -Path $dest -ChildPath $legacy
-    if (Test-Path -Path (Join-Path -Path $old -ChildPath "$legacy.psm1")) {
-        Remove-Item -Path $old -Recurse -Force -ErrorAction SilentlyContinue
-        Write-Host "Removed the old '$legacy' module from $dest (the core module is now psfdx-core)." -ForegroundColor Yellow
-    }
-}
-
 foreach ($m in $modules) {
     $src = Join-Path -Path $PSScriptRoot -ChildPath $m
     if (-not (Test-Path -Path $src)) {
