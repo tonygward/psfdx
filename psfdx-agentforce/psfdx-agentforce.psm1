@@ -164,6 +164,31 @@ function Assert-SalesforceAgentPlugin {
     }
 }
 
+function Invoke-SalesforceAgentText {
+    # Private: runs a command whose result is text (junit, tap, human). Invoke-Salesforce only checks the exit code in JSON mode, so a failure
+    # (for example failing tests, or a run that errored) would otherwise come back as if it had worked. The text goes in the error's message and
+    # in its TargetObject, so a script can still read it.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Arguments,
+        [Parameter(Mandatory = $false)][hashtable] $CommonParams = @{}
+    )
+    $global:LASTEXITCODE = 0
+    $output = Invoke-Salesforce -FilePath 'sf' -Arguments $Arguments @CommonParams
+    $exitCode = $global:LASTEXITCODE
+    if ($exitCode -ne 0) {
+        $text = [string]::Join([Environment]::NewLine, @($output | ForEach-Object { [string] $_ })).Trim()
+        $shown = $text
+        if ($shown.Length -gt 4000) { $shown = $shown.Substring(0, 4000) + '...' }
+        $command = ($Arguments | Where-Object { $_ -and -not $_.StartsWith('-') } | Select-Object -First 3) -join ' '
+        $message = "sf $command exited with code $exitCode."
+        if ($shown) { $message += " $shown" }
+        $record = New-Object System.Management.Automation.ErrorRecord ((New-Object System.InvalidOperationException $message), 'PsfdxAgentCommandFailed', [System.Management.Automation.ErrorCategory]::InvalidResult, $text)
+        throw $record
+    }
+    return $output
+}
+
 function Assert-SalesforceAgentApiName {
     # Private: agent and test API names are letters, digits and underscores.
     [CmdletBinding()]
@@ -311,7 +336,7 @@ function Start-SalesforceAgentTest {
     if ($ResultFormat) { $arguments += @('--result-format', $ResultFormat) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     # human, junit and tap are text, so the CLI's output is handed back as it is.
-    if ($ResultFormat -and $ResultFormat -ne 'json') { return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams }
+    if ($ResultFormat -and $ResultFormat -ne 'json') { return Invoke-SalesforceAgentText -Arguments $arguments -CommonParams $commonParams }
     $arguments += '--json'
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
@@ -390,7 +415,7 @@ function Get-SalesforceAgentTestResult {
     if ($ResultFormat) { $arguments += @('--result-format', $ResultFormat) }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     # human, junit and tap are text, so the CLI's output is handed back as it is.
-    if ($ResultFormat -and $ResultFormat -ne 'json') { return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams }
+    if ($ResultFormat -and $ResultFormat -ne 'json') { return Invoke-SalesforceAgentText -Arguments $arguments -CommonParams $commonParams }
     $arguments += '--json'
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
@@ -979,7 +1004,7 @@ function Open-SalesforceAgent {
     if ($UrlOnly) { $arguments += '--url-only' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
-    return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    return Invoke-SalesforceAgentText -Arguments $arguments -CommonParams $commonParams
 }
 
 #endregion
@@ -1513,7 +1538,7 @@ function Resume-SalesforceAgentTest {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
-    if ($ResultFormat -and $ResultFormat -ne 'json') { return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams }
+    if ($ResultFormat -and $ResultFormat -ne 'json') { return Invoke-SalesforceAgentText -Arguments $arguments -CommonParams $commonParams }
     $arguments += '--json'
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
@@ -1587,7 +1612,7 @@ function Start-SalesforceAgentEvaluation {
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
-    if ($ResultFormat -ne 'json') { return Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams }
+    if ($ResultFormat -ne 'json') { return Invoke-SalesforceAgentText -Arguments $arguments -CommonParams $commonParams }
     $arguments += '--json'
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
@@ -2209,13 +2234,13 @@ function New-SalesforceAgentDataLibrary {
     How the content is indexed. Valid values: basic, enhanced. Passed to sf as --index-mode.
 
     .PARAMETER ContentFields
-    Knowledge fields to index. Each is passed to sf as its own --content-fields. For a knowledge library. Passed to sf as --content-fields.
+    Knowledge fields to index. For a knowledge library. The values are joined with commas and passed as one --content-fields.
 
     .PARAMETER DataCategoryIds
-    IDs of the data categories to include. Each is passed to sf as its own --data-category-ids. For a knowledge library. Passed to sf as --data-category-ids.
+    IDs of the data categories to include. For a knowledge library. The values are joined with commas and passed as one --data-category-ids. Use it or -DataCategoryNames, not both.
 
     .PARAMETER DataCategoryNames
-    Names of the data categories to include. Each is passed to sf as its own --data-category-names. For a knowledge library. Passed to sf as --data-category-names.
+    Names of the data categories to include. Qualified names such as Group_API_Name.Category, for a knowledge library. The values are joined with commas and passed as one --data-category-names. Use it or -DataCategoryIds, not both.
 
     .PARAMETER PrimaryIndexField1
     First field of the primary index. For a retriever library. Passed to sf as --primary-index-field1.
@@ -2277,9 +2302,13 @@ function New-SalesforceAgentDataLibrary {
     $arguments = @('agent', 'adl', 'create', '--name', $Name, '--developer-name', $DeveloperName, '--source-type', $SourceType)
     if ($Description) { $arguments += @('--description', $Description) }
     if ($IndexMode) { $arguments += @('--index-mode', $IndexMode) }
-    foreach ($item in @($ContentFields | Where-Object { $_ })) { $arguments += @('--content-fields', $item) }
-    foreach ($item in @($DataCategoryIds | Where-Object { $_ })) { $arguments += @('--data-category-ids', $item) }
-    foreach ($item in @($DataCategoryNames | Where-Object { $_ })) { $arguments += @('--data-category-names', $item) }
+    $contentFields = @($ContentFields | Where-Object { $_ })
+    if ($contentFields.Count -gt 0) { $arguments += @('--content-fields', ($contentFields -join ',')) }
+    $categoryIds = @($DataCategoryIds | Where-Object { $_ })
+    $categoryNames = @($DataCategoryNames | Where-Object { $_ })
+    if ($categoryIds.Count -gt 0 -and $categoryNames.Count -gt 0) { throw 'Use -DataCategoryIds or -DataCategoryNames, not both.' }
+    if ($categoryIds.Count -gt 0) { $arguments += @('--data-category-ids', ($categoryIds -join ',')) }
+    if ($categoryNames.Count -gt 0) { $arguments += @('--data-category-names', ($categoryNames -join ',')) }
     if ($PrimaryIndexField1) { $arguments += @('--primary-index-field1', $PrimaryIndexField1) }
     if ($PrimaryIndexField2) { $arguments += @('--primary-index-field2', $PrimaryIndexField2) }
     if ($RetrieverId) { $arguments += @('--retriever-id', $RetrieverId) }
@@ -2474,16 +2503,16 @@ function Update-SalesforceAgentDataLibrary {
     New description. Passed to sf as --description.
 
     .PARAMETER ContentFields
-    Knowledge fields to index. Each is passed to sf as its own --content-fields. Passed to sf as --content-fields.
+    Knowledge fields to index. The values are joined with commas and passed as one --content-fields.
 
     .PARAMETER RetrieverId
     ID of the retriever, for a retriever library. Passed to sf as --retriever-id.
 
     .PARAMETER DataCategoryRule
-    Turn on the data category rule of a knowledge library. Adds --data-category-rule.
+    Turn on the data category rule of a knowledge library. Adds --data-category-rule; -DataCategoryRule:$false sends --no-data-category-rule to turn it off.
 
     .PARAMETER RestrictToPublicArticles
-    Index only public articles of a knowledge library. Adds --restrict-to-public-articles.
+    Index only public articles of a knowledge library. Adds --restrict-to-public-articles; -RestrictToPublicArticles:$false sends --no-restrict-to-public-articles to turn it off.
 
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
@@ -2528,10 +2557,11 @@ function Update-SalesforceAgentDataLibrary {
     $arguments = @('agent', 'adl', 'update', '--library-id', $LibraryId)
     if ($Name) { $arguments += @('--name', $Name) }
     if ($Description) { $arguments += @('--description', $Description) }
-    foreach ($item in @($ContentFields | Where-Object { $_ })) { $arguments += @('--content-fields', $item) }
+    $contentFieldList = @($ContentFields | Where-Object { $_ })
+    if ($contentFieldList.Count -gt 0) { $arguments += @('--content-fields', ($contentFieldList -join ',')) }
     if ($RetrieverId) { $arguments += @('--retriever-id', $RetrieverId) }
-    if ($DataCategoryRule) { $arguments += '--data-category-rule' }
-    if ($RestrictToPublicArticles) { $arguments += '--restrict-to-public-articles' }
+    if ($PSBoundParameters.ContainsKey('DataCategoryRule')) { if ($DataCategoryRule) { $arguments += '--data-category-rule' } else { $arguments += '--no-data-category-rule' } }
+    if ($PSBoundParameters.ContainsKey('RestrictToPublicArticles')) { if ($RestrictToPublicArticles) { $arguments += '--restrict-to-public-articles' } else { $arguments += '--no-restrict-to-public-articles' } }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters

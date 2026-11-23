@@ -347,7 +347,7 @@ Describe 'psfdx-agentforce full sf agent parity (issue 255)' {
                 @{ Cmdlet = 'Get-SalesforceAgentTraces'; Splat = @{ Agent = 'Svc_Agent'; SessionId = 'a1b2'; Since = [datetime]'2026-11-01' }; Expected = 'agent|trace|list|--agent|Svc_Agent|--session-id|a1b2|--since|2026-11-01|--json' }
                 @{ Cmdlet = 'Read-SalesforceAgentTrace'; Splat = @{ SessionId = 'a1b2'; Format = 'detail'; Dimension = 'routing'; Turn = 2 }; Expected = 'agent|trace|read|--session-id|a1b2|--format|detail|--dimension|routing|--turn|2|--json' }
                 @{ Cmdlet = 'Remove-SalesforceAgentTrace'; Splat = @{ Agent = 'Svc_Agent'; SessionId = 'a1b2'; OlderThan = '7d'; Confirm = $false }; Expected = 'agent|trace|delete|--agent|Svc_Agent|--session-id|a1b2|--older-than|7d|--no-prompt|--json' }
-                @{ Cmdlet = 'New-SalesforceAgentDataLibrary'; Splat = @{ Name = 'Product Manuals'; DeveloperName = 'Product_Manuals'; SourceType = 'knowledge'; Description = 'D'; IndexMode = 'enhanced'; ContentFields = 'Title', 'Body'; DataCategoryIds = 'C1'; DataCategoryNames = 'Cat A', 'Cat B'; PrimaryIndexField1 = 'F1'; PrimaryIndexField2 = 'F2'; RetrieverId = 'R1'; WaitMinutes = 5; TargetOrg = 'dev'; Confirm = $false }; Expected = 'agent|adl|create|--name|Product Manuals|--developer-name|Product_Manuals|--source-type|knowledge|--description|D|--index-mode|enhanced|--content-fields|Title|--content-fields|Body|--data-category-ids|C1|--data-category-names|Cat A|--data-category-names|Cat B|--primary-index-field1|F1|--primary-index-field2|F2|--retriever-id|R1|--wait|5|--target-org|dev|--json' }
+                @{ Cmdlet = 'New-SalesforceAgentDataLibrary'; Splat = @{ Name = 'Product Manuals'; DeveloperName = 'Product_Manuals'; SourceType = 'knowledge'; Description = 'D'; IndexMode = 'enhanced'; ContentFields = 'Title', 'Body'; DataCategoryIds = 'C1', 'C2'; PrimaryIndexField1 = 'F1'; PrimaryIndexField2 = 'F2'; RetrieverId = 'R1'; WaitMinutes = 5; TargetOrg = 'dev'; Confirm = $false }; Expected = 'agent|adl|create|--name|Product Manuals|--developer-name|Product_Manuals|--source-type|knowledge|--description|D|--index-mode|enhanced|--content-fields|Title,Body|--data-category-ids|C1,C2|--primary-index-field1|F1|--primary-index-field2|F2|--retriever-id|R1|--wait|5|--target-org|dev|--json' }
                 @{ Cmdlet = 'Get-SalesforceAgentDataLibraries'; Splat = @{ SourceType = 'sfdrive'; TargetOrg = 'dev' }; Expected = 'agent|adl|list|--source-type|sfdrive|--target-org|dev|--json' }
                 @{ Cmdlet = 'Get-SalesforceAgentDataLibrary'; Splat = @{ LibraryId = '1JDxx0000000001'; TargetOrg = 'dev' }; Expected = 'agent|adl|get|--library-id|1JDxx0000000001|--target-org|dev|--json' }
                 @{ Cmdlet = 'Get-SalesforceAgentDataLibraryStatus'; Splat = @{ LibraryId = '1JDxx0000000001'; IncludeArtifacts = $true }; Expected = 'agent|adl|status|--library-id|1JDxx0000000001|--include-artifacts|--json' }
@@ -481,6 +481,59 @@ Describe 'psfdx-agentforce full sf agent parity (issue 255)' {
                 $ConfirmPreference = 'Low'
                 { New-SalesforceAgent -Spec (Join-Path $script:dir 'spec.yaml') -Preview | Out-Null } | Should -Not -Throw
                 @($script:Seen).Count | Should -Be 1
+            }
+        }
+
+        Context 'data library list flags and switches (review findings)' {
+            It 'joins list values with commas into one flag, as the CLI takes them' {
+                New-SalesforceAgentDataLibrary -Name N -DeveloperName N_Lib -SourceType knowledge -ContentFields Title, Body -DataCategoryNames 'Grp.A', 'Grp.B' -Confirm:$false | Out-Null
+                $script:Seen[0].Args | Should -Be 'agent|adl|create|--name|N|--developer-name|N_Lib|--source-type|knowledge|--content-fields|Title,Body|--data-category-names|Grp.A,Grp.B|--json'
+                Update-SalesforceAgentDataLibrary -LibraryId 1JDxx0000000001 -ContentFields Title, Body, Summary -Confirm:$false | Out-Null
+                $script:Seen[1].Args | Should -Be 'agent|adl|update|--library-id|1JDxx0000000001|--content-fields|Title,Body,Summary|--json'
+            }
+            It 'refuses category IDs and category names together, as the CLI does' {
+                { New-SalesforceAgentDataLibrary -Name N -DeveloperName N_Lib -SourceType knowledge -DataCategoryIds C1 -DataCategoryNames 'Grp.A' -Confirm:$false } | Should -Throw -ExpectedMessage '*not both*'
+                @($script:Seen).Count | Should -Be 0
+            }
+            It 'sends the --no- form when a switch is explicitly false, and nothing when it is not given' {
+                Update-SalesforceAgentDataLibrary -LibraryId 1JDxx0000000001 -DataCategoryRule:$false -RestrictToPublicArticles:$false -Confirm:$false | Out-Null
+                $script:Seen[0].Args | Should -Be 'agent|adl|update|--library-id|1JDxx0000000001|--no-data-category-rule|--no-restrict-to-public-articles|--json'
+                Update-SalesforceAgentDataLibrary -LibraryId 1JDxx0000000001 -DataCategoryRule:$true -Confirm:$false | Out-Null
+                $script:Seen[1].Args | Should -Be 'agent|adl|update|--library-id|1JDxx0000000001|--data-category-rule|--json'
+                Update-SalesforceAgentDataLibrary -LibraryId 1JDxx0000000001 -Name N -Confirm:$false | Out-Null
+                $script:Seen[2].Args | Should -Be 'agent|adl|update|--library-id|1JDxx0000000001|--name|N|--json'
+            }
+        }
+
+        Context 'a failing exit code in a text result format is not swallowed (review finding)' {
+            BeforeEach {
+                Mock Invoke-Salesforce {
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    $global:LASTEXITCODE = 1
+                    return 'Test run failed: 2 of 5 tests failed.'
+                }
+            }
+            AfterEach { $global:LASTEXITCODE = 0 }
+            It '<Name> throws PsfdxAgentCommandFailed with the CLI text, which is also the target object' -ForEach @(
+                @{ Name = 'Start-SalesforceAgentTest'; Call = { Start-SalesforceAgentTest -ApiName Orders_Test -ResultFormat junit } }
+                @{ Name = 'Get-SalesforceAgentTestResult'; Call = { Get-SalesforceAgentTestResult -JobId 4KBxx0000000001AAA -ResultFormat tap } }
+                @{ Name = 'Resume-SalesforceAgentTest'; Call = { Resume-SalesforceAgentTest -JobId 4KBxx0000000001AAA -ResultFormat human } }
+                @{ Name = 'Start-SalesforceAgentEvaluation'; Call = { Start-SalesforceAgentEvaluation -Spec (Join-Path $script:dir 'spec.yaml') -ResultFormat junit } }
+                @{ Name = 'Open-SalesforceAgent'; Call = { Open-SalesforceAgent -ApiName Svc_Agent -UrlOnly } }
+            ) {
+                $err = $null
+                try { & $Call } catch { $err = $_ }
+                $err.FullyQualifiedErrorId | Should -BeLike 'PsfdxAgentCommandFailed*'
+                $err.Exception.Message | Should -BeLike '*exited with code 1*2 of 5 tests failed*'
+                $err.TargetObject | Should -Be 'Test run failed: 2 of 5 tests failed.'
+            }
+            It 'a successful text run still returns the text' {
+                Mock Invoke-Salesforce {
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    $global:LASTEXITCODE = 0
+                    return '<testsuites/>'
+                }
+                (Start-SalesforceAgentTest -ApiName Orders_Test -ResultFormat junit) | Should -Be '<testsuites/>'
             }
         }
 
