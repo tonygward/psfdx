@@ -5295,7 +5295,7 @@ function Add-SalesforceDevOpsStageEnvironment {
     Type of the Salesforce org. Valid values: Production, Sandbox. Passed to sf as --org-type. Required.
 
     .PARAMETER NoBrowser
-    Do not open the browser for the login; the CLI prints the URL to open yourself. Adds --no-browser.
+    Do not open the browser for the login; the CLI prints the URL for you to open yourself. The CLI only prints it outside JSON mode, so with this switch the command runs live in your terminal without --json (it needs a terminal, and returns nothing). Adds --no-browser.
 
     .PARAMETER Force
     Replace the stage's existing environment. Adds --force.
@@ -5344,10 +5344,16 @@ function Add-SalesforceDevOpsStageEnvironment {
     if ($NoBrowser) { $arguments += '--no-browser' }
     if ($Force) { $arguments += '--force' }
     if ($PSBoundParameters.ContainsKey('TargetOrg') -and -not [string]::IsNullOrWhiteSpace($TargetOrg)) { $arguments += @('--target-org', $TargetOrg) }
-    $arguments += '--json'
+    # With -NoBrowser the CLI prints the login URL, and it does not print it in JSON mode. So that run is shown live instead of captured.
+    if (-not $NoBrowser) { $arguments += '--json' }
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     if (-not $PSCmdlet.ShouldProcess($EnvironmentName, 'Add environment to DevOps Center pipeline stage (starts an OAuth login)')) { return }
+    if ($NoBrowser) {
+        Assert-SalesforceInteractiveSession -Command 'sf devops stage environment add --no-browser'
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments -Interactive @commonParams
+        return
+    }
     $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
     return Show-SalesforceResult -Result $result
 }
