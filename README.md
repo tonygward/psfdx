@@ -19,7 +19,7 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
 
 ```
 Import-Module psfdx
@@ -143,6 +143,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys. |
+| `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume. |
 | `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
 | `psfdx-sandbox` | Salesforce sandbox lifecycle management. |
 | `psfdx-packages` | Salesforce packages: create, version, promote, install. |
@@ -206,14 +207,6 @@ Included in the `psfdx` package.
 | `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
 | `Export-SalesforceTreeData` | Export records with their child records to JSON (and with `-Plan`, a plan file) for copying test data between orgs (`sf data export tree`). |
 | `Import-SalesforceTreeData` | Import tree JSON files or a plan into an org (`sf data import tree`); `-Plan` or `-File`, not both. Supports `-WhatIf`. |
-| `Export-SalesforceBulkData` | Export a SOQL query to a file with Bulk API 2.0 (`sf data export bulk`). Returns a `JobId` at once, or the row count with `-WaitMinutes`. |
-| `Import-SalesforceBulkData` | Insert the rows of a CSV with Bulk API 2.0 (`sf data import bulk`). Supports `-WhatIf`. |
-| `Update-SalesforceBulkData` | Update records from a CSV with Bulk API 2.0 (`sf data update bulk`). Supports `-WhatIf`. |
-| `Upsert-SalesforceBulkData` | Upsert records from a CSV by external ID with Bulk API 2.0 (`sf data upsert bulk`). Supports `-WhatIf`. |
-| `Remove-SalesforceBulkData` | Delete the records whose IDs are in a CSV with Bulk API 2.0 (`sf data delete bulk`). `-HardDelete` deletes permanently. Asks for confirmation, supports `-WhatIf`. |
-| `Get-SalesforceBulkJobStatus` | Read the status of a bulk job, or one batch, from the org (`sf data resume`). |
-| `Resume-SalesforceBulkJob` | Resume an export, import, update, upsert or delete job by `-JobId`, or the latest with `-UseMostRecent`, in a later step. The CLI finds the org from its record of the job, so it must have been created on this computer. |
-| `Get-SalesforceBulkResult` | Get a bulk ingest job's counts and save its success, failed and unprocessed row CSVs to `-OutputDirectory` (`sf data bulk results`). Works for any job in the org. |
 | `Get-SalesforceRecordType` | List record types (optionally by object). |
 
 ### REST API
@@ -411,6 +404,30 @@ $wi = Get-SalesforceDevOpsWorkItem -ProjectId 1Qg000000000001 -TargetOrg devops-
 Test-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org
 Start-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org -WhatIf
 ```
+### psfdx-bulk
+
+Installed with `Install-Module psfdx`. The Bulk API 2.0 cmdlets: bulk export, import, update, upsert and delete, and the status, results and resume of a bulk job (the `sf data ... bulk` and `... resume` commands). They were in `psfdx` before; the cmdlet names, parameters and behaviour are unchanged, only the module that holds them (the `Source` in `Get-Command`) is new. Single-record create, update, get and delete, SOQL and the data tree cmdlets stay in `psfdx`.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Export-SalesforceBulkData` | Export a SOQL query to a file with Bulk API 2.0 (`sf data export bulk`). Returns a `JobId` at once, or the row count with `-WaitMinutes`. |
+| `Import-SalesforceBulkData` | Insert the rows of a CSV with Bulk API 2.0 (`sf data import bulk`). Supports `-WhatIf`. |
+| `Update-SalesforceBulkData` | Update records from a CSV with Bulk API 2.0 (`sf data update bulk`). Supports `-WhatIf`. |
+| `Upsert-SalesforceBulkData` | Upsert records from a CSV by external ID with Bulk API 2.0 (`sf data upsert bulk`). Supports `-WhatIf`. |
+| `Remove-SalesforceBulkData` | Delete the records whose IDs are in a CSV with Bulk API 2.0 (`sf data delete bulk`). `-HardDelete` deletes permanently. Asks for confirmation, supports `-WhatIf`. |
+| `Get-SalesforceBulkJobStatus` | Read the status of a bulk job, or one batch, from the org (`sf data resume`). |
+| `Resume-SalesforceBulkJob` | Resume an export, import, update, upsert or delete job by `-JobId`, or the latest with `-UseMostRecent`, in a later step. The CLI finds the org from its record of the job, so it must have been created on this computer. |
+| `Get-SalesforceBulkResult` | Get a bulk ingest job's counts and save its success, failed and unprocessed row CSVs to `-OutputDirectory` (`sf data bulk results`). Works for any job in the org. |
+
+Delete the accounts whose IDs are in a CSV, look at the job, and get the result files:
+
+```powershell
+$job = Remove-SalesforceBulkData -File .\old-accounts.csv -Object Account -WhatIf    # preview first
+$job = Remove-SalesforceBulkData -File .\old-accounts.csv -Object Account -TargetOrg dev1
+Get-SalesforceBulkJobStatus -JobId $job.JobId -TargetOrg dev1
+Get-SalesforceBulkResult -JobId $job.JobId -TargetOrg dev1
+```
+
 ### psfdx-development
 
 Included in the `psfdx` package.

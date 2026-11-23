@@ -6,6 +6,7 @@ function Get-PsfdxModules {
         'psfdx-sandbox',
         'psfdx-metadata',
         'psfdx-devops',
+        'psfdx-bulk',
         'psfdx-packages',
         'psfdx-agentforce',
         'psfdx-shared'

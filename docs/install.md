@@ -6,7 +6,7 @@ One command installs everything:
 Install-Module psfdx
 ```
 
-There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
+There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
 
 ## What you get
 
@@ -25,6 +25,7 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | `psfdx` | Authentication, orgs, aliases, records and SOQL, limits, REST and GraphQL requests, CLI and plugin management |
 | `psfdx-metadata` | Retrieve, deploy and describe metadata |
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys |
+| `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume |
 | `psfdx-development` | Projects, scratch orgs, Apex tests, Code Analyzer, templates, LWC |
 | `psfdx-logs` | Debug logs, login history, event monitoring |
 | `psfdx-sandbox` | Sandbox lifecycle |
