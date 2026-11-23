@@ -1,10 +1,10 @@
 # psfdx website
 
-The public one-page site for psfdx (psfdx.com). It is plain HTML, CSS and a few lines of JavaScript with no framework and no dependencies. It is not part of the PowerShell product: it never ships in the Gallery package and changing it does not cause a release.
+The public website for psfdx (psfdx.com), with a homepage and a documentation page for each included module. It is plain HTML, CSS and a few lines of JavaScript with no framework and no dependencies. It is not part of the PowerShell product: it never ships in the Gallery package and changing it does not cause a release.
 
 ```
 site/
-  src/               the page: index.html, style.css, script.js, fonts/, favicon.png, og-image.png, _headers
+  src/               the homepage (index.html), module reference pages (modules/*/index.html), style.css, script.js, fonts/, favicon.png, og-image.png, _headers
   site.config.json   domain and link settings
   build.mjs          builds site/dist (needs Node 18 or later, nothing to install)
   build.test.mjs     tests: links and files exist, copy, accessibility basics, no outside requests
@@ -13,7 +13,7 @@ site/
 
 ## Design and fonts
 
-The homepage follows the "psfdx.com Homepage Redesign" handover (21 November 2026): navy console palette, a typing terminal, a rotated command marquee, three feature cards, a six-module list and a yellow closing panel. The prototype itself is not deployed; the page is plain HTML, CSS and a small script.
+The homepage follows the "psfdx.com Homepage Redesign" handover (21 November 2026): navy console palette, a typing terminal, a rotated command marquee, three feature cards, an eight-module list and a yellow closing panel. The prototype itself is not deployed; the page is plain HTML, CSS and a small script.
 
 - **Fonts are self-hosted** in `src/fonts/` (Bricolage Grotesque and IBM Plex Mono, latin subset, both under the SIL Open Font License 1.1, downloaded from Google Fonts). The content security policy allows only this site, so no font is loaded from outside.
 - **The release pill** shows the number in the repository's `VERSION` file, put in at build time (`%RELEASE_VERSION%`). Cloudflare Pages rebuilds on every push to `main`, and every release is a push, so it follows the latest release. It is the only version number allowed on the page.
@@ -57,10 +57,16 @@ Every push to `main` redeploys the site, and pull requests get a preview URL. To
 
 ## Changing the content
 
-Edit `site/src/index.html` and `style.css`, then run the tests. Keep the module descriptions in line with the README and the real cmdlets, and do not type a version number into the page: the release pill takes it from `VERSION` at build time. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
+Edit `site/src/index.html` and `style.css`, then run the tests. Keep all eight module descriptions and their documentation pages in line with the README and the real cmdlets, and do not type a version number into the page: the release pill takes it from `VERSION` at build time. The footer disclaimer (not affiliated with or endorsed by Salesforce) must stay.
 
 ## Deployment troubleshooting
 
 If a merge to `main` does not appear on psfdx.com, check the Cloudflare Pages `psfdx` project's deployment history and GitHub connection. Cloudflare Pages must automatically build `main` with `node site/build.mjs` and publish `site/dist`; GitHub's `ci-site.yml` validates pull requests but does not publish the site. If no deployment is created for the commit, investigate the GitHub integration rather than the site build. After reconnecting the repository, verify that a subsequent push creates a new production deployment.
 
 <!-- Deployment trigger verified after granting the Cloudflare GitHub App access to psfdx on 2026-11-21. -->
+
+## Module documentation
+
+The homepage links to `/modules/<module-name>/` for each of the seven user-facing modules plus `psfdx-shared` (an internal helper module). Each reference page describes its scope, shows usable PowerShell examples, and explains how to discover all cmdlets and full command help through `Get-Command` and `Get-Help`. The build includes every page in `sitemap.xml`, and the site tests check that each page exists and is linked.
+
+The homepage also demonstrates `Get-Help`, `Update-Module psfdx`, and `Select-SalesforceRecords ... | Export-Csv`. Import `psfdx` before querying individual module names, because the Gallery package contains the entire suite in one installation.
