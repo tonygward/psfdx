@@ -71,7 +71,7 @@ export function build({ outDir = path.join(here, 'dist'), env = process.env } = 
   fs.copyFileSync(path.join(repoRoot, 'images', 'psfdx-logo.png'), path.join(outDir, 'psfdx-logo.png'));
   fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
   fs.writeFileSync(path.join(outDir, 'sitemap.xml'),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${config.siteUrl}/</loc></url>\n</urlset>\n`);
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${config.siteUrl}/</loc></url>\n${fs.readdirSync(path.join(srcDir, 'modules')).map(module => `  <url><loc>${config.siteUrl}/modules/${module}/</loc></url>`).join('\n')}\n</urlset>\n`);
   return { outDir, config };
 }
 
