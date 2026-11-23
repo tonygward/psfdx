@@ -245,7 +245,7 @@ test('module pages display PowerShell prompts, compact code blocks and ordered c
   for (const name of moduleNames) {
     const page = fs.readFileSync(path.join(dist, 'modules', name, 'index.html'), 'utf8');
     assert.match(page, /class="ps-prompt">PS&gt;<\/span>/, name + ' should display PS prompt');
-    assert.match(page, /class="terminal-example"/, name + ' should use styled terminal');
+    assert.match(page, /class="code-box terminal-example"/, name + ' should use styled terminal');
   }
   const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
   const snippets = ['1. Connect to your sandbox', '2. Explore built-in help', '3. Export Salesforce records to CSV', '4. Update the entire suite'];
