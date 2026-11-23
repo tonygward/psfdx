@@ -227,3 +227,30 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .documentation .code-box pre, #powershell-examples .card pre { overflow-x: auto; white-space: pre; }
 #powershell-examples .card pre { background: var(--bg); border: 1px solid var(--border); padding: 14px; border-radius: 8px; font-size: .78rem; line-height: 1.7; }
 #powershell-examples .card code { font-size: inherit; }
+
+/* Documentation: compact, high-contrast PowerShell reference styling */
+.documentation { max-width: 880px; font-size: .96rem; line-height: 1.55; }
+.documentation h1 { font-size: clamp(2.1rem, 4vw, 3.5rem); color: var(--yellow); }
+.documentation .tagline { color: var(--text); font-size: clamp(1rem, 1.6vw, 1.2rem); margin: .35em 0 1em; }
+.documentation .section-intro { font-size: 1rem; line-height: 1.6; max-width: 68ch; }
+.documentation h2 { max-width: none; font-size: clamp(1.65rem, 2.7vw, 2.4rem); color: var(--yellow); margin: 1.4em 0 .45em; }
+.documentation h3 { font-size: 1.05rem; color: var(--yellow); font-weight: 700; margin: 1.4em 0 .5em; }
+.documentation .eyebrow { color: var(--cyan); font-size: .78rem; }
+.documentation .code-box { border-left: 3px solid var(--yellow); background: #081d41; padding: 17px 20px; margin: 12px 0 20px; border-radius: 12px; }
+.documentation .code-box pre { font-size: clamp(.76rem, 1.2vw, .9rem); line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: hidden; font-weight: 400; }
+.documentation .code-box code { background: transparent; padding: 0; font-size: inherit; border-radius: 0; }
+.documentation .terminal-line { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+.documentation .terminal-continuation { color: var(--text); padding-left: 2.6rem; }
+.documentation .ps-prompt { color: var(--yellow); font-weight: 700; }
+.documentation .terminal-output { display: block; border-top: 1px solid var(--border-strong); margin-top: 12px; padding-top: 12px; white-space: pre-wrap; color: var(--muted); font-weight: 400; }
+.documentation .example-note { color: var(--muted); font-size: .82rem; }
+.documentation .example-group { margin: 0 0 1.5rem; }
+.documentation p > code { color: var(--yellow); }
+.documentation a { color: var(--yellow); }
+.documentation a:hover { color: #fff09b; }
+@media (max-width: 640px) {
+  .documentation { font-size: .9rem; }
+  .documentation .code-box { padding: 12px 14px; }
+  .documentation .code-box pre { font-size: .74rem; }
+  .documentation .terminal-continuation { padding-left: 1.8rem; }
+}
