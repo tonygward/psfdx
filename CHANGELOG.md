@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.56 - 2026-11-23
+
 - psfdx-bulk: Breaking (a packaging change, not a removal): the Bulk API 2.0 cmdlets are now their own module, `psfdx-bulk`, instead of part of `psfdx`: `Export-SalesforceBulkData`, `Import-SalesforceBulkData`, `Update-SalesforceBulkData`, `Upsert-SalesforceBulkData`, `Remove-SalesforceBulkData`, `Resume-SalesforceBulkJob`, `Get-SalesforceBulkJobStatus` and `Get-SalesforceBulkResult`. Every name, parameter, job result, `-WhatIf` and confirmation, error and help text is unchanged, and `Install-Module psfdx` still installs everything in the one package, with `Import-Module psfdx` loading `psfdx-bulk` too. What differs is the module shown for these commands: `Get-Command -Module psfdx-bulk` lists them and `Get-Command -Module psfdx` no longer does. Single-record create, update, get and delete, SOQL and the data tree cmdlets stay in `psfdx`. If you install from a clone or the release zip, import `psfdx-bulk` as well as `psfdx` to keep these cmdlets. There is no separate `psfdx-bulk` package on the Gallery.
 
 ## 0.8.55 - 2026-11-23
