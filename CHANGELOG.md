@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.52 - 2026-11-23
+
 - psfdx: new cmdlets for the rest of the Salesforce CLI: `Get-SalesforceCommunityTemplates`, `New-SalesforceCommunity` and `Publish-SalesforceCommunity` (Experience Cloud sites; publishing asks first), `Invoke-SalesforceGraphQL` and `Invoke-SalesforceRestRequest` (call the API as the CLI's logged-in user; a mutation or a write asks first and supports `-WhatIf`, and an error response throws with the response text), and `Invoke-SalesforceDoctor` (`-CreateIssue` shares your diagnostics on GitHub, so it asks first). On Windows the CLI cannot take a double quote in an argument, so use `-QueryFile` or `-BodyFile` for JSON there.
 - psfdx: plugin management is complete: `Uninstall-SalesforcePlugin`, `Get-SalesforcePluginDetails`, `Find-SalesforcePlugins`, `Reset-SalesforcePlugins`, `Test-SalesforcePluginSignature` and the allowlist cmdlets (`Get-`, `Add-` and `Remove-SalesforcePluginAllowlist`). Anything that removes a plugin or relaxes the signature check asks for confirmation. `Install-SalesforcePlugin` gains `-Force`, `-Silent` and `-ExtendedDetails`, and `Update-SalesforcePlugins` gains `-ExtendedDetails`.
 - psfdx: `Remove-SalesforceAlias` gains `-All` to remove every alias. It asks first (`-NoPrompt` skips the question, `-WhatIf` works); removing one alias works as before.
