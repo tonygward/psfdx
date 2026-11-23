@@ -53,7 +53,9 @@ $representative = [ordered]@{
     'psfdx-development' = @{ Command = 'Remove-SalesforceScratchOrg'; Run = 'Remove-SalesforceScratchOrg -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-sandbox'     = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-packages'    = @{ Command = 'Uninstall-SalesforcePackage'; Run = 'Uninstall-SalesforcePackage -Package 04t000000000001 -TargetOrg nosuch -WhatIf'; Expect = $null }
-    'psfdx-agentforce'  = @{ Command = 'Remove-SalesforceMcpServer'; Run = 'Remove-SalesforceMcpServer -McpServerId 0Xxxx0000000001 -WhatIf'; Expect = $null }
+    # Every agent command asks for the Salesforce CLI first, which a clean machine does not have. This one rejects a bad combination in the module's own code
+    # before any CLI call, so its own error message proves the module's code ran.
+    'psfdx-agentforce'  = @{ Command = 'Start-SalesforceAgentPreview'; Run = 'Start-SalesforceAgentPreview -ApiName Agent_One -AuthoringBundle Agent_Two'; Expect = $null; ExpectError = 'not both' }
 }
 
 # Runs a script in a fresh PowerShell whose module path is only $Path. Returns the exit code, the text and the last JSON line it printed.
@@ -172,9 +174,14 @@ Test-Ownership $viaFirstUse 'After the first use of a core command, with no impo
 # ---- 5. A representative command from every module runs, and belongs to its module ----
 $runs = ($representative.Keys | ForEach-Object {
     $m = $_; $spec = $representative[$m]
-    "try { `$out = @($($spec.Run)) | Out-String; `$ok = `$true; `$err = '' } catch { `$out = ''; `$ok = `$false; `$err = `$_.Exception.Message }; `$r['run_$m'] = [pscustomobject]@{ ok = `$ok; out = `$out.Trim(); err = `$err; source = (Get-Command '$($spec.Command)' -ErrorAction SilentlyContinue | Select-Object -First 1).Source }; "
+    # Normally the command must run without an error. A command with ExpectError must fail with a message that matches it: its own code rejected the call.
+    $expectError = ''
+    if ($spec.ExpectError) { $expectError = ([string]$spec.ExpectError).Replace("'", "''") }
+    "`$expectError = '$expectError'; try { `$out = @($($spec.Run)) | Out-String; `$ok = (`$expectError -eq ''); `$err = ''; if (`$expectError) { `$err = 'it was expected to fail with ' + `$expectError + ' but did not fail' } } catch { `$out = ''; `$err = `$_.Exception.Message; `$ok = ((`$expectError -ne '') -and (`$err -match `$expectError)) }; `$r['run_$m'] = [pscustomobject]@{ ok = `$ok; out = `$out.Trim(); err = `$err; source = (Get-Command '$($spec.Command)' -ErrorAction SilentlyContinue | Select-Object -First 1).Source }; "
 }) -join ''
 $ran = Invoke-FreshSession @"
+# The representative commands must not need the Salesforce CLI, so hide it: this machine and a CI runner then behave the same.
+`$env:PATH = ((`$env:PATH -split [IO.Path]::PathSeparator) | Where-Object { -not ((Test-Path (Join-Path `$_ 'sf')) -or (Test-Path (Join-Path `$_ 'sf.cmd')) -or (Test-Path (Join-Path `$_ 'sf.exe'))) }) -join [IO.Path]::PathSeparator
 Import-Module psfdx -RequiredVersion '$Version'
 `$r = [ordered]@{}
 $runs
