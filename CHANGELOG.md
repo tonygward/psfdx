@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.53 - 2026-11-23
+
 - psfdx-metadata: every `sf devops` command is now covered, with 26 new cmdlets named `...SalesforceDevOps...`: projects (`Get-`, `New-`, `Update-SalesforceDevOpsProject`), work items (`Get-`, `New-`, `Update-`, `Initialize-` to prepare a one-off promotion, `Join-` to combine, and `New-SalesforceDevOpsReview` for a pull request), pipelines (`Get-SalesforceDevOpsPipeline`, `Get-SalesforceDevOpsPipelineDetails`, `New-`, `Update-` to rename, activate or deactivate), pipeline projects, stages, stage branches and stage environments (`Add-` and `Remove-`), and promotion (`Start-`, `Complete-`, `Test-SalesforceDevOpsPromotion` and `Get-SalesforceDevOpsRequestStatus`). They need a DevOps Center org. Deleting, deploying and activating ask for confirmation, and every change supports `-WhatIf`.
 
 ## 0.8.52 - 2026-11-23
