@@ -239,4 +239,28 @@ test('applyConfig replaces every occurrence', () => {
   assert.equal(applyConfig('%GITHUB_URL% %GITHUB_URL% v%RELEASE_VERSION%', readConfig({})), `https://github.com/tonygward/psfdx https://github.com/tonygward/psfdx v${release}`);
 });
 
+
+test('module pages display PowerShell prompts, compact code blocks and ordered core examples', () => {
+  const moduleNames = ['psfdx', 'psfdx-metadata', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared'];
+  for (const name of moduleNames) {
+    const page = fs.readFileSync(path.join(dist, 'modules', name, 'index.html'), 'utf8');
+    assert.match(page, /class="ps-prompt">PS&gt;<\/span>/, name + ' should display PS prompt');
+    assert.match(page, /class="terminal-example"/, name + ' should use styled terminal');
+  }
+  const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
+  const snippets = ['1. Connect to your sandbox', '2. Explore built-in help', '3. Export Salesforce records to CSV', '4. Update the entire suite'];
+  let previous = -1;
+  for (const snippet of snippets) {
+    const position = core.indexOf(snippet);
+    assert.ok(position > previous, snippet + ' must follow preceding example');
+    previous = position;
+  }
+  assert.match(core, /<span class="terminal-output">NAME/, 'help contains a sample result');
+  assert.match(core, /Illustrative excerpt, shortened for readability/, 'sample result is clearly labelled');
+  assert.match(core, /Update-Module psfdx<\/span><\/code><\/pre><\/div>/, 'update is last executable example');
+  for (const rule of ['.documentation h2', '.documentation .ps-prompt', '.documentation .terminal-output', '.documentation .terminal-continuation']) {
+    assert.ok(css.includes(rule), rule);
+  }
+});
+
 test('cleanup', () => { fs.rmSync(out, { recursive: true, force: true }); });
