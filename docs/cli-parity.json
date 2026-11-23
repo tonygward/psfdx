@@ -183,28 +183,28 @@
   },
   "scope": "The plugin set that `sf commands` lists for the CLI version above: the core plugins that ship with it and the just-in-time plugins it installs on first use. Plugins you install yourself are not in scope.",
   "flagCoverage": {
-    "commandsPsfdxRuns": 224,
+    "commandsPsfdxRuns": 250,
     "flags": {
-      "total": 1044,
-      "passed": 1044
+      "total": 1148,
+      "passed": 1148
     },
     "requiredFlagsNotPassed": 0,
-    "flagsWithAListOfValues": 100,
+    "flagsWithAListOfValues": 105,
     "values": {
-      "total": 373,
-      "reachable": 373
+      "total": 387,
+      "reachable": 387
     }
   },
   "totals": {
     "all": {
       "commands": 279,
-      "wrapped": 224,
+      "wrapped": 250,
       "partiallyWrapped": 0,
-      "missing": 26,
+      "missing": 0,
       "excluded": 3,
       "notApplicable": 26,
       "inScope": 250,
-      "coveredPercent": "89.6"
+      "coveredPercent": "100.0"
     },
     "core": {
       "commands": 214,
@@ -218,18 +218,18 @@
     },
     "jit": {
       "commands": 65,
-      "wrapped": 30,
+      "wrapped": 56,
       "partiallyWrapped": 0,
-      "missing": 26,
+      "missing": 0,
       "excluded": 0,
       "notApplicable": 9,
       "inScope": 56,
-      "coveredPercent": "53.6"
+      "coveredPercent": "100.0"
     }
   },
   "psfdx": {
-    "exportedFunctions": 271,
-    "runningTheCli": 240,
+    "exportedFunctions": 297,
+    "runningTheCli": 266,
     "withoutADirectCliCommand": [
       "Build-SalesforceQuery",
       "Clear-SalesforceMetadataTypeCache",
@@ -3220,13 +3220,13 @@
       "label": "DevOps Center",
       "totals": {
         "commands": 26,
-        "wrapped": 0,
+        "wrapped": 26,
         "partiallyWrapped": 0,
-        "missing": 26,
+        "missing": 0,
         "excluded": 0,
         "notApplicable": 0,
         "inScope": 26,
-        "coveredPercent": "0.0"
+        "coveredPercent": "100.0"
       },
       "commands": [
         {
@@ -3236,37 +3236,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create a DevOps Center pipeline.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceDevOpsPipeline"
+          ],
           "flags": {
             "total": 10,
-            "passed": 0,
+            "passed": 10,
             "required": 3
           },
-          "uncoveredFlags": [
-            "bitbucket-project-key",
-            "bitbucket-workspace",
-            "create-repo",
-            "name",
-            "project-id",
-            "repo",
-            "repo-owner",
-            "repo-type",
-            "stage",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "repo",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -3276,23 +3263,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Get details of a DevOps Center pipeline including its stages, repositories, and connected projects.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDevOpsPipelineDetails"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "pipeline-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "pipeline-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3307,21 +3290,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "List DevOps Center pipelines with their stages, repositories, and connected projects.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDevOpsPipeline"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3336,25 +3317,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Attach a DevOps Center project to a pipeline.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Add-SalesforceDevOpsPipelineProject"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "pipeline-id",
-            "project-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "pipeline-id",
-            "project-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3369,25 +3344,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Remove a DevOps Center project's connection to a pipeline.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceDevOpsPipelineProject"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "pipeline-id",
-            "project-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "pipeline-id",
-            "project-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3402,27 +3371,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Add a stage to a DevOps Center pipeline.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Add-SalesforceDevOpsPipelineStage"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 4
           },
-          "uncoveredFlags": [
-            "name",
-            "next-stage-id",
-            "pipeline-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "next-stage-id",
-            "pipeline-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3437,25 +3398,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Delete a stage from a DevOps Center pipeline.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceDevOpsPipelineStage"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3470,25 +3425,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Update a DevOps Center pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Update-SalesforceDevOpsPipelineStage"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "name",
-            "stage-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "stage-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3503,26 +3452,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Update a DevOps Center pipeline.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Update-SalesforceDevOpsPipeline"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "activate",
-            "deactivate",
-            "name",
-            "pipeline-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "pipeline-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3537,24 +3479,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create a DevOps Center project in a DevOps Center org.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceDevOpsProject"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 2
           },
-          "uncoveredFlags": [
-            "description",
-            "name",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "name",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3569,21 +3506,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "List all DevOps Center projects in a Salesforce org.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDevOpsProject"
+          ],
           "flags": {
             "total": 1,
-            "passed": 0,
+            "passed": 1,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3598,26 +3533,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Update a DevOps Center project.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Update-SalesforceDevOpsProject"
+          ],
           "flags": {
             "total": 5,
-            "passed": 0,
+            "passed": 5,
             "required": 2
           },
-          "uncoveredFlags": [
-            "description",
-            "is-active",
-            "name",
-            "project-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "project-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3632,35 +3560,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Promote work items or a pipeline stage to a target pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Start-SalesforceDevOpsPromotion"
+          ],
           "flags": {
             "total": 9,
-            "passed": 0,
+            "passed": 9,
             "required": 2
           },
-          "uncoveredFlags": [
-            "deploy-all",
-            "force",
-            "skip-validation",
-            "stage-id",
-            "target-org",
-            "target-stage-id",
-            "test-level",
-            "tests",
-            "work-item-id"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org",
-            "target-stage-id"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -3670,32 +3587,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Deploy undeployed work items to a pipeline stage org.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Complete-SalesforceDevOpsPromotion"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 2
           },
-          "uncoveredFlags": [
-            "deploy-all",
-            "target-org",
-            "target-stage-id",
-            "test-level",
-            "tests",
-            "work-item-id"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org",
-            "target-stage-id"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 4,
+            "reachable": 4
           }
         },
         {
@@ -3705,25 +3614,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Validate work item promotion for a pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Test-SalesforceDevOpsPromotion"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "target-org",
-            "target-stage-id",
-            "work-item-id"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org",
-            "target-stage-id",
-            "work-item-id"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3738,23 +3641,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Get the status of a request.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDevOpsRequestStatus"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "request-token",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "request-token",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3769,23 +3668,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create a pull request for a work item branch.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceDevOpsReview"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 1
           },
-          "uncoveredFlags": [
-            "target-org",
-            "work-item-id",
-            "work-item-name"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3800,29 +3695,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Add a source code repository branch to a pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Add-SalesforceDevOpsStageBranch"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 4
           },
-          "uncoveredFlags": [
-            "branch-name",
-            "create-vcs-branch",
-            "force",
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "branch-name",
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3837,25 +3722,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Delete the source code repository branch associated with a pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceDevOpsStageBranch"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3870,36 +3749,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Add a Salesforce environment to a pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Add-SalesforceDevOpsStageEnvironment"
+          ],
           "flags": {
             "total": 7,
-            "passed": 0,
+            "passed": 7,
             "required": 5
           },
-          "uncoveredFlags": [
-            "environment-name",
-            "force",
-            "no-browser",
-            "org-type",
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "environment-name",
-            "org-type",
-            "pipeline-id",
-            "stage-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         },
         {
@@ -3909,25 +3776,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Delete an environment from a DevOps Center pipeline stage.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Remove-SalesforceDevOpsStageEnvironment"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "environment-id",
-            "pipeline-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "environment-id",
-            "pipeline-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3942,27 +3803,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Prepare work items to be combined for custom promotion.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Join-SalesforceDevOpsWorkItem"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 4
           },
-          "uncoveredFlags": [
-            "child-work-item-id",
-            "parent-work-item-id",
-            "target-org",
-            "target-stage-id"
-          ],
-          "requiredFlagsNotPassed": [
-            "child-work-item-id",
-            "parent-work-item-id",
-            "target-org",
-            "target-stage-id"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -3977,26 +3830,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Create a new work item in a DevOps Center project.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "New-SalesforceDevOpsWorkItem"
+          ],
           "flags": {
             "total": 4,
-            "passed": 0,
+            "passed": 4,
             "required": 3
           },
-          "uncoveredFlags": [
-            "description",
-            "project-id",
-            "subject",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "project-id",
-            "subject",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -4011,23 +3857,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "List all work items for a DevOps Center project.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Get-SalesforceDevOpsWorkItem"
+          ],
           "flags": {
             "total": 2,
-            "passed": 0,
+            "passed": 2,
             "required": 2
           },
-          "uncoveredFlags": [
-            "project-id",
-            "target-org"
-          ],
-          "requiredFlagsNotPassed": [
-            "project-id",
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -4042,25 +3884,19 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Prepare a work item for one-off promotion between pipeline stages.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Initialize-SalesforceDevOpsWorkItem"
+          ],
           "flags": {
             "total": 3,
-            "passed": 0,
+            "passed": 3,
             "required": 3
           },
-          "uncoveredFlags": [
-            "target-org",
-            "target-stage-id",
-            "work-item-id"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org",
-            "target-stage-id",
-            "work-item-id"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
             "flagsWithAList": 0,
@@ -4075,31 +3911,24 @@
           "pluginType": "jit",
           "state": "ga",
           "summary": "Update a work item in DevOps Center.",
-          "status": "missing",
-          "reason": "Deferred on purpose: the DevOps Center commands are one capability with their own ticket (PSF-62, issue 256), so they are not built here.",
-          "issue": 256,
-          "psfdx": [],
+          "status": "wrapped",
+          "reason": null,
+          "issue": null,
+          "psfdx": [
+            "Update-SalesforceDevOpsWorkItem"
+          ],
           "flags": {
             "total": 6,
-            "passed": 0,
+            "passed": 6,
             "required": 1
           },
-          "uncoveredFlags": [
-            "description",
-            "status",
-            "subject",
-            "target-org",
-            "work-item-id",
-            "work-item-name"
-          ],
-          "requiredFlagsNotPassed": [
-            "target-org"
-          ],
+          "uncoveredFlags": [],
+          "requiredFlagsNotPassed": [],
           "valuesNotReachable": [],
           "values": {
-            "flagsWithAList": 0,
-            "total": 0,
-            "reachable": 0
+            "flagsWithAList": 1,
+            "total": 2,
+            "reachable": 2
           }
         }
       ]
@@ -8613,18 +8442,18 @@
     "flags": [
       {
         "flag": "json",
-        "psfdxFunctionsPassingIt": 201,
-        "commandsPsfdxRunsThatHaveIt": 210
+        "psfdxFunctionsPassingIt": 227,
+        "commandsPsfdxRunsThatHaveIt": 236
       },
       {
         "flag": "flags-dir",
         "psfdxFunctionsPassingIt": 0,
-        "commandsPsfdxRunsThatHaveIt": 218
+        "commandsPsfdxRunsThatHaveIt": 244
       },
       {
         "flag": "api-version",
         "psfdxFunctionsPassingIt": 1,
-        "commandsPsfdxRunsThatHaveIt": 154
+        "commandsPsfdxRunsThatHaveIt": 180
       }
     ]
   },

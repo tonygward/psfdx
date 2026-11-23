@@ -343,6 +343,39 @@ Get-SalesforceDeployStatus -JobId 0AfXXXXXXXXXXXXXXX -TargetOrg prod
 Stop-SalesforceDeploy -JobId 0AfXXXXXXXXXXXXXXX -WhatIf
 ```
 
+### DevOps Center (sf devops)
+
+These run the `sf devops` commands. They need a DevOps Center org that you are logged in to (`-TargetOrg`, or the `target-org` configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The commands come from the `@salesforce/plugin-devops-center` plugin, which the CLI installs the first time it needs it. Anything that deletes or deploys asks for confirmation (use `-Confirm:$false` in a script) and every change supports `-WhatIf`. IDs are the 15 or 18 character Salesforce IDs the list cmdlets return.
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Get-SalesforceDevOpsProject` | List the projects (`project list`). |
+| `New-SalesforceDevOpsProject` | Create a project (`project create`). |
+| `Update-SalesforceDevOpsProject` | Rename, describe, or activate / deactivate with `-IsActive` / `-IsActive:$false` (`project update`). |
+| `Get-SalesforceDevOpsWorkItem` | List the work items of a project (`work-item list`). |
+| `New-SalesforceDevOpsWorkItem` | Create a work item (`work-item create`). |
+| `Update-SalesforceDevOpsWorkItem` | Change the subject, description or status, by `-WorkItemId` or `-WorkItemName` (`work-item update`). |
+| `Initialize-SalesforceDevOpsWorkItem` | Prepare a work item for a one-off promotion: creates branches and pull requests (`work-item prepare`). |
+| `Join-SalesforceDevOpsWorkItem` | Combine work items so they promote together (`work-item combine`). |
+| `New-SalesforceDevOpsReview` | Open a pull request for a work item branch (`review create`). |
+| `Get-SalesforceDevOpsPipeline` | List the pipelines with their stages, repositories and projects (`pipeline list`). |
+| `Get-SalesforceDevOpsPipelineDetails` | One pipeline in detail (`pipeline get`). |
+| `New-SalesforceDevOpsPipeline` | Create a pipeline on an existing or new GitHub or Bitbucket repository (`pipeline create`). |
+| `Update-SalesforceDevOpsPipeline` | Rename, `-Activate` (asks first) or `-Deactivate` (`pipeline update`). |
+| `Add-SalesforceDevOpsPipelineProject` / `Remove-SalesforceDevOpsPipelineProject` | Attach or disconnect a project (`pipeline project add` / `delete`). |
+| `Add-SalesforceDevOpsPipelineStage` / `Update-SalesforceDevOpsPipelineStage` / `Remove-SalesforceDevOpsPipelineStage` | Add, rename or delete a stage (`pipeline stage add` / `update` / `delete`). |
+| `Add-SalesforceDevOpsStageBranch` / `Remove-SalesforceDevOpsStageBranch` | Assign or remove the branch of a stage (`stage branch add` / `delete`). |
+| `Add-SalesforceDevOpsStageEnvironment` / `Remove-SalesforceDevOpsStageEnvironment` | Connect (an OAuth login that opens a browser) or remove the environment of a stage (`stage environment add` / `delete`). |
+| `Start-SalesforceDevOpsPromotion` | Promote work items (`-WorkItemId`) or a whole stage (`-StageId`) to a stage (`promote`). |
+| `Complete-SalesforceDevOpsPromotion` | Deploy work items merged outside DevOps Center (`promotion complete`). |
+| `Test-SalesforceDevOpsPromotion` | Check that work items can be promoted, without deploying (`promotion validate`). |
+| `Get-SalesforceDevOpsRequestStatus` | Status of a request, from its token (`request status`). |
+
+```powershell
+$wi = Get-SalesforceDevOpsWorkItem -ProjectId 1Qg000000000001 -TargetOrg devops-org
+Test-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org
+Start-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org -WhatIf
+```
 ### Describe
 
 | Cmdlet | Description |
