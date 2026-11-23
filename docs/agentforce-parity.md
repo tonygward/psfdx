@@ -41,6 +41,7 @@ Scope of the `psfdx-agentforce` module against the Salesforce CLI agent plugin (
 - **Confirmation.** Deletes are `ConfirmImpact = 'High'`. Where the CLI has `--no-prompt` (`agent preview end`, `agent trace delete`, `agent mcp delete`), psfdx asks first and always passes it, so the CLI does not ask twice; `-NoPrompt` skips only the PowerShell question and never overrides `-WhatIf`. `Remove-SalesforceAgentTrace` needs at least one filter, so a call cannot delete every trace by accident.
 - **Result formats.** Cmdlets that take `-ResultFormat` return an object for `json` (and when it is left off, as before), and the CLI text for `human`, `junit` and `tap`, so a CI step can redirect JUnit XML to a file.
 - **Input checks.** Names, IDs and file paths are checked before `sf` runs. Context variables are `Field=value` pairs with checked names, so a name cannot become an option and a value that looks like a flag is passed as a value.
+- **Windows and double quotes.** On Windows the Salesforce CLI is a `.cmd` launcher that cannot be given an argument with a double quote or a line break. JSON always has quotes, so `-ContextVariablesJson` (preview) and `-Assets` / `-AssetList` (MCP assets) cannot work there, and neither can an utterance with a quote. The cmdlets say so in their help and, when the launcher refuses, name the alternative: `-ContextVariables` and `-AssetsFile`. They work normally on macOS and Linux.
 
 ## Tests
 

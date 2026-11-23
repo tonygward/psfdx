@@ -189,6 +189,26 @@ function Invoke-SalesforceAgentText {
     return $output
 }
 
+function Invoke-SalesforceAgentChecked {
+    # Private: runs sf and, when it is refused because an argument cannot be passed safely (a double quote or line break through the Windows
+    # .cmd launcher), says what to do instead.
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $true)][string[]] $Arguments,
+        [Parameter(Mandatory = $false)][hashtable] $CommonParams = @{},
+        [Parameter(Mandatory = $false)][string] $Hint,
+        [Parameter(Mandatory = $false)][switch] $Interactive
+    )
+    try {
+        if ($Interactive) { Invoke-Salesforce -FilePath 'sf' -Arguments $Arguments -Interactive @CommonParams; return }
+        return Invoke-Salesforce -FilePath 'sf' -Arguments $Arguments @CommonParams
+    }
+    catch {
+        if ($Hint -and $_.Exception.Message -like '*cannot be passed safely*') { throw "$Hint ($($_.Exception.Message))" }
+        throw
+    }
+}
+
 function Assert-SalesforceAgentApiName {
     # Private: agent and test API names are letters, digits and underscores.
     [CmdletBinding()]
@@ -1642,7 +1662,7 @@ function Start-SalesforceAgentPreview {
     Context variables for the conversation as name and value pairs. Each pair is passed to sf as its own --context-variables name=value. Names are checked, and a value may not contain a double quote or line break. Cannot be used with -ContextVariablesJson. Passed to sf as --context-variables.
 
     .PARAMETER ContextVariablesJson
-    Context variables as a JSON string, for example '{"order":"1001"}'. It must be valid JSON. Cannot be used with -ContextVariables. Passed to sf as --context-variables-json.
+    Context variables as a JSON string, for example '{"order":"1001"}'. It must be valid JSON. On Windows the CLI's .cmd launcher cannot take an argument with double quotes, which JSON always has, so this does not work there: use -ContextVariables. Cannot be used with -ContextVariables. Passed to sf as --context-variables-json.
 
     .PARAMETER SimulateActions
     Simulate the agent's actions instead of running them. Only for an authoring bundle. Adds --simulate-actions.
@@ -1712,7 +1732,9 @@ function Start-SalesforceAgentPreview {
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $hint = $null
+    if ($ContextVariablesJson) { $hint = '-ContextVariablesJson has double quotes, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely, so it cannot be used on this machine. Use -ContextVariables (name and value pairs) instead.' }
+    $result = Invoke-SalesforceAgentChecked -Arguments $arguments -CommonParams $commonParams -Hint $hint
     return Show-SalesforceResult -Result $result
 }
 
@@ -1722,7 +1744,7 @@ function Send-SalesforceAgentPreviewMessage {
     Sends a message to a preview session and returns the agent's answer.
 
     .DESCRIPTION
-    Runs sf agent preview send. This is a programmatic preview session: each step is its own command, so a script or another tool can drive the conversation. Give the session with -SessionId, or the agent with -ApiName or -AuthoringBundle if there is only one open session for it. The message is passed as one argument, so quotes and special characters need no escaping.
+    Runs sf agent preview send. This is a programmatic preview session: each step is its own command, so a script or another tool can drive the conversation. Give the session with -SessionId, or the agent with -ApiName or -AuthoringBundle if there is only one open session for it. The message is passed as one argument, so special characters need no escaping. On Windows the CLI's .cmd launcher cannot take a double quote or a line break in an argument, so leave those out there.
 
     .PARAMETER Utterance
     What to say to the agent. Passed to sf as --utterance. Required.
@@ -1780,7 +1802,7 @@ function Send-SalesforceAgentPreviewMessage {
     $arguments += '--json'
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $result = Invoke-SalesforceAgentChecked -Arguments $arguments -CommonParams $commonParams -Hint 'The utterance has a double quote or a line break, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely. Leave those out on this machine.'
     return Show-SalesforceResult -Result $result
 }
 
@@ -1926,7 +1948,7 @@ function Invoke-SalesforceAgentPreview {
     Context variables for the conversation as name and value pairs. Each pair is passed to sf as its own --context-variables name=value. Names are checked, and a value may not contain a double quote or line break. Cannot be used with -ContextVariablesJson. Passed to sf as --context-variables.
 
     .PARAMETER ContextVariablesJson
-    Context variables as a JSON string, for example '{"order":"1001"}'. It must be valid JSON. Cannot be used with -ContextVariables. Passed to sf as --context-variables-json.
+    Context variables as a JSON string, for example '{"order":"1001"}'. It must be valid JSON. On Windows the CLI's .cmd launcher cannot take an argument with double quotes, which JSON always has, so this does not work there: use -ContextVariables. Cannot be used with -ContextVariables. Passed to sf as --context-variables-json.
 
     .PARAMETER ApexDebug
     Show Apex debug logs of the agent's actions. Adds --apex-debug.
@@ -2000,7 +2022,9 @@ function Invoke-SalesforceAgentPreview {
     $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
     Assert-SalesforceAgentInteractiveSession -Command 'sf agent preview'
-    Invoke-Salesforce -FilePath 'sf' -Arguments $arguments -Interactive @commonParams
+    $hint = $null
+    if ($ContextVariablesJson) { $hint = '-ContextVariablesJson has double quotes, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely, so it cannot be used on this machine. Use -ContextVariables (name and value pairs) instead.' }
+    Invoke-SalesforceAgentChecked -Arguments $arguments -CommonParams $commonParams -Hint $hint -Interactive
 }
 
 #endregion
@@ -3391,10 +3415,10 @@ function Set-SalesforceMcpAssets {
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
     .PARAMETER Assets
-    The allowed assets as a JSON string. It must be valid JSON. Use one of -Assets, -AssetList and -AssetsFile. Passed to sf as --assets.
+    The allowed assets as a JSON string. It must be valid JSON. On Windows the CLI's .cmd launcher cannot take an argument with double quotes, which JSON always has, so this does not work there: use -AssetsFile. Use one of -Assets, -AssetList and -AssetsFile. Passed to sf as --assets.
 
     .PARAMETER AssetList
-    The allowed assets as a PowerShell object or array, sent as JSON. Use one of -Assets, -AssetList and -AssetsFile. Sent to sf as --assets.
+    The allowed assets as a PowerShell object or array, sent as JSON. On Windows the CLI's .cmd launcher cannot take an argument with double quotes, which JSON always has, so this does not work there: use -AssetsFile. Use one of -Assets, -AssetList and -AssetsFile. Sent to sf as --assets.
 
     .PARAMETER AssetsFile
     Path of a JSON file with the allowed assets. It must exist. Use one of -Assets, -AssetList and -AssetsFile. Passed to sf as --assets-file.
@@ -3454,7 +3478,9 @@ function Set-SalesforceMcpAssets {
     $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
     Assert-SalesforceAgentPlugin -CommonParams $commonParams
     if (-not $PSCmdlet.ShouldProcess($McpServerId, 'Replace the allowed assets')) { return }
-    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    $hint = $null
+    if ($json) { $hint = 'The assets JSON has double quotes, which the Salesforce CLI''s Windows .cmd launcher cannot be given safely, so -Assets and -AssetList cannot be used on this machine. Put the JSON in a file and use -AssetsFile instead.' }
+    $result = Invoke-SalesforceAgentChecked -Arguments $arguments -CommonParams $commonParams -Hint $hint
     return Show-SalesforceResult -Result $result
 }
 

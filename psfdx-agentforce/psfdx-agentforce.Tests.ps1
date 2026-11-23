@@ -537,6 +537,42 @@ Describe 'psfdx-agentforce full sf agent parity (issue 255)' {
             }
         }
 
+        Context 'arguments the Windows .cmd launcher refuses (review finding)' {
+            BeforeEach {
+                # What Invoke-Salesforce does on Windows when sf is a .cmd shim and an argument has a double quote.
+                Mock Invoke-Salesforce {
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    if (@($Arguments | Where-Object { $_ -match '["\r\n]' }).Count -gt 0) { throw "Argument contains a character that cannot be passed safely to 'sf' on Windows (double quote or line break)." }
+                    return '{"status":0,"result":{"ok":true}}'
+                }
+            }
+            It 'says to use -ContextVariables when -ContextVariablesJson is refused, for the programmatic and the interactive preview' {
+                { Start-SalesforceAgentPreview -ApiName Svc_Agent -ContextVariablesJson '{"order":"1001"}' } | Should -Throw -ExpectedMessage '*Use -ContextVariables (name and value pairs) instead*cannot be passed safely*'
+                { Invoke-SalesforceAgentPreview -ApiName Svc_Agent -ContextVariablesJson '{"order":"1001"}' } | Should -Throw -ExpectedMessage '*Use -ContextVariables (name and value pairs) instead*'
+            }
+            It 'says to use -AssetsFile when the assets JSON is refused' {
+                { Set-SalesforceMcpAssets -McpServerId 0Xxxx0000000001 -Assets '[{"name":"t"}]' -Confirm:$false } | Should -Throw -ExpectedMessage '*use -AssetsFile instead*'
+                { Set-SalesforceMcpAssets -McpServerId 0Xxxx0000000001 -AssetList @([ordered]@{ name = 't' }) -Confirm:$false } | Should -Throw -ExpectedMessage '*use -AssetsFile instead*'
+                { Set-SalesforceMcpAssets -McpServerId 0Xxxx0000000001 -AssetsFile (Join-Path $script:dir 'assets.json') -Confirm:$false } | Should -Not -Throw
+            }
+            It 'explains a refused utterance, and leaves other failures alone' {
+                { Send-SalesforceAgentPreviewMessage -SessionId a1b2 -Utterance 'say "hi"' } | Should -Throw -ExpectedMessage '*utterance has a double quote*'
+                { Send-SalesforceAgentPreviewMessage -SessionId a1b2 -Utterance 'plain words' } | Should -Not -Throw
+                Mock Invoke-Salesforce {
+                    if (($Arguments -join '|') -eq 'plugins|--core|--json') { return '{"status":0,"result":[{"name":"@salesforce/plugin-agent"}]}' }
+                    throw 'The sf executable was not found.'
+                }
+                $err = $null
+                try { Start-SalesforceAgentPreview -ApiName Svc_Agent -ContextVariablesJson '{"a":"1"}' } catch { $err = $_ }
+                $err.Exception.Message | Should -Be 'The sf executable was not found.'
+            }
+            It 'the help says the JSON parameters do not work on Windows and names the alternative' {
+                $help = Get-Help Start-SalesforceAgentPreview -Parameter ContextVariablesJson | Out-String
+                $help | Should -BeLike '*Windows*use -ContextVariables*'
+                (Get-Help Set-SalesforceMcpAssets -Parameter Assets | Out-String) | Should -BeLike '*Windows*use -AssetsFile*'
+            }
+        }
+
         Context 'MCP client secret' {
             It 'takes a SecureString only, sends its text to sf, and never prints it' {
                 $secret = ConvertTo-SecureString 'TOPSECRETVALUE' -AsPlainText -Force
