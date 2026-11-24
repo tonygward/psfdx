@@ -6,7 +6,7 @@ function Get-PsfdxModules {
         'psfdx-org',
         'psfdx-metadata',
         'psfdx-devops',
-        'psfdx-bulk',
+        'psfdx-data',
         'psfdx-plugins',
         'psfdx-packages',
         'psfdx-agentforce',
@@ -18,7 +18,8 @@ function Get-PsfdxModules {
 # that replaced it, and the uninstall scripts remove them too.
 function Get-PsfdxRetiredModules {
     @(
-        'psfdx-sandbox'   # now psfdx-org
+        'psfdx-sandbox',  # now psfdx-org
+        'psfdx-bulk'      # now psfdx-data
     )
 }
 

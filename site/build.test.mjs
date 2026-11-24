@@ -120,7 +120,7 @@ test('the feature examples and all ten public modules use real content', () => {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
-  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-org', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce']);
+  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-org', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce']);
   for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
   for (const m of modules) assert.ok(html.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
 });
@@ -147,7 +147,7 @@ test('the homepage copy is tight: objects not text, discoverability, one CSV exa
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
   assert.match(html, /PowerShell with psfdx[\s\S]*Bash with the Salesforce CLI and jq[\s\S]*Both examples do the same job/);
   for (const command of ['Get-Help Deploy-SalesforceMetadata -Examples', 'Select-SalesforceRecords', 'Export-Csv ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
-  for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce']) {
+  for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
     assert.ok(fs.readFileSync(doc, 'utf8').includes('Get-Command -Module ' + m), `commands missing: ${m}`);
@@ -261,7 +261,7 @@ test('applyConfig replaces every occurrence', () => {
 
 
 test('module pages display PowerShell prompts, compact code blocks and ordered core examples', () => {
-  const moduleNames = ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce'];
+  const moduleNames = ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce'];
   for (const name of moduleNames) {
     const page = fs.readFileSync(path.join(dist, 'modules', name, 'index.html'), 'utf8');
     assert.match(page, /class="ps-prompt">PS&gt;<\/span>/, name + ' should display PS prompt');

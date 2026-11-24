@@ -1,11 +1,13 @@
 # Ensure clean slate and load dependency modules locally
-Get-Module -Name 'psfdx','psfdx-logs' -All | ForEach-Object {
+Get-Module -Name 'psfdx','psfdx-data','psfdx-logs' -All | ForEach-Object {
     try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
 }
 
 $repoRoot = Split-Path -Path $PSScriptRoot -Parent
 $psfdxManifest = Join-Path -Path $repoRoot -ChildPath 'psfdx/psfdx.psd1'
 Import-Module $psfdxManifest -Force | Out-Null
+# Enable-SalesforceDebugLogging looks names up with Select-SalesforceRecords, which lives in psfdx-data. -Global: a module only sees another module's commands when they are global.
+Import-Module (Join-Path -Path $repoRoot -ChildPath 'psfdx-data/psfdx-data.psd1') -Force -Global | Out-Null
 
 $moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-logs.psd1'
 Import-Module $moduleManifest -Force | Out-Null
@@ -287,30 +289,30 @@ Describe 'Enable-SalesforceDebugLogging by name' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"id":"7tf000000000001AAA","success":true}}' }
             $script:LookupJson = '{"status":0,"result":{"records":[{"attributes":{"type":"X"},"Id":"0XX000000000001AAA"}]}}'
-            Mock Invoke-Salesforce { $script:LookupJson } -ModuleName 'psfdx'
+            Mock Invoke-Salesforce { $script:LookupJson } -ModuleName 'psfdx-data'
         }
         It 'does not look up an Id when -TracedEntityId is given' {
             Enable-SalesforceDebugLogging -TracedEntityId '005000000000001' -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 0
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx-data' -Times 0
         }
         It 'resolves -Username to a user Id' {
             Enable-SalesforceDebugLogging -Username 'me@example.com' -DebugLevel 'SFDC_DevConsole' -TargetOrg 'myorg' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM User WHERE Username = ''me@example.com'' LIMIT 2|--target-org|myorg|--result-format|json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx-data' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM User WHERE Username = ''me@example.com'' LIMIT 2|--target-org|myorg|--result-format|json' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|SFDC_DevConsole|--target-org|myorg|--json' }
         }
         It 'resolves -ApexClass to a class Id' {
             Enable-SalesforceDebugLogging -ApexClass 'AccountService' -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexClass WHERE Name = ''AccountService'' LIMIT 2|--result-format|json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx-data' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexClass WHERE Name = ''AccountService'' LIMIT 2|--result-format|json' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|X|--json' }
         }
         It 'resolves -ApexTrigger to a trigger Id' {
             Enable-SalesforceDebugLogging -ApexTrigger 'AccountTrigger' -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexTrigger WHERE Name = ''AccountTrigger'' LIMIT 2|--result-format|json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx-data' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM ApexTrigger WHERE Name = ''AccountTrigger'' LIMIT 2|--result-format|json' }
             Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'apex|trace|create|--traced-entity-id|0XX000000000001AAA|--debug-level|X|--json' }
         }
         It 'escapes single quotes in the name' {
             Enable-SalesforceDebugLogging -Username "o'brien@example.com" -DebugLevel 'X' | Out-Null
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM User WHERE Username = ''o\''brien@example.com'' LIMIT 2|--result-format|json' }
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx-data' -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'data|query|--query|SELECT Id FROM User WHERE Username = ''o\''brien@example.com'' LIMIT 2|--result-format|json' }
         }
         It 'throws and does not create a trace flag when the name is not found' {
             $script:LookupJson = '{"status":0,"result":{"records":[]}}'
@@ -324,7 +326,7 @@ Describe 'Enable-SalesforceDebugLogging by name' {
         }
         It 'rejects more than one way of naming the entity' {
             { Enable-SalesforceDebugLogging -Username 'a' -ApexClass 'B' -DebugLevel 'X' } | Should -Throw -ExpectedMessage '*Parameter set cannot be resolved*'
-            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx' -Times 0
+            Assert-MockCalled Invoke-Salesforce -ModuleName 'psfdx-data' -Times 0
             Assert-MockCalled Invoke-Salesforce -Times 0
         }
     }

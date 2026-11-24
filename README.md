@@ -19,7 +19,7 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-org`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-data`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-org`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
 
 ```
 Import-Module psfdx
@@ -143,7 +143,7 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-logs` | Debug Logs, Login History and Event Monitoring. |
 | `psfdx-metadata` | Retrieve, deploy and describe Salesforce metadata. |
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys. |
-| `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume. |
+| `psfdx-data` | Salesforce data: SOQL and SOSL queries, single records, files, tree data and Bulk API 2.0 jobs. |
 | `psfdx-plugins` | Salesforce CLI plugins: install, list, inspect, update, uninstall, discover, reset, signature checks and the allowlist. |
 | `psfdx-development` | Salesforce DX development (projects, tests, deploy). |
 | `psfdx-org` | Salesforce org lifecycle: sandboxes and scratch orgs. |
@@ -183,16 +183,13 @@ Included in the `psfdx` package.
 | Cmdlet | Description |
 | :--- | :--- |
 | `Get-SalesforceLimits` | Retrieve org limits (API, storage, etc.). |
-| `Get-SalesforceSObjectRecordCount` | Record counts of objects, all or the ones named with `-SObject` (`sf org list sobject record-counts`). |
 | `Get-SalesforceDataStorage` | Calculate data storage usage and percent. |
 | `Get-SalesforceApiUsage` | Calculate API usage percent. |
 
-### Data & SOQL
+### Users and permissions
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Select-SalesforceRecords` | Run SOQL and return records. |
-| `Search-SalesforceRecords` | Run a SOSL text search and return the matches as objects, each with its `SObject` (`sf data search`). `-File` reads the search from a file; `-ResultFormat` csv or human returns the CLI text. |
 | `Get-SalesforceUsers` | List users with optional filters (username, active only, limit). |
 | `Get-SalesforceAuthenticatedUser` | List the users of an org that the CLI has authorised here (`sf org list users`); tokens removed. |
 | `Get-SalesforceOrgUser` | Show the user the CLI is signed in as (`sf org display user`); never returns the token or password (the CLI redacts them), only `HasPassword`. |
@@ -200,15 +197,6 @@ Included in the `psfdx` package.
 | `New-SalesforceUserPassword` | Generate a password for a user, returned as a SecureString (`sf org generate password`). Asks for confirmation. |
 | `Grant-SalesforcePermissionSet` | Assign permission sets to users (`sf org assign permset`); re-running is safe (`AlreadyAssigned`). Asks for confirmation. |
 | `Grant-SalesforcePermissionSetLicense` | Assign permission set licences to users (`sf org assign permsetlicense`). Asks for confirmation. |
-| `New-SalesforceRecord` | Create a record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
-| `Set-SalesforceRecord` | Update a record by `-Id` or by `-Where` field values that identify exactly one record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
-| `New-SalesforceFile` | Upload a local file as a Salesforce File, optionally attached to a record with `-ParentId` (`sf data create file`). Supports `-WhatIf`. |
-| `Get-SalesforceRecord` | Get one record by `-Id`, or by `-Where` field values that identify exactly one (`sf data get record`). |
-| `Remove-SalesforceRecord` | Delete one record by `-Id` or `-Where` (`sf data delete record`). Asks for confirmation; supports `-WhatIf`. |
-| `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
-| `Export-SalesforceTreeData` | Export records with their child records to JSON (and with `-Plan`, a plan file) for copying test data between orgs (`sf data export tree`). |
-| `Import-SalesforceTreeData` | Import tree JSON files or a plan into an org (`sf data import tree`); `-Plan` or `-File`, not both. Supports `-WhatIf`. |
-| `Get-SalesforceRecordType` | List record types (optionally by object). |
 
 ### REST API
 
@@ -397,9 +385,33 @@ $wi = Get-SalesforceDevOpsWorkItem -ProjectId 1Qg000000000001 -TargetOrg devops-
 Test-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org
 Start-SalesforceDevOpsPromotion -WorkItemId $wi[0].id -TargetStageId 1QV000000000002 -TargetOrg devops-org -WhatIf
 ```
-### psfdx-bulk
+### psfdx-data
 
-Installed with `Install-Module psfdx`. The Bulk API 2.0 cmdlets: bulk export, import, update, upsert and delete, and the status, results and resume of a bulk job (the `sf data ... bulk` and `... resume` commands). They were in `psfdx` before; the cmdlet names, parameters and behaviour are unchanged, only the module that holds them (the `Source` in `Get-Command`) is new. Single-record create, update, get and delete, SOQL and the data tree cmdlets stay in `psfdx`.
+Included in the `psfdx` package. It holds the Salesforce data commands: queries and single records (they were part of `psfdx`), tree data, and the Bulk API 2.0 commands (this module was `psfdx-data` before). Every command keeps its name, parameters and behaviour.
+
+#### Records and queries
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Select-SalesforceRecords` | Run SOQL and return records. |
+| `Search-SalesforceRecords` | Run a SOSL text search and return the matches as objects, each with its `SObject` (`sf data search`). `-File` reads the search from a file; `-ResultFormat` csv or human returns the CLI text. |
+| `New-SalesforceRecord` | Create a record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
+| `Set-SalesforceRecord` | Update a record by `-Id` or by `-Where` field values that identify exactly one record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
+| `Get-SalesforceRecord` | Get one record by `-Id`, or by `-Where` field values that identify exactly one (`sf data get record`). |
+| `Remove-SalesforceRecord` | Delete one record by `-Id` or `-Where` (`sf data delete record`). Asks for confirmation; supports `-WhatIf`. |
+| `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
+| `Get-SalesforceRecordType` | List record types (optionally by object). |
+| `Get-SalesforceSObjectRecordCount` | Record counts of objects, all or the ones named with `-SObject` (`sf org list sobject record-counts`). |
+| `New-SalesforceFile` | Upload a local file as a Salesforce File, optionally attached to a record with `-ParentId` (`sf data create file`). Supports `-WhatIf`. |
+
+#### Tree data
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Export-SalesforceTreeData` | Export records with their child records to JSON (and with `-Plan`, a plan file) for copying test data between orgs (`sf data export tree`). |
+| `Import-SalesforceTreeData` | Import tree JSON files or a plan into an org (`sf data import tree`); `-Plan` or `-File`, not both. Supports `-WhatIf`. |
+
+#### Bulk API 2.0
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -411,6 +423,7 @@ Installed with `Install-Module psfdx`. The Bulk API 2.0 cmdlets: bulk export, im
 | `Get-SalesforceBulkJobStatus` | Read the status of a bulk job, or one batch, from the org (`sf data resume`). |
 | `Resume-SalesforceBulkJob` | Resume an export, import, update, upsert or delete job by `-JobId`, or the latest with `-UseMostRecent`, in a later step. The CLI finds the org from its record of the job, so it must have been created on this computer. |
 | `Get-SalesforceBulkResult` | Get a bulk ingest job's counts and save its success, failed and unprocessed row CSVs to `-OutputDirectory` (`sf data bulk results`). Works for any job in the org. |
+
 
 Delete the accounts whose IDs are in a CSV, look at the job, and get the result files:
 

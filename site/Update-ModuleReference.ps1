@@ -169,11 +169,15 @@ $commandGroups = @{
     'psfdx' = [ordered]@{
         'Authentication and aliases' = '^(Add|Get|Remove)-SalesforceAlias|^(Connect|Disconnect|Open)-Salesforce|Salesforce(AuthenticatedUser|Authorizations|Connections)$'
         'Users and permissions' = 'Salesforce(OrgUser|Users?|UserPassword|PermissionSet(?:License)?)$'
-        'Records and data' = 'Salesforce(Records?|RecordType|SObjectRecordCount|TreeData)$'
         'SOQL helpers' = '^ConvertTo-SalesforceSoql'
         'APIs' = 'Salesforce(Api.*|LatestApiVersion|GraphQL|RestRequest)$'
         'Experience Cloud' = 'SalesforceCommunity'
         'Tools and org information' = 'Salesforce(Cli|Doctor|File|DateTime|Limits|DataStorage|OrgDetails)$'
+    }
+    'psfdx-data' = [ordered]@{
+        'Records and queries' = 'Salesforce(Records?|RecordType|SObjectRecordCount|File)$'
+        'Tree data' = 'SalesforceTreeData$'
+        'Bulk API 2.0' = 'SalesforceBulk'
     }
     'psfdx-agentforce' = [ordered]@{
         'Data libraries' = 'SalesforceAgentDataLibrar'

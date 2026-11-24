@@ -73,7 +73,7 @@ Describe 'Public command surface' {
 
 Describe 'Internal helpers stay usable by the modules' {
     It '<Module> reaches the internal helpers it uses without exporting them' -ForEach @(
-        @{ Module = 'psfdx' }, @{ Module = 'psfdx-bulk' }, @{ Module = 'psfdx-development' }, @{ Module = 'psfdx-devops' }, @{ Module = 'psfdx-logs' },
+        @{ Module = 'psfdx' }, @{ Module = 'psfdx-data' }, @{ Module = 'psfdx-development' }, @{ Module = 'psfdx-devops' }, @{ Module = 'psfdx-logs' },
         @{ Module = 'psfdx-metadata' }, @{ Module = 'psfdx-org' }, @{ Module = 'psfdx-packages' }, @{ Module = 'psfdx-plugins' }, @{ Module = 'psfdx-agentforce' }
     ) {
         $found = & (Get-Module $Module) { param($names) $names | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue } } @('Invoke-Salesforce', 'Show-SalesforceResult', 'Get-PsfdxCommonParameterSplat', 'ConvertTo-SalesforceSoqlLiteral')
