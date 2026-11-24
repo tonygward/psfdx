@@ -80,7 +80,7 @@ test('the hero: headline, tagline, copy command, docs link and release pill', ()
   const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   assert.equal(h1, 'Salesforce. Meet PowerShell.');
   assert.match(html, /<span class="y">Meet<\/span> <span class="b">PowerShell\.<\/span>/);
-  assert.ok(html.includes('Powerful Salesforce tools. Familiar PowerShell commands. One <span class="pipe">|</span> away from anything.'));
+  assert.ok(html.includes('Powerful Salesforce tools.<br>Familiar PowerShell commands.<br>One <span class="pipe">|</span> away from anything.'));
   assert.match(html, /class="install" data-copy="Install-Module psfdx"/);
   assert.match(html, /<code>Install-Module psfdx<\/code>/);
   assert.match(html, /class="button secondary" href="\/#modules">Read the docs</);
@@ -126,7 +126,7 @@ test('the feature examples and all eleven modules use real content', () => {
 });
 
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
-  for (const command of ['Get-Help Deploy-SalesforceMetadata -Full', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv -Path ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
+  for (const command of ['<code>Get-Help Deploy-SalesforceMetadata</code>', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv -Path ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
   for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
