@@ -276,5 +276,5 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .documentation .cmd-type { color: var(--muted); font-size: .78rem; margin-left: .4em; }
 .documentation .cmd-body .code-box { margin: 6px 0 8px; }
 .documentation .cmd-example-note, .documentation .cmd-cli { color: var(--muted); font-size: .85rem; margin: .2em 0 0; }
-.documentation .cmd-body .cmd-description { margin: 0 0 .65em; font-size: .88rem; line-height: 1.5; }
+.documentation .cmd-body .cmd-description { color: var(--text); margin: 0 0 .65em; font-size: .88rem; line-height: 1.5; }
 @media (max-width: 600px) { .documentation .cmd-body { padding: 0 12px 12px; } }

@@ -4,7 +4,7 @@ Writes the command reference of every psfdx module into its page of the website.
 .DESCRIPTION
 Reads the comment-based help and the parameter block of every command each module exports, which is exactly what Get-Help reads, and fills the part of
 site/src/modules/<module>/index.html between <!-- reference:start --> and <!-- reference:end --> with one compact,
-expandable entry per command, grouped by PowerShell verb on longer pages: its description, syntax (one line per parameter set), parameters, a practical example with the PS> prompt, and the Salesforce CLI
+expandable entry per command, grouped by command type on longer pages: its description, syntax (one line per parameter set), parameters, a practical example with the PS> prompt, and the Salesforce CLI
 command it runs. Nothing is typed by hand and nothing is invented: a command appears under the module that exports it, with the text of its own help.
 The result is the same on Windows PowerShell 5.1 and PowerShell 7 (it parses the source and does not load the modules), so a Pester test can fail when a page
 is stale. With -Check nothing is written; it returns the pages that are out of date.
@@ -164,14 +164,74 @@ function Build-Entry([System.Management.Automation.Language.FunctionDefinitionAs
     return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); Cli = $cli }
 }
 
+# Match specific command types first, then broader families. Patterns match the full cmdlet name.
+$commandGroups = @{
+    'psfdx' = [ordered]@{
+        'Authentication and aliases' = '^(Add|Get|Remove)-SalesforceAlias|^(Connect|Disconnect|Open)-Salesforce|Salesforce(AuthenticatedUser|Authorizations|Connections)$'
+        'Users and permissions' = 'Salesforce(OrgUser|Users?|UserPassword|PermissionSet(?:License)?)$'
+        'Records and data' = 'Salesforce(Records?|RecordType|SObjectRecordCount|TreeData)$'
+        'APIs' = 'Salesforce(Api.*|LatestApiVersion|GraphQL|RestRequest)$'
+        'Experience Cloud' = 'SalesforceCommunity'
+        'Tools and org information' = 'Salesforce(Cli|Doctor|File|DateTime|Limits|DataStorage|OrgDetails)$'
+    }
+    'psfdx-agentforce' = [ordered]@{
+        'Data libraries' = 'SalesforceAgentDataLibrar'
+        'MCP servers and assets' = 'SalesforceMcp'
+        'Preview and traces' = 'SalesforceAgent(Preview|Trace)'
+        'Tests and evaluations' = 'SalesforceAgent(Test|Evaluation)'
+        'Agent setup and authoring' = 'SalesforceAgent'
+    }
+    'psfdx-development' = [ordered]@{
+        'Apex' = 'Salesforce(Apex|CodeCoverage)'
+        'Code Analyzer' = 'SalesforceCodeAnalyzer'
+        'Flow and logic tests' = 'Salesforce(Flow|Logic)'
+        'Jest tests' = 'SalesforceJest'
+        'Local development servers' = 'Salesforce(LwcDevServer|UiBundleDevServer)'
+        'Scratch orgs, shapes and snapshots' = 'Salesforce(ScratchOrg|OrgShape|OrgSnapshot)'
+        'Project configuration' = 'Salesforce(Config|Target|SourceTracking)|^New-SalesforceProject$'
+        'Component and template generation' = '^New-Salesforce'
+    }
+    'psfdx-devops' = [ordered]@{
+        'Pipelines and stages' = 'SalesforceDevOps(Pipeline|Stage)'
+        'Pipeline deployments' = 'SalesforcePipeline(Quick)?Deploy'
+        'Projects' = 'SalesforceDevOpsProject'
+        'Work items and reviews' = 'SalesforceDevOps(WorkItem|Review)'
+        'Promotions and request status' = 'SalesforceDevOps(Promotion|RequestStatus)'
+    }
+    'psfdx-metadata' = [ordered]@{
+        'Deployments' = '^(Deploy|Resume-.*Deploy|Start-.*Deploy|Stop-.*Deploy|Test-.*Deploy|Get-.*Deploy)'
+        'Retrieval' = '^Retrieve-|SalesforceRetrievePreview$'
+        'Objects, fields and metadata discovery' = '^(Describe|Build)-|Salesforce(MetadataTypeCache|MetadataComponents)$'
+        'Metadata generation' = '^New-Salesforce'
+        'Source and tracking' = 'Salesforce(MdapiFormat|Source.*|IgnoredFiles)$'
+    }
+    'psfdx-packages' = [ordered]@{
+        'First-generation packages' = 'SalesforceFirstGen|^Convert-SalesforcePackage$'
+        'Installation and removal from orgs' = '^(Install|Uninstall)-|Salesforce(PackagesInstalled|Package(Un)?installStatus)$'
+        'Push upgrades' = 'SalesforcePushUpgrade'
+        'Package versions' = 'SalesforcePackageVersion'
+        'Package management' = 'SalesforcePackages?$'
+    }
+}
+
+function Get-CommandGroup([string] $Module, [string] $Name) {
+    $groups = $commandGroups[$Module]
+    if ($groups) {
+        foreach ($group in $groups.Keys) {
+            if ($Name -match $groups[$group]) { return $group }
+        }
+    }
+    return 'Other commands'
+}
+
 $stale = New-Object System.Collections.Generic.List[string]
 $summary = @()
 foreach ($module in Get-PsfdxModules) {
     $page = Join-Path (Join-Path (Join-Path (Join-Path $Root 'site') 'src') 'modules') (Join-Path $module 'index.html')
     if (-not (Test-Path -LiteralPath $page)) { throw "No website page for $module at $page" }
     $entries = @(Get-Commands $module | ForEach-Object { Build-Entry $_ })
-    $commandList = if ($entries.Count -ge 20) {
-        $entries | Group-Object { ($_.Name -split '-', 2)[0] } | ForEach-Object {
+    $commandList = if ($entries.Count -ge 20 -and $commandGroups.ContainsKey($module)) {
+        $entries | Group-Object { Get-CommandGroup $module $_.Name } | ForEach-Object {
             '<section class="cmd-group">'
             '<h3>' + (ConvertTo-HtmlText $_.Name) + '</h3>'
             $_.Group | ForEach-Object { $_.Html }
