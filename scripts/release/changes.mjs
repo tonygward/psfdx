@@ -13,6 +13,8 @@ const SHIPS = [
   /^modules\.ps1$/,
   /^(?:un)?install(?:-windows)?\.ps1$/,
   /^VERSION$/,
+  // The script that assembles the Gallery package decides what is in it, so a change to it changes what users install.
+  /^scripts\/release\/Build-GalleryPackage\.ps1$/,
 ];
 // Inside a module folder, tests and Markdown do not ship.
 const SHIPS_NOT = [/\.Tests\.ps1$/, /\.md$/];
