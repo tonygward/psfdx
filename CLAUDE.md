@@ -108,7 +108,6 @@ Manifests declare `PowerShellVersion = '5.1'` and `CompatiblePSEditions = @('Des
 6. A new module also needs adding to `modules.ps1`.
 7. Write its help (see `.claude/rules/cmdlets.md`): `tests/Help.Tests.ps1` fails for a missing synopsis, description, parameter, example, or "Salesforce CLI mapping" note, or a mapping that does not name the `sf` command the parity report says it runs.
 8. If it runs a new `sf` command, or passes a flag no cmdlet passed before, regenerate the parity report with `./scripts/parity/New-CliParityReport.ps1` and commit `docs/cli-parity.md` and `docs/cli-parity.json`. A test fails if you forget.
-9. Regenerate the website's command reference with `pwsh ./site/Update-ModuleReference.ps1` and commit the changed pages in `site/src/modules/`. Each module page of the website lists every exported command with its synopsis, syntax, parameters, example and `sf` command, generated from the command's own help. `site/ModuleReference.Tests.ps1` fails when a page is stale, so change the help, the exports or the owning module, then regenerate.
 
 ## How work runs
 

@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fillPage, moduleDirs } from './reference.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
@@ -67,6 +68,11 @@ export function build({ outDir = path.join(here, 'dist'), env = process.env } = 
     }
   };
   copyDir(srcDir, outDir);
+  // the command reference of every module page is built from the PowerShell source, so nothing generated is committed
+  for (const dir of moduleDirs(repoRoot)) {
+    const page = path.join(outDir, 'modules', dir, 'index.html');
+    if (fs.existsSync(page)) fs.writeFileSync(page, fillPage(fs.readFileSync(page, 'utf8'), dir, repoRoot));
+  }
 
   fs.copyFileSync(path.join(repoRoot, 'images', 'psfdx-logo.png'), path.join(outDir, 'psfdx-logo.png'));
   fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
