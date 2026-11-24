@@ -120,7 +120,7 @@ test('the feature examples and all ten public modules use real content', () => {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
-  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-org', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce']);
+  assert.deepEqual(modules, ['psfdx', 'psfdx-data', 'psfdx-org', 'psfdx-metadata', 'psfdx-logs', 'psfdx-development', 'psfdx-devops', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-plugins']);
   for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
   for (const m of modules) assert.ok(html.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
 });
