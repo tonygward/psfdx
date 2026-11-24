@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.59 - 2026-11-24
+
 - psfdx: Breaking: `psfdx-shared` is now an internal module that exports no commands, so the helpers it holds are no longer public commands and `Get-Command -Module psfdx*` lists only commands meant for you. These twelve were visible before; nine are now internal and unreachable from a script: `Invoke-Salesforce`, `Show-SalesforceResult`, `Get-SalesforceErrorMessage`, `Get-SalesforceDeployFailures`, `Get-SalesforceTestFailure`, `Get-SalesforceApexCliTestArguments`, `Get-SalesforceApexTestClassNamesFromPath`, `Test-SalesforceApexTestReference` and `Get-PsfdxCommonParameterSplat`. Use the documented cmdlets, or run `sf` yourself, instead. The three SOQL converters, `ConvertTo-SalesforceSoqlLiteral`, `ConvertTo-SalesforceSoqlIdentifier` and `ConvertTo-SalesforceSoqlDateTime`, are public commands of the core `psfdx` module now (their names, parameters and behaviour are unchanged, and they show `psfdx` as their module and appear in its command reference). Every psfdx cmdlet works as before, and `Install-Module psfdx` still installs everything. The website no longer has a `psfdx-shared` page.
 
 ## 0.8.58 - 2026-11-24
