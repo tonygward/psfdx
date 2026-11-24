@@ -34,22 +34,21 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | `psfdx-agentforce` | Agentforce agents |
 | `psfdx-shared` | Internal: implementation helpers the other modules use. It exports no commands, so it is not part of the public command surface, `Get-Command -Module psfdx*` does not list it, and it has no page on the website |
 
-No command is defined twice. `psfdx` exports only its own commands and does not re-export the others.
+No command is defined twice. Once loaded, `psfdx` exports only its own commands and does not re-export the others.
 
 **Which module holds a command.** A cmdlet belongs to the module for the family of Salesforce CLI commands it wraps, and a command family that comes from one CLI plugin stays together. For example every cmdlet that runs a command of the DevOps Center plugin (`@salesforce/plugin-devops-center`) is in `psfdx-devops`: the 26 `sf devops` commands and the 5 beta `sf project deploy pipeline` commands, even though the second group looks like a deploy. They were in `psfdx-metadata` until a release that moved them. The same rule puts every `sf data` cmdlet in `psfdx-data`: queries, single-record changes, files, tree data and the Bulk API 2.0 cmdlets (they were in `psfdx` and `psfdx-bulk`) and the Salesforce CLI plugin cmdlets (`sf plugins ...`) in `psfdx-plugins`; `Install-SalesforceCli` and `Update-SalesforceCli` stay in `psfdx` because they install the CLI itself, not a plugin. A command keeps its name and parameters when its module changes; only the module shown in `Get-Command` (the `Source`) differs, so scripts that call it by name keep working.
 
 ## When the other modules load
 
-PowerShell finds a module only as a folder of its own on its module path, and `Install-Module` installs one package as one folder. So after the install only `psfdx` is discoverable, and the other modules arrive when it loads. `psfdx` loads when you `Import-Module psfdx`, when you use any core command (PowerShell loads it for you), and when you ask `Get-Command -Module psfdx`. Loading it loads every other module, each under its own name.
+PowerShell finds a module only as a folder of its own on its module path, and `Install-Module` installs one package as one folder. So after the install only `psfdx` is discoverable as a module, and the other modules arrive when it loads. To make every command discoverable anyway, the `psfdx` manifest lists every public command of the suite. `psfdx` loads when you `Import-Module psfdx`, when you use or look up any psfdx command (PowerShell loads it for you), and when you ask `Get-Command -Module psfdx`. Loading it loads every other module, each under its own name.
 
 In practice:
 
-- In a new session, `Get-Command -Module psfdx`, then `Get-Command -Module psfdx-logs`, then `Get-Command -Module 'psfdx*'` give the core commands, the logs commands and all commands, each correctly attributed.
-- If the very first thing you do in a new session is `Get-Command -Module psfdx-logs` (or `-Module 'psfdx*'`), it shows no non-core commands yet, because nothing has loaded `psfdx`. Run `Import-Module psfdx` first.
-- A command from a non-core module, such as `Get-SalesforceDebugLogs`, is not found by name until `psfdx` has loaded. Start a session with `Import-Module psfdx` (put it in your profile if you like) and everything is there.
+- In a new session, with nothing imported, `Get-Command -Module 'psfdx*'` lists every command. Until `psfdx` has loaded they all show `psfdx` in the `Source` column; once it has loaded, each shows the module that holds it.
+- Any command autoloads by name, core or not: `Get-SalesforceDebugLogs` in a new session just works, and `Get-Command Get-SalesforceDebugLogs` reports `psfdx-logs`.
+- `Get-Command -Module psfdx` loads `psfdx` and shows only the core commands. `Get-Command -Module psfdx`, then `-Module psfdx-logs`, then `-Module 'psfdx*'` give the core commands, the logs commands and all commands, each correctly attributed.
+- `Get-Command -Module psfdx-logs` as the very first command in a new session shows nothing, because there is no `psfdx-logs` folder for PowerShell to find until `psfdx` has loaded. Use any psfdx command, or `Import-Module psfdx`, first.
 - `Get-Module -ListAvailable 'psfdx*'` lists `psfdx`, the one package you installed. The other modules show in `Get-Module 'psfdx*'` once loaded.
-
-This was chosen on purpose. Listing every command in the `psfdx` manifest would make all of them autoload by name, but it would label every command `psfdx` until the first import, and `Get-Command -Module psfdx` would no longer show only the core commands.
 
 ## Updating
 
@@ -85,7 +84,7 @@ Install-Module psfdx
 `CI - Suite install` builds the package, publishes it to a folder repository as a real NuGet package, and installs it from there with PowerShellGet on Ubuntu (PowerShell 7), Windows (PowerShell 7) and Windows PowerShell 5.1. `scripts/release/Test-PsfdxSuite.ps1` then runs in fresh sessions that see only the installed copy:
 
 - one `Save-Module psfdx` brings the whole suite, and it is one package;
-- in a fresh session `Get-Command -Module psfdx` shows only the core commands, Source `psfdx`;
+- in a fresh session, before anything loads, `Get-Command -Module 'psfdx*'` lists every command and a non-core command is found by name under its own module; `Get-Command -Module psfdx` shows only the core commands, Source `psfdx`;
 - in one fresh session, in order, `-Module psfdx`, `-Module psfdx-logs` and `-Module 'psfdx*'` give the core commands, exactly the logs commands, and every command attributed to its own module, with nothing missing, twice or falsely attributed;
 - the same after `Import-Module psfdx`, and after the first use of a core command with no import;
 - a representative command from every module runs;

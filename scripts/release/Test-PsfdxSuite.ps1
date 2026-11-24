@@ -6,15 +6,17 @@ Run it against a folder that Save-Module or Install-Module filled from a package
 builds). It never imports anything from the source tree: every check runs in a fresh PowerShell process whose module path is that folder alone, so it
 sees what a new user sees after `Install-Module psfdx` and nothing else. It checks that:
   1. the install is the one package `psfdx`, at the expected version, holding every module (no separate psfdx-* package beside it);
-  2. in a fresh session, Get-Command -Module psfdx shows only the core commands, each with the Source `psfdx`;
+  2. in a fresh session, before anything has loaded, Get-Command -Module 'psfdx*' lists every command of the suite (the psfdx manifest lists them
+     all, so they show the Source `psfdx` until it loads), a non-core command is found by name and reports its own module (looking it up loads
+     psfdx), and Get-Command -Module psfdx shows only the core commands, each with the Source `psfdx`;
   3. in one fresh session, in this order: Get-Command -Module psfdx, then -Module psfdx-logs, then -Module 'psfdx*' give the core commands, exactly
      the commands the logs module owns (Source psfdx-logs), and every command of the suite with each one attributed to the module that holds it,
      with nothing missing, nothing twice and nothing falsely attributed (asking for psfdx is what loads the package, and loading it loads the rest);
   4. the same holds after Import-Module psfdx, and after the first use of a core command with no import at all (PowerShell loads psfdx by itself);
   5. a representative command from every module runs.
 What a brand-new session cannot do is recorded, not hidden: PowerShell discovers modules only as folders of their own on the module path and one package
-installs one folder, so before psfdx has loaded, `-Module psfdx-logs` and `-Module 'psfdx*'` show no non-core command and a non-core command is not found
-by name. The report says so (see docs/install.md).
+installs one folder, so before psfdx has loaded, `-Module psfdx-logs` shows nothing and `-Module 'psfdx*'` shows every command with the Source `psfdx`.
+The report says so (see docs/install.md).
 What each module should export comes from the manifests in the repository (-Root). Works on Windows PowerShell 5.1 and PowerShell 7, needs no
 Salesforce CLI and no org. Throws, listing every problem, when anything is wrong.
 #>
@@ -107,6 +109,20 @@ $(& $collect 'core' 'psfdx')
 "@
 if (-not (Same @($fresh.listed) @("psfdx $Version"))) { Add-Problem "Get-Module -ListAvailable 'psfdx*' lists [$(@($fresh.listed) -join ', ')], expected [psfdx $Version]" }
 if (@($fresh.loadedBefore).Count -ne 0) { Add-Problem "The clean session already had psfdx modules loaded: $(@($fresh.loadedBefore) -join ', ')" }
+$expectedAll = @($modules | ForEach-Object { $expectedExports[$_] })
+$discovered = Invoke-FreshSession @"
+`$r = [ordered]@{}
+`$r['all'] = @(Get-Command -Module 'psfdx*' -ErrorAction SilentlyContinue | Where-Object { `$_.CommandType -eq 'Function' } | ForEach-Object Name)
+`$r['loadedAfterList'] = @(Get-Module 'psfdx*').Count
+`$r['byName'] = (Get-Command '$($representative['psfdx-logs'].Command)' -ErrorAction SilentlyContinue).Source
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+if (-not (Same @($discovered.all) $expectedAll)) {
+    $missing = @($expectedAll | Where-Object { $_ -notin @($discovered.all) })
+    Add-Problem "In a fresh session, before psfdx has loaded, Get-Command -Module 'psfdx*' shows $(@($discovered.all).Count) commands, expected all $expectedTotal. Missing: $($missing -join ', ')"
+}
+if ($discovered.loadedAfterList -ne 0) { Add-Problem "Get-Command -Module 'psfdx*' in a fresh session loaded $($discovered.loadedAfterList) modules; listing should not load anything" }
+if ($discovered.byName -ne 'psfdx-logs') { Add-Problem "In a fresh session, Get-Command $($representative['psfdx-logs'].Command) reports the Source '$($discovered.byName)', expected psfdx-logs: a non-core command must be found by name before psfdx has loaded" }
 $bySource = BySource @($fresh.core)
 if (-not (Same @($bySource['psfdx']) $expectedExports[$core]) -or @($bySource.Keys | Where-Object { $_ -ne 'psfdx' }).Count) {
     Add-Problem "In a fresh session Get-Command -Module psfdx shows $(@($fresh.core).Count) commands from [$(@($bySource.Keys) -join ', ')], expected the $($expectedExports[$core].Count) core commands, every one with the Source psfdx"
@@ -237,7 +253,8 @@ $evidence = [ordered]@{
     brandNewSession = [ordered]@{
         listedModules = @($fresh.listed)
         coreCommandsShown = @($fresh.core).Count
-        note = 'Before psfdx has loaded only psfdx is discoverable: PowerShell finds modules as folders of their own on the module path, and one package installs one folder. Asking for psfdx, importing it or using a core command loads the rest.'
+        commandsDiscoverableBeforeLoad = @($discovered.all).Count
+        note = 'Before psfdx has loaded only psfdx is discoverable as a module: PowerShell finds modules as folders of their own on the module path, and one package installs one folder. Its manifest lists every command, so all of them are discoverable and autoload by name, with the Source psfdx until it loads. Asking for psfdx, importing it or using any command loads the rest under their own names.'
     }
     representativeCommands = $runEvidence
 }
@@ -245,4 +262,4 @@ if ($EvidencePath) { ($evidence | ConvertTo-Json -Depth 6) | Set-Content -Litera
 
 if ($problems.Count) { throw ("The installed psfdx package is not right (PowerShell $($PSVersionTable.PSVersion)):`n - " + ($problems -join "`n - ")) }
 $summary = ($modules | ForEach-Object { "$_=$($counts[$_])" }) -join ', '
-"psfdx $Version is one package holding $($modules.Count) modules, checked on PowerShell $($PSVersionTable.PSVersion): in a fresh session Get-Command -Module psfdx shows only the $($counts[$core]) core commands; once psfdx has loaded (Get-Command -Module psfdx, Import-Module psfdx or a first core command) Get-Command -Module psfdx-logs shows exactly the $($counts['psfdx-logs']) logs commands and -Module 'psfdx*' shows all $expectedTotal with each attributed to its own module ($summary) and no duplicate; one representative command from each of the $($modules.Count) modules runs."
+"psfdx $Version is one package holding $($modules.Count) modules, checked on PowerShell $($PSVersionTable.PSVersion): in a fresh session every command is discoverable and Get-Command -Module psfdx shows only the $($counts[$core]) core commands; once psfdx has loaded (Get-Command -Module psfdx, Import-Module psfdx or a first core command) Get-Command -Module psfdx-logs shows exactly the $($counts['psfdx-logs']) logs commands and -Module 'psfdx*' shows all $expectedTotal with each attributed to its own module ($summary) and no duplicate; one representative command from each of the $($modules.Count) modules runs."

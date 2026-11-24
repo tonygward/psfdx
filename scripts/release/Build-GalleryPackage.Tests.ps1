@@ -56,12 +56,21 @@ Describe 'Gallery package (one psfdx package that holds every module)' {
         @(Get-ChildItem -Path $script:Out -File | ForEach-Object Name | Sort-Object) | Should -Be @('LICENSE', 'psfdx.psd1', 'psfdx.psm1')
     }
 
-    It 'exports only the core commands, by explicit name, so Get-Command -Module psfdx shows the core and nothing else' {
-        @($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be $script:Exports['psfdx']
+    It 'lists every public command of the suite, by explicit name and once, so all of them are discoverable before psfdx loads' {
+        $all = @(Get-PsfdxModules | ForEach-Object { $script:Exports[$_] } | Sort-Object)
+        @($script:Manifest.FunctionsToExport | Sort-Object) | Should -Be $all
         @($script:Manifest.FunctionsToExport | Where-Object { $_ -match '[*?]' }).Count | Should -Be 0
-        foreach ($module in $script:Others) {
-            foreach ($function in $script:Exports[$module]) { $script:Manifest.FunctionsToExport | Should -Not -Contain $function -Because "$function belongs to $module" }
-        }
+    }
+
+    It 'makes every command discoverable in a brand-new session, and autoloads a non-core command by name under its own module' {
+        $total = 0; foreach ($module in Get-PsfdxModules) { $total += $script:Exports[$module].Count }
+        $discover = & $script:Fresh "`$c = @(Get-Command -Module 'psfdx*' | Where-Object { `$_.CommandType -eq 'Function' }); `"`$(`$c.Count) `$(@(`$c | Select-Object -ExpandProperty Name -Unique).Count) loaded=`$(@(Get-Module 'psfdx*').Count)`""
+        $discover.ExitCode | Should -Be 0 -Because $discover.Output
+        $discover.Output | Should -Be "$total $total loaded=0"
+        $command = $script:Exports['psfdx-logs'][0]
+        $autoload = & $script:Fresh "(Get-Command '$command').Source"
+        $autoload.ExitCode | Should -Be 0 -Because $autoload.Output
+        $autoload.Output | Should -Be 'psfdx-logs'
     }
 
     It 'holds every other module in a folder of its own, with its own manifest and exports, and without tests' {
@@ -113,7 +122,7 @@ Describe 'Gallery package (one psfdx package that holds every module)' {
         @($match.Groups[1].Value -split ',' | ForEach-Object { $_.Trim().Trim("'") }) | Should -Be $expected
     }
 
-    It 'gives every module its own identity once psfdx loads: Get-Command -Module psfdx stays core only, and nothing is defined twice' {
+    It 'gives every module its own identity once psfdx loads: Get-Command -Module psfdx shows only the core once loaded, and nothing is defined twice' {
         $run = & $script:Fresh @'
 Import-Module psfdx
 $core = @(Get-Command -Module psfdx)

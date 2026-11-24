@@ -68,6 +68,16 @@ Describe 'Test-PsfdxSuite' {
         $run.Output | Should -BeLike '*Get-Command -Module psfdx*core*'
     }
 
+    It 'fails when the manifest lists only the core commands, because then nothing else is discoverable before psfdx loads' {
+        $folder = & $script:Install 'core-only-manifest'
+        $manifest = Join-Path (Join-Path (Join-Path $folder 'psfdx') $script:Version) 'psfdx.psd1'
+        $core = @((Import-PowerShellDataFile -Path (Join-Path (Join-Path $script:Root 'psfdx') 'psfdx.psd1')).FunctionsToExport | ForEach-Object { "'$_'" }) -join ', '
+        [System.IO.File]::WriteAllText($manifest, [regex]::Replace([System.IO.File]::ReadAllText($manifest), '(?s)FunctionsToExport\s*=\s*@\(.*?\)', "FunctionsToExport = @($core)"))
+        $run = & $script:Run @('-ModulePath', $folder)
+        $run.ExitCode | Should -Not -Be 0
+        $run.Output | Should -BeLike "*before psfdx has loaded, Get-Command -Module 'psfdx`**"
+    }
+
     It 'fails when a separate psfdx-* package sits beside the one package' {
         $folder = & $script:Install 'second-package'
         New-Item -ItemType Directory -Path (Join-Path (Join-Path $folder 'psfdx-logs') $script:Version) -Force | Out-Null

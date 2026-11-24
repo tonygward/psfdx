@@ -40,7 +40,7 @@ Rules that keep them apart:
 
 Each module has `<name>.psd1` (manifest), `<name>.psm1` (code) and `<name>.Tests.ps1` (Pester).
 
-The PowerShell Gallery gets **one** package, `psfdx`: the core module is its root module and every other module sits in a folder inside it. The build (`scripts/release/Build-GalleryPackage.ps1`) adds a loader to the end of the published `psfdx.psm1` that imports the others with `-Global`, so each keeps its own module identity (`Get-Command -Module psfdx-logs`). Keep `FunctionsToExport` explicit and unique across modules, never list another module's command in the core manifest, and put a new module in `modules.ps1`. See [docs/release.md](docs/release.md) and [docs/install.md](docs/install.md).
+The PowerShell Gallery gets **one** package, `psfdx`: the core module is its root module and every other module sits in a folder inside it. The build (`scripts/release/Build-GalleryPackage.ps1`) adds a loader to the end of the published `psfdx.psm1` that imports the others with `-Global`, so each keeps its own module identity (`Get-Command -Module psfdx-logs`). Keep `FunctionsToExport` explicit and unique across modules, never list another module's command in the repository's core `psfdx/psfdx.psd1` (the build writes every module's commands into the packaged manifest so they are discoverable before `psfdx` loads), and put a new module in `modules.ps1`. See [docs/release.md](docs/release.md) and [docs/install.md](docs/install.md).
 
 ## Commands
 

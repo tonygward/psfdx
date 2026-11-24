@@ -10,15 +10,16 @@ Param(
 # PowerShell 5.1 and PowerShell 7.
 #
 # What the package is: ONE Gallery package, installed by the one command `Install-Module psfdx`, that holds every module.
-#   - `psfdx` is the core module and the package's root module. Its manifest exports only the core commands, so `Get-Command -Module psfdx` shows
-#     the core commands and nothing else, each with the Source `psfdx`.
-#   - Every other module sits in a folder of its own inside the package. When `psfdx` loads (Import-Module psfdx, or the first time any core command
+#   - `psfdx` is the core module and the package's root module. It defines only the core commands.
+#   - Every other module sits in a folder of its own inside the package. When `psfdx` loads (Import-Module psfdx, or the first time any psfdx command
 #     is used and PowerShell loads it), the end of psfdx.psm1 imports them with -Global, so each is a module in its own right: `Get-Module`,
 #     `Get-Command -Module psfdx-logs` and `Get-Command -Module 'psfdx*'` show every command under the module that really holds it, with no
 #     duplicates. The loader is generated here; it is not in the source psfdx.psm1.
-#   - PowerShell finds modules only as folders of their own on the module path, and one package installs one folder. So until `psfdx` has loaded, only
-#     `psfdx` is discoverable, and a non-core command is not found by name. Listing every command in the psfdx manifest would fix that but would
-#     label every command `psfdx` before the first import, so it is deliberately not done. docs/install.md explains this.
+#   - PowerShell finds modules only as folders of their own on the module path, and one package installs one folder, so before anything has loaded
+#     only the psfdx manifest is read. That manifest therefore lists EVERY public command of the suite in FunctionsToExport. In a brand-new session
+#     `Get-Command -Module 'psfdx*'` lists every command and any command autoloads by name (PowerShell imports psfdx, which loads the module that
+#     holds it). Until that first load the commands show the Source `psfdx`; afterwards each shows its own module. A module exports only functions
+#     it defines, so once loaded `Get-Command -Module psfdx` still shows only the core commands. docs/install.md explains this.
 #
 # GUIDs: the core module's GUID is the Gallery identity of the package `psfdx`, so the package keeps it. Every other module has its own.
 $ErrorActionPreference = 'Stop'
@@ -138,9 +139,9 @@ $newText = $start + $coreText.TrimEnd() + "`n" + $loader
 if ($crlf) { $newText = $newText.Replace("`n", "`r`n") }
 [System.IO.File]::WriteAllText((Join-Path $outputFull "$coreName.psm1"), $newText, (New-Object System.Text.UTF8Encoding($hasBom)))
 
-# ---- The package manifest: the core module's, with only the core commands exported ----
+# ---- The package manifest: the core module's, listing every public command of the suite so all of them are discoverable before psfdx loads ----
 $tags = @($psData.Tags)
-$functionList = @(@($core.FunctionsToExport) | Sort-Object | ForEach-Object { "        '$_'" })
+$functionList = @(@($exports.Keys) | Sort-Object | ForEach-Object { "        '$_'" })
 $lines = @(
     '@{'
     "    RootModule           = 'psfdx.psm1'"
