@@ -1,6 +1,6 @@
 @{
     RootModule = 'psfdx-data.psm1'
-    ModuleVersion = '0.8.59'
+    ModuleVersion = '0.8.60'
     GUID = '04d396d0-872a-433c-878e-7dbd8e5f4f57'
     Author = 'Tony Ward'
     Description = 'Salesforce data for the Salesforce CLI: SOQL and SOSL queries, single records, files, tree data and Bulk API 2.0 jobs.'

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.60 - 2026-11-24
+
 - psfdx-data: Breaking (a packaging change, not a removal): `psfdx-bulk` is now `psfdx-data`, and the Salesforce data commands moved into it from `psfdx`: `Select-SalesforceRecords`, `Search-SalesforceRecords`, `New-SalesforceRecord`, `Set-SalesforceRecord`, `Get-SalesforceRecord`, `Remove-SalesforceRecord`, `Upsert-SalesforceRecord`, `Get-SalesforceRecordType`, `Get-SalesforceSObjectRecordCount`, `New-SalesforceFile`, `Export-SalesforceTreeData` and `Import-SalesforceTreeData`. They join the eight Bulk API 2.0 commands, so `Get-Command -Module psfdx-data` lists all the data commands. Names, parameters and behaviour are unchanged, and `Install-Module psfdx` still installs everything. Only code that imports `psfdx-bulk` by name or reads the `Source` of these commands needs to change: use `psfdx-data`. The website page `/modules/psfdx-bulk/` is now `/modules/psfdx-data/`, the `psfdx` page lists only core commands, and the `psfdx-data` page groups its commands as Records and queries, Tree data and Bulk API 2.0. As with every module other than `psfdx`, run `Import-Module psfdx` first in a new session: it loads the rest, including `psfdx-data`.
 
 ## 0.8.59 - 2026-11-24

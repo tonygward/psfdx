@@ -1,6 +1,6 @@
 @{
     RootModule = 'psfdx-plugins.psm1'
-    ModuleVersion = '0.8.59'
+    ModuleVersion = '0.8.60'
     GUID = 'c48c6804-def7-438a-91d4-45ba4d5cb01a'
     Author = 'Tony Ward'
     Description = 'Salesforce CLI plugin management for PowerShell: install, list, inspect, update, uninstall, discover and reset plugins, verify plugin signatures, and manage the plugin allowlist.'
