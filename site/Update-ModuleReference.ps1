@@ -235,10 +235,18 @@ foreach ($module in Get-PsfdxModules) {
     if (-not (Test-Path -LiteralPath $page)) { throw "No website page for $module at $page" }
     $entries = @(Get-Commands $module | ForEach-Object { Build-Entry $_ })
     $commandList = if (($entries.Count -ge 20 -or $module -eq 'psfdx-org') -and $commandGroups.ContainsKey($module)) {
-        $entries | Group-Object { Get-CommandGroup $module $_.Name } | ForEach-Object {
+        # Group in order of first appearance. Group-Object does not promise that order on Windows PowerShell 5.1, and the pages must be identical on both editions.
+        $groupNames = New-Object System.Collections.Generic.List[string]
+        $byGroup = @{}
+        foreach ($entry in $entries) {
+            $groupName = Get-CommandGroup $module $entry.Name
+            if (-not $byGroup.ContainsKey($groupName)) { $byGroup[$groupName] = New-Object System.Collections.Generic.List[object]; $groupNames.Add($groupName) }
+            $byGroup[$groupName].Add($entry)
+        }
+        foreach ($groupName in $groupNames) {
             '<section class="cmd-group">'
-            '<h3>' + (ConvertTo-HtmlText $_.Name) + '</h3>'
-            $_.Group | ForEach-Object { $_.Html }
+            '<h3>' + (ConvertTo-HtmlText $groupName) + '</h3>'
+            $byGroup[$groupName] | ForEach-Object { $_.Html }
             '</section>'
         }
     } else {
