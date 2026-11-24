@@ -27,22 +27,12 @@ Describe 'Website command reference' {
         }
     }
 
-    It 'lists the commands alphabetically in a linked index' {
-        foreach ($module in Get-PsfdxModules) {
-            $links = @([regex]::Matches($script:Pages[$module], '<li><a href="#([^"]+)">') | ForEach-Object { $_.Groups[1].Value })
-            $sorted = @($links | Sort-Object { $_.ToLowerInvariant() })
-            ($links -join ',') | Should -Be ($sorted -join ',') -Because "$module's index must be alphabetical"
-            $ids = @([regex]::Matches($script:Pages[$module], '<details class="cmd" id="([^"]+)">') | ForEach-Object { $_.Groups[1].Value })
-            ($ids -join ',') | Should -Be ($links -join ',') -Because "$module's entries follow the index"
-        }
-    }
-
-    It 'gives every entry a synopsis, syntax and a practical example with the PS> prompt' {
+    It 'gives every entry a description, syntax and a practical example with the PS> prompt' {
         foreach ($module in Get-PsfdxModules) {
             $entries = @([regex]::Matches($script:Pages[$module], '(?s)<details class="cmd" id="([^"]+)">(.*?)</details>'))
             foreach ($entry in $entries) {
                 $name = $entry.Groups[1].Value; $body = $entry.Groups[2].Value
-                $body | Should -Match '<span class="cmd-synopsis">[^<]+</span>' -Because "$name needs a synopsis"
+                $body | Should -Match '</summary><div class="cmd-body"><h4>Description</h4><p class="cmd-description">[^<]+</p>' -Because "$name needs a description beneath the command name"
                 $body | Should -Match '<h4>Syntax</h4><pre class="cmd-syntax"><code>' -Because "$name needs syntax"
                 $body | Should -Match '<h4>Example</h4>' -Because "$name needs an example"
                 $body | Should -Match 'class="ps-prompt">PS&gt;</span>' -Because "$name's example needs the PS> prompt"

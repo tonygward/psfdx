@@ -3,8 +3,8 @@
 Writes the command reference of every psfdx module into its page of the website.
 .DESCRIPTION
 Reads the comment-based help and the parameter block of every command each module exports, which is exactly what Get-Help reads, and fills the part of
-site/src/modules/<module>/index.html between <!-- reference:start --> and <!-- reference:end --> with an alphabetical linked index and one compact,
-expandable entry per command: its synopsis, syntax (one line per parameter set), parameters, a practical example with the PS> prompt, and the Salesforce CLI
+site/src/modules/<module>/index.html between <!-- reference:start --> and <!-- reference:end --> with one compact,
+expandable entry per command, grouped by PowerShell verb on longer pages: its description, syntax (one line per parameter set), parameters, a practical example with the PS> prompt, and the Salesforce CLI
 command it runs. Nothing is typed by hand and nothing is invented: a command appears under the module that exports it, with the text of its own help.
 The result is the same on Windows PowerShell 5.1 and PowerShell 7 (it parses the source and does not load the modules), so a Pester test can fail when a page
 is stale. With -Check nothing is written; it returns the pages that are out of date.
@@ -129,7 +129,12 @@ function Build-Entry([System.Management.Automation.Language.FunctionDefinitionAs
     $syntax = @($syntax | Select-Object -Unique)
 
     $sb = New-Object System.Text.StringBuilder
-    [void]$sb.Append('<details class="cmd" id="' + (ConvertTo-HtmlText $name) + '"><summary><span class="cmd-name">' + (ConvertTo-HtmlText $name) + '</span> <span class="cmd-synopsis">' + (ConvertTo-HtmlText ($help.Synopsis.Trim() -replace '\s+', ' ')) + '</span></summary><div class="cmd-body">')
+    [void]$sb.Append('<details class="cmd" id="' + (ConvertTo-HtmlText $name) + '"><summary><span class="cmd-name">' + (ConvertTo-HtmlText $name) + '</span></summary><div class="cmd-body">')
+    $description = if ($help.Description) { $help.Description.Trim() } else { $help.Synopsis.Trim() }
+    [void]$sb.Append('<h4>Description</h4>')
+    foreach ($paragraph in ($description -split '\r?\n[ \t]*\r?\n')) {
+        [void]$sb.Append('<p class="cmd-description">' + (ConvertTo-HtmlText ($paragraph.Trim() -replace '\s+', ' ')) + '</p>')
+    }
     [void]$sb.Append('<h4>Syntax</h4><pre class="cmd-syntax"><code>' + (($syntax | ForEach-Object { ConvertTo-HtmlText $_ }) -join "`n") + '</code></pre>')
     if ($items.Count -gt 0) {
         [void]$sb.Append('<h4>Parameters</h4><dl class="cmd-params">')
@@ -165,15 +170,20 @@ foreach ($module in Get-PsfdxModules) {
     $page = Join-Path (Join-Path (Join-Path (Join-Path $Root 'site') 'src') 'modules') (Join-Path $module 'index.html')
     if (-not (Test-Path -LiteralPath $page)) { throw "No website page for $module at $page" }
     $entries = @(Get-Commands $module | ForEach-Object { Build-Entry $_ })
-    $index = ($entries | ForEach-Object { '<li><a href="#' + (ConvertTo-HtmlText $_.Name) + '">' + (ConvertTo-HtmlText $_.Name) + '</a></li>' }) -join "`n"
+    $commandList = if ($entries.Count -ge 20) {
+        $entries | Group-Object { ($_.Name -split '-', 2)[0] } | ForEach-Object {
+            '<section class="cmd-group">'
+            '<h3>' + (ConvertTo-HtmlText $_.Name) + '</h3>'
+            $_.Group | ForEach-Object { $_.Html }
+            '</section>'
+        }
+    } else {
+        $entries | ForEach-Object { $_.Html }
+    }
     $fragment = @(
         '<!-- reference:start -->'
-        "<p class=""ref-note"">$($entries.Count) commands, in alphabetical order. Each entry is generated from the command's own help, so it matches <code>Get-Help &lt;command&gt; -Full</code>. Every command also takes the common parameters, such as <code>-Verbose</code>.</p>"
-        '<nav aria-label="Command index"><ul class="cmd-index">'
-        $index
-        '</ul></nav>'
         '<div class="cmd-list">'
-        (($entries | ForEach-Object { $_.Html }) -join "`n")
+        $commandList
         '</div>'
         '<!-- reference:end -->'
     ) -join "`n"

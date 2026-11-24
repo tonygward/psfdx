@@ -71,9 +71,8 @@ The homepage links to `/modules/<module-name>/` for each module (the seven user-
 
 **The command reference is generated, not written.** `site/Update-ModuleReference.ps1` reads the comment-based help and the parameter block of every command a module exports (the text `Get-Help` reads) and fills the part of each page between `<!-- reference:start -->` and `<!-- reference:end -->`:
 
-- an alphabetical index that links to every command;
-- one compact, expandable entry per command: synopsis, syntax (one line per parameter set), parameters, a practical example with the `PS>` prompt, and the Salesforce CLI command it runs.
+- one compact, expandable entry per command: description, syntax (one line per parameter set), parameters, a practical example with the `PS>` prompt, and the Salesforce CLI command it runs.
 
 A command appears under the module that exports it, so moving a command to another module moves its entry. Run `pwsh ./site/Update-ModuleReference.ps1` after changing a command, its help, or its owning module, and commit the changed pages. The script parses the source and does not load the modules, so it gives the same result on Windows PowerShell 5.1 and PowerShell 7. `site/ModuleReference.Tests.ps1` fails when a page is stale, and also checks that every command is documented once under its owning module, that every `sf` command shown exists in the CLI inventory, and that every wrapped `sf` command appears on a page. `site/build.test.mjs` checks the structure of the pages and that every exported command has an entry.
 
-Never edit between the markers by hand: the next run replaces it. A small script, `reference.js`, opens the entry an index link points at; the pages work without it.
+Never edit between the markers by hand: the next run replaces it. Pages with 20 or more commands group them by PowerShell verb. A small script, `reference.js`, opens a command when the page is loaded with its fragment identifier.
