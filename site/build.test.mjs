@@ -126,7 +126,8 @@ test('the feature examples and all eleven modules use real content', () => {
 });
 
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
-  for (const command of ['<code>Get-Help Deploy-SalesforceMetadata</code>', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv -Path ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
+  assert.match(html, /PowerShell with psfdx[\s\S]*Bash with the Salesforce CLI and jq[\s\S]*Both examples do the same job/);
+  for (const command of ['<code>Get-Help Deploy-SalesforceMetadata</code>', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
   for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);

@@ -287,3 +287,7 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .watch-example { margin: 20px 0 12px; }
 .watch-example pre { font-size: .9rem; }
 .watch-example figcaption { margin-bottom: 0; }
+
+.pipeline-comparison { margin-top: 2.5rem; }
+.pipeline-comparison .code-box { margin: 1rem 0; }
+.pipeline-comparison figcaption { color: var(--yellow); font-weight: 600; margin-bottom: .5rem; }
