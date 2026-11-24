@@ -224,8 +224,8 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .documentation h2 { font-size: clamp(1.5rem, 2.8vw, 2.15rem); margin: 1.8em 0 .65em; }
 .documentation .section-intro { max-width: 72ch; }
 .documentation .code-box { margin: 18px 0 24px; max-width: 100%; }
-.documentation .code-box pre, #powershell-examples .card pre { overflow-x: auto; white-space: pre; }
-#powershell-examples .card pre { background: var(--bg); border: 1px solid var(--border); padding: 14px; border-radius: 8px; font-size: .78rem; line-height: 1.7; }
+.documentation .code-box pre, :is(#powershell-examples, #why) .card pre { overflow-x: auto; white-space: pre; }
+:is(#powershell-examples, #why) .card pre { background: var(--bg); border: 1px solid var(--border); padding: 14px; border-radius: 8px; font-size: .78rem; line-height: 1.7; }
 #powershell-examples .card code { font-size: inherit; }
 
 /* Documentation: compact, high-contrast PowerShell reference styling */
@@ -278,3 +278,8 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .documentation .cmd-example-note, .documentation .cmd-cli { color: var(--muted); font-size: .85rem; margin: .2em 0 0; }
 .documentation .cmd-body .cmd-description { color: var(--text); margin: 0 0 .65em; font-size: .88rem; line-height: 1.5; }
 @media (max-width: 600px) { .documentation .cmd-body { padding: 0 12px 12px; } }
+
+#why .card pre, .watch-example pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.watch-example { margin: 20px 0 12px; }
+.watch-example pre { font-size: .9rem; }
+.watch-example figcaption { margin-bottom: 0; }
