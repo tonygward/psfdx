@@ -126,9 +126,24 @@
         <ul class="cards">
           <li class="card"><p class="card-tag">Get-Help</p><h3>Every command explained</h3><p>Discover parameters, examples and exactly which Salesforce CLI operation each psfdx cmdlet invokes.</p><pre><code>Get-Help Deploy-SalesforceMetadata</code></pre></li>
           <li class="card"><p class="card-tag">Update-Module</p><h3>One update, every module</h3><p>Install and update the complete suite with one PowerShell Gallery package.</p><pre><code>Update-Module psfdx</code></pre></li>
-          <li class="card"><p class="card-tag">| Export-Csv</p><h3>Salesforce data, native pipelines</h3><p>Query records as PowerShell objects, then export them with the built-in CSV command.</p><pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg myorg |
-  Export-Csv -Path ./accounts.csv -NoTypeInformation</code></pre></li>
+          <li class="card"><p class="card-tag">| Export-Csv</p><h3>Salesforce data, native pipelines</h3><p>Query records as PowerShell objects, then export them with the built-in CSV command.</p><p><a href="#pipeline-comparison">Compare the PowerShell and Bash examples</a></p></li>
         </ul>
+
+        <div id="pipeline-comparison" class="pipeline-comparison">
+          <h3>Export Salesforce accounts to CSV</h3>
+          <figure class="code-box">
+            <figcaption>PowerShell with psfdx</figcaption>
+            <pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg dev |
+    Export-Csv ./accounts.csv -NoTypeInformation</code></pre>
+          </figure>
+          <figure class="code-box">
+            <figcaption>Bash with the Salesforce CLI and jq</figcaption>
+            <pre><code>sf data query --query 'SELECT Id, Name FROM Account' --target-org dev --json |
+  jq -r '["Id", "Name"], (.result.records[] | [.Id, .Name]) | @csv' \
+  &gt; accounts.csv</code></pre>
+          </figure>
+          <p class="section-intro">Both examples do the same job, but the psfdx version is easier to read. psfdx returns PowerShell objects, so you can pipe the results straight into tools like <code>Sort-Object</code> and <code>Group-Object</code>.</p>
+        </div>
       </div>
     </section>
 
