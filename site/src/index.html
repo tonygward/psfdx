@@ -109,8 +109,10 @@
           </li>
           <li class="card">
             <p class="card-tag">-Verbose</p>
-            <h3>Nothing hidden</h3>
-            <p>psfdx wraps the official Salesforce CLI, and <code>-Verbose</code> shows the exact <code>sf</code> command it runs, so you can always see what happened.</p>
+            <h3>See exactly what runs</h3>
+            <p>Add <code>-Verbose</code> to see the underlying Salesforce CLI command when troubleshooting a script.</p>
+            <pre><code><span class="prompt">PS&gt;</span> Get-SalesforceOrgDetails -TargetOrg dev -Verbose
+<span class="prompt">VERBOSE:</span> sf org display --target-org dev --json</code></pre>
           </li>
         </ul>
       </div>
@@ -127,6 +129,21 @@
           <li class="card"><p class="card-tag">| Export-Csv</p><h3>Salesforce data, native pipelines</h3><p>Query records as PowerShell objects, then export them with the built-in CSV command.</p><pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg myorg |
   Export-Csv -Path ./accounts.csv -NoTypeInformation</code></pre></li>
         </ul>
+      </div>
+    </section>
+
+    <section id="watch" class="section" aria-labelledby="watch-title">
+      <div class="wrap">
+        <h2 id="watch-title">Deploy and test Apex as you save.</h2>
+        <p class="section-intro">Set a sandbox or scratch org as your default target, then start <code>Watch-SalesforceApex</code> from your Salesforce DX project. Saving a class or trigger deploys that component and runs related tests it discovers in the project.</p>
+        <figure class="code-box watch-example">
+          <pre><code><span class="prompt">PS&gt;</span> Watch-SalesforceApex
+Watching /work/salesforce for Apex changes. Press Ctrl+C to stop.
+Deploying ApexClass InvoiceService...
+Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).</code></pre>
+          <figcaption class="fine">Example output after saving <code>InvoiceService.cls</code>. If a deployment or test fails, read the error in the terminal. Fix the issue and save the Apex file again to retry while the watcher is running.</figcaption>
+        </figure>
+        <p><a href="/modules/psfdx-development/#Watch-SalesforceApex">Apex watcher help</a> · <a href="/modules/psfdx-development/#Watch-SalesforceJest">LWC Jest watch mode</a></p>
       </div>
     </section>
 

@@ -116,7 +116,7 @@ test('the marquee lists real psfdx commands (and Export-Csv), twice, with the co
 });
 
 test('the feature examples and all eleven modules use real content', () => {
-  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'Nothing hidden', 'A simpler, more intuitive way to work with Salesforce.', 'One installation. Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
+  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'See exactly what runs', 'Get-SalesforceOrgDetails -TargetOrg dev -Verbose', 'sf org display --target-org dev --json', 'Deploy and test Apex as you save.', 'Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).', 'A simpler, more intuitive way to work with Salesforce.', 'One installation. Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);

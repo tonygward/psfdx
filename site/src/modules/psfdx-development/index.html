@@ -9,6 +9,9 @@
 <p class="eyebrow">MODULE REFERENCE / psfdx-development</p><h1>psfdx-development</h1><p class="tagline">Development and testing</p><p class="section-intro">Salesforce projects, scratch org provisioning, Apex tests, Code Analyzer, LWC and generators.</p>
 <p>Part of the <code>psfdx</code> package, which installs every module: see the <a href="/modules/psfdx/#get-started">installation and update instructions</a>.</p>
 <div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> Get-Command -Module psfdx-development</span></code></pre></div>
+<h2>Watch Apex and LWC tests</h2>
+<p>From a Salesforce DX project, run <a href="#Watch-SalesforceApex"><code>Watch-SalesforceApex</code></a> to deploy changed Apex to your default target org and run related tests. Set the target to a sandbox or scratch org before starting.</p>
+<p>To rerun LWC tests locally as files change, run <a href="#Watch-SalesforceJest"><code>Watch-SalesforceJest</code></a> from a project with npm dependencies installed and a <code>test:unit:watch</code> script in <code>package.json</code>.</p>
 <h2 id="reference">Commands</h2>
 <!-- reference:start -->
 <div class="cmd-list">
