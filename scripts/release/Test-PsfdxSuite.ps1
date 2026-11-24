@@ -47,7 +47,6 @@ function Same([object[]] $A, [object[]] $B) { (@($A | Sort-Object) -join '|') -e
 # One command that runs from every module without a Salesforce CLI or an org. Each must run (not throw) and be owned by the module named.
 $representative = [ordered]@{
     'psfdx'             = @{ Command = 'Get-SalesforceDateTime'; Run = "Get-SalesforceDateTime -Datetime ([datetime]'2026-01-02T03:04:05Z')"; Expect = '2026-01-02T03:04:05Z' }
-    'psfdx-shared'      = @{ Command = 'ConvertTo-SalesforceSoqlLiteral'; Run = 'ConvertTo-SalesforceSoqlLiteral -Value "O''Brien"'; Expect = "'O\'Brien'" }
     'psfdx-logs'        = @{ Command = 'Convert-SalesforceDebugLog'; Run = "Convert-SalesforceDebugLog -Log ('59.0 APEX_CODE,DEBUG' + [Environment]::NewLine + '12:00:00.1 (1000)|EXECUTION_STARTED')"; Expect = $null }
     'psfdx-metadata'    = @{ Command = 'Clear-SalesforceMetadataTypeCache'; Run = 'Clear-SalesforceMetadataTypeCache'; Expect = $null }
     'psfdx-plugins'     = @{ Command = 'Uninstall-SalesforcePlugin'; Run = 'Uninstall-SalesforcePlugin -Name sfdx-nothing -WhatIf'; Expect = $null }
@@ -199,6 +198,30 @@ foreach ($m in $representative.Keys) {
     elseif ($got.source -ne $m) { Add-Problem "$($spec.Command) reports the Source '$($got.source)', expected $m" }
     elseif ($spec.Expect -and $got.out -ne $spec.Expect) { Add-Problem "$($spec.Command) returned '$($got.out)', expected '$($spec.Expect)'" }
 }
+
+# ---- 6. Internal helpers stay internal ----
+# psfdx-shared exports nothing. Every helper it holds must stay undiscoverable after the package has loaded, the three SOQL converters excepted: they are public and
+# belong to the core module (their Source is checked with the other core commands above). The other modules must still work, which the representative runs above prove.
+$internalNames = @()
+foreach ($internal in @(Get-PsfdxInternalModules)) {
+    foreach ($file in Get-ChildItem -LiteralPath (Join-Path $Root $internal) -Filter '*.ps1' | Where-Object { $_.Name -notlike '*.Tests.ps1' }) {
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)
+        $internalNames += @($ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false) | ForEach-Object { $_.Name })
+    }
+}
+$publicFromInternal = @($expectedExports[$core] | Where-Object { $_ -in $internalNames })
+$hiddenNames = @($internalNames | Where-Object { $_ -notin $publicFromInternal })
+$namesLiteral = ($hiddenNames | ForEach-Object { "'$_'" }) -join ','
+$hidden = Invoke-FreshSession @"
+Import-Module psfdx -RequiredVersion '$Version'
+`$r = [ordered]@{}
+`$r['leaked'] = @(@($namesLiteral) | Where-Object { Get-Command `$_ -ErrorAction SilentlyContinue })
+`$r['internalModuleCommands'] = @(Get-Command -Module psfdx-shared -ErrorAction SilentlyContinue).Count
+[pscustomobject]`$r | ConvertTo-Json -Compress -Depth 4
+"@
+if (@($hidden.leaked).Count) { Add-Problem "These internal helpers are discoverable commands after Import-Module psfdx: $(@($hidden.leaked) -join ', ')" }
+if ($hidden.internalModuleCommands -ne 0) { Add-Problem "Get-Command -Module psfdx-shared shows $($hidden.internalModuleCommands) commands, expected none: it is an internal module" }
+if ($hiddenNames.Count -lt 5) { Add-Problem "Only $($hiddenNames.Count) internal helpers were found to check; the check cannot be trusted" }
 
 # ---- The evidence ----
 $counts = [ordered]@{}

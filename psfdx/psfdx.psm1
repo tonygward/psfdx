@@ -9,6 +9,7 @@ function Import-PsfdxSharedModule {
     #   2. Otherwise the first tier that has a compatible copy wins, and the highest version within the tier:
     #      the sibling folder (source checkout, zip install, flat install, Gallery bundle), then sibling version
     #      folders (<Modules>/psfdx-shared/<version>), then PSModulePath.
+    #   Whichever copy is chosen, its helpers are then bound as private functions of the importing module (see $bindHelpers below).
     #   3. A loaded copy that is not compatible is removed and replaced. If nothing compatible exists the
     #      function throws and says what it found; it never carries on with the wrong version.
     [CmdletBinding()]
@@ -35,10 +36,21 @@ function Import-PsfdxSharedModule {
         return (($Version.Major -eq $OwnVersion.Major) -and ($Version.Minor -eq $OwnVersion.Minor) -and ($Version -ge $OwnVersion))
     }
 
+    # psfdx-shared exports nothing, so none of its helpers is a public command (Get-Command -Module psfdx* never lists them).
+    # Each module binds the helpers it needs as private functions of its own: a function keeps running in psfdx-shared's own scope,
+    # so the helpers still reach each other, and the importing module's manifest decides which of them it exports (the public ones
+    # that belong to the core module). Nothing is copied, so a fix in psfdx-shared reaches every module.
+    $bindHelpers = {
+        param([System.Management.Automation.PSModuleInfo] $Shared)
+        $helpers = & $Shared { param($Name) Get-ChildItem -Path function: | Where-Object { $_.ModuleName -eq $Name } } $Shared.Name
+        foreach ($helper in $helpers) { Set-Item -Path ('function:script:' + $helper.Name) -Value $helper.ScriptBlock }
+    }
+
     $loaded = @(Get-Module -Name $ModuleName -ErrorAction SilentlyContinue | Sort-Object -Property Version -Descending)
     $loadedCompatible = @($loaded | Where-Object { & $isCompatible $_.Version }) | Select-Object -First 1
     if ($loadedCompatible) {
         Import-Module -ModuleInfo $loadedCompatible -ErrorAction Stop
+        & $bindHelpers $loadedCompatible
         return
     }
 
@@ -90,7 +102,8 @@ function Import-PsfdxSharedModule {
         if ($match) {
             # Remove the stale copies first: -Force alone would leave two modules of the same name loaded.
             foreach ($stale in $loaded) { Remove-Module -ModuleInfo $stale -Force -ErrorAction SilentlyContinue }
-            Import-Module -Name $match.Path -ErrorAction Stop
+            $imported = Import-Module -Name $match.Path -ErrorAction Stop -PassThru
+            & $bindHelpers $imported
             return
         }
     }

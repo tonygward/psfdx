@@ -22,6 +22,6 @@ The development, logs, metadata and packages manifests declare `PowerShellVersio
 
 ## Culture
 
-- Build SOQL datetime literals with `ConvertTo-SalesforceSoqlDateTime -Value $Date` (psfdx-shared). It converts to UTC before writing the `Z` (a Local or Unspecified value is read as local time) and uses the invariant culture. Never write `$Date.ToString('s') + 'Z'`, which is off by the UTC offset; a test fails if a module does.
+- Build SOQL datetime literals with `ConvertTo-SalesforceSoqlDateTime -Value $Date` (code in psfdx-shared, a public command of the core module). It converts to UTC before writing the `Z` (a Local or Unspecified value is read as local time) and uses the invariant culture. Never write `$Date.ToString('s') + 'Z'`, which is off by the UTC offset; a test fails if a module does.
 - Parse dates and numbers with `[System.Globalization.CultureInfo]::InvariantCulture`, as `Get-SalesforceSandboxRefreshStatus` does.
 - Use `ToLowerInvariant()` and `[System.StringComparison]::OrdinalIgnoreCase` for comparisons, as the Apex watcher helpers do.

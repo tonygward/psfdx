@@ -6,20 +6,9 @@
     Description = 'Shared helpers for psfdx PowerShell modules'
     PowerShellVersion = '5.1'
     CompatiblePSEditions = @('Desktop','Core')
-    FunctionsToExport = @(
-        'Invoke-Salesforce',
-        'Show-SalesforceResult',
-        'Get-SalesforceErrorMessage',
-        'Get-SalesforceDeployFailures',
-        'Get-SalesforceTestFailure',
-        'Get-SalesforceApexCliTestArguments',
-        'Get-SalesforceApexTestClassNamesFromPath',
-        'Test-SalesforceApexTestReference',
-        'Get-PsfdxCommonParameterSplat',
-        'ConvertTo-SalesforceSoqlLiteral',
-        'ConvertTo-SalesforceSoqlDateTime',
-        'ConvertTo-SalesforceSoqlIdentifier'
-    )
+    # Nothing is exported: every command here is an internal helper. Each psfdx module binds the helpers it needs as private functions
+    # (see Import-PsfdxSharedModule), and the core psfdx module exports the three SOQL converters, which are public commands.
+    FunctionsToExport = @()
     CmdletsToExport = @()
     AliasesToExport = @()
 }

@@ -32,7 +32,7 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | `psfdx-org` | Org lifecycle: sandboxes and scratch orgs |
 | `psfdx-packages` | Packages and package versions |
 | `psfdx-agentforce` | Agentforce agents |
-| `psfdx-shared` | Helpers the other modules use |
+| `psfdx-shared` | Internal: implementation helpers the other modules use. It exports no commands, so it is not part of the public command surface, `Get-Command -Module psfdx*` does not list it, and it has no page on the website |
 
 No command is defined twice. `psfdx` exports only its own commands and does not re-export the others.
 

@@ -8,6 +8,10 @@
     CompatiblePSEditions = @('Desktop','Core')
     FunctionsToExport = @(
         'Get-SalesforceDateTime',
+        # The SOQL converters are public commands. Their code lives in psfdx-shared, which the other modules use too, and the core module exports them.
+        'ConvertTo-SalesforceSoqlLiteral',
+        'ConvertTo-SalesforceSoqlIdentifier',
+        'ConvertTo-SalesforceSoqlDateTime',
         'Connect-Salesforce',
         'Connect-SalesforceAuthUrl',
         'Disconnect-Salesforce',

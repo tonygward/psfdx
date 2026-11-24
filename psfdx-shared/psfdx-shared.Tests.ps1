@@ -443,7 +443,9 @@ public static class ArgvCapture {
 param([string] $ShimDir, [string] $CasesFile, [string] $Manifest, [string] $OutFile)
 $env:PATH = $ShimDir + ';' + $env:PATH
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-Import-Module $Manifest -Force
+# psfdx-shared exports nothing: call its internal Invoke-Salesforce through the module's own scope.
+$shared = Import-Module $Manifest -Force -PassThru
+function Invoke-Salesforce { param($FilePath, $Arguments) & $shared { param($f, $a) Invoke-Salesforce -FilePath $f -Arguments $a } $FilePath $Arguments }
 $cases = @(Get-Content -LiteralPath $CasesFile -Raw -Encoding UTF8 | ConvertFrom-Json | ForEach-Object { $_ })
 $rows = @()
 foreach ($case in $cases) {
@@ -493,7 +495,8 @@ ConvertTo-Json -InputObject ([pscustomobject]@{ Rows = $rows; Leftover = $leftov
 param([string] $ShimDir, [string] $Manifest, [string] $OutFile)
 $env:PATH = $ShimDir + ';' + $env:PATH
 $rows = 1..6 | ForEach-Object -Parallel {
-    Import-Module $using:Manifest -Force
+    $shared = Import-Module $using:Manifest -Force -PassThru
+    function Invoke-Salesforce { param($FilePath, $Arguments) & $shared { param($f, $a) Invoke-Salesforce -FilePath $f -Arguments $a } $FilePath $Arguments }
     [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
     $bad = 0
     for ($i = 0; $i -lt 15; $i++) {

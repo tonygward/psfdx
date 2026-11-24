@@ -15,7 +15,7 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `psfdx-logs/` | Debug logs, flow interviews, login history, event log files |
 | `psfdx-org/` | Org lifecycle: sandboxes and scratch orgs (was `psfdx-sandbox`) |
 | `psfdx-packages/` | Packages and package versions |
-| `psfdx-shared/` | Internal helpers (`Invoke-Salesforce`, `Show-SalesforceResult`, Apex test-param helpers, `Get-PsfdxCommonParameterSplat`) |
+| `psfdx-shared/` | Internal module that exports nothing: `Invoke-Salesforce`, `Show-SalesforceResult`, Apex test-param helpers, `Get-PsfdxCommonParameterSplat`, the SOQL converters. Each module binds the helpers it uses as private functions (see `Import-PsfdxSharedModule`); the core `psfdx` manifest exports the three public SOQL converters |
 | `modules.ps1` | Canonical module list used by the install/uninstall scripts |
 
 **Everything above, plus `install*.ps1`, `uninstall*.ps1` and `VERSION`, is the product** (what users install). **Everything below is infrastructure** (how the product is built, tested and released). Keep the two apart:

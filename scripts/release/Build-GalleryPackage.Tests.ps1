@@ -149,7 +149,7 @@ $c = @(Get-Command -Module 'psfdx*')
 
     It 'refuses two modules that export the same function' {
         $copy = & $script:NewRepo 'dup'
-        & $script:Edit (Join-Path (Join-Path $copy 'psfdx-logs') 'psfdx-logs.psd1') { param($t) $t -replace 'FunctionsToExport\s*=\s*@\(', "FunctionsToExport = @('Invoke-Salesforce', " }
+        & $script:Edit (Join-Path (Join-Path $copy 'psfdx-logs') 'psfdx-logs.psd1') { param($t) $t -replace 'FunctionsToExport\s*=\s*@\(', "FunctionsToExport = @('Connect-Salesforce', " }
         { & $script:Build -OutputFolder (Join-Path $TestDrive 'dup-out') -Root $copy } | Should -Throw '*exported by both*'
     }
 
