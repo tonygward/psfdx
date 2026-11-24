@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.58 - 2026-11-24
+
 - psfdx-org: Breaking (a packaging change, not a removal): `psfdx-sandbox` is now `psfdx-org`, and the scratch org cmdlets moved into it from `psfdx-development`: `Get-SalesforceScratchOrgs`, `New-SalesforceScratchOrg`, `Resume-SalesforceScratchOrg`, `Remove-SalesforceScratchOrg` and `Remove-SalesforceScratchOrgs`. The command names, parameters and behaviour are unchanged, and the sandbox cmdlets stay as they were. `Install-Module psfdx` still installs everything and `Get-Command -Module psfdx-org` lists the sandbox and scratch org commands together. Only code that imports `psfdx-sandbox` by name, or reads `(Get-Command Get-SalesforceScratchOrgs).Source`, needs to change: use `psfdx-org`. The website page `/modules/psfdx-sandbox/` is now `/modules/psfdx-org/`.
 
 ## 0.8.57 - 2026-11-23
