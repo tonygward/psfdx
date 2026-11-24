@@ -95,12 +95,12 @@
     <section id="why" class="section" aria-labelledby="why-title">
       <div class="wrap">
         <h2 id="why-title">A simpler, more intuitive way to work with Salesforce.</h2>
-        <p class="section-intro">psfdx brings the power of the Salesforce CLI into PowerShell, making everyday Salesforce development, administration and automation easier. Less time remembering CLI syntax. More time getting things done.</p>
+        <p class="section-intro">psfdx brings the power of the Salesforce CLI into PowerShell, making everyday Salesforce development, administration and automation easier.</p>
         <ul class="cards">
           <li class="card">
             <p class="card-tag">| pipeline</p>
-            <h3>Built around PowerShell</h3>
-            <p>Familiar commands and structured objects, so you can filter, sort, export and pipe results like any other PowerShell data.</p>
+            <h3>Objects, not JSON</h3>
+            <p>Every command returns real PowerShell objects, not text to parse. Pipe them straight into <code>Where-Object</code>, <code>Sort-Object</code>, <code>Group-Object</code> or <code>Export-Csv</code>. No <code>jq</code>, no string handling.</p>
           </li>
           <li class="card">
             <p class="card-tag">win · mac · linux</p>
@@ -108,11 +108,11 @@
             <p>PowerShell 7 on Windows, macOS and Linux. Windows PowerShell 5.1 is supported too.</p>
           </li>
           <li class="card">
-            <p class="card-tag">-Verbose</p>
-            <h3>See exactly what runs</h3>
-            <p>Add <code>-Verbose</code> to see the underlying Salesforce CLI command when troubleshooting a script.</p>
-            <pre><code><span class="prompt">PS&gt;</span> Get-SalesforceOrgDetails -TargetOrg dev -Verbose
-<span class="prompt">VERBOSE:</span> sf org display --target-org dev --json</code></pre>
+            <p class="card-tag">Get-Command · Get-Help</p>
+            <h3>Everything is discoverable</h3>
+            <p><code>Get-Command</code> and <code>Get-Help</code> are all you need to find every command and every parameter, with examples.</p>
+            <pre><code><span class="prompt">PS&gt;</span> Get-Command -Module 'psfdx*'
+<span class="prompt">PS&gt;</span> Get-Help Deploy-SalesforceMetadata -Examples</code></pre>
           </li>
         </ul>
       </div>
@@ -120,17 +120,8 @@
 
     <section id="powershell-examples" class="section" aria-labelledby="powershell-examples-title">
       <div class="wrap">
-        <p class="eyebrow">BUILT FOR POWERSHELL</p>
-        <h2 id="powershell-examples-title">The little things that make a big difference.</h2>
-        <p class="section-intro">Detailed help built into every cmdlet, one-command upgrades, and real Salesforce objects flowing straight into standard PowerShell tools.</p>
-        <ul class="cards">
-          <li class="card"><p class="card-tag">Get-Help</p><h3>Every command explained</h3><p>Discover parameters, examples and exactly which Salesforce CLI operation each psfdx cmdlet invokes.</p><pre><code>Get-Help Deploy-SalesforceMetadata</code></pre></li>
-          <li class="card"><p class="card-tag">Update-Module</p><h3>One update, every module</h3><p>Install and update the complete suite with one PowerShell Gallery package.</p><pre><code>Update-Module psfdx</code></pre></li>
-          <li class="card"><p class="card-tag">| Export-Csv</p><h3>Salesforce data, native pipelines</h3><p>Query records as PowerShell objects, then export them with the built-in CSV command.</p><p><a href="#pipeline-comparison">Compare the PowerShell and Bash examples</a></p></li>
-        </ul>
-
         <div id="pipeline-comparison" class="pipeline-comparison">
-          <h3>Export Salesforce accounts to CSV</h3>
+          <h2 id="powershell-examples-title">Export Salesforce accounts to CSV</h2>
           <figure class="code-box">
             <figcaption>PowerShell with psfdx</figcaption>
             <pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg dev |
@@ -149,14 +140,14 @@
 
     <section id="watch" class="section" aria-labelledby="watch-title">
       <div class="wrap">
-        <h2 id="watch-title">Deploy and test Apex as you save.</h2>
-        <p class="section-intro">Set a sandbox or scratch org as your default target, then start <code>Watch-SalesforceApex</code> from your Salesforce DX project. Saving a class or trigger deploys that component and runs related tests it discovers in the project.</p>
+        <h2 id="watch-title">Deploy and test as you save.</h2>
+        <p class="section-intro">Run <code>Watch-SalesforceApex</code> in your project. Every save deploys the change and runs its tests.</p>
         <figure class="code-box watch-example">
           <pre><code><span class="prompt">PS&gt;</span> Watch-SalesforceApex
 Watching /work/salesforce for Apex changes. Press Ctrl+C to stop.
 Deploying ApexClass InvoiceService...
 Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).</code></pre>
-          <figcaption class="fine">Example output after saving <code>InvoiceService.cls</code>. If a deployment or test fails, read the error in the terminal. Fix the issue and save the Apex file again to retry while the watcher is running.</figcaption>
+          <figcaption class="fine">Example output after saving <code>InvoiceService.cls</code>.</figcaption>
         </figure>
         <p><a href="/modules/psfdx-development/#Watch-SalesforceApex">Apex watcher help</a> · <a href="/modules/psfdx-development/#Watch-SalesforceJest">LWC Jest watch mode</a></p>
       </div>
@@ -165,7 +156,7 @@ Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest
     <section id="modules" class="section modules" aria-labelledby="modules-title">
       <div class="wrap">
         <p class="eyebrow"><span class="prompt">PS&gt;</span> Get-Command -Module 'psfdx*'</p>
-        <h2 id="modules-title">One installation. Every Salesforce workflow.</h2>
+        <h2 id="modules-title"><span class="h1-line">One install.</span> <span class="h1-line">Every Salesforce workflow.</span></h2>
         <ul class="module-list">
           <li><a class="module-row" href="/modules/psfdx/"><span class="module-name">psfdx</span><span class="module-desc">Connection, query and records</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
           <li><a class="module-row" href="/modules/psfdx-metadata/"><span class="module-name">psfdx-metadata</span><span class="module-desc">Retrieve, deploy and describe metadata</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
@@ -179,7 +170,7 @@ Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest
           <li><a class="module-row" href="/modules/psfdx-agentforce/"><span class="module-name">psfdx-agentforce</span><span class="module-desc">Agents, Agentforce tests, Data Libraries and MCP</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
           <li><a class="module-row" href="/modules/psfdx-shared/"><span class="module-name">psfdx-shared</span><span class="module-desc">Shared internal PowerShell helpers</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
         </ul>
-        <p class="fine">Explore each module above or see the full command catalogue in the <a href="%GITHUB_URL%#modules">README</a>, or run <code>Get-Command -Module 'psfdx*'</code> after <code>Import-Module psfdx</code>.</p>
+        <p class="update-tile"><code>Update-Module psfdx</code><span>One command updates every module.</span></p>
       </div>
     </section>
 

@@ -181,6 +181,8 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .module-desc { color: var(--muted); }
 .module-arrow { font-family: var(--mono); color: var(--cyan); transition: transform .18s ease; }
 .module-row:hover .module-arrow { transform: translateX(6px); }
+.update-tile { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; width: fit-content; max-width: 100%; margin: 0; padding: 10px 18px; background: var(--yellow); color: var(--bg); border-radius: 12px; font-weight: 600; }
+.update-tile code { background: rgba(1, 15, 43, 0.12); color: var(--bg); font-family: var(--mono); font-weight: 700; }
 
 /* Closing */
 .closing { background: var(--yellow); color: var(--bg); padding: clamp(56px, 9vw, 110px) 0; }
@@ -196,7 +198,7 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 /* Footer */
 .site-footer { padding: 40px 0 56px; color: var(--muted); font-family: var(--mono); font-size: 0.85rem; }
 .site-footer a { color: var(--text); }
-.disclaimer { max-width: 70ch; color: var(--muted); font-family: var(--display); font-size: 0.85rem; margin-top: 0.8em; }
+.disclaimer { color: var(--muted); font-family: var(--display); font-size: 0.85rem; margin-top: 0.8em; }
 
 /* Small screens */
 @media (max-width: 900px) {
