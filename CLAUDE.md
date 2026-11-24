@@ -126,6 +126,18 @@ Any change users will notice adds plain-language bullets under `## Unreleased` i
 
 Start every commit and PR title with its area so the history separates product from infrastructure: a module name (`psfdx-logs: ...`) for product changes, `infra: ...` for workflows, scripts and tools (`infra(matrix): ...` for Matrix), `docs: ...` for documentation. The title must describe what the change does. Automated `[release]` and `[archive]` commits keep their own prefixes.
 
+## Ticket comments
+
+**Standing rule from the owner, 2026-11-24.** Whenever the AI works on a GitHub issue it keeps the issue's thread up to date by commenting at each of these points, without being asked. Use `gh issue comment <n> --body-file <file>`, and keep each comment to a few plain lines:
+
+1. **Picked up:** the ticket is now being worked on, with the branch name and, if the ticket leaves anything open, the decision taken.
+2. **CI passed:** every check has passed on the pull request's exact head commit. Link the pull request and give the short commit SHA. Say what was not checked, if anything.
+3. **Merged:** the pull request is squash-merged. Link it and give the merge commit.
+4. **Published:** for a product change, the released version and that it is live on the PowerShell Gallery. For a change that does not ship (website, docs, infrastructure), say "no release: nothing that ships changed" and, for the website, that Cloudflare Pages deployed it.
+5. **Closed:** the issue is closed, with a one-line summary of what was delivered and anything left for later.
+
+If a step does not happen, for example CI fails or a ticket is blocked, comment on that too, so the thread always shows where the work stands. Never put secrets, personal data or local paths in a comment.
+
 ## Git
 
 - **Merging is the AI's job (standing rule from the owner, 2026-11-18).** Every pull request is merged by the AI, not by the owner, and the AI does not ask first. Open the PR, wait for every check to pass on the exact head commit, address review findings, then squash-merge it (`gh pr merge <n> --squash --delete-branch`), whatever it changes: product, infrastructure, workflows, docs or policy. Where the merge gate's lanes allow it (`docs/pipelines.md`), the gate merges it automatically. Otherwise the AI merges it after CI. Never merge with a failing, cancelled or still-running check, never bypass branch protection or use admin overrides, and never merge a PR the AI did not open or review. After a product merge, confirm the release and Gallery publish; Gallery versions are permanent, so a product change needs the same care it always did.
