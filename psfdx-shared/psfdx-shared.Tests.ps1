@@ -645,7 +645,7 @@ foreach ($q in $queries) {
 }
 ConvertTo-Json -InputObject $results -Depth 5 | Set-Content -LiteralPath $OutFile -Encoding utf8
 '@
-            $script:manifest = Join-Path (Split-Path -Parent $PSScriptRoot) (Join-Path 'psfdx' 'psfdx.psd1')
+            $script:manifest = Join-Path (Split-Path -Parent $PSScriptRoot) (Join-Path 'psfdx-data' 'psfdx-data.psd1')
         }
     }
 

@@ -6,7 +6,7 @@ One command installs everything:
 Install-Module psfdx
 ```
 
-There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-org`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
+There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-data`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-org`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
 
 ## What you get
 
@@ -25,7 +25,7 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | `psfdx` | Authentication, orgs, aliases, records and SOQL, limits, REST and GraphQL requests, installing the Salesforce CLI itself |
 | `psfdx-metadata` | Retrieve, deploy and describe metadata |
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys |
-| `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume |
+| `psfdx-data` | Salesforce data: SOQL and SOSL queries, single records, files, tree data and Bulk API 2.0 jobs |
 | `psfdx-plugins` | Salesforce CLI plugins: install, list, inspect, update, uninstall, discover, reset, signature checks and the allowlist |
 | `psfdx-development` | Projects, Apex tests, Code Analyzer, templates, LWC |
 | `psfdx-logs` | Debug logs, login history, event monitoring |
@@ -36,7 +36,7 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 
 No command is defined twice. `psfdx` exports only its own commands and does not re-export the others.
 
-**Which module holds a command.** A cmdlet belongs to the module for the family of Salesforce CLI commands it wraps, and a command family that comes from one CLI plugin stays together. For example every cmdlet that runs a command of the DevOps Center plugin (`@salesforce/plugin-devops-center`) is in `psfdx-devops`: the 26 `sf devops` commands and the 5 beta `sf project deploy pipeline` commands, even though the second group looks like a deploy. They were in `psfdx-metadata` until a release that moved them. The same rule puts the Bulk API 2.0 cmdlets in `psfdx-bulk` (single-record changes, SOQL and the older data tree cmdlets stay in `psfdx`) and the Salesforce CLI plugin cmdlets (`sf plugins ...`) in `psfdx-plugins`; `Install-SalesforceCli` and `Update-SalesforceCli` stay in `psfdx` because they install the CLI itself, not a plugin. A command keeps its name and parameters when its module changes; only the module shown in `Get-Command` (the `Source`) differs, so scripts that call it by name keep working.
+**Which module holds a command.** A cmdlet belongs to the module for the family of Salesforce CLI commands it wraps, and a command family that comes from one CLI plugin stays together. For example every cmdlet that runs a command of the DevOps Center plugin (`@salesforce/plugin-devops-center`) is in `psfdx-devops`: the 26 `sf devops` commands and the 5 beta `sf project deploy pipeline` commands, even though the second group looks like a deploy. They were in `psfdx-metadata` until a release that moved them. The same rule puts every `sf data` cmdlet in `psfdx-data`: queries, single-record changes, files, tree data and the Bulk API 2.0 cmdlets (they were in `psfdx` and `psfdx-bulk`) and the Salesforce CLI plugin cmdlets (`sf plugins ...`) in `psfdx-plugins`; `Install-SalesforceCli` and `Update-SalesforceCli` stay in `psfdx` because they install the CLI itself, not a plugin. A command keeps its name and parameters when its module changes; only the module shown in `Get-Command` (the `Source`) differs, so scripts that call it by name keep working.
 
 ## When the other modules load
 

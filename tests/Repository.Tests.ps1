@@ -149,6 +149,7 @@ Describe 'Retired modules' {
     It 'are not in the module list, have no folder and are removed by the install and uninstall scripts' {
         $retired = @(Get-PsfdxRetiredModules)
         $retired | Should -Contain 'psfdx-sandbox'
+        $retired | Should -Contain 'psfdx-bulk'
         foreach ($name in $retired) {
             @(Get-PsfdxModules) | Should -Not -Contain $name
             Test-Path -LiteralPath (Join-Path $script:Root $name) | Should -BeFalse -Because "$name was retired, so nothing may ship it"

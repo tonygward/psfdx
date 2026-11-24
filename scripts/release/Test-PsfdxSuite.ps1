@@ -50,7 +50,7 @@ $representative = [ordered]@{
     'psfdx-logs'        = @{ Command = 'Convert-SalesforceDebugLog'; Run = "Convert-SalesforceDebugLog -Log ('59.0 APEX_CODE,DEBUG' + [Environment]::NewLine + '12:00:00.1 (1000)|EXECUTION_STARTED')"; Expect = $null }
     'psfdx-metadata'    = @{ Command = 'Clear-SalesforceMetadataTypeCache'; Run = 'Clear-SalesforceMetadataTypeCache'; Expect = $null }
     'psfdx-plugins'     = @{ Command = 'Uninstall-SalesforcePlugin'; Run = 'Uninstall-SalesforcePlugin -Name sfdx-nothing -WhatIf'; Expect = $null }
-    'psfdx-bulk'        = @{ Command = 'Remove-SalesforceBulkData'; Run = "`$probe = Join-Path ([IO.Path]::GetTempPath()) 'psfdx-bulk-probe.csv'; Set-Content -LiteralPath `$probe -Value 'Id'; Remove-SalesforceBulkData -File `$probe -Object Account -WhatIf"; Expect = $null }
+    'psfdx-data'        = @{ Command = 'Remove-SalesforceBulkData'; Run = "`$probe = Join-Path ([IO.Path]::GetTempPath()) 'psfdx-data-probe.csv'; Set-Content -LiteralPath `$probe -Value 'Id'; Remove-SalesforceBulkData -File `$probe -Object Account -WhatIf"; Expect = $null }
     'psfdx-devops'      = @{ Command = 'New-SalesforceDevOpsProject'; Run = "New-SalesforceDevOpsProject -Name 'x' -WhatIf"; Expect = $null }
     'psfdx-development' = @{ Command = 'Disable-SalesforceSourceTracking'; Run = 'Disable-SalesforceSourceTracking -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-org'         = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }
