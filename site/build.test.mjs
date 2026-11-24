@@ -116,7 +116,7 @@ test('the marquee lists real psfdx commands (and Export-Csv), twice, with the co
 });
 
 test('the feature examples and all eleven modules use real content', () => {
-  for (const text of ['| pipeline', 'Built around PowerShell', 'win · mac · linux', 'Runs everywhere', '-Verbose', 'See exactly what runs', 'Get-SalesforceOrgDetails -TargetOrg dev -Verbose', 'sf org display --target-org dev --json', 'Deploy and test Apex as you save.', 'Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).', 'A simpler, more intuitive way to work with Salesforce.', 'One installation. Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
+  for (const text of ['| pipeline', 'Objects, not JSON', 'win · mac · linux', 'Runs everywhere', 'Get-Command · Get-Help', 'Everything is discoverable', 'Deploy and test as you save.', 'Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).', 'A simpler, more intuitive way to work with Salesforce.', 'One install.', 'Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
@@ -125,9 +125,27 @@ test('the feature examples and all eleven modules use real content', () => {
   for (const m of modules) assert.ok(html.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
 });
 
+test('the homepage copy is tight: objects not text, discoverability, one CSV example, a short watch section and an update tile', () => {
+  assert.ok(!html.includes('Less time remembering CLI syntax'), 'the repeated tagline is gone');
+  assert.ok(!html.includes('See exactly what runs') && !html.includes('Get-SalesforceOrgDetails -TargetOrg dev -Verbose'), 'the -Verbose card is replaced');
+  assert.match(html, /Every command returns real PowerShell objects, not text to parse[\s\S]*No <code>jq<\/code>, no string handling/);
+  assert.match(html, /<h3>Everything is discoverable<\/h3>[\s\S]*Get-Command -Module 'psfdx\*'[\s\S]*Get-Help Deploy-SalesforceMetadata -Examples/);
+  for (const gone of ['BUILT FOR POWERSHELL', 'The little things that make a big difference', 'Compare the PowerShell and Bash examples', 'Explore each module above', 'Every command explained', 'One update, every module']) assert.ok(!html.includes(gone), gone);
+  assert.match(html, /<section id="powershell-examples"[^>]*aria-labelledby="powershell-examples-title"[\s\S]*<h2 id="powershell-examples-title">Export Salesforce accounts to CSV<\/h2>/);
+  assert.match(html, /<h2 id="watch-title">Deploy and test as you save\.<\/h2>\s*<p class="section-intro">Run <code>Watch-SalesforceApex<\/code> in your project\. Every save deploys the change and runs its tests\.<\/p>/);
+  assert.match(html, /<figcaption class="fine">Example output after saving <code>InvoiceService\.cls<\/code>\.<\/figcaption>/);
+  assert.match(html, /<h2 id="modules-title"><span class="h1-line">One install\.<\/span> <span class="h1-line">Every Salesforce workflow\.<\/span><\/h2>/);
+  assert.match(html, /<\/ul>\s*<p class="update-tile"><code>Update-Module psfdx<\/code><span>One command updates every module\.<\/span><\/p>/);
+  assert.ok(/\.update-tile \{[^}]*background: var\(--yellow\)/.test(css), 'the tile is yellow');
+  assert.ok(!/\.disclaimer \{[^}]*max-width/.test(css), 'the disclaimer is not narrowed');
+  for (const [, id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(html.includes('id="' + id + '"'), 'dead in-page anchor #' + id);
+  const levels = [...html.matchAll(/<h([1-6])[ >]/g)].map(m => Number(m[1]));
+  for (let i = 1; i < levels.length; i++) assert.ok(levels[i] - levels[i - 1] <= 1, 'heading levels skip near heading ' + (i + 1));
+});
+
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
   assert.match(html, /PowerShell with psfdx[\s\S]*Bash with the Salesforce CLI and jq[\s\S]*Both examples do the same job/);
-  for (const command of ['<code>Get-Help Deploy-SalesforceMetadata</code>', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
+  for (const command of ['Get-Help Deploy-SalesforceMetadata -Examples', 'Select-SalesforceRecords', 'Export-Csv ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
   for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
