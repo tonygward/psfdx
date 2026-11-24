@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.61 - 2026-11-24
+
 - psfdx: every command is now discoverable straight after `Install-Module psfdx`, without `Import-Module psfdx` first. In a new session `Get-Command -Module psfdx*` lists every command of every module, not only the core ones, and any command, such as `Get-SalesforceDebugLogs`, autoloads by name. Until `psfdx` has loaded, `Get-Command` shows `psfdx` as the module of every command; once it has loaded (any command, or `Import-Module psfdx`), each shows its own module as before.
 
 ## 0.8.60 - 2026-11-24

@@ -3,7 +3,7 @@
     RootModule        = 'psfdx-logs.psm1'
 
     # Version number of this module.
-    ModuleVersion     = '0.8.60'
+    ModuleVersion     = '0.8.61'
 
     # Supported PowerShell editions: Desktop = Windows PowerShell, Core = PowerShell 7+
     CompatiblePSEditions = @('Desktop','Core')
