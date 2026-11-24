@@ -6,7 +6,7 @@ One command installs everything:
 Install-Module psfdx
 ```
 
-There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
+There is one Gallery listing, `psfdx`, one install and one update path (`Update-Module psfdx`). The package holds every module: `psfdx` (the core commands), `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-org`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers `psfdx-shared`. There are no separate `psfdx-*` packages to install.
 
 ## What you get
 
@@ -27,9 +27,9 @@ Get-Module 'psfdx*'                  # the loaded modules: psfdx, psfdx-logs, ps
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys |
 | `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume |
 | `psfdx-plugins` | Salesforce CLI plugins: install, list, inspect, update, uninstall, discover, reset, signature checks and the allowlist |
-| `psfdx-development` | Projects, scratch orgs, Apex tests, Code Analyzer, templates, LWC |
+| `psfdx-development` | Projects, Apex tests, Code Analyzer, templates, LWC |
 | `psfdx-logs` | Debug logs, login history, event monitoring |
-| `psfdx-sandbox` | Sandbox lifecycle |
+| `psfdx-org` | Org lifecycle: sandboxes and scratch orgs |
 | `psfdx-packages` | Packages and package versions |
 | `psfdx-agentforce` | Agentforce agents |
 | `psfdx-shared` | Helpers the other modules use |

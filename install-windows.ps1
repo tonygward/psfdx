@@ -25,6 +25,12 @@ if (-not (Test-Path -Path $dest)) {
     New-Item -Path $dest -ItemType Directory -Force | Out-Null
 }
 
+# Remove the folders of modules that no longer exist, so an old copy cannot export the same commands as its replacement
+foreach ($retired in (Get-PsfdxRetiredModules)) {
+    $old = Join-Path -Path $dest -ChildPath $retired
+    if (Test-Path -Path $old) { Remove-Item -Path $old -Recurse -Force -ErrorAction SilentlyContinue }
+}
+
 foreach ($m in $modules) {
     $src = Join-Path -Path $PSScriptRoot -ChildPath $m
     if (-not (Test-Path -Path $src)) {

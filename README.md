@@ -19,7 +19,7 @@ PowerShell asks about the untrusted PSGallery repository. Answer `Y` or `A`:
 
 ![Install-Module psfdx asks about the untrusted PSGallery repository](images/psfdx-install-trust-prompt.png)
 
-That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-sandbox`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
+That one command installs everything. The `psfdx` package holds every module (`psfdx`, `psfdx-metadata`, `psfdx-devops`, `psfdx-bulk`, `psfdx-plugins`, `psfdx-development`, `psfdx-logs`, `psfdx-org`, `psfdx-packages`, `psfdx-agentforce` and the shared helpers): there are no other packages to install. Start a session with:
 
 ```
 Import-Module psfdx
@@ -145,8 +145,8 @@ psfdx is released under the MIT licence. See [LICENSE](LICENSE).
 | `psfdx-devops` | Salesforce DevOps Center: projects, work items, pipelines, stages, promotion and the beta pipeline deploys. |
 | `psfdx-bulk` | Salesforce Bulk API 2.0: bulk export, import, update, upsert and delete, and bulk job status, results and resume. |
 | `psfdx-plugins` | Salesforce CLI plugins: install, list, inspect, update, uninstall, discover, reset, signature checks and the allowlist. |
-| `psfdx-development` | Salesforce DX development (projects, scratch orgs, tests, deploy). |
-| `psfdx-sandbox` | Salesforce sandbox lifecycle management. |
+| `psfdx-development` | Salesforce DX development (projects, tests, deploy). |
+| `psfdx-org` | Salesforce org lifecycle: sandboxes and scratch orgs. |
 | `psfdx-packages` | Salesforce packages: create, version, promote, install. |
 | `psfdx-agentforce` | Agentforce agent tests and activation through the Salesforce CLI agent plugin. |
 
@@ -452,22 +452,14 @@ Included in the `psfdx` package.
 | `Get-SalesforceTargetDevHub` | Get default Dev Hub (project or global). |
 | `Remove-SalesforceTargetDevHub` | Unset default Dev Hub (project or global). |
 | `Get-SalesforceConfig` | Get all Salesforce Config values per project or global. |
-### Scratch Orgs
+### Code Analyzer
 
 | Cmdlet | Description |
 | :--- | :--- |
-| `Get-SalesforceScratchOrgs` | List scratch orgs. |
-| `New-SalesforceScratchOrg` | Create scratch org. `-Async` returns before the org is ready. |
-| `Resume-SalesforceScratchOrg` | Resume a scratch org creation by `-JobId` (2SR...) or `-UseMostRecent`. Returns the org with `Completed`. Assign permission sets afterwards with `Grant-SalesforcePermissionSet`. |
-| `New-SalesforceScratchOrg` | Create scratch org. |
 | `Invoke-SalesforceCodeAnalyzer` | Run Code Analyzer (`sf code-analyzer run`) over `-Workspace` and `-Target` with `-RuleSelector`, `-ConfigFile` and `-SeverityThreshold`. Returns findings as objects. A threshold failure is returned (`ThresholdExceeded`) rather than thrown, unless `-ThrowOnThreshold`; a plugin or engine failure always throws. Also `-IncludeFixes`, `-IncludeSuggestions` (each violation then has `Fixes` and `Suggestions`), `-NoSuppressions`, `-TargetOrg`, `-View` and extra `-OutputFile` files. |
 | `Get-SalesforceCodeAnalyzerRule` | List the rules a selector matches (`sf code-analyzer rules`); `-View` sets the terminal display. |
 | `Get-SalesforceCodeAnalyzerConfig` | Show the current Code Analyzer configuration as YAML (`sf code-analyzer config`); `-OutputFile` also saves it, for example as `code-analyzer.yml`. |
 | `Get-SalesforceCodeAnalyzerAst` | Show the syntax tree PMD builds for a source file (`sf code-analyzer ast-dump`), as objects (`-Format json`) or an XML document. Needs Java. |
-| `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
-| `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
-
-`New-SalesforceScratchOrg` also takes `-Alias`, `-OAuthClientId`, `-NoAncestors`, `-NoNamespace` and `-NoTrackSource`.
 
 ### Org Source Tracking, Shapes and Snapshots
 
@@ -551,9 +543,11 @@ The CLI replaces a generated file that differs from the template **without askin
 | `Debug-SalesforceJest` | Run Jest in debug mode. |
 | `Watch-SalesforceJest` | Run Jest in watch mode. |
 
-### psfdx-sandbox
+### psfdx-org
 
-Included in the `psfdx` package.
+Included in the `psfdx` package. It was `psfdx-sandbox` before; the sandbox cmdlets are unchanged and the scratch org cmdlets moved here from `psfdx-development`.
+
+#### Sandboxes
 
 | Cmdlet | Description |
 | :--- | :--- |
@@ -564,6 +558,18 @@ Included in the `psfdx` package.
 | `Update-SalesforceSandbox` | Refresh a sandbox from production or another sandbox; this replaces its data (asks for confirmation, supports `-WhatIf`). |
 | `Resume-SalesforceSandbox` | Resume a pending or paused sandbox creation or refresh, by `-SandboxName`, `-JobId` or `-UseMostRecent`. |
 | `Remove-SalesforceSandbox` | Delete a sandbox from the production org, optionally specifying the target org (asks for confirmation, supports `-WhatIf`). |
+
+#### Scratch Orgs
+
+| Cmdlet | Description |
+| :--- | :--- |
+| `Get-SalesforceScratchOrgs` | List scratch orgs. |
+| `New-SalesforceScratchOrg` | Create scratch org. `-Async` returns before the org is ready. |
+| `Resume-SalesforceScratchOrg` | Resume a scratch org creation by `-JobId` (2SR...) or `-UseMostRecent`. Returns the org with `Completed`. Assign permission sets afterwards with `Grant-SalesforcePermissionSet`. |
+| `Remove-SalesforceScratchOrg` | Delete a scratch org (asks for confirmation, supports `-WhatIf`). |
+| `Remove-SalesforceScratchOrgs` | Delete all scratch orgs found; one confirmation lists every org (asks for confirmation, supports `-WhatIf`). |
+
+`New-SalesforceScratchOrg` also takes `-Alias`, `-OAuthClientId`, `-NoAncestors`, `-NoNamespace` and `-NoTrackSource`.
 
 ### psfdx-agentforce
 

@@ -11,9 +11,9 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `psfdx-plugins/` | Salesforce CLI plugin management: the `sf plugins` commands (install, list, inspect, update, uninstall, discover, reset, trust and allowlist) |
 | `psfdx-metadata/` | Retrieve / deploy / describe metadata |
 | `psfdx-devops/` | DevOps Center: the `sf devops` commands and the beta `sf project deploy pipeline` commands (every cmdlet that wraps a command of `@salesforce/plugin-devops-center`) |
-| `psfdx-development/` | Projects, config, scratch orgs, Apex tests, `Watch-SalesforceApex`, LWC/Jest |
+| `psfdx-development/` | Projects, config, Apex tests, `Watch-SalesforceApex`, LWC/Jest |
 | `psfdx-logs/` | Debug logs, flow interviews, login history, event log files |
-| `psfdx-sandbox/` | Sandbox lifecycle |
+| `psfdx-org/` | Org lifecycle: sandboxes and scratch orgs (was `psfdx-sandbox`) |
 | `psfdx-packages/` | Packages and package versions |
 | `psfdx-shared/` | Internal helpers (`Invoke-Salesforce`, `Show-SalesforceResult`, Apex test-param helpers, `Get-PsfdxCommonParameterSplat`) |
 | `modules.ps1` | Canonical module list used by the install/uninstall scripts |

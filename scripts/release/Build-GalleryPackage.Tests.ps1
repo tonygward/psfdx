@@ -155,18 +155,18 @@ $c = @(Get-Command -Module 'psfdx*')
 
     It 'refuses version drift, a wildcard export, a prerelease, a shared GUID, a manifest key it would drop and a wrong RootModule' {
         $cases = @(
-            @{ Change = { param($t) $t -replace "ModuleVersion = '[0-9.]+'", "ModuleVersion = '9.9.9'" }; Message = '*psfdx-sandbox is 9.9.9*' }
+            @{ Change = { param($t) $t -replace "ModuleVersion = '[0-9.]+'", "ModuleVersion = '9.9.9'" }; Message = '*psfdx-org is 9.9.9*' }
             @{ Change = { param($t) $t -replace 'FunctionsToExport\s*=\s*@\(', "FunctionsToExport = @('Get-*', " }; Message = '*wildcard*' }
             @{ Change = { param($t) $t.TrimEnd().TrimEnd('}') + "`n    PrivateData = @{ PSData = @{ Prerelease = 'beta' } }`n}`n" }; Message = '*Prerelease*' }
             @{ Change = { param($t) $t -replace "GUID\s*=\s*'[0-9a-fA-F-]+'", "GUID = '32273e30-b48e-46a0-a566-a74261704f38'" }; Message = '*GUID*' }
             @{ Change = { param($t) $t.TrimEnd().TrimEnd('}') + "`n    ScriptsToProcess = @('x.ps1')`n}`n" }; Message = '*ScriptsToProcess*' }
-            @{ Change = { param($t) $t.Replace("RootModule = 'psfdx-sandbox.psm1'", "RootModule = 'other.psm1'") }; Message = '*RootModule*' }
+            @{ Change = { param($t) $t.Replace("RootModule = 'psfdx-org.psm1'", "RootModule = 'other.psm1'") }; Message = '*RootModule*' }
         )
         $n = 0
         foreach ($case in $cases) {
             $n++
             $copy = & $script:NewRepo "break$n"
-            & $script:Edit (Join-Path (Join-Path $copy 'psfdx-sandbox') 'psfdx-sandbox.psd1') $case.Change
+            & $script:Edit (Join-Path (Join-Path $copy 'psfdx-org') 'psfdx-org.psd1') $case.Change
             { & $script:Build -OutputFolder (Join-Path $TestDrive "break$n-out") -Root $copy } | Should -Throw $case.Message
         }
     }

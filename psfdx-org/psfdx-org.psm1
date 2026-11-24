@@ -110,7 +110,7 @@ function Import-PsfdxSharedModule {
 
 Import-PsfdxSharedModule
 
-#region Sandbox Management
+#region Sandboxes
 
 function Get-SalesforceSandboxes {
     <#
@@ -728,6 +728,390 @@ function Get-SalesforceSandboxRefreshStatus {
         LastRefreshed = $lastRefreshed
         NextRefreshDate = $nextRefresh
     })
+}
+
+#endregion
+
+#region Scratch Orgs
+
+function Get-SalesforceScratchOrgs {
+    <#
+    .SYNOPSIS
+    Lists the scratch orgs this computer knows about.
+
+    .DESCRIPTION
+    Runs sf org list --all and returns the scratch orgs (orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias). With -Last only the most recently used one is returned. 
+
+    .PARAMETER SkipConnectionStatus
+    Skip retrieving the connection status of non-scratch orgs. Adds --skip-connection-status.
+
+    .PARAMETER Last
+    Return only the scratch org with the latest lastUsed date. The sorting happens in PowerShell.
+
+    .EXAMPLE
+    Get-SalesforceScratchOrgs | Where-Object connectedStatus -eq 'Connected'
+    Scratch orgs that are reachable.
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org list (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -SkipConnectionStatus = --skip-connection-status.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][switch] $SkipConnectionStatus,
+        [Parameter(Mandatory = $false)][switch] $Last
+    )
+
+    $arguments = @('org', 'list', '--all')
+    if ($SkipConnectionStatus) {
+        $arguments += '--skip-connection-status'
+    }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+
+    $result = $result | ConvertFrom-Json
+    $result = $result.result.scratchOrgs
+    $result = $result | Select-Object orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias
+    if ($Last) {
+        $result = $result | Sort-Object lastUsed -Descending | Select-Object -First 1
+    }
+    return $result
+}
+
+function New-SalesforceScratchOrg {
+    <#
+    .SYNOPSIS
+    Creates a scratch org.
+
+    .DESCRIPTION
+    Runs sf org create scratch from a scratch org definition file. Use -Async to return before the org is ready, then finish with Resume-SalesforceScratchOrg. Scratch orgs use your Dev Hub's allocation and expire after the duration.
+
+    .PARAMETER TargetDevHub
+    Username or alias of the Dev Hub org. Passed to sf as --target-dev-hub.
+
+    .PARAMETER SetDefault
+    Set the scratch org as your default org. Adds --set-default.
+
+    .PARAMETER DurationDays
+    Number of days before the org expires. Passed to sf as --duration-days.
+
+    .PARAMETER DefinitionFile
+    Path to a scratch org definition file. Passed to sf as --definition-file. Default: config/project-scratch-def.json.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the scratch org to be ready. Passed to sf as --wait.
+
+    .PARAMETER Async
+    Request the org, but don't wait for it to complete. Adds --async.
+
+    .PARAMETER Edition
+    Salesforce edition of the scratch org. Overrides the value of the "edition" option in the definition file, if set. Passed to sf as --edition. Valid values: developer, enterprise, group, professional, partner-developer, partner-enterprise, partner-group, partner-professional.
+
+    .PARAMETER Snapshot
+    Name of the snapshot to use when creating this scratch org. Overrides the value of the "snapshot" option in the defintion file, if set. Passed to sf as --snapshot.
+
+    .PARAMETER AdminEmail
+    Email address that will be applied to the org's admin user. Overrides the value of the "adminEmail" option in the definition file, if set. Passed to sf as --admin-email.
+
+    .PARAMETER Description
+    Description of the scratch org in the Dev Hub. Overrides the value of the "description" option in the definition file, if set. Passed to sf as --description.
+
+    .PARAMETER Name
+    Name of the org, such as "Acme Company". Overrides the value of the "orgName" option in the definition file, if set. Passed to sf as --name.
+
+    .PARAMETER Release
+    Release of the scratch org as compared to the Dev Hub release. Passed to sf as --release. Valid values: preview, previous.
+
+    .PARAMETER SourceOrgId
+    15-character ID of the org shape that the new scratch org is based on. Overrides the value of the "sourceOrg" option in the definition file, if set. Passed to sf as --source-org.
+
+    .PARAMETER AdminUsername
+    Username of the scratch org admin user. Overrides the value of the "username" option in the definition file, if set. Passed to sf as --username.
+
+    .PARAMETER Alias
+    Alias for the scratch org. Passed to sf as --alias.
+
+    .PARAMETER OAuthClientId
+    OAuth client ID (also called consumer key) of your connected app, used to log in to the new scratch org. Passed to sf as --client-id.
+
+    .PARAMETER NoAncestors
+    Don't include second-generation managed package (2GP) ancestors in the scratch org. Adds --no-ancestors.
+
+    .PARAMETER NoNamespace
+    Create the scratch org without the namespace of the Dev Hub or the project, even if the project has one. Adds --no-namespace.
+
+    .PARAMETER NoTrackSource
+    Create the scratch org without source tracking. Scratch orgs have source tracking on by default. Adds --no-track-source.
+
+    .EXAMPLE
+    New-SalesforceScratchOrg -DefinitionFile config/project-scratch-def.json -Name ci-1 -DurationDays 3 -SetDefault
+    Create a three-day scratch org and make it the default.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org create scratch (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username; -Alias = --alias; -OAuthClientId = --client-id; -NoAncestors = --no-ancestors; -NoNamespace = --no-namespace; -NoTrackSource = --no-track-source.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $TargetDevHub,
+        [Parameter(Mandatory = $false)][switch] $SetDefault,
+        [Parameter(Mandatory = $false)][int] $DurationDays,
+        [Parameter(Mandatory = $false)][string] $DefinitionFile = 'config/project-scratch-def.json',
+        [Parameter(Mandatory = $false)][int] $WaitMinutes,
+        [Parameter(Mandatory = $false)][switch] $Async,
+        [Parameter(Mandatory = $false)][string][ValidateSet('developer', 'enterprise', 'group', 'professional', 'partner-developer', 'partner-enterprise', 'partner-group', 'partner-professional')] $Edition,
+        [Parameter(Mandatory = $false)][string] $Snapshot,
+        [Parameter(Mandatory = $false)][string] $AdminEmail,
+        [Parameter(Mandatory = $false)][string] $Description,
+        [Parameter(Mandatory = $false)][string] $Name,
+        [Parameter(Mandatory = $false)][string][ValidateSet('preview', 'previous')] $Release,
+        [Parameter(Mandatory = $false)][string] $SourceOrgId,
+        [Parameter(Mandatory = $false)][string] $AdminUsername,
+        [Parameter(Mandatory = $false)][string] $Alias,
+        [Parameter(Mandatory = $false)][string] $OAuthClientId,
+        [Parameter(Mandatory = $false)][switch] $NoAncestors,
+        [Parameter(Mandatory = $false)][switch] $NoNamespace,
+        [Parameter(Mandatory = $false)][switch] $NoTrackSource
+    )
+    $arguments = @('org', 'create', 'scratch')
+    if ($TargetDevHub) { $arguments += @('--target-dev-hub', $TargetDevHub) }
+    if ($SetDefault) { $arguments += '--set-default' }
+    if ($DurationDays) { $arguments += @('--duration-days', $DurationDays) }
+    $arguments += @('--definition-file', $DefinitionFile)
+    if ($WaitMinutes) { $arguments += @('--wait', $WaitMinutes) }
+    if ($Async) { $arguments += '--async' }
+    if ($Edition) { $arguments += @('--edition', $Edition) }
+    if ($Snapshot) { $arguments += @('--snapshot', $Snapshot) }
+    if ($AdminEmail) { $arguments += @('--admin-email', $AdminEmail) }
+    if ($Description) { $arguments += @('--description', $Description) }
+    if ($Name) { $arguments += @('--name', $Name) }
+    if ($Release) { $arguments += @('--release', $Release) }
+    if ($SourceOrgId) { $arguments += @('--source-org', $SourceOrgId) }
+    if ($AdminUsername) { $arguments += @('--username', $AdminUsername) }
+    if ($Alias) { $arguments += @('--alias', $Alias) }
+    if ($OAuthClientId) { $arguments += @('--client-id', $OAuthClientId) }
+    if ($NoAncestors) { $arguments += '--no-ancestors' }
+    if ($NoNamespace) { $arguments += '--no-namespace' }
+    if ($NoTrackSource) { $arguments += '--no-track-source' }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    Show-SalesforceResult -Result $result
+}
+
+function Resume-SalesforceScratchOrg {
+    <#
+    .SYNOPSIS
+    Resumes a scratch org creation that was started with New-SalesforceScratchOrg -Async or that timed out (sf org resume scratch).
+
+    .DESCRIPTION
+    Select the creation by -JobId (the scratch org info ID, starting 2SR, reported when the creation was started) or by -UseMostRecent.
+    The CLI keeps a local record of the job, so there is no -TargetOrg; resume from the machine that started it.
+    Returns the CLI result (org ID, username, instance URL) with Completed: true once the org is ready. A creation that is still running
+    when -WaitMinutes ends (the CLI's StillInProgressError) returns Completed: false with Status InProgress, so a script can poll; a failed creation throws the CLI message.
+    Permission sets are assigned afterwards with Grant-SalesforcePermissionSet (psfdx), which asks for confirmation.
+
+    .PARAMETER JobId
+    Job ID of the incomplete scratch org create that you want to resume. Passed to sf as --job-id.
+
+    .PARAMETER UseMostRecent
+    Resume the creation the CLI started most recently. Passed as --use-most-recent. Use instead of -JobId.
+
+    .PARAMETER WaitMinutes
+    Number of minutes to wait for the scratch org to be ready. Passed to sf as --wait. Range: 1 to 1440.
+
+    .EXAMPLE
+    New-SalesforceScratchOrg -Async -Name ci-1 | Out-Null
+    Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 10
+    Grant-SalesforcePermissionSet -Name MyPermSet -TargetOrg ci-1
+
+    .EXAMPLE
+    Resume-SalesforceScratchOrg -JobId 2SR000000000001AAA -WaitMinutes 5
+
+    .NOTES
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org resume scratch (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -JobId = --job-id; -WaitMinutes = --wait.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory = $false)][string] $JobId,
+        [Parameter(Mandatory = $false)][switch] $UseMostRecent,
+        [Parameter(Mandatory = $false)][ValidateRange(1, 1440)][int] $WaitMinutes
+    )
+
+    if ($JobId -and $UseMostRecent) { throw 'Specify only one of -JobId or -UseMostRecent.' }
+    if (-not $JobId -and -not $UseMostRecent) { throw 'Specify -JobId or -UseMostRecent.' }
+    if ($JobId -and $JobId -notmatch '^2SR[A-Za-z0-9]{12}([A-Za-z0-9]{3})?\z') {
+        throw "Job ID '$JobId' is not a valid scratch org info ID. Expected a 15 or 18 character ID starting with 2SR."
+    }
+
+    $arguments = @('org', 'resume', 'scratch')
+    if ($JobId) { $arguments += @('--job-id', $JobId) } else { $arguments += '--use-most-recent' }
+    if ($PSBoundParameters.ContainsKey('WaitMinutes')) { $arguments += @('--wait', $WaitMinutes) }
+    $arguments += '--json'
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    # A creation that is still running when the wait ends is reported by the CLI as the error StillInProgressError; that is a normal pending state.
+    $body = $null
+    try { $body = ((@($result) | Out-String).Trim() | ConvertFrom-Json -ErrorAction Stop) } catch { $body = $null }
+    if ($null -ne $body -and $body.PSObject.Properties.Name -contains 'name' -and [string]$body.name -eq 'StillInProgressError') {
+        $pending = ''
+        if ($body.PSObject.Properties.Name -contains 'message') { $pending = [string]$body.message }
+        return [pscustomobject]@{ Completed = $false; Status = 'InProgress'; Message = $pending }
+    }
+    $parsed = Show-SalesforceResult -Result $result
+    if ($null -eq $parsed) { return $null }
+    $names = @($parsed.PSObject.Properties.Name)
+    $completed = ($names -contains 'username') -and -not [string]::IsNullOrWhiteSpace([string]$parsed.username)
+    if ($names -contains 'status' -and [string]$parsed.status -match '^(Creating|Waiting|Queued|New|Pending)') { $completed = $false }
+    $parsed | Add-Member -NotePropertyName Completed -NotePropertyValue $completed -Force
+    return $parsed
+}
+
+function Remove-SalesforceScratchOrg {
+    <#
+    .SYNOPSIS
+    Deletes a scratch org.
+
+    .DESCRIPTION
+    Runs sf org delete scratch. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt also turns off the CLI's own question.
+
+    .PARAMETER TargetOrg
+    Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org. Required.
+
+    .PARAMETER NoPrompt
+    Don't prompt the user to confirm the deletion. Adds --no-prompt.
+
+    .EXAMPLE
+    Remove-SalesforceScratchOrg -TargetOrg ci-1 -WhatIf
+    Show which org would be deleted.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+    Command run: sf org delete scratch (plugin @salesforce/plugin-org)
+      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+    Parameter to flag: -TargetOrg = --target-org; -NoPrompt = --no-prompt.
+    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
+    .LINK
+    https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
+
+    .LINK
+    https://github.com/salesforcecli/plugin-org
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param(
+        [Parameter(Mandatory = $true)][string] $TargetOrg,
+        [Parameter()][switch] $NoPrompt
+    )
+    $arguments = @('org', 'delete', 'scratch', '--target-org', $TargetOrg)
+    if ($NoPrompt) {
+        $arguments += '--no-prompt'
+    }
+    $commonParams = Get-PsfdxCommonParameterSplat -BoundParameters $PSBoundParameters
+    $commonParams.Remove('WhatIf'); $commonParams.Remove('Confirm')
+    if ($PSCmdlet.ShouldProcess($TargetOrg, 'Delete scratch org')) {
+        Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+    }
+}
+
+function Remove-SalesforceScratchOrgs {
+    <#
+    .SYNOPSIS
+    Deletes every scratch org this computer knows about.
+
+    .DESCRIPTION
+    Lists scratch orgs with Get-SalesforceScratchOrgs and deletes each one with Remove-SalesforceScratchOrg -NoPrompt. One confirmation names all of them. This cannot be undone. Supports -WhatIf.
+
+    .EXAMPLE
+    Remove-SalesforceScratchOrgs -WhatIf
+    List the orgs that would be deleted.
+
+    .NOTES
+    Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
+
+    Salesforce CLI mapping
+    This cmdlet does not run an sf command.
+    It is built on other psfdx cmdlets: Get-SalesforceScratchOrgs, Remove-SalesforceScratchOrg. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
+    .LINK
+    https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
+
+    .LINK
+    https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_commonparameters
+    #>
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High')]
+    Param()
+
+    $usernames = @(Get-SalesforceScratchOrgs | ForEach-Object { $_.username } | Where-Object { $_ })
+    if ($usernames.Count -eq 0) { return }
+    # One confirmation names every org; the per-org confirmation is then skipped.
+    $target = "$($usernames.Count) scratch org(s): $($usernames -join ', ')"
+    if ($PSCmdlet.ShouldProcess($target, 'Delete all scratch orgs')) {
+        foreach ($username in $usernames) {
+            Remove-SalesforceScratchOrg -TargetOrg $username -NoPrompt -Confirm:$false
+        }
+    }
 }
 
 #endregion

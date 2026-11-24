@@ -53,8 +53,8 @@ $representative = [ordered]@{
     'psfdx-plugins'     = @{ Command = 'Uninstall-SalesforcePlugin'; Run = 'Uninstall-SalesforcePlugin -Name sfdx-nothing -WhatIf'; Expect = $null }
     'psfdx-bulk'        = @{ Command = 'Remove-SalesforceBulkData'; Run = "`$probe = Join-Path ([IO.Path]::GetTempPath()) 'psfdx-bulk-probe.csv'; Set-Content -LiteralPath `$probe -Value 'Id'; Remove-SalesforceBulkData -File `$probe -Object Account -WhatIf"; Expect = $null }
     'psfdx-devops'      = @{ Command = 'New-SalesforceDevOpsProject'; Run = "New-SalesforceDevOpsProject -Name 'x' -WhatIf"; Expect = $null }
-    'psfdx-development' = @{ Command = 'Remove-SalesforceScratchOrg'; Run = 'Remove-SalesforceScratchOrg -TargetOrg nosuch -WhatIf'; Expect = $null }
-    'psfdx-sandbox'     = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }
+    'psfdx-development' = @{ Command = 'Disable-SalesforceSourceTracking'; Run = 'Disable-SalesforceSourceTracking -TargetOrg nosuch -WhatIf'; Expect = $null }
+    'psfdx-org'         = @{ Command = 'Remove-SalesforceSandbox'; Run = 'Remove-SalesforceSandbox -TargetOrg nosuch -WhatIf'; Expect = $null }
     'psfdx-packages'    = @{ Command = 'Uninstall-SalesforcePackage'; Run = 'Uninstall-SalesforcePackage -Package 04t000000000001 -TargetOrg nosuch -WhatIf'; Expect = $null }
     # Every agent command asks for the Salesforce CLI first, which a clean machine does not have. This one rejects a bad combination in the module's own code
     # before any CLI call, so its own error message proves the module's code ran.
