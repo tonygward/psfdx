@@ -246,6 +246,9 @@ Included in the `psfdx` package.
 
 | Cmdlet | Description |
 | :--- | :--- |
+| `ConvertTo-SalesforceSoqlLiteral` | Turn a value into a quoted SOQL literal with SOQL's backslash escapes, so a value can never change the meaning of a query. |
+| `ConvertTo-SalesforceSoqlIdentifier` | Check an object or field API name and return it, or throw, before it goes into a query. |
+| `ConvertTo-SalesforceSoqlDateTime` | Turn a date into a SOQL datetime literal in UTC (a local time is converted, never labelled as UTC). |
 | `Get-SalesforceDateTime` | Format the current or a given datetime as a Salesforce UTC literal. Local time is converted to UTC first. |
 
 
@@ -726,9 +729,3 @@ These run the `sf package1` commands, which work on first-generation (1GP) packa
 | `Get-SalesforceFirstGenPackageVersionCreateStatus` | Show the status of a 1GP upload request. |
 | `Get-SalesforceFirstGenPackageVersion` | Show one 1GP package version. |
 | `Get-SalesforceFirstGenPackageVersions` | List 1GP package versions, of one package or of the org. |
-
-### psfdx-shared
-
-| Cmdlet | Description |
-| :--- | :--- |
-| `Invoke-Salesforce` | Internal executor. Runs `sf` (and `npm`/`yarn`) with an argument array, never through `Invoke-Expression`; secret values are masked in `-Verbose` output. |

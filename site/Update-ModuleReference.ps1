@@ -85,9 +85,9 @@ function Get-CliCommands([string] $Notes) {
 }
 
 function Get-Commands([string] $Module) {
-    $files = @()
-    if ($Module -eq 'psfdx-shared') { $files = @(Get-ChildItem -LiteralPath (Join-Path $Root $Module) -Filter '*.ps1' -File | Where-Object { $_.Name -notlike '*.Tests.ps1' }) }
-    else { $files = @(Get-Item -LiteralPath (Join-Path (Join-Path $Root $Module) "$Module.psm1")) }
+    # A module's code is its .psm1. The code of the public commands that the core module exports from an internal module (the SOQL converters in psfdx-shared) is read from there.
+    $files = @(Get-Item -LiteralPath (Join-Path (Join-Path $Root $Module) "$Module.psm1"))
+    foreach ($internal in @(Get-PsfdxInternalModules)) { $files += @(Get-ChildItem -LiteralPath (Join-Path $Root $internal) -Filter '*.ps1' -File | Where-Object { $_.Name -notlike '*.Tests.ps1' }) }
     $exports = @((Import-PowerShellDataFile -Path (Join-Path (Join-Path $Root $Module) "$Module.psd1")).FunctionsToExport)
     $found = @{}
     foreach ($file in $files) {
@@ -170,6 +170,7 @@ $commandGroups = @{
         'Authentication and aliases' = '^(Add|Get|Remove)-SalesforceAlias|^(Connect|Disconnect|Open)-Salesforce|Salesforce(AuthenticatedUser|Authorizations|Connections)$'
         'Users and permissions' = 'Salesforce(OrgUser|Users?|UserPassword|PermissionSet(?:License)?)$'
         'Records and data' = 'Salesforce(Records?|RecordType|SObjectRecordCount|TreeData)$'
+        'SOQL helpers' = '^ConvertTo-SalesforceSoql'
         'APIs' = 'Salesforce(Api.*|LatestApiVersion|GraphQL|RestRequest)$'
         'Experience Cloud' = 'SalesforceCommunity'
         'Tools and org information' = 'Salesforce(Cli|Doctor|File|DateTime|Limits|DataStorage|OrgDetails)$'
@@ -230,7 +231,8 @@ function Get-CommandGroup([string] $Module, [string] $Name) {
 
 $stale = New-Object System.Collections.Generic.List[string]
 $summary = @()
-foreach ($module in Get-PsfdxModules) {
+# Internal modules have no page: they export no commands and are not part of the public command surface.
+foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInternalModules) })) {
     $page = Join-Path (Join-Path (Join-Path (Join-Path $Root 'site') 'src') 'modules') (Join-Path $module 'index.html')
     if (-not (Test-Path -LiteralPath $page)) { throw "No website page for $module at $page" }
     $entries = @(Get-Commands $module | ForEach-Object { Build-Entry $_ })

@@ -715,7 +715,7 @@ function New-ParityReport {
     # Exported cmdlets that never run `sf` themselves (they call other psfdx cmdlets) are conveniences, not extra CLI coverage.
     $direct = @{}
     foreach ($key in $usage.Keys) { foreach ($owner in $usage[$key]) { $direct[$owner] = $true } }
-    # psfdx-shared exports internal helpers (Invoke-Salesforce and friends), not cmdlets a user runs, so they are not counted here.
+    # psfdx-shared is an internal module (it exports nothing since issue 284), so its helpers are not counted here. The three public SOQL converters it holds are exported by the core module.
     $exportedFunctions = @($Scan.Functions | Where-Object { $_.Exported -and $_.Module -ne 'psfdx-shared' })
     $runs = @{}
     foreach ($f in $exportedFunctions) {

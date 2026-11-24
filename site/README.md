@@ -67,7 +67,7 @@ If a merge to `main` does not appear on psfdx.com, check the Cloudflare Pages `p
 
 ## Module documentation
 
-The homepage links to `/modules/<module-name>/` for each module (the seven user-facing ones, plus `psfdx-devops`, `psfdx-bulk` and `psfdx-plugins`, and `psfdx-shared`, an internal helper module). The pages are a short introduction followed by a command reference. The introductions (definition and overview) are written by hand in `site/src/modules/<module>/index.html`; the main `psfdx` page also keeps its installation instructions and showcase examples.
+The homepage links to `/modules/<module-name>/` for each module (every module that exports commands). `psfdx-shared` is internal: it exports nothing, so it has no page, no homepage row and no reference. The pages are a short introduction followed by a command reference. The introductions (definition and overview) are written by hand in `site/src/modules/<module>/index.html`; the main `psfdx` page also keeps its installation instructions and showcase examples.
 
 **The command reference is generated, not written.** `site/Update-ModuleReference.ps1` reads the comment-based help and the parameter block of every command a module exports (the text `Get-Help` reads) and fills the part of each page between `<!-- reference:start -->` and `<!-- reference:end -->`:
 

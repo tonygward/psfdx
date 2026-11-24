@@ -21,3 +21,11 @@ function Get-PsfdxRetiredModules {
         'psfdx-sandbox'   # now psfdx-org
     )
 }
+
+# Modules that hold only implementation helpers. They ship in the package and the other modules use them, but they export no commands,
+# so they are not part of the public command surface, the website or the command reference.
+function Get-PsfdxInternalModules {
+    @(
+        'psfdx-shared'
+    )
+}

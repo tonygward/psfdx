@@ -7,7 +7,7 @@
 
 BeforeDiscovery {
     $root = Split-Path -Parent $PSScriptRoot
-    $moduleNames = 'psfdx-shared', 'psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce'
+    $moduleNames = 'psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce'
     $parity = [System.IO.File]::ReadAllText((Join-Path $root 'docs/cli-parity.json')) | ConvertFrom-Json
     $runs = @{}
     foreach ($capability in $parity.capabilities) {
@@ -105,7 +105,10 @@ Describe 'Help of <Name> (<Module>)' -ForEach $script:helpCases {
 
 Describe 'Help for helpers that do not run sf' {
     It 'Test-SalesforceApexTestReference says it only reads local files' {
-        $notes = (Get-Help -Name Test-SalesforceApexTestReference -Full).alertSet | Out-String
+        # An internal helper now (psfdx-shared exports nothing), so Get-Help cannot see it: read the help comment from the source.
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $script:root (Join-Path 'psfdx-shared' 'SalesforceApexTests.ps1')), [ref]$null, [ref]$null)
+        $function = $ast.Find({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Test-SalesforceApexTestReference' }, $true)
+        $notes = $function.GetHelpContent().Notes
         $notes | Should -BeLike '*does not run an sf command*'
         $notes | Should -Not -BeLike '*Command run: sf*'
     }
