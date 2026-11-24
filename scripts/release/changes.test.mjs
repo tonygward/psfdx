@@ -4,12 +4,12 @@ import fs from 'node:fs';
 import { shipsRelease, shipsNothing, needsPester, testsNeeded } from './changes.mjs';
 
 test('product files ship; infrastructure, tests and docs do not', () => {
-  for (const f of ['psfdx/psfdx.psm1', 'psfdx-shared/Invoke-Salesforce.ps1', 'psfdx-logs/psfdx-logs.psd1', 'modules.ps1', 'install.ps1', 'uninstall-windows.ps1', 'VERSION']) {
+  for (const f of ['psfdx/psfdx.psm1', 'psfdx-shared/Invoke-Salesforce.ps1', 'psfdx-logs/psfdx-logs.psd1', 'modules.ps1', 'install.ps1', 'uninstall-windows.ps1', 'VERSION', 'scripts/release/Build-GalleryPackage.ps1']) {
     assert.equal(shipsRelease(f), true, f);
   }
   for (const f of ['psfdx-logs/psfdx-logs.Tests.ps1', 'README.md', 'CHANGELOG.md', 'scripts/release/bump.mjs', 'scripts/matrix/automerge.mjs',
     '.github/workflows/ci.yml', 'tools/matrix/worker.mjs', 'tools/matrix-linux/Dockerfile', 'tests/Repository.Tests.ps1', 'docs/release.md',
-    'prompts/PSF-1-x.md', 'scripts/release/Build-GalleryPackage.ps1', 'scripts/release/gallery.json']) {
+    'prompts/PSF-1-x.md', 'scripts/release/Build-GalleryPackage.Tests.ps1', 'scripts/release/Test-PsfdxSuite.ps1', 'scripts/release/gallery.json']) {
     assert.equal(shipsRelease(f), false, f);
   }
 });
@@ -17,6 +17,7 @@ test('product files ship; infrastructure, tests and docs do not', () => {
 test('a change ships nothing only when it has files and none ship; an empty list is never "nothing"', () => {
   assert.equal(shipsNothing(['.github/workflows/ci.yml', 'scripts/release/bump.mjs']), true);
   assert.equal(shipsNothing(['.github/workflows/ci.yml', 'psfdx/psfdx.psm1']), false);
+  assert.equal(shipsNothing(['.github/workflows/ci.yml', 'scripts/release/Build-GalleryPackage.ps1']), false, 'a change to the package build releases');
   assert.equal(shipsNothing([]), false);
 });
 

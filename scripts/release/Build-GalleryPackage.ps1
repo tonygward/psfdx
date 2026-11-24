@@ -5,6 +5,7 @@ Param(
     [Parameter(Mandatory = $false)][string] $Root
 )
 
+# A change to this script changes what users install, so it releases a new version (scripts/release/changes.mjs counts it as product).
 # Builds the one `psfdx` package for the PowerShell Gallery. The repository keeps separate modules (one folder, manifest, .psm1 and test file
 # each) so development doesn't change; this script only assembles them into out/psfdx/ and generates the package manifest. Works on Windows
 # PowerShell 5.1 and PowerShell 7.

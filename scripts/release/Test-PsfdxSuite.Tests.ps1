@@ -26,7 +26,8 @@ BeforeAll {
         $ErrorActionPreference = 'Continue'
         try {
             $text = & $script:Shell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $script:Check @Arguments 2>&1 | Out-String
-            return [pscustomobject]@{ Output = $text; ExitCode = $LASTEXITCODE }
+            # PowerShell wraps an error at the width of the console, which breaks a message across lines on a narrow terminal: compare with the line breaks and the error box margin collapsed.
+            return [pscustomobject]@{ Output = (($text -replace '\r?\n\s*\|?\s*', ' ') -replace '\s+', ' '); ExitCode = $LASTEXITCODE }
         } finally { $ErrorActionPreference = $saved }
     }
     $script:Good = & $script:Install 'good'

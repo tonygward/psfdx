@@ -33,7 +33,7 @@ psfdx is a set of cross-platform PowerShell modules that wrap the Salesforce CLI
 | `docs/`, `prompts/` | Policy, pipelines, release rules; backlog prompts. `docs/CODE-REVIEW.md` is an old review; `docs/security-findings.md` is the security findings register |
 
 Rules that keep them apart:
-- Only a change to the product releases. Workflows, scripts, tools, tests and docs never bump the version. The rule is `scripts/release/changes.mjs`; don't copy it into a workflow.
+- Only a change to the product releases. Workflows, scripts, tools, tests and docs never bump the version, with one exception: `scripts/release/Build-GalleryPackage.ps1` builds the package users install, so a change to it releases. The rule is `scripts/release/changes.mjs`; don't copy it into a workflow.
 - Infrastructure tests live next to their code (`scripts/release/*.Tests.ps1`, `tools/matrix-linux/*.Tests.ps1`, `*.test.mjs`), not in the root `tests/`.
 - Matrix task pull requests may change only `psfdx*/`, `prompts/`, `images/`, `README.md`, `CHANGELOG.md` and `modules.ps1`. Infrastructure and `docs/` need a person.
 - Infrastructure changes get no `CHANGELOG.md` entry; the changelog is for users.
