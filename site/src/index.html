@@ -48,7 +48,7 @@
         <div class="hero-copy">
           <a class="release-pill" href="%GITHUB_URL%/releases"><span class="pill-dot" aria-hidden="true"></span>v%RELEASE_VERSION% — latest release</a>
           <h1 id="hero-title"><span class="h1-line">Salesforce.</span> <span class="h1-line"><span class="y">Meet</span> <span class="b">PowerShell.</span></span></h1>
-          <p class="tagline">Powerful Salesforce tools. Familiar PowerShell commands. One <span class="pipe">|</span> away from anything.</p>
+          <p class="tagline">Powerful Salesforce tools.<br>Familiar PowerShell commands.<br>One <span class="pipe">|</span> away from anything.</p>
           <div class="cta-row">
             <div class="install" data-copy="Install-Module psfdx"><span class="install-prompt" aria-hidden="true">PS&gt;</span><code>Install-Module psfdx</code></div>
             <a class="button secondary" href="/#modules">Read the docs</a>
@@ -124,7 +124,7 @@
         <h2 id="powershell-examples-title">The little things that make a big difference.</h2>
         <p class="section-intro">Detailed help built into every cmdlet, one-command upgrades, and real Salesforce objects flowing straight into standard PowerShell tools.</p>
         <ul class="cards">
-          <li class="card"><p class="card-tag">Get-Help</p><h3>Every command explained</h3><p>Discover parameters, examples and exactly which Salesforce CLI operation each psfdx cmdlet invokes.</p><pre><code>Get-Help Deploy-SalesforceMetadata -Full</code></pre></li>
+          <li class="card"><p class="card-tag">Get-Help</p><h3>Every command explained</h3><p>Discover parameters, examples and exactly which Salesforce CLI operation each psfdx cmdlet invokes.</p><pre><code>Get-Help Deploy-SalesforceMetadata</code></pre></li>
           <li class="card"><p class="card-tag">Update-Module</p><h3>One update, every module</h3><p>Install and update the complete suite with one PowerShell Gallery package.</p><pre><code>Update-Module psfdx</code></pre></li>
           <li class="card"><p class="card-tag">| Export-Csv</p><h3>Salesforce data, native pipelines</h3><p>Query records as PowerShell objects, then export them with the built-in CSV command.</p><pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg myorg |
   Export-Csv -Path ./accounts.csv -NoTypeInformation</code></pre></li>

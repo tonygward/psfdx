@@ -83,6 +83,7 @@ h1 { font-size: clamp(2.6rem, 1rem + 5.4vw, 4.9rem); font-weight: 800; letter-sp
 h1 .y { color: var(--yellow); }
 h1 .b { color: var(--blue); }
 .tagline { font-size: clamp(1.15rem, 1rem + 0.7vw, 1.55rem); color: var(--muted); max-width: 30ch; margin-bottom: 1.6em; }
+.hero .tagline { max-width: none; }
 .tagline .pipe { color: var(--yellow); font-family: var(--mono); font-weight: 600; }
 .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 18px; margin-bottom: 1.4em; }
 .fine { font-size: 0.9rem; color: var(--muted); max-width: 56ch; }
@@ -156,6 +157,9 @@ h1 .b { color: var(--blue); }
 /* Sections */
 .section { padding: clamp(56px, 9vw, 120px) 0; }
 h2 { font-size: clamp(1.9rem, 1.2rem + 3vw, 3.4rem); font-weight: 800; letter-spacing: -0.02em; max-width: 22ch; }
+@media (min-width: 901px) {
+  .hero ~ .section + .section { padding-top: 0; }
+}
 .section-intro { color: var(--muted); font-size: clamp(1.05rem, 1rem + 0.4vw, 1.3rem); max-width: 62ch; margin-top: 1em; }
 .cards { list-style: none; padding: 0; margin: clamp(28px, 4vw, 48px) 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 20px; }
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px; transition: transform .2s ease, border-color .2s ease; }
