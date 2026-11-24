@@ -1,4 +1,4 @@
-// Opens the command entry that a link or the address points to (the index at the top of a module page links to each entry).
+// Opens the command entry that a link or the address points to.
 // The pages work without JavaScript: an entry is simply opened by clicking its name.
 (function () {
   function openTarget() {

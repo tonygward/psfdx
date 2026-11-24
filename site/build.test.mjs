@@ -273,7 +273,7 @@ function exportsOf(dir) {
 }
 const pageOf = dir => fs.readFileSync(path.join(dist, 'modules', dir, 'index.html'), 'utf8');
 
-test('every exported command of every module is documented once, under its owning module, in alphabetical order', () => {
+test('every exported command of every module is documented once, under its owning module', () => {
   assert.ok(moduleDirs.length >= 11, 'all the modules');
   const seen = new Map();
   for (const dir of moduleDirs) {
@@ -282,23 +282,37 @@ test('every exported command of every module is documented once, under its ownin
     assert.ok(names.length > 0, dir);
     const ids = [...page.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(m => m[1]);
     assert.deepEqual([...ids].sort(), [...names].sort(), `${dir}: the entries are exactly the exported commands`);
-    assert.deepEqual(ids, [...ids].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())), `${dir}: commands are alphabetical`);
+    const alphabetical = commands => [...commands].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     assert.doesNotMatch(page, /class="cmd-index"/, `${dir}: no duplicate index`);
     const groups = [...page.matchAll(/<section class="cmd-group">\s*<h3>([^<]+)<\/h3>([\s\S]*?)<\/section>/g)];
     if (names.length >= 20) {
-      assert.deepEqual(groups.map(group => group[1]), [...new Set(ids.map(id => id.split('-')[0]))], dir);
-      const groupedIds = groups.flatMap(([, verb, contents]) => {
+      assert.ok(groups.length > 1, `${dir}: command types`);
+      const groupedIds = groups.flatMap(([, type, contents]) => {
         const commands = [...contents.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(match => match[1]);
-        assert.ok(commands.length && commands.every(id => id.startsWith(verb + '-')), `${dir}: ${verb}`);
+        assert.ok(commands.length, `${dir}: ${type}`);
+        assert.deepEqual(commands, alphabetical(commands), `${dir}: ${type} is alphabetical`);
         return commands;
       });
       assert.deepEqual(groupedIds, ids, dir);
     } else {
       assert.equal(groups.length, 0, dir);
+      assert.deepEqual(ids, alphabetical(ids), dir);
     }
     for (const id of ids) { assert.equal(seen.has(id), false, `${id} is documented on ${seen.get(id)} and on ${dir}`); seen.set(id, dir); }
   }
   assert.equal(seen.size, exported.size, 'every exported command of the suite is documented');
+});
+
+test('commands with different verbs share the same command type', () => {
+  for (const [module, type, commands] of [
+    ['psfdx-devops', 'Pipelines and stages', ['Add-SalesforceDevOpsPipelineStage', 'Get-SalesforceDevOpsPipeline', 'Update-SalesforceDevOpsPipeline']],
+    ['psfdx-metadata', 'Deployments', ['Deploy-SalesforceMetadata', 'Get-SalesforceDeployStatus', 'Stop-SalesforceDeploy']],
+  ]) {
+    const group = [...pageOf(module).matchAll(/<section class="cmd-group">\s*<h3>([^<]+)<\/h3>([\s\S]*?)<\/section>/g)].find(match => match[1] === type);
+    assert.ok(group, type);
+    for (const command of commands) assert.ok(group[2].includes(`id="${command}"`), command);
+  }
+  assert.match(css, /\.cmd-description\s*\{\s*color:\s*var\(--text\)/);
 });
 
 test('every entry has a description, syntax and a practical example with the PS> prompt', () => {
