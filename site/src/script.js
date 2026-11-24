@@ -50,7 +50,7 @@
     var run = enhance(install, chip);
     install.setAttribute('role', 'button');
     install.setAttribute('tabindex', '0');
-    install.setAttribute('aria-label', 'Copy the install command: ' + install.getAttribute('data-copy'));
+    install.setAttribute('aria-label', 'Copy the command: ' + install.getAttribute('data-copy'));
     install.addEventListener('click', run);
     install.addEventListener('keydown', function (event) {
       if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); run(); }
