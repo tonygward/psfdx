@@ -35,7 +35,7 @@ Get-Command -Module psfdx-logs     # only the commands the logs module owns
 Get-Command -Module 'psfdx*'       # every command, each attributed to its own module
 ```
 
-Run `Import-Module psfdx` first in a new session: it loads every module, and until it has run, PowerShell can only see the core commands (details in [docs/install.md](docs/install.md)).
+Every command is discoverable and autoloads by name in a new session. Until `psfdx` has loaded, `Get-Command` shows `psfdx` as the module of every command; `Import-Module psfdx` (or using any command) loads every module under its own name (details in [docs/install.md](docs/install.md)).
 
 Every command has full help:
 
