@@ -139,3 +139,22 @@ Describe 'Repository rules' {
         }
     }
 }
+
+Describe 'Retired modules' {
+    BeforeAll {
+        $script:Root = Split-Path -Parent $PSScriptRoot
+        . (Join-Path $script:Root 'modules.ps1')
+    }
+
+    It 'are not in the module list, have no folder and are removed by the install and uninstall scripts' {
+        $retired = @(Get-PsfdxRetiredModules)
+        $retired | Should -Contain 'psfdx-sandbox'
+        foreach ($name in $retired) {
+            @(Get-PsfdxModules) | Should -Not -Contain $name
+            Test-Path -LiteralPath (Join-Path $script:Root $name) | Should -BeFalse -Because "$name was retired, so nothing may ship it"
+        }
+        foreach ($script in 'install.ps1', 'install-windows.ps1', 'uninstall.ps1', 'uninstall-windows.ps1') {
+            [System.IO.File]::ReadAllText((Join-Path $script:Root $script)) | Should -Match 'Get-PsfdxRetiredModules' -Because "$script must clean up retired modules"
+        }
+    }
+}

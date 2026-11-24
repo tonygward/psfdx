@@ -120,14 +120,14 @@ test('the feature examples and all eleven modules use real content', () => {
     assert.ok(html.includes(text), text);
   }
   const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
-  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce', 'psfdx-shared']);
+  assert.deepEqual(modules, ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-org', 'psfdx-packages', 'psfdx-logs', 'psfdx-agentforce', 'psfdx-shared']);
   for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
   for (const m of modules) assert.ok(html.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
 });
 
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
   for (const command of ['Get-Help Deploy-SalesforceMetadata -Full', 'Update-Module psfdx', 'Select-SalesforceRecords', 'Export-Csv -Path ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
-  for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared']) {
+  for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
     assert.ok(fs.readFileSync(doc, 'utf8').includes('Get-Command -Module ' + m), `commands missing: ${m}`);
@@ -241,7 +241,7 @@ test('applyConfig replaces every occurrence', () => {
 
 
 test('module pages display PowerShell prompts, compact code blocks and ordered core examples', () => {
-  const moduleNames = ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-sandbox', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared'];
+  const moduleNames = ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-bulk', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-shared'];
   for (const name of moduleNames) {
     const page = fs.readFileSync(path.join(dist, 'modules', name, 'index.html'), 'utf8');
     assert.match(page, /class="ps-prompt">PS&gt;<\/span>/, name + ' should display PS prompt');
@@ -285,7 +285,7 @@ test('every exported command of every module is documented once, under its ownin
     const alphabetical = commands => [...commands].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     assert.doesNotMatch(page, /class="cmd-index"/, `${dir}: no duplicate index`);
     const groups = [...page.matchAll(/<section class="cmd-group">\s*<h3>([^<]+)<\/h3>([\s\S]*?)<\/section>/g)];
-    if (names.length >= 20) {
+    if (names.length >= 20 || dir === 'psfdx-org') {
       assert.ok(groups.length > 1, `${dir}: command types`);
       const groupedIds = groups.flatMap(([, type, contents]) => {
         const commands = [...contents.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(match => match[1]);
@@ -313,6 +313,16 @@ test('commands with different verbs share the same command type', () => {
     for (const command of commands) assert.ok(group[2].includes(`id="${command}"`), command);
   }
   assert.match(css, /\.cmd-description\s*\{\s*color:\s*var\(--text\)/);
+});
+
+test('psfdx-org lists its sandbox and scratch org commands together, grouped by Sandboxes and Scratch Orgs', () => {
+  const page = pageOf('psfdx-org');
+  const groups = new Map([...page.matchAll(/<section class="cmd-group">\s*<h3>([^<]+)<\/h3>([\s\S]*?)<\/section>/g)].map(([, name, body]) => [name, [...body.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(m => m[1])]));
+  assert.deepEqual([...groups.keys()], ['Sandboxes', 'Scratch Orgs']);
+  assert.ok(groups.get('Sandboxes').length >= 7 && groups.get('Sandboxes').every(n => /Sandbox/.test(n)));
+  assert.deepEqual(groups.get('Scratch Orgs'), ['Get-SalesforceScratchOrgs', 'New-SalesforceScratchOrg', 'Remove-SalesforceScratchOrg', 'Remove-SalesforceScratchOrgs', 'Resume-SalesforceScratchOrg']);
+  assert.equal(pageOf('psfdx-development').includes('id="New-SalesforceScratchOrg"'), false, 'the scratch org commands left psfdx-development');
+  assert.equal(fs.existsSync(path.join(dist, 'modules', 'psfdx-sandbox')), false, 'the retired module has no page');
 });
 
 test('every entry has a description, syntax and a practical example with the PS> prompt', () => {

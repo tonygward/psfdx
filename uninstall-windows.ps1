@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 
 # Load shared module list
 . (Join-Path -Path $PSScriptRoot -ChildPath 'modules.ps1')
-$modules = Get-PsfdxModules
+$modules = @(Get-PsfdxModules) + @(Get-PsfdxRetiredModules)
 
 # Resolve target module root similar to install-windows.ps1
 if ($Scope -eq 'AllUsers') {

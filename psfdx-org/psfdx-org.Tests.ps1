@@ -1,13 +1,13 @@
 # Ensure a clean module state before importing
-Get-Module -Name 'psfdx-sandbox' -All | ForEach-Object {
+Get-Module -Name 'psfdx-org' -All | ForEach-Object {
     try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
 }
 
-$moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-sandbox.psd1'
+$moduleManifest = Join-Path -Path $PSScriptRoot -ChildPath 'psfdx-org.psd1'
 Import-Module $moduleManifest -Force | Out-Null
 
-Describe 'psfdx-sandbox module' {
-    InModuleScope 'psfdx-sandbox' {
+Describe 'psfdx-org module' {
+    InModuleScope 'psfdx-org' {
         Context 'Get-SalesforceSandboxes' {
             It 'returns empty array when no sandbox data is available' {
                 Mock Invoke-Salesforce { '{"status":0}' }
@@ -211,7 +211,7 @@ Describe 'psfdx-sandbox module' {
 }
 
 Describe 'Remove-SalesforceSandbox safety' {
-    InModuleScope 'psfdx-sandbox' {
+    InModuleScope 'psfdx-org' {
         It 'runs nothing under -WhatIf' {
             Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
             Remove-SalesforceSandbox -TargetOrg 'prod' -WhatIf
@@ -223,7 +223,7 @@ Describe 'Remove-SalesforceSandbox safety' {
 # SOQL builder and `sf data query --json` regression coverage (#172).
 # Fixtures are sanitised copies of real `sf data query --json` output shapes: no tokens, no real org data.
 Describe 'Get-SalesforceSandboxRefreshStatus SOQL regression' {
-    InModuleScope 'psfdx-sandbox' {
+    InModuleScope 'psfdx-org' {
         BeforeAll {
             $script:Empty = '{"status":0,"result":{"records":[],"totalSize":0,"done":true},"warnings":[]}'
             $script:Info = '{"status":0,"result":{"records":[{"attributes":{"type":"SandboxInfo"},"SandboxName":"dev1","LicenseType":"Developer"}],"totalSize":1,"done":true},"warnings":[]}'
@@ -280,8 +280,8 @@ Describe 'Get-SalesforceSandboxRefreshStatus SOQL regression' {
     }
 }
 
-Describe 'psfdx-sandbox sf org parity (issue 248)' {
-    InModuleScope 'psfdx-sandbox' {
+Describe 'psfdx-org sf org parity (issue 248)' {
+    InModuleScope 'psfdx-org' {
         BeforeEach {
             Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
         }
@@ -362,8 +362,119 @@ Describe 'psfdx-sandbox sf org parity (issue 248)' {
                 { Update-SalesforceSandbox -SandboxName dev1 -Confirm:$false } | Should -Throw -ExpectedMessage '*not refreshable*'
             }
             It 'is exported and asks for confirmation by default' {
-                (Get-Module psfdx-sandbox).ExportedFunctions.Keys | Should -Contain 'Update-SalesforceSandbox'
+                (Get-Module psfdx-org).ExportedFunctions.Keys | Should -Contain 'Update-SalesforceSandbox'
                 (Get-Command Update-SalesforceSandbox).Parameters.ContainsKey('WhatIf') | Should -BeTrue
+            }
+        }
+    }
+}
+
+Describe 'Scratch org deletion safety' {
+    InModuleScope 'psfdx-org' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{}}' }
+        }
+
+        It 'Remove-SalesforceScratchOrg runs nothing under -WhatIf' {
+            Remove-SalesforceScratchOrg -TargetOrg 'so1' -WhatIf
+            Assert-MockCalled Invoke-Salesforce -Times 0
+        }
+
+        It 'Remove-SalesforceScratchOrg deletes with -Confirm:$false and keeps --no-prompt' {
+            Remove-SalesforceScratchOrg -TargetOrg 'so1' -NoPrompt -Confirm:$false
+            Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter {
+                ($Arguments -join '|') -eq 'org|delete|scratch|--target-org|so1|--no-prompt'
+            }
+        }
+
+        Context 'Remove-SalesforceScratchOrgs' {
+            BeforeEach {
+                Mock Get-SalesforceScratchOrgs { @([pscustomobject]@{ username = 'a@x.com' }, [pscustomobject]@{ username = 'b@x.com' }) }
+            }
+
+            It 'runs nothing under -WhatIf' {
+                Remove-SalesforceScratchOrgs -WhatIf
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+
+            It 'deletes each org once with -Confirm:$false' {
+                Remove-SalesforceScratchOrgs -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 2
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|delete|scratch|--target-org|a@x.com|--no-prompt' }
+                Assert-MockCalled Invoke-Salesforce -Times 1 -ParameterFilter { ($Arguments -join '|') -eq 'org|delete|scratch|--target-org|b@x.com|--no-prompt' }
+            }
+
+            It 'does nothing when there are no scratch orgs' {
+                Mock Get-SalesforceScratchOrgs { @() }
+                Remove-SalesforceScratchOrgs -Confirm:$false
+                Assert-MockCalled Invoke-Salesforce -Times 0
+            }
+        }
+    }
+}
+
+Describe 'Resume-SalesforceScratchOrg' {
+    InModuleScope 'psfdx-org' {
+        BeforeEach {
+            $script:Reply = '{"status":0,"result":{"orgId":"00Dxx0000000001","username":"test-abc@example.com","instanceUrl":"https://x.my.salesforce.com"}}'
+            Mock Invoke-Salesforce { $script:Reply }
+        }
+        It 'builds the exact command for a job ID with a wait and marks a ready org Completed' {
+            $r = Resume-SalesforceScratchOrg -JobId '2SR000000000001AAA' -WaitMinutes 10
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|scratch|--job-id|2SR000000000001AAA|--wait|10|--json' }
+            $r.username | Should -Be 'test-abc@example.com'
+            $r.Completed | Should -BeTrue
+        }
+        It 'builds the exact command for -UseMostRecent' {
+            Resume-SalesforceScratchOrg -UseMostRecent | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|resume|scratch|--use-most-recent|--json' }
+        }
+        It 'returns a still-running creation as not completed instead of throwing' {
+            $script:Reply = '{"status":1,"name":"StillInProgressError","message":"The scratch org is still being created."}'
+            $r = Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 1
+            $r.Completed | Should -BeFalse
+            $r.Status | Should -Be 'InProgress'
+            $r.Message | Should -BeLike '*still being created*'
+        }
+        It 'throws the CLI message for a failed creation' {
+            $script:Reply = '{"status":1,"name":"ScratchOrgCreationError","message":"The scratch org creation failed."}'
+            { Resume-SalesforceScratchOrg -UseMostRecent } | Should -Throw -ExpectedMessage '*creation failed*'
+        }
+        It 'rejects missing, conflicting and invalid inputs without calling the CLI' {
+            { Resume-SalesforceScratchOrg } | Should -Throw -ExpectedMessage '*Specify -JobId or -UseMostRecent*'
+            { Resume-SalesforceScratchOrg -JobId '2SR000000000001AAA' -UseMostRecent } | Should -Throw -ExpectedMessage '*only one of*'
+            { Resume-SalesforceScratchOrg -JobId '08c000000000001AAA' } | Should -Throw -ExpectedMessage '*2SR*'
+            { Resume-SalesforceScratchOrg -UseMostRecent -WaitMinutes 0 } | Should -Throw
+            Assert-MockCalled Invoke-Salesforce -Times 0 -Exactly
+        }
+        It 'adds --async to New-SalesforceScratchOrg only when asked' {
+            New-SalesforceScratchOrg -Async -Name ci-1 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--definition-file|config/project-scratch-def.json|--async|--name|ci-1|--json' }
+            New-SalesforceScratchOrg -Name ci-2 | Out-Null
+            Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--definition-file|config/project-scratch-def.json|--name|ci-2|--json' }
+        }
+        It 'is exported and has examples' {
+            $exports = (Import-PowerShellDataFile -Path (Join-Path (Get-Module -Name psfdx-org).ModuleBase 'psfdx-org.psd1')).FunctionsToExport
+            $exports | Should -Contain 'Resume-SalesforceScratchOrg'
+            @((Get-Help Resume-SalesforceScratchOrg -Examples).examples.example).Count | Should -BeGreaterThan 0
+        }
+    }
+}
+
+Describe 'psfdx-org scratch org flags (issue 248)' {
+    InModuleScope 'psfdx-org' {
+        BeforeEach {
+            Mock Invoke-Salesforce { '{"status":0,"result":{"ok":true}}' }
+        }
+
+        Context 'New-SalesforceScratchOrg new flags' {
+            It 'passes -Alias, -OAuthClientId, -NoAncestors, -NoNamespace and -NoTrackSource' {
+                New-SalesforceScratchOrg -TargetDevHub hub -Alias ci1 -OAuthClientId abc -NoAncestors -NoNamespace -NoTrackSource | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--target-dev-hub|hub|--definition-file|config/project-scratch-def.json|--alias|ci1|--client-id|abc|--no-ancestors|--no-namespace|--no-track-source|--json' }
+            }
+            It 'leaves the new flags out by default' {
+                New-SalesforceScratchOrg | Out-Null
+                Assert-MockCalled Invoke-Salesforce -Times 1 -Exactly -ParameterFilter { ($Arguments -join '|') -eq 'org|create|scratch|--definition-file|config/project-scratch-def.json|--json' }
             }
         }
     }

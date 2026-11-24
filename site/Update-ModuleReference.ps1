@@ -187,9 +187,13 @@ $commandGroups = @{
         'Flow and logic tests' = 'Salesforce(Flow|Logic)'
         'Jest tests' = 'SalesforceJest'
         'Local development servers' = 'Salesforce(LwcDevServer|UiBundleDevServer)'
-        'Scratch orgs, shapes and snapshots' = 'Salesforce(ScratchOrg|OrgShape|OrgSnapshot)'
+        'Org shapes and snapshots' = 'Salesforce(OrgShape|OrgSnapshot)'
         'Project configuration' = 'Salesforce(Config|Target|SourceTracking)|^New-SalesforceProject$'
         'Component and template generation' = '^New-Salesforce'
+    }
+    'psfdx-org' = [ordered]@{
+        'Sandboxes' = 'SalesforceSandbox'
+        'Scratch Orgs' = 'SalesforceScratchOrg'
     }
     'psfdx-devops' = [ordered]@{
         'Pipelines and stages' = 'SalesforceDevOps(Pipeline|Stage)'
@@ -230,7 +234,7 @@ foreach ($module in Get-PsfdxModules) {
     $page = Join-Path (Join-Path (Join-Path (Join-Path $Root 'site') 'src') 'modules') (Join-Path $module 'index.html')
     if (-not (Test-Path -LiteralPath $page)) { throw "No website page for $module at $page" }
     $entries = @(Get-Commands $module | ForEach-Object { Build-Entry $_ })
-    $commandList = if ($entries.Count -ge 20 -and $commandGroups.ContainsKey($module)) {
+    $commandList = if (($entries.Count -ge 20 -or $module -eq 'psfdx-org') -and $commandGroups.ContainsKey($module)) {
         $entries | Group-Object { Get-CommandGroup $module $_.Name } | ForEach-Object {
             '<section class="cmd-group">'
             '<h3>' + (ConvertTo-HtmlText $_.Name) + '</h3>'

@@ -11,7 +11,7 @@ Every cmdlet that builds SOQL, or runs a caller-authored query, has a Pester tes
 | psfdx-development | `Get-SalesforceApexClass`, `Get-SalesforceCodeCoverage` | Generated (tooling API) |
 | psfdx-logs | `Get-SalesforceFlowInterviews`, `Get-SalesforceLoginHistory`, `New-SalesforceEventFileQuery` (used by `Select-` and `Export-SalesforceEventFiles`), `Enable-SalesforceDebugLogging` (name lookup) | Generated. Dates go through `ConvertTo-SalesforceSoqlDateTime` |
 | psfdx-metadata | `Build-SalesforceQuery` | Generated. Object and field names go through `ConvertTo-SalesforceSoqlIdentifier` |
-| psfdx-sandbox | `Get-SalesforceSandboxRefreshStatus` | Generated (two tooling API queries) |
+| psfdx-org | `Get-SalesforceSandboxRefreshStatus` | Generated (two tooling API queries) |
 
 A new cmdlet that builds SOQL adds a row here and the same kinds of test.
 
