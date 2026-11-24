@@ -273,7 +273,7 @@ function exportsOf(dir) {
 }
 const pageOf = dir => fs.readFileSync(path.join(dist, 'modules', dir, 'index.html'), 'utf8');
 
-test('every exported command of every module is documented once, under its owning module, with an alphabetical linked index', () => {
+test('every exported command of every module is documented once, under its owning module, in alphabetical order', () => {
   assert.ok(moduleDirs.length >= 11, 'all the modules');
   const seen = new Map();
   for (const dir of moduleDirs) {
@@ -282,20 +282,32 @@ test('every exported command of every module is documented once, under its ownin
     assert.ok(names.length > 0, dir);
     const ids = [...page.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(m => m[1]);
     assert.deepEqual([...ids].sort(), [...names].sort(), `${dir}: the entries are exactly the exported commands`);
-    const links = [...page.matchAll(/<li><a href="#([^"]+)">/g)].map(m => m[1]);
-    assert.deepEqual(links, [...links].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())), `${dir}: the index is alphabetical`);
-    assert.deepEqual(links, ids, `${dir}: every index link points at an entry, in the same order`);
+    assert.deepEqual(ids, [...ids].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())), `${dir}: commands are alphabetical`);
+    assert.doesNotMatch(page, /class="cmd-index"/, `${dir}: no duplicate index`);
+    const groups = [...page.matchAll(/<section class="cmd-group">\s*<h3>([^<]+)<\/h3>([\s\S]*?)<\/section>/g)];
+    if (names.length >= 20) {
+      assert.deepEqual(groups.map(group => group[1]), [...new Set(ids.map(id => id.split('-')[0]))], dir);
+      const groupedIds = groups.flatMap(([, verb, contents]) => {
+        const commands = [...contents.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(match => match[1]);
+        assert.ok(commands.length && commands.every(id => id.startsWith(verb + '-')), `${dir}: ${verb}`);
+        return commands;
+      });
+      assert.deepEqual(groupedIds, ids, dir);
+    } else {
+      assert.equal(groups.length, 0, dir);
+    }
     for (const id of ids) { assert.equal(seen.has(id), false, `${id} is documented on ${seen.get(id)} and on ${dir}`); seen.set(id, dir); }
   }
   assert.equal(seen.size, exported.size, 'every exported command of the suite is documented');
 });
 
-test('every entry has a synopsis, syntax and a practical example with the PS> prompt', () => {
+test('every entry has a description, syntax and a practical example with the PS> prompt', () => {
   for (const dir of moduleDirs) {
     const page = pageOf(dir);
     for (const m of page.matchAll(/<details class="cmd" id="([^"]+)">([\s\S]*?)<\/details>/g)) {
       const [, name, body] = m;
-      assert.match(body, /<span class="cmd-synopsis">[^<]+<\/span>/, `${name}: synopsis`);
+      assert.ok(body.startsWith(`<summary><span class="cmd-name">${name}</span></summary>`), `${name}: collapsed label`);
+      assert.match(body, /<div class="cmd-body"><h4>Description<\/h4><p class="cmd-description">[^<]+<\/p>/, `${name}: description`);
       assert.match(body, /<h4>Syntax<\/h4><pre class="cmd-syntax"><code>/, `${name}: syntax`);
       assert.match(body, /<h4>Example<\/h4>/, `${name}: example`);
       assert.match(body, /class="ps-prompt">PS&gt;<\/span>/, `${name}: PS> prompt`);
@@ -329,7 +341,7 @@ test('the reference pages load their small script and work without it', () => {
   const script = fs.readFileSync(path.join(dist, 'reference.js'), 'utf8');
   assert.ok(!/https?:\/\//.test(script), 'no outside requests');
   for (const dir of moduleDirs) assert.ok(pageOf(dir).includes('<script src="/reference.js" defer></script>'), dir);
-  for (const rule of ['details.cmd', '.cmd-index', '.cmd-params', '.cmd-syntax']) assert.ok(css.includes(rule), rule);
+  for (const rule of ['details.cmd', '.cmd-group', '.cmd-params', '.cmd-syntax']) assert.ok(css.includes(rule), rule);
 });
 
 test('cleanup', () => { fs.rmSync(out, { recursive: true, force: true }); });
