@@ -131,12 +131,13 @@ test('the homepage copy is tight: objects not text, discoverability, one CSV exa
   assert.match(html, /Every command returns real PowerShell objects, not text to parse[\s\S]*No <code>jq<\/code>, no string handling/);
   assert.match(html, /<h3>Everything is discoverable<\/h3>[\s\S]*Get-Command -Module 'psfdx\*'[\s\S]*Get-Help Deploy-SalesforceMetadata -Examples/);
   for (const gone of ['BUILT FOR POWERSHELL', 'The little things that make a big difference', 'Compare the PowerShell and Bash examples', 'Explore each module above', 'Every command explained', 'One update, every module']) assert.ok(!html.includes(gone), gone);
-  assert.match(html, /<section id="powershell-examples"[^>]*aria-labelledby="powershell-examples-title"[\s\S]*<h2 id="powershell-examples-title">Export Salesforce accounts to CSV<\/h2>/);
-  assert.match(html, /<h2 id="watch-title">Deploy and test as you save\.<\/h2>\s*<p class="section-intro">Run <code>Watch-SalesforceApex<\/code> in your project\. Every save deploys the change and runs its tests\.<\/p>/);
+  assert.match(html, /<section id="powershell-examples"[^>]*aria-labelledby="powershell-examples-title"[\s\S]*<h2 id="powershell-examples-title">Comparison: Export accounts to CSV<\/h2>/);
+  assert.match(html, /<h2 id="watch-title">Deploy and test as you save\.<\/h2>\s*<p class="section-intro">Run <code>Watch-SalesforceApex<\/code> in your project\.<br>Every save deploys the change and runs its tests\.<\/p>/);
   assert.match(html, /<figcaption class="fine">Example output after saving <code>InvoiceService\.cls<\/code>\.<\/figcaption>/);
   assert.match(html, /<h2 id="modules-title"><span class="h1-line">One install\.<\/span> <span class="h1-line">Every Salesforce workflow\.<\/span><\/h2>/);
-  assert.match(html, /<\/ul>\s*<p class="update-tile"><code>Update-Module psfdx<\/code><span>One command updates every module\.<\/span><\/p>/);
-  assert.ok(/\.update-tile \{[^}]*background: var\(--yellow\)/.test(css), 'the tile is yellow');
+  assert.match(html, /<\/ul>\s*<div class="update-row">\s*<div class="install" data-copy="Update-Module psfdx">[\s\S]*?<code>Update-Module psfdx<\/code><\/div>\s*<p>One command updates every module\.<\/p>/);
+  assert.ok(!/update-tile/.test(html + css), 'the old update tile is gone');
+  assert.ok(!/Copy the install command/.test(fs.readFileSync(new URL('./src/script.js', import.meta.url), 'utf8')), 'copy label is not install-specific');
   assert.ok(!/\.disclaimer \{[^}]*max-width/.test(css), 'the disclaimer is not narrowed');
   for (const [, id] of html.matchAll(/href="#([^"]+)"/g)) assert.ok(html.includes('id="' + id + '"'), 'dead in-page anchor #' + id);
   const levels = [...html.matchAll(/<h([1-6])[ >]/g)].map(m => Number(m[1]));

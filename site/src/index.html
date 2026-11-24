@@ -121,7 +121,7 @@
     <section id="powershell-examples" class="section" aria-labelledby="powershell-examples-title">
       <div class="wrap">
         <div id="pipeline-comparison" class="pipeline-comparison">
-          <h2 id="powershell-examples-title">Export Salesforce accounts to CSV</h2>
+          <h2 id="powershell-examples-title">Comparison: Export accounts to CSV</h2>
           <figure class="code-box">
             <figcaption>PowerShell with psfdx</figcaption>
             <pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg dev |
@@ -141,7 +141,7 @@
     <section id="watch" class="section" aria-labelledby="watch-title">
       <div class="wrap">
         <h2 id="watch-title">Deploy and test as you save.</h2>
-        <p class="section-intro">Run <code>Watch-SalesforceApex</code> in your project. Every save deploys the change and runs its tests.</p>
+        <p class="section-intro">Run <code>Watch-SalesforceApex</code> in your project.<br>Every save deploys the change and runs its tests.</p>
         <figure class="code-box watch-example">
           <pre><code><span class="prompt">PS&gt;</span> Watch-SalesforceApex
 Watching /work/salesforce for Apex changes. Press Ctrl+C to stop.
@@ -170,7 +170,10 @@ Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest
           <li><a class="module-row" href="/modules/psfdx-agentforce/"><span class="module-name">psfdx-agentforce</span><span class="module-desc">Agents, Agentforce tests, Data Libraries and MCP</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
           <li><a class="module-row" href="/modules/psfdx-shared/"><span class="module-name">psfdx-shared</span><span class="module-desc">Shared internal PowerShell helpers</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
         </ul>
-        <p class="update-tile"><code>Update-Module psfdx</code><span>One command updates every module.</span></p>
+        <div class="update-row">
+          <div class="install" data-copy="Update-Module psfdx"><span class="install-prompt" aria-hidden="true">PS&gt;</span><code>Update-Module psfdx</code></div>
+          <p>One command updates every module.</p>
+        </div>
       </div>
     </section>
 
