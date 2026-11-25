@@ -41,7 +41,8 @@ Describe 'Website command reference' {
             $entries = @([regex]::Matches($script:Pages[$module], '(?s)<details class="cmd" id="([^"]+)">(.*?)</details>'))
             foreach ($entry in $entries) {
                 $name = $entry.Groups[1].Value; $body = $entry.Groups[2].Value
-                $body | Should -Match '(?s)</summary><div class="cmd-body"><h4>Synopsis</h4><p class="cmd-description">[^<]+</p><h4>Syntax</h4>.*?<h4>Description</h4><p class="cmd-description">[^<]+</p>.*?<h4>Salesforce CLI</h4>.*?<h4>Related links</h4>.*?<h4>Remarks</h4>' -Because "$name needs the default help sections in order"
+                $headings = [regex]::Matches($body, '<h4>([^<]+)</h4>') | ForEach-Object { $_.Groups[1].Value }
+                ($headings -join ', ') | Should -BeExactly 'Synopsis, Syntax, Description, Salesforce CLI, Example, Remarks, Related Links' -Because "$name needs the reference sections in order"
                 $body | Should -Match '<h4>Syntax</h4><pre class="cmd-syntax"><code>' -Because "$name needs syntax"
                 $body | Should -Match '<h4>Example</h4>' -Because "$name needs an example"
                 $body | Should -Match 'class="ps-prompt">PS&gt;</span>' -Because "$name's example needs the PS> prompt"
@@ -56,6 +57,11 @@ Describe 'Website command reference' {
         $entry | Should -Match 'approximate counts.*SOQL COUNT\(\)'
         $entry | Should -Match '<code>sf org list sobject record-counts</code>'
         $entry | Should -Match 'PS&gt;</span> Get-SalesforceSObjectRecordCount -SObject Account, Contact -TargetOrg dev1'
+    }
+
+    It 'shows just the command name for the alias mapping' {
+        $entry = [regex]::Match($script:Pages['psfdx'], '(?s)<details class="cmd" id="Add-SalesforceAlias">.*?</details>').Value
+        $entry | Should -Match '<h4>Salesforce CLI</h4><div class="cmd-cli"><p><code>sf alias set</code></p></div>'
     }
 
     It 'shows only Salesforce CLI commands that exist in the parity inventory or the compatibility list' {
