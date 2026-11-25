@@ -133,6 +133,13 @@ function Connect-Salesforce {
     .DESCRIPTION
     Opens the login page of Salesforce in your browser. After you sign in, the Salesforce CLI stores the authorization on this computer so other psfdx cmdlets can use the org. Use -Sandbox for a sandbox, or -CustomUrl for a My Domain or other login URL.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org login web (plugin @salesforce/plugin-auth)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Sandbox = --instance-url https://test.salesforce.com; -CustomUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -Browser = --browser; -OAuthClientId = --client-id; -ClientApp = --client-app; -Scopes = --scopes; -Username = --username.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Sandbox
     Log in through the sandbox login host. psfdx passes --instance-url https://test.salesforce.com. Use -CustomUrl instead for a different host.
 
@@ -173,13 +180,6 @@ function Connect-Salesforce {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org login web (plugin @salesforce/plugin-auth)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Sandbox = --instance-url https://test.salesforce.com; -CustomUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -Browser = --browser; -OAuthClientId = --client-id; -ClientApp = --client-app; -Scopes = --scopes; -Username = --username.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -237,6 +237,13 @@ function Connect-SalesforceAuthUrl {
     .DESCRIPTION
     Runs sf org login sfdx-url with the file you give. The result has the access token and auth URL removed unless you pass -IncludeToken. Keep the file safe: anyone who has it can log in as that user.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org login sfdx-url (plugin @salesforce/plugin-auth)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --sfdx-url-stdin
+        Parameter to flag: -SfdxUrlFile = --sfdx-url-file; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SfdxUrlFile
     Path to a file that contains the Salesforce DX authorization URL. Passed to sf as --sfdx-url-file. Required.
 
@@ -258,13 +265,6 @@ function Connect-SalesforceAuthUrl {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org login sfdx-url (plugin @salesforce/plugin-auth)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --sfdx-url-stdin
-    Parameter to flag: -SfdxUrlFile = --sfdx-url-file; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -344,6 +344,13 @@ function Disconnect-Salesforce {
     .DESCRIPTION
     Runs sf org logout. The authorization is removed from this computer; scratch orgs and sandboxes are not deleted. Asks for confirmation and supports -WhatIf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org logout (plugin @salesforce/plugin-auth)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -All = --all; -TargetOrg = --target-org; -ClientApp = --client-app; -NoPrompt = --no-prompt.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER All
     Log out of every org this computer is authorized for. Use it instead of -TargetOrg. Required in the All parameter set.
 
@@ -366,13 +373,6 @@ function Disconnect-Salesforce {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org logout (plugin @salesforce/plugin-auth)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -All = --all; -TargetOrg = --target-org; -ClientApp = --client-app; -NoPrompt = --no-prompt.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -419,6 +419,13 @@ function Connect-SalesforceJwt {
     .DESCRIPTION
     Runs sf org login jwt with the connected app's consumer key, the user name and the private key file. It is meant for CI. The key file must exist; its content is never read or printed by psfdx. The login host is https://login.salesforce.com, or https://test.salesforce.com with -Sandbox.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org login jwt (plugin @salesforce/plugin-auth)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ConsumerKey = --client-id; -TargetOrg = --username; -JwtKeyfile = --jwt-key-file; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ConsumerKey
     OAuth client ID (also called consumer key) of your custom connected app. Passed to sf as --client-id. Required.
 
@@ -446,13 +453,6 @@ function Connect-SalesforceJwt {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org login jwt (plugin @salesforce/plugin-auth)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ConsumerKey = --client-id; -TargetOrg = --username; -JwtKeyfile = --jwt-key-file; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -503,6 +503,13 @@ function Open-Salesforce {
     .DESCRIPTION
     Runs sf org open. The URL contains a session token, so treat it like a password; -UrlOnly prints it instead of opening a browser.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org open (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org; -UrlOnly = --url-only; -Browser = --browser; -BrowserPrivateMode = --private; -Path = --path; -SourceFile = --source-file.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -528,14 +535,6 @@ function Open-Salesforce {
     .EXAMPLE
     Open-Salesforce -TargetOrg dev1 -UrlOnly
     Print the login URL only.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org open (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org; -UrlOnly = --url-only; -Browser = --browser; -BrowserPrivateMode = --private; -Path = --path; -SourceFile = --source-file.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -578,20 +577,19 @@ function Get-SalesforceConnections {
     .DESCRIPTION
     Runs sf org list and returns one object per org (orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias). Scratch orgs are not included here; use Get-SalesforceScratchOrgs for those.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ShowVerboseDetails = --verbose.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ShowVerboseDetails
     List more information about each org. Adds --verbose.
 
     .EXAMPLE
     Get-SalesforceConnections | Format-Table username, alias, connectedStatus
     A quick overview of connected orgs.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ShowVerboseDetails = --verbose.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -641,6 +639,13 @@ function Repair-SalesforceConnections {
     .DESCRIPTION
     Runs sf org list --clean, which checks every org and offers to remove the ones that no longer exist or whose scratch org has expired. Without -NoPrompt the CLI asks first. It returns the CLI's text output.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -NoPrompt = --no-prompt.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER NoPrompt
     Don't prompt for confirmation. Adds --no-prompt.
 
@@ -654,13 +659,6 @@ function Repair-SalesforceConnections {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -NoPrompt = --no-prompt.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -690,6 +688,13 @@ function Get-SalesforceOrgDetails {
     .DESCRIPTION
     Runs sf org display. The result has the access token and the Salesforce DX authorization URL removed, so the output is safe to log or share, unless you pass -IncludeToken. Anyone who has the token or the URL can act as that user, so only use -IncludeToken when you need it.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org display (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org; -ShowVerboseDetails = --verbose.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -702,14 +707,6 @@ function Get-SalesforceOrgDetails {
     .EXAMPLE
     Get-SalesforceOrgDetails -TargetOrg dev1
     Show the org ID, instance URL and status of dev1, without any token.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org display (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org; -ShowVerboseDetails = --verbose.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -748,16 +745,15 @@ function Get-SalesforceAuthorizations {
     .DESCRIPTION
     Runs sf org list auth and returns one object per saved authorization (user name, org ID, instance URL, aliases, how it was authorized and whether it has expired). Unlike Get-SalesforceConnections it does not contact the orgs, so it is quick and works offline. Tokens and authorization URLs are removed from the result.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list auth (plugin @salesforce/plugin-auth)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     Get-SalesforceAuthorizations | Format-Table username, aliases, instanceUrl
     A quick overview of the saved logins.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list auth (plugin @salesforce/plugin-auth)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -791,6 +787,13 @@ function Connect-SalesforceAccessToken {
     .DESCRIPTION
     Runs sf org login access-token. Give the org's instance URL and the access token as a SecureString. The token is handed to the CLI in the SF_ACCESS_TOKEN environment variable of the sf process only, never on the command line, and the variable is put back to its earlier value afterwards. The login is saved on this computer so other psfdx cmdlets can use the org. The authorization cannot be refreshed, so it stops working when the token expires. Because the environment belongs to the whole process, logins started at the same time in one PowerShell process run one after the other. The URL must be an absolute https URL, because the token is sent to it. Tokens and authorization URLs are removed from the result.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org login access-token (plugin @salesforce/plugin-auth)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -InstanceUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -NoPrompt = --no-prompt. -AccessToken is not a flag: the CLI reads it from the SF_ACCESS_TOKEN environment variable.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER InstanceUrl
     URL of the org, for example https://mycompany.my.salesforce.com. Must be an absolute https:// URL. Passed to sf as --instance-url. Required.
 
@@ -815,13 +818,6 @@ function Connect-SalesforceAccessToken {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org login access-token (plugin @salesforce/plugin-auth)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -InstanceUrl = --instance-url; -Alias = --alias; -SetDefault = --set-default; -SetDefaultDevHub = --set-default-dev-hub; -NoPrompt = --no-prompt. -AccessToken is not a flag: the CLI reads it from the SF_ACCESS_TOKEN environment variable.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -894,16 +890,15 @@ function Get-SalesforceAlias {
     .DESCRIPTION
     Runs sf alias list and returns the aliases, each with the value it points to. Reads local CLI configuration only; it does not contact an org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf alias list (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     Get-SalesforceAlias
     List every alias.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf alias list (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -933,6 +928,12 @@ function Add-SalesforceAlias {
     .DESCRIPTION
     Stores the alias in the Salesforce CLI configuration on this computer; nothing changes in the org. Once set, the alias works anywhere a psfdx cmdlet takes -TargetOrg.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf alias set (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Alias
     The alias to create, for example prod or dev1. Setting an alias that already exists replaces it. Required.
 
@@ -945,12 +946,6 @@ function Add-SalesforceAlias {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf alias set (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -982,6 +977,13 @@ function Remove-SalesforceAlias {
     .DESCRIPTION
     Runs sf alias unset. Only the local aliases are removed; the orgs are not touched. Give -Alias to remove one, or -All to remove every alias, which asks for confirmation first because it cannot be undone. Supports -WhatIf. -NoPrompt skips the question so a script can run unattended; psfdx always passes --no-prompt to the CLI itself after it has asked, so the CLI never waits for an answer.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf alias unset (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -All = --all; -NoPrompt = --no-prompt.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Alias
     The alias to remove. Required unless -All is given.
 
@@ -1001,13 +1003,6 @@ function Remove-SalesforceAlias {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf alias unset (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -All = --all; -NoPrompt = --no-prompt.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1056,20 +1051,19 @@ function Get-SalesforceLimits {
     .DESCRIPTION
     Runs sf org list limits and returns one object per limit with its name, max and remaining values.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list limits (plugin @salesforce/plugin-limits)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceLimits -TargetOrg prod | Where-Object remaining -lt 1000
     Limits that are nearly used up.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list limits (plugin @salesforce/plugin-limits)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1101,17 +1095,16 @@ function Get-SalesforceDataStorage {
     .DESCRIPTION
     Reads the org limits with Get-SalesforceLimits and returns the DataStorageMB entry with InUse and Usage (percentage) added. Returns nothing if the org does not report that limit.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceLimits. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER TargetOrg
     Username or alias of the org to check. If omitted, the Salesforce CLI uses the default target org (passed on to Get-SalesforceLimits).
 
     .EXAMPLE
     Get-SalesforceDataStorage -TargetOrg prod
     Data storage used, in MB and as a percentage.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceLimits. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1140,17 +1133,16 @@ function Get-SalesforceApiUsage {
     .DESCRIPTION
     Reads the org limits with Get-SalesforceLimits and returns the DailyApiRequests entry with a Usage percentage added (used divided by max). Returns nothing if the org does not report that limit.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceLimits. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER TargetOrg
     Username or alias of the org to check. If omitted, the Salesforce CLI uses the default target org (passed on to Get-SalesforceLimits).
 
     .EXAMPLE
     Get-SalesforceApiUsage -TargetOrg prod
     See the API usage of the production org.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceLimits. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1192,6 +1184,10 @@ function Get-SalesforceUsers {
     .DESCRIPTION
     Queries User (Id, Name, Username, Email, IsActive, LastLoginDate) through Select-SalesforceRecords, ordered by LastLoginDate descending. Values are escaped as SOQL literals.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER Username
     Return only the user with this exact user name.
 
@@ -1207,11 +1203,6 @@ function Get-SalesforceUsers {
     .EXAMPLE
     Get-SalesforceUsers -ActiveOnly -Limit 20 -TargetOrg prod
     The 20 most recently active users.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1298,6 +1289,10 @@ function Connect-SalesforceApi {
     .DESCRIPTION
     Does not use the Salesforce CLI. It posts the user name, the password plus security token, and the connected app client ID and secret to the org's /services/oauth2/token endpoint with Invoke-RestMethod and returns the response, which holds the access token and instance URL. The request is sent only over https. Pass the password, token and client secret as SecureString: they are converted to text only when the request is built and are never written to the verbose, debug or error output. Plain strings still work but write a warning, because they stay in your session history and memory.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It calls the Salesforce REST API directly with Invoke-RestMethod, with no Salesforce CLI involved.
+
     .PARAMETER TargetOrg
     The Salesforce user name to log in as (sent as the OAuth username). This is not an org alias. Required.
 
@@ -1322,11 +1317,6 @@ function Connect-SalesforceApi {
     .EXAMPLE
     Connect-SalesforceApi -TargetOrg user@example.com -Password $pw -Token $tok -ClientId $key -ClientSecret $secret
     Request an access token from production.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It calls the Salesforce REST API directly with Invoke-RestMethod, with no Salesforce CLI involved.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1377,6 +1367,10 @@ function Invoke-SalesforceApi {
     .DESCRIPTION
     Does not use the Salesforce CLI. It sends the request with Invoke-RestMethod and an Authorization: Bearer header, and returns the parsed response. The URL must be absolute and https, so the token is never sent over plain http. You choose the host; the cmdlet does not check that it is a Salesforce host.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It calls the Salesforce REST API directly with Invoke-RestMethod, with no Salesforce CLI involved.
+
     .PARAMETER Url
     Absolute https:// URL of the REST resource. Required.
 
@@ -1389,11 +1383,6 @@ function Invoke-SalesforceApi {
     .EXAMPLE
     Invoke-SalesforceApi -Url https://example.my.salesforce.com/services/data -AccessToken $token
     List the API versions of an org.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It calls the Salesforce REST API directly with Invoke-RestMethod, with no Salesforce CLI involved.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1420,21 +1409,20 @@ function Get-SalesforceApiVersions {
     .DESCRIPTION
     Sends a GET request to /services/data with sf api request rest and returns the list of versions as objects (label, url, version).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf api request rest (plugin @salesforce/plugin-api)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
+          Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceApiVersions -TargetOrg dev1 | Select-Object -Last 1
     The newest API version of the org.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf api request rest (plugin @salesforce/plugin-api)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
-      Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1467,17 +1455,16 @@ function Get-SalesforceLatestApiVersion {
     .DESCRIPTION
     Calls Get-SalesforceApiVersions and returns the highest version prefixed with v. Returns nothing if the org reports no versions.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceApiVersions. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER TargetOrg
     Username or alias of the org to ask. If omitted, the Salesforce CLI uses the default target org (passed on to Get-SalesforceApiVersions).
 
     .EXAMPLE
     Get-SalesforceLatestApiVersion -TargetOrg dev1
     For example v62.0.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceApiVersions. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1521,19 +1508,18 @@ function Get-SalesforceAuthenticatedUser {
     .DESCRIPTION
     Tokens are removed from the result. To search all users in the org, use Get-SalesforceUsers.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list users (plugin @salesforce/plugin-user)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceAuthenticatedUser -TargetOrg myscratch
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list users (plugin @salesforce/plugin-user)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1570,19 +1556,18 @@ function Get-SalesforceOrgUser {
     there is nothing real to return. HasPassword says whether the CLI holds a password for the user. To set a known password, use
     New-SalesforceUserPassword.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org display user (plugin @salesforce/plugin-user)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceOrgUser -TargetOrg myscratch
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org display user (plugin @salesforce/plugin-user)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1623,6 +1608,13 @@ function New-SalesforceUser {
     and spaces need no escaping, but a value with a double quote or a line break is rejected by the Windows CLI shim. Needs the Manage Users
     permission. The CLI creates users for scratch orgs and sandboxes it can sign in to.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create user (plugin @salesforce/plugin-user)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -DefinitionFile = --definition-file; -SetAlias = --set-alias; -SetUniqueUsername = --set-unique-username; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER DefinitionFile
     File path to a user definition file for customizing the new user. Passed to sf as --definition-file.
 
@@ -1643,14 +1635,6 @@ function New-SalesforceUser {
 
     .EXAMPLE
     New-SalesforceUser -DefinitionFile .\config\user-def.json -SetUniqueUsername -TargetOrg myscratch -WhatIf
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create user (plugin @salesforce/plugin-user)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -DefinitionFile = --definition-file; -SetAlias = --set-alias; -SetUniqueUsername = --set-unique-username; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1712,6 +1696,13 @@ function New-SalesforceUserPassword {
     5 (higher is stronger), as the CLI allows. One user at a time (-OnBehalfOf takes a single username or alias). Needs the Manage Users and
     Reset User Passwords and Unlock Users permissions.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org generate password (plugin @salesforce/plugin-user)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -OnBehalfOf = --on-behalf-of; -Length = --length; -Complexity = --complexity; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER OnBehalfOf
     Comma-separated list of usernames or aliases to assign the password to; must have been created locally with the "org create user" command. Passed to sf as --on-behalf-of.
 
@@ -1726,14 +1717,6 @@ function New-SalesforceUserPassword {
 
     .EXAMPLE
     $p = New-SalesforceUserPassword -OnBehalfOf qa1 -TargetOrg myscratch -Confirm:$false; $p.Username
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org generate password (plugin @salesforce/plugin-user)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -OnBehalfOf = --on-behalf-of; -Length = --length; -Complexity = --complexity; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1789,6 +1772,13 @@ function Grant-SalesforcePermissionSet {
     set, no permission) are returned with Status Failed and the cmdlet then throws PsfdxPermissionAssignmentFailed, whose TargetObject lists
     them. Asks for confirmation by default; -WhatIf makes no CLI call. Needs the Assign Permission Sets permission.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org assign permset (plugin @salesforce/plugin-user)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Passed on to Test-SalesforceAssignmentNames -Name. Required.
 
@@ -1800,14 +1790,6 @@ function Grant-SalesforcePermissionSet {
 
     .EXAMPLE
     Grant-SalesforcePermissionSet -Name Sales_Admin, Reports_User -OnBehalfOf qa1, qa2 -TargetOrg myscratch -Confirm:$false
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org assign permset (plugin @salesforce/plugin-user)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1854,6 +1836,13 @@ function Grant-SalesforcePermissionSetLicense {
 
     Supports -WhatIf and -Confirm and asks for confirmation by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org assign permsetlicense (plugin @salesforce/plugin-user)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Passed on to Test-SalesforceAssignmentNames -Name. Required.
 
@@ -1865,14 +1854,6 @@ function Grant-SalesforcePermissionSetLicense {
 
     .EXAMPLE
     Grant-SalesforcePermissionSetLicense -Name SalesforceCPQ_Admin -OnBehalfOf qa1 -TargetOrg myscratch -Confirm:$false
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org assign permsetlicense (plugin @salesforce/plugin-user)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2002,16 +1983,16 @@ function Install-SalesforceCli {
     .DESCRIPTION
     Runs npm install --global @salesforce/cli. This downloads and runs code from the npm registry. Node.js and npm must already be installed. Asks nothing by default, supports -WhatIf and -Confirm.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
     .EXAMPLE
     Install-SalesforceCli -WhatIf
     Show what would be installed.
 
     .NOTES
     Installs or updates software on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2037,16 +2018,16 @@ function Update-SalesforceCli {
     .DESCRIPTION
     Runs npm update --global @salesforce/cli. It downloads and runs code from the npm registry. Supports -WhatIf and -Confirm.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
     .EXAMPLE
     Update-SalesforceCli -WhatIf
     Show what would be updated.
 
     .NOTES
     Installs or updates software on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2075,17 +2056,16 @@ function Get-SalesforceDateTime {
     .DESCRIPTION
     Returns the value in UTC as 2026-11-18T11:00:00Z, ready to use in a SOQL WHERE clause. With no value it uses the current time. A local or unspecified time is converted to UTC first. It is a thin wrapper over ConvertTo-SalesforceSoqlDateTime.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It works locally in PowerShell and .NET.
+
     .PARAMETER Datetime
     The moment to format. Defaults to now. A local or unspecified kind is read as local time and converted to UTC.
 
     .EXAMPLE
     Get-SalesforceDateTime (Get-Date).AddDays(-1)
     Yesterday, as a literal for a CreatedDate filter.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It works locally in PowerShell and .NET.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2113,20 +2093,19 @@ function Get-SalesforceCommunityTemplates {
     .DESCRIPTION
     Runs sf community list template and returns one object per template. Use a template name with New-SalesforceCommunity. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf community list template (plugin @salesforce/plugin-community)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceCommunityTemplates -TargetOrg dev1
     The templates the org offers.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf community list template (plugin @salesforce/plugin-community)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2160,6 +2139,13 @@ function New-SalesforceCommunity {
     .DESCRIPTION
     Runs sf community create. The site is created in the org, as a draft that is not live yet; make it live with Publish-SalesforceCommunity. Digital Experiences must be turned on in the org. Supports -WhatIf and -Confirm; it does not prompt by default. To write the files of a site into a project instead, use New-SalesforceExperienceSite.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf community create (plugin @salesforce/plugin-community)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -TemplateName = --template-name; -UrlPathPrefix = --url-path-prefix; -Description = --description; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the site. Passed to sf as --name. Required.
 
@@ -2181,13 +2167,6 @@ function New-SalesforceCommunity {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf community create (plugin @salesforce/plugin-community)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -TemplateName = --template-name; -UrlPathPrefix = --url-path-prefix; -Description = --description; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2229,6 +2208,13 @@ function Publish-SalesforceCommunity {
     .DESCRIPTION
     Runs sf community publish. Publishing makes the current draft of the site visible to its visitors, and it cannot be taken back with one command. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf community publish (plugin @salesforce/plugin-community)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the site to publish. Passed to sf as --name. Required.
 
@@ -2244,13 +2230,6 @@ function Publish-SalesforceCommunity {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf community publish (plugin @salesforce/plugin-community)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2325,6 +2304,13 @@ function Invoke-SalesforceGraphQL {
     .DESCRIPTION
     Runs sf api request graphql, which sends a GraphQL query or mutation to the Salesforce GraphQL API as the user you are logged in as. Give the statement as -Query, or put it in a file and give -QueryFile. The response is returned as text, or as an object with -AsObject. A mutation changes data, so a statement that starts with mutation asks for confirmation and supports -WhatIf; a query does not. A response the server marks as an error makes the cmdlet throw (PsfdxRequestFailed). On Windows the CLI's .cmd launcher cannot take a statement with a double quote or a line break, so use -QueryFile there.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf api request graphql (plugin @salesforce/plugin-api)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Query = --body; -Include = --include; -StreamToFile = --stream-to-file; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Query
     The GraphQL statement. Use it or -QueryFile. Passed to sf as --body.
 
@@ -2353,13 +2339,6 @@ function Invoke-SalesforceGraphQL {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf api request graphql (plugin @salesforce/plugin-api)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Query = --body; -Include = --include; -StreamToFile = --stream-to-file; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2426,6 +2405,13 @@ function Invoke-SalesforceRestRequest {
     .DESCRIPTION
     Runs sf api request rest, which calls any REST endpoint as the user you are logged in as, so you need no token. The response is returned as text, or as an object with -AsObject. A request that changes data (POST, PUT, PATCH or DELETE) asks for confirmation and supports -WhatIf; a read does not. An error response makes the cmdlet throw (PsfdxRequestFailed). Give the body as -Body, as a file with -BodyFile, or give the whole request (URL, method, headers and body) in a JSON -File. On Windows the CLI's .cmd launcher cannot take a body with a double quote, which JSON always has, so use -BodyFile or -File there. For the other psfdx REST helpers see Invoke-SalesforceApi, which uses an access token instead.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf api request rest (plugin @salesforce/plugin-api)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Method = --method; -Body = --body; -File = --file; -Header = --header; -Include = --include; -StreamToFile = --stream-to-file; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Url
     The endpoint, for example /services/data/v62.0/limits. Not needed if -File holds it. It is an argument of the command, not a flag.
 
@@ -2466,13 +2452,6 @@ function Invoke-SalesforceRestRequest {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf api request rest (plugin @salesforce/plugin-api)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Method = --method; -Body = --body; -File = --file; -Header = --header; -Include = --include; -StreamToFile = --stream-to-file; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2571,6 +2550,13 @@ function Invoke-SalesforceDoctor {
     .DESCRIPTION
     Runs sf doctor, which gathers the CLI's configuration and runs checks to find problems in your environment. The results are written to files in the output folder. With -Command it also runs that command in debug mode and logs it. -CreateIssue goes further: it opens a new issue on the Salesforce CLI's GitHub repository with the diagnostic results attached, which shares information about your machine outside it, so it asks for confirmation first. Supports -WhatIf and -Confirm.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf doctor (plugin @salesforce/plugin-info)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Command = --command; -Plugin = --plugin; -OutputDirectory = --output-dir; -CreateIssue = --create-issue.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Command
     A CLI command to run in debug mode, for example 'org list'. Its results go to a log file. Passed to sf as --command.
 
@@ -2589,13 +2575,6 @@ function Invoke-SalesforceDoctor {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf doctor (plugin @salesforce/plugin-info)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Command = --command; -Plugin = --plugin; -OutputDirectory = --output-dir; -CreateIssue = --create-issue.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html

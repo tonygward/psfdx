@@ -40,12 +40,12 @@ Every command is discoverable and autoloads by name in a new session. Until `psf
 Every command has full help:
 
 ```
-Get-Help Deploy-SalesforceMetadata -Full          # synopsis, every parameter, examples, notes
+Get-Help Deploy-SalesforceMetadata -Full          # synopsis, every parameter, examples, CLI mapping
 Get-Help Deploy-SalesforceMetadata -Examples
 Get-Help Deploy-SalesforceMetadata -Parameter *
 ```
 
-The notes of each command have a **Salesforce CLI mapping** section. It names the exact `sf` command or commands the cmdlet runs, how its parameters map to flags, the flags and values it cannot pass, and says plainly when a cmdlet does not run `sf` at all (it calls the REST API, runs npm, or is built from other psfdx cmdlets). The help is checked against the [CLI parity report](docs/cli-parity.md); [docs/help-audit.md](docs/help-audit.md) records the cross-check.
+Default help for each public command shows a **SALESFORCE CLI** section after its behavioural description and before related links. It identifies the underlying `sf` commands and relevant flags, or explains how the cmdlet works without a direct CLI equivalent. The website reference uses the same help and includes an inline example. The help checks use the [CLI parity report](docs/cli-parity.md) and are described in the [help audit](docs/help-audit.md).
 
 ## 4. Update psfdx
 
@@ -399,9 +399,9 @@ Included in the `psfdx` package. It holds the Salesforce data commands: queries 
 | `Set-SalesforceRecord` | Update a record by `-Id` or by `-Where` field values that identify exactly one record. `-SkipAssignmentRules` skips Case and Lead assignment rules. |
 | `Get-SalesforceRecord` | Get one record by `-Id`, or by `-Where` field values that identify exactly one (`sf data get record`). |
 | `Remove-SalesforceRecord` | Delete one record by `-Id` or `-Where` (`sf data delete record`). Asks for confirmation; supports `-WhatIf`. |
-| `Upsert-SalesforceRecord` | Create or update one record by external ID. The CLI has no single-record upsert, so this calls the REST API through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` (known only on create) and `StatusCode`. |
+| `Upsert-SalesforceRecord` | Create or update one record by external ID through `sf api request rest`. Returns `Operation` (Created or Updated), `Created`, `Id` when the API supplies it, and `StatusCode`. |
 | `Get-SalesforceRecordType` | List record types (optionally by object). |
-| `Get-SalesforceSObjectRecordCount` | Record counts of objects, all or the ones named with `-SObject` (`sf org list sobject record-counts`). |
+| `Get-SalesforceSObjectRecordCount` | Approximate record counts for all supported objects or the ones named with `-SObject` (`sf org list sobject record-counts`). |
 | `New-SalesforceFile` | Upload a local file as a Salesforce File, optionally attached to a record with `-ParentId` (`sf data create file`). Supports `-WhatIf`. |
 
 #### Tree data

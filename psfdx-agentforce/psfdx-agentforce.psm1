@@ -133,16 +133,15 @@ function Test-SalesforceAgentPlugin {
     .DESCRIPTION
     Runs sf plugins --core --json and returns $true when @salesforce/plugin-agent is listed, otherwise $false. The other agent cmdlets run this check first.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf plugins (plugin @oclif/plugin-plugins)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     if (-not (Test-SalesforceAgentPlugin)) { Install-SalesforcePlugin -Name @salesforce/plugin-agent }
     Install the plugin when it is missing.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf plugins (plugin @oclif/plugin-plugins)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -247,20 +246,19 @@ function Get-SalesforceAgentTests {
     .DESCRIPTION
     Runs sf agent test list and returns the test definitions as objects (an empty array when there are none). Needs the @salesforce/plugin-agent plugin.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent test list (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceAgentTests -TargetOrg dev1
     Agent tests in the org.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent test list (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -299,6 +297,13 @@ function Start-SalesforceAgentTest {
     .DESCRIPTION
     Runs sf agent test run for the test API name. Without -WaitMinutes the run is started and the job ID is returned; fetch the outcome later with Get-SalesforceAgentTestResult. Needs the @salesforce/plugin-agent plugin.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent test run (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -WaitMinutes = --wait; -ExtendedDetails = --verbose; -OutputDir = --output-dir; -ResultFormat = --result-format; -TestRunner = --test-runner; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of the agent test to run; corresponds to the name of the AiEvaluationDefinition metadata component that implements the agent test. Passed to sf as --api-name. Required.
 
@@ -326,13 +331,6 @@ function Start-SalesforceAgentTest {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent test run (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -WaitMinutes = --wait; -ExtendedDetails = --verbose; -OutputDir = --output-dir; -ResultFormat = --result-format; -TestRunner = --test-runner; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -383,6 +381,13 @@ function Get-SalesforceAgentTestResult {
     .DESCRIPTION
     Runs sf agent test results for a job ID returned by Start-SalesforceAgentTest. Needs the @salesforce/plugin-agent plugin.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent test results (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -ExtendedDetails = --verbose; -OutputDir = --output-dir; -ResultFormat = --result-format; -TestRunner = --test-runner; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     Job ID of the completed agent test run. Passed to sf as --job-id. Required.
 
@@ -404,14 +409,6 @@ function Get-SalesforceAgentTestResult {
     .EXAMPLE
     Get-SalesforceAgentTestResult -JobId 4KBxx0000000001 -TargetOrg dev1
     Results of that run.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent test results (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -ExtendedDetails = --verbose; -OutputDir = --output-dir; -ResultFormat = --result-format; -TestRunner = --test-runner; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -466,6 +463,13 @@ function Enable-SalesforceAgent {
     .DESCRIPTION
     Runs sf agent activate for the agent API name and, optionally, a version. Activating makes the agent available to users. Needs the @salesforce/plugin-agent plugin. Asks for confirmation and supports -WhatIf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent activate (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -Version = --version; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of the agent to activate; if not specified, the command provides a list that you choose from. Passed to sf as --api-name. Required.
 
@@ -481,13 +485,6 @@ function Enable-SalesforceAgent {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent activate (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -Version = --version; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -532,6 +529,13 @@ function Disable-SalesforceAgent {
     .DESCRIPTION
     Runs sf agent deactivate for the agent API name. The plugin @salesforce/plugin-agent must be installed; the cmdlet stops with install guidance if it is not. Asks for confirmation and supports -WhatIf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent deactivate (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of the agent to deactivate; if not specified, the command provides a list that you choose from. Passed to sf as --api-name. Required.
 
@@ -544,13 +548,6 @@ function Disable-SalesforceAgent {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent deactivate (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -643,6 +640,13 @@ function New-SalesforceAgentAuthoringBundle {
     (an agent spec file made by the agent plugin) or -NoSpec to generate a blank bundle; both are checked before the CLI is called. -OutputDir is where the bundle goes (the CLI default is the project's authoring bundle folder). Returns the CLI result, which includes
     the paths written. Needs the @salesforce/plugin-agent plugin, a recent version, and Agentforce enabled in the org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent generate authoring-bundle (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -ApiName = --api-name; -Spec = --spec; -NoSpec = --no-spec; -OutputDir = --output-dir; -ForceOverwrite = --force-overwrite; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name (label) of the authoring bundle; if not specified, you're prompted for the name. Passed to sf as --name. Required.
 
@@ -671,14 +675,6 @@ function New-SalesforceAgentAuthoringBundle {
     New-SalesforceAgentAuthoringBundle -Name 'Service Agent' -ApiName Service_Agent -NoSpec -Confirm:$false | Out-Null
     Test-SalesforceAgentAuthoringBundle -ApiName Service_Agent
     Publish-SalesforceAgentAuthoringBundle -ApiName Service_Agent -Confirm:$false
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent generate authoring-bundle (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -ApiName = --api-name; -Spec = --spec; -NoSpec = --no-spec; -OutputDir = --output-dir; -ForceOverwrite = --force-overwrite; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -739,6 +735,13 @@ function Test-SalesforceAgentAuthoringBundle {
     its diagnostics, not thrown, so a script can print or filter them; add -ThrowOnInvalid to fail a CI step (error id PsfdxAgentValidationFailed,
     with the result as the target object). Failures that are not validation problems, such as an unknown org, always throw.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent validate authoring-bundle (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of the authoring bundle you want to validate; if not specified, the command provides a list that you can choose from. Passed to sf as --api-name. Required.
 
@@ -750,14 +753,6 @@ function Test-SalesforceAgentAuthoringBundle {
 
     .EXAMPLE
     $v = Test-SalesforceAgentAuthoringBundle -ApiName Service_Agent -TargetOrg my-org; $v.Diagnostics | Format-Table Line, Message
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent validate authoring-bundle (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -819,6 +814,13 @@ function Publish-SalesforceAgentAuthoringBundle {
     Changes the org, so it asks for confirmation and supports -WhatIf. Returns the CLI result (the published agent). By default the CLI retrieves
     the published agent metadata afterwards; -SkipRetrieve turns that off. Validate first with Test-SalesforceAgentAuthoringBundle.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent publish authoring-bundle (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -SkipRetrieve = --skip-retrieve; -Concise = --concise; -ExtendedDetails = --verbose; -SourceType = --source-type; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of the authoring bundle you want to publish; if not specified, the command provides a list that you can choose from. Passed to sf as --api-name. Required.
 
@@ -839,14 +841,6 @@ function Publish-SalesforceAgentAuthoringBundle {
 
     .EXAMPLE
     Publish-SalesforceAgentAuthoringBundle -ApiName Service_Agent -TargetOrg my-org
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent publish authoring-bundle (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -SkipRetrieve = --skip-retrieve; -Concise = --concise; -ExtendedDetails = --verbose; -SourceType = --source-type; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -906,6 +900,13 @@ function New-SalesforceAgentUser {
     .DESCRIPTION
     Runs sf org create agent-user, which creates the Einstein Agent user an agent uses to run its actions. Without the name parameters the CLI picks defaults. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create agent-user (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -BaseUsername = --base-username; -FirstName = --first-name; -LastName = --last-name; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER BaseUsername
     User name to base the new agent user's name on. The CLI adds a unique suffix. Passed to sf as --base-username.
 
@@ -924,13 +925,6 @@ function New-SalesforceAgentUser {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create agent-user (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -BaseUsername = --base-username; -FirstName = --first-name; -LastName = --last-name; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -972,6 +966,13 @@ function Open-SalesforceAgent {
     .DESCRIPTION
     Runs sf org open agent. The URL contains a session token, so treat it like a password; -UrlOnly prints it instead of opening a browser. Give -ApiName for a published agent or -AuthoringBundle for a local Agent Script agent.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org open agent (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -Version = --version; -Browser = --browser; -BrowserPrivateMode = --private; -UrlOnly = --url-only; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of the agent to open. Use it or -AuthoringBundle, not both. Passed to sf as --api-name.
 
@@ -996,14 +997,6 @@ function Open-SalesforceAgent {
     .EXAMPLE
     Open-SalesforceAgent -ApiName Service_Agent -UrlOnly -TargetOrg dev1
     Print the Builder link of a published agent.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org open agent (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -Version = --version; -Browser = --browser; -BrowserPrivateMode = --private; -UrlOnly = --url-only; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1081,6 +1074,13 @@ function New-SalesforceAgent {
     .DESCRIPTION
     Runs sf agent create. The agent spec is the YAML file made by New-SalesforceAgentSpec. With -Preview the CLI shows what it would create without creating it. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent create (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Spec = --spec; -Name = --name; -ApiName = --api-name; -Preview = --preview; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Spec
     Path of the agent spec YAML file. It must exist. Passed to sf as --spec.
 
@@ -1102,13 +1102,6 @@ function New-SalesforceAgent {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent create (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Spec = --spec; -Name = --name; -ApiName = --api-name; -Preview = --preview; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1154,6 +1147,13 @@ function New-SalesforceAgentSpec {
 
     .DESCRIPTION
     Runs sf agent generate agent-spec. The model of your org uses the role and company details to propose the agent's topics; edit the file afterwards, then create the agent with New-SalesforceAgent. Give the details as parameters and the cmdlet returns the CLI result. With -FullInterview the CLI asks for every property, so it is interactive: it needs a terminal, and you should run it as a plain command (an assigned or piped result hides the questions). To improve an existing spec, give it as -Spec.
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent generate agent-spec (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Role = --role; -CompanyName = --company-name; -CompanyDescription = --company-description; -CompanyWebsite = --company-website; -Type = --type; -Tone = --tone; -AgentUser = --agent-user; -MaxTopics = --max-topics; -GroundingContext = --grounding-context; -PromptTemplate = --prompt-template; -EnrichLogs = --enrich-logs; -Spec = --spec; -OutputFile = --output-file; -ForceOverwrite = --force-overwrite; -FullInterview = --full-interview; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER Role
     The role of the agent in your company. Passed to sf as --role.
@@ -1206,14 +1206,6 @@ function New-SalesforceAgentSpec {
     .EXAMPLE
     New-SalesforceAgentSpec -Role 'Answers order questions' -CompanyName Acme -CompanyDescription 'We sell anvils' -Type customer -Tone casual -OutputFile .\specs\orders.yaml -TargetOrg dev1
     Generate a spec without any questions.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent generate agent-spec (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Role = --role; -CompanyName = --company-name; -CompanyDescription = --company-description; -CompanyWebsite = --company-website; -Type = --type; -Tone = --tone; -AgentUser = --agent-user; -MaxTopics = --max-topics; -GroundingContext = --grounding-context; -PromptTemplate = --prompt-template; -EnrichLogs = --enrich-logs; -Spec = --spec; -OutputFile = --output-file; -ForceOverwrite = --force-overwrite; -FullInterview = --full-interview; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1288,6 +1280,13 @@ function New-SalesforceAgentTemplate {
     .DESCRIPTION
     Runs sf agent generate template. It reads the agent from the project and the org it came from, and writes a template that you can put in a second-generation managed package so others can install it. It writes local files and reads the source org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent generate template (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -AgentFile = --agent-file; -AgentVersion = --agent-version; -SourceOrg = --source-org; -OutputDir = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER AgentFile
     Path of the agent's bot metadata file in the project. It must exist. Passed to sf as --agent-file. Required.
 
@@ -1303,14 +1302,6 @@ function New-SalesforceAgentTemplate {
     .EXAMPLE
     New-SalesforceAgentTemplate -AgentFile force-app/main/default/bots/Service_Agent/Service_Agent.bot-meta.xml -AgentVersion 1 -SourceOrg dev1
     Generate a template from version 1 of the agent.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent generate template (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -AgentFile = --agent-file; -AgentVersion = --agent-version; -SourceOrg = --source-org; -OutputDir = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1349,6 +1340,13 @@ function New-SalesforceAgentTestSpec {
     .DESCRIPTION
     Runs sf agent generate test-spec, the first step of making an agent test. By default the CLI asks questions (the agent, then the utterances, expected topic, actions and outcome of each test case), so it is interactive: it needs a terminal, and you should run it as a plain command (an assigned or piped result hides the questions). With -FromDefinition it converts an existing test definition file instead and asks nothing. It reads the project and writes a local file; it never looks in your org. Create the test in the org with New-SalesforceAgentTest.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent generate test-spec (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -FromDefinition = --from-definition; -OutputFile = --output-file; -ForceOverwrite = --force-overwrite; -TestRunner = --test-runner.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER FromDefinition
     Path of an existing test definition file to convert into a spec, instead of answering questions. It must exist. Passed to sf as --from-definition.
 
@@ -1364,14 +1362,6 @@ function New-SalesforceAgentTestSpec {
     .EXAMPLE
     New-SalesforceAgentTestSpec -OutputFile .\specs\orders-testSpec.yaml
     Answer the questions to build a spec.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent generate test-spec (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -FromDefinition = --from-definition; -OutputFile = --output-file; -ForceOverwrite = --force-overwrite; -TestRunner = --test-runner.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1423,6 +1413,13 @@ function New-SalesforceAgentTest {
     .DESCRIPTION
     Runs sf agent test create. The spec is the YAML file made by New-SalesforceAgentTestSpec. With -Preview the CLI shows what it would create without creating it. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent test create (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Spec = --spec; -ApiName = --api-name; -Preview = --preview; -ForceOverwrite = --force-overwrite; -TestRunner = --test-runner; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Spec
     Path of the test spec YAML file. It must exist. Passed to sf as --spec.
 
@@ -1447,13 +1444,6 @@ function New-SalesforceAgentTest {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent test create (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Spec = --spec; -ApiName = --api-name; -Preview = --preview; -ForceOverwrite = --force-overwrite; -TestRunner = --test-runner; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1502,6 +1492,13 @@ function Resume-SalesforceAgentTest {
     .DESCRIPTION
     Runs sf agent test resume for the job ID that Start-SalesforceAgentTest returned, or for the most recent run with -UseMostRecent. With -ResultFormat json (the default) the results come back as an object; the other formats return the CLI text. It does not change anything in the org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent test resume (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -UseMostRecent = --use-most-recent; -WaitMinutes = --wait; -ExtendedDetails = --verbose; -OutputDir = --output-dir; -ResultFormat = --result-format; -TestRunner = --test-runner; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     ID of the test run (the job ID). Required unless you give -UseMostRecent. Passed to sf as --job-id. Required.
 
@@ -1529,14 +1526,6 @@ function Resume-SalesforceAgentTest {
     .EXAMPLE
     Resume-SalesforceAgentTest -UseMostRecent -WaitMinutes 10 -TargetOrg dev1
     Wait for the latest run.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent test resume (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -UseMostRecent = --use-most-recent; -WaitMinutes = --wait; -ExtendedDetails = --verbose; -OutputDir = --output-dir; -ResultFormat = --result-format; -TestRunner = --test-runner; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1585,6 +1574,13 @@ function Start-SalesforceAgentEvaluation {
     .DESCRIPTION
     Runs sf agent test run-eval, which runs the test cases of a spec file (YAML or JSON) against an agent, without a test being created in the org. This CLI command is in beta, so its flags and output can change in a later release. With -ResultFormat json the results come back as an object; the CLI default, human, and the other formats return text.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent test run-eval (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Spec = --spec; -ApiName = --api-name; -BatchSize = --batch-size; -NoNormalize = --no-normalize; -ResultFormat = --result-format; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Spec
     Path of the test spec file (YAML or JSON). It must exist. Passed to sf as --spec. Required.
 
@@ -1606,14 +1602,6 @@ function Start-SalesforceAgentEvaluation {
     .EXAMPLE
     Start-SalesforceAgentEvaluation -Spec .\specs\orders-eval.yaml -ResultFormat json -TargetOrg dev1
     Run an evaluation and get the results as an object.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent test run-eval (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Spec = --spec; -ApiName = --api-name; -BatchSize = --batch-size; -NoNormalize = --no-normalize; -ResultFormat = --result-format; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1665,6 +1653,13 @@ function Start-SalesforceAgentPreview {
     .DESCRIPTION
     Runs sf agent preview start and returns the session, with the session ID that Send-SalesforceAgentPreviewMessage, Stop-SalesforceAgentPreview and Get-SalesforceAgentTrace* use. This is a programmatic preview session: each step is its own command, so a script or another tool can drive the conversation. Give -ApiName for a published agent or -AuthoringBundle for a local Agent Script agent. For a conversation you type yourself use Invoke-SalesforceAgentPreview.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent preview start (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -ContextVariables = --context-variables; -ContextVariablesJson = --context-variables-json; -SimulateActions = --simulate-actions; -UseLiveActions = --use-live-actions; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of a published, activated agent. Use it or -AuthoringBundle, not both. Passed to sf as --api-name.
 
@@ -1689,14 +1684,6 @@ function Start-SalesforceAgentPreview {
     .EXAMPLE
     $session = Start-SalesforceAgentPreview -ApiName Service_Agent -TargetOrg dev1
     Start a session with a published agent.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent preview start (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -ContextVariables = --context-variables; -ContextVariablesJson = --context-variables-json; -SimulateActions = --simulate-actions; -UseLiveActions = --use-live-actions; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1759,6 +1746,13 @@ function Send-SalesforceAgentPreviewMessage {
     .DESCRIPTION
     Runs sf agent preview send. This is a programmatic preview session: each step is its own command, so a script or another tool can drive the conversation. Give the session with -SessionId, or the agent with -ApiName or -AuthoringBundle if there is only one open session for it. The message is passed as one argument, so special characters need no escaping. On Windows the CLI's .cmd launcher cannot take a double quote or a line break in an argument, so leave those out there.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent preview send (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Utterance = --utterance; -SessionId = --session-id; -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Utterance
     What to say to the agent. Passed to sf as --utterance. Required.
 
@@ -1777,14 +1771,6 @@ function Send-SalesforceAgentPreviewMessage {
     .EXAMPLE
     Send-SalesforceAgentPreviewMessage -SessionId $session.sessionId -Utterance 'Where is my order?' -TargetOrg dev1
     Ask the agent a question.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent preview send (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Utterance = --utterance; -SessionId = --session-id; -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1827,6 +1813,13 @@ function Stop-SalesforceAgentPreview {
     .DESCRIPTION
     Runs sf agent preview end. Give the session with -SessionId, the agent with -ApiName or -AuthoringBundle, or -All to end every session. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent preview end (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SessionId = --session-id; -All = --all; -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SessionId
     ID of the preview session to end. Passed to sf as --session-id.
 
@@ -1851,13 +1844,6 @@ function Stop-SalesforceAgentPreview {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent preview end (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SessionId = --session-id; -All = --all; -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1909,16 +1895,15 @@ function Get-SalesforceAgentPreviewSessions {
     .DESCRIPTION
     Runs sf agent preview sessions and returns one object per known programmatic preview session (its ID and the agent). It reads local session records, so it needs no org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent preview sessions (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     Get-SalesforceAgentPreviewSessions
     Every open session.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent preview sessions (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1951,6 +1936,13 @@ function Invoke-SalesforceAgentPreview {
     .DESCRIPTION
     Runs sf agent preview, the CLI version of the Preview panel in Agentforce Builder: you type utterances and read the answers. It is interactive, so it needs a terminal, and you should run it as a plain command (an assigned or piped result hides the conversation). Without -ApiName or -AuthoringBundle the CLI lets you pick an agent. For a conversation driven by a script use Start-SalesforceAgentPreview.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent preview (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -ContextVariables = --context-variables; -ContextVariablesJson = --context-variables-json; -ApexDebug = --apex-debug; -UseLiveActions = --use-live-actions; -OutputDir = --output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApiName
     API name of a published, activated agent. Use it or -AuthoringBundle, not both. Passed to sf as --api-name.
 
@@ -1978,14 +1970,6 @@ function Invoke-SalesforceAgentPreview {
     .EXAMPLE
     Invoke-SalesforceAgentPreview -ApiName Service_Agent -TargetOrg dev1
     Chat with a published agent.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent preview (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApiName = --api-name; -AuthoringBundle = --authoring-bundle; -ContextVariables = --context-variables; -ContextVariablesJson = --context-variables-json; -ApexDebug = --apex-debug; -UseLiveActions = --use-live-actions; -OutputDir = --output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2054,6 +2038,13 @@ function Get-SalesforceAgentTraces {
     .DESCRIPTION
     Runs sf agent trace list. Trace files record how an agent handled each turn of a preview. It reads local files and needs no org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent trace list (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Agent = --agent; -SessionId = --session-id; -Since = --since.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Agent
     Only traces of the agent with this API name (a published agent or an authoring bundle). Passed to sf as --agent.
 
@@ -2066,14 +2057,6 @@ function Get-SalesforceAgentTraces {
     .EXAMPLE
     Get-SalesforceAgentTraces -Agent Service_Agent -Since (Get-Date).AddDays(-7)
     Last week's traces of an agent.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent trace list (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Agent = --agent; -SessionId = --session-id; -Since = --since.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2112,6 +2095,13 @@ function Read-SalesforceAgentTrace {
     .DESCRIPTION
     Runs sf agent trace read. -Format picks how much you get: summary (the default), detail, or raw. With -Format detail, -Dimension narrows it to one kind of question. A turn is one utterance and response, counted from 1. It reads local files and needs no org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent trace read (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SessionId = --session-id; -Format = --format; -Dimension = --dimension; -Turn = --turn.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SessionId
     ID of the preview session to read. Passed to sf as --session-id. Required.
 
@@ -2127,14 +2117,6 @@ function Read-SalesforceAgentTrace {
     .EXAMPLE
     Read-SalesforceAgentTrace -SessionId $session.sessionId -Format detail -Dimension routing
     How the agent routed each turn.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent trace read (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SessionId = --session-id; -Format = --format; -Dimension = --dimension; -Turn = --turn.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2175,6 +2157,13 @@ function Remove-SalesforceAgentTrace {
     .DESCRIPTION
     Runs sf agent trace delete for the traces that match -Agent, -SessionId and -OlderThan. At least one filter is needed, so a call cannot delete every trace by accident. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time. It only touches local files.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent trace delete (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Agent = --agent; -SessionId = --session-id; -OlderThan = --older-than.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Agent
     Only traces of the agent with this API name. Passed to sf as --agent.
 
@@ -2193,13 +2182,6 @@ function Remove-SalesforceAgentTrace {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent trace delete (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Agent = --agent; -SessionId = --session-id; -OlderThan = --older-than.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2255,6 +2237,13 @@ function New-SalesforceAgentDataLibrary {
     .DESCRIPTION
     Runs sf agent adl create. The source decides what the library holds: sfdrive (files you upload), knowledge (Salesforce Knowledge articles) or retriever (an existing retriever). Supports -WhatIf and -Confirm; it does not prompt by default. Without -WaitMinutes the CLI returns before indexing is done; check with Get-SalesforceAgentDataLibraryStatus.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl create (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -DeveloperName = --developer-name; -SourceType = --source-type; -Description = --description; -IndexMode = --index-mode; -ContentFields = --content-fields; -DataCategoryIds = --data-category-ids; -DataCategoryNames = --data-category-names; -PrimaryIndexField1 = --primary-index-field1; -PrimaryIndexField2 = --primary-index-field2; -RetrieverId = --retriever-id; -WaitMinutes = --wait; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name (label) of the library. Passed to sf as --name. Required.
 
@@ -2300,13 +2289,6 @@ function New-SalesforceAgentDataLibrary {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl create (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -DeveloperName = --developer-name; -SourceType = --source-type; -Description = --description; -IndexMode = --index-mode; -ContentFields = --content-fields; -DataCategoryIds = --data-category-ids; -DataCategoryNames = --data-category-names; -PrimaryIndexField1 = --primary-index-field1; -PrimaryIndexField2 = --primary-index-field2; -RetrieverId = --retriever-id; -WaitMinutes = --wait; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2368,6 +2350,13 @@ function Get-SalesforceAgentDataLibraries {
     .DESCRIPTION
     Runs sf agent adl list and returns one object per library. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl list (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SourceType = --source-type; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SourceType
     Only libraries with this source. Valid values: sfdrive, knowledge, retriever. Passed to sf as --source-type.
 
@@ -2377,14 +2366,6 @@ function Get-SalesforceAgentDataLibraries {
     .EXAMPLE
     Get-SalesforceAgentDataLibraries -SourceType sfdrive -TargetOrg dev1
     The file-based libraries.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl list (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SourceType = --source-type; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2421,6 +2402,13 @@ function Get-SalesforceAgentDataLibrary {
     .DESCRIPTION
     Runs sf agent adl get. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl get (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2430,14 +2418,6 @@ function Get-SalesforceAgentDataLibrary {
     .EXAMPLE
     Get-SalesforceAgentDataLibrary -LibraryId 1JDxx0000000001 -TargetOrg dev1
     The details of one library.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl get (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2473,6 +2453,13 @@ function Get-SalesforceAgentDataLibraryStatus {
     .DESCRIPTION
     Runs sf agent adl status, which says whether the library's content is indexed and ready for an agent to use. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl status (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -IncludeArtifacts = --include-artifacts; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2485,14 +2472,6 @@ function Get-SalesforceAgentDataLibraryStatus {
     .EXAMPLE
     Get-SalesforceAgentDataLibraryStatus -LibraryId 1JDxx0000000001 -TargetOrg dev1
     Is the library indexed yet?
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl status (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -IncludeArtifacts = --include-artifacts; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2530,6 +2509,13 @@ function Update-SalesforceAgentDataLibrary {
     .DESCRIPTION
     Runs sf agent adl update. Only the settings you give are changed. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl update (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -Name = --name; -Description = --description; -ContentFields = --content-fields; -RetrieverId = --retriever-id; -DataCategoryRule = --data-category-rule; -RestrictToPublicArticles = --restrict-to-public-articles; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2560,13 +2546,6 @@ function Update-SalesforceAgentDataLibrary {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl update (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -Name = --name; -Description = --description; -ContentFields = --content-fields; -RetrieverId = --retriever-id; -DataCategoryRule = --data-category-rule; -RestrictToPublicArticles = --restrict-to-public-articles; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2617,6 +2596,13 @@ function Remove-SalesforceAgentDataLibrary {
     .DESCRIPTION
     Runs sf agent adl delete. Agents that use the library lose that knowledge, and this cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl delete (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2632,13 +2618,6 @@ function Remove-SalesforceAgentDataLibrary {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl delete (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2678,6 +2657,13 @@ function Get-SalesforceAgentDataLibraryFiles {
     .DESCRIPTION
     Runs sf agent adl file list and returns one object per file, with its status. It only reads. Use -Offset and -PageSize to page through a big library.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl file list (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -Status = --status; -Offset = --offset; -PageSize = --page-size; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2696,14 +2682,6 @@ function Get-SalesforceAgentDataLibraryFiles {
     .EXAMPLE
     Get-SalesforceAgentDataLibraryFiles -LibraryId 1JDxx0000000001 -Status index_failed -TargetOrg dev1
     The files that did not index.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl file list (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -Status = --status; -Offset = --offset; -PageSize = --page-size; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2745,6 +2723,13 @@ function Add-SalesforceAgentDataLibraryFile {
     .DESCRIPTION
     Runs sf agent adl file add for each path you give. Supports -WhatIf and -Confirm; it does not prompt by default. For an SFDRIVE library that you want to wait on, use Send-SalesforceAgentDataLibraryFile.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl file add (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -Path = --path; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2760,13 +2745,6 @@ function Add-SalesforceAgentDataLibraryFile {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl file add (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -Path = --path; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2809,6 +2787,13 @@ function Remove-SalesforceAgentDataLibraryFile {
     .DESCRIPTION
     Runs sf agent adl file delete. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl file delete (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -FileId = --file-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2827,13 +2812,6 @@ function Remove-SalesforceAgentDataLibraryFile {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl file delete (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -FileId = --file-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2874,6 +2852,13 @@ function Send-SalesforceAgentDataLibraryFile {
     .DESCRIPTION
     Runs sf agent adl upload, which uploads local files to a library whose source is sfdrive and can wait for them to be indexed. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent adl upload (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -LibraryId = --library-id; -File = --file; -WaitMinutes = --wait; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER LibraryId
     ID of the data library. Passed to sf as --library-id. Required.
 
@@ -2892,13 +2877,6 @@ function Send-SalesforceAgentDataLibraryFile {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent adl upload (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -LibraryId = --library-id; -File = --file; -WaitMinutes = --wait; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2949,6 +2927,13 @@ function New-SalesforceMcpServer {
     .DESCRIPTION
     Runs sf agent mcp create, which adds a Model Context Protocol server to the org's API Catalog so agents can use its tools. This CLI command is a preview, so its flags and output can change in a later release. The server URL must be an absolute https URL, because credentials are sent to it. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp create (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -ServerUrl = --server-url; -AuthType = --auth-type; -Label = --label; -Description = --description; -IdentityProvider = --identity-provider; -Scope = --scope; -ClientId = --client-id; -ClientSecret = --client-secret; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Unique name of the server. Passed to sf as --name. Required.
 
@@ -2985,13 +2970,6 @@ function New-SalesforceMcpServer {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp create (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -ServerUrl = --server-url; -AuthType = --auth-type; -Label = --label; -Description = --description; -IdentityProvider = --identity-provider; -Scope = --scope; -ClientId = --client-id; -ClientSecret = --client-secret; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3045,6 +3023,13 @@ function Update-SalesforceMcpServer {
     .DESCRIPTION
     Runs sf agent mcp update. Only the settings you give are changed. This CLI command is a preview, so its flags and output can change in a later release. A new server URL must be an absolute https URL. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp update (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -McpServerId = --mcp-server-id; -ServerUrl = --server-url; -AuthType = --auth-type; -Label = --label; -Description = --description; -IdentityProvider = --identity-provider; -Scope = --scope; -ClientId = --client-id; -ClientSecret = --client-secret; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER McpServerId
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
@@ -3081,13 +3066,6 @@ function Update-SalesforceMcpServer {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp update (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -McpServerId = --mcp-server-id; -ServerUrl = --server-url; -AuthType = --auth-type; -Label = --label; -Description = --description; -IdentityProvider = --identity-provider; -Scope = --scope; -ClientId = --client-id; -ClientSecret = --client-secret; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3142,6 +3120,13 @@ function Remove-SalesforceMcpServer {
     .DESCRIPTION
     Runs sf agent mcp delete. Agents that use the server lose its tools, and this cannot be undone. This CLI command is a preview, so its flags and output can change in a later release. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp delete (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER McpServerId
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
@@ -3157,13 +3142,6 @@ function Remove-SalesforceMcpServer {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp delete (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3205,6 +3183,13 @@ function Get-SalesforceMcpServer {
     .DESCRIPTION
     Runs sf agent mcp get. This CLI command is a preview, so its flags and output can change in a later release. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp get (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER McpServerId
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
@@ -3214,14 +3199,6 @@ function Get-SalesforceMcpServer {
     .EXAMPLE
     Get-SalesforceMcpServer -McpServerId 0Xxxx0000000001 -TargetOrg dev1
     The details of one server.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp get (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3257,6 +3234,13 @@ function Get-SalesforceMcpServers {
     .DESCRIPTION
     Runs sf agent mcp list and returns one object per server. This CLI command is a preview, so its flags and output can change in a later release. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp list (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Label = --label; -Status = --status; -Type = --type; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Label
     Only servers with this label. Passed to sf as --label.
 
@@ -3272,14 +3256,6 @@ function Get-SalesforceMcpServers {
     .EXAMPLE
     Get-SalesforceMcpServers -Status ACTIVE -TargetOrg dev1
     The servers that are connected.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp list (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Label = --label; -Status = --status; -Type = --type; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3320,6 +3296,13 @@ function Get-SalesforceMcpAssets {
     .DESCRIPTION
     Runs sf agent mcp asset list: the assets that are allowed in the catalog. Use Get-SalesforceMcpServerLiveAssets for what the server offers right now. This CLI command is a preview, so its flags and output can change in a later release. It only reads.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp asset list (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER McpServerId
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
@@ -3329,14 +3312,6 @@ function Get-SalesforceMcpAssets {
     .EXAMPLE
     Get-SalesforceMcpAssets -McpServerId 0Xxxx0000000001 -TargetOrg dev1
     The allowed assets of a server.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp asset list (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3372,6 +3347,13 @@ function Get-SalesforceMcpServerLiveAssets {
     .DESCRIPTION
     Runs sf agent mcp fetch, which connects to the server and returns the tools, prompts and resources it advertises. Compare it with Get-SalesforceMcpAssets, then change the allowed set with Set-SalesforceMcpAssets. This CLI command is a preview, so its flags and output can change in a later release. It does not change the catalog.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp fetch (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER McpServerId
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
@@ -3381,14 +3363,6 @@ function Get-SalesforceMcpServerLiveAssets {
     .EXAMPLE
     Get-SalesforceMcpServerLiveAssets -McpServerId 0Xxxx0000000001 -TargetOrg dev1
     What the server offers now.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp fetch (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -McpServerId = --mcp-server-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3424,6 +3398,13 @@ function Set-SalesforceMcpAssets {
     .DESCRIPTION
     Runs sf agent mcp asset replace. The set you give replaces the allowed set, so an asset that is not in it is no longer allowed. Give the set as a JSON string in -Assets, as an object or array in -AssetList (psfdx converts it to JSON), or as a JSON file in -AssetsFile. This CLI command is a preview, so its flags and output can change in a later release. Supports -WhatIf and -Confirm; it does not prompt by default.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf agent mcp asset replace (plugin @salesforce/plugin-agent)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -McpServerId = --mcp-server-id; -Assets = --assets; -AssetsFile = --assets-file; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER McpServerId
     ID of the MCP server in the API Catalog. Passed to sf as --mcp-server-id. Required.
 
@@ -3445,13 +3426,6 @@ function Set-SalesforceMcpAssets {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf agent mcp asset replace (plugin @salesforce/plugin-agent)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -McpServerId = --mcp-server-id; -Assets = --assets; -AssetsFile = --assets-file; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html

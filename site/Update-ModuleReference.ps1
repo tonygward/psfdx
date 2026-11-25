@@ -2,12 +2,8 @@
 .SYNOPSIS
 Writes the command reference of every psfdx module into its page of the website.
 .DESCRIPTION
-Reads the comment-based help and the parameter block of every command each module exports, which is exactly what Get-Help reads, and fills the part of
-site/src/modules/<module>/index.html between <!-- reference:start --> and <!-- reference:end --> with one compact,
-expandable entry per command, grouped by command type on longer pages: its description, syntax (one line per parameter set), parameters, a practical example with the PS> prompt, and the Salesforce CLI
-command it runs. Nothing is typed by hand and nothing is invented: a command appears under the module that exports it, with the text of its own help.
-The result is the same on Windows PowerShell 5.1 and PowerShell 7 (it parses the source and does not load the modules), so a Pester test can fail when a page
-is stale. With -Check nothing is written; it returns the pages that are out of date.
+Imports the repository modules and renders their native Get-Help content in the website command reference.
+With -Check nothing is written; it returns the pages that are out of date.
 Run it after changing a command, its help, or which module exports it:  pwsh ./site/Update-ModuleReference.ps1
 #>
 [CmdletBinding()]
@@ -21,37 +17,6 @@ if (-not $Root) { $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.M
 . (Join-Path $Root 'modules.ps1')
 $enc = New-Object System.Text.UTF8Encoding($false)
 function ConvertTo-HtmlText([string] $Text) { [System.Net.WebUtility]::HtmlEncode($Text) }
-
-function Get-TypeText([System.Management.Automation.Language.ParameterAst] $Parameter) {
-    $constraint = @($Parameter.Attributes | Where-Object { $_ -is [System.Management.Automation.Language.TypeConstraintAst] }) | Select-Object -First 1
-    if (-not $constraint) { return 'object' }
-    $name = $constraint.TypeName.FullName
-    return ($name -replace '^System\.Management\.Automation\.', '' -replace '^System\.(Collections\.)?(Generic\.)?', '')
-}
-
-# What each [Parameter()] attribute of a parameter says: the set it belongs to (empty = every set) and whether it is mandatory there.
-function Get-ParameterFacts([System.Management.Automation.Language.ParameterAst] $Parameter) {
-    $facts = @()
-    foreach ($attribute in @($Parameter.Attributes | Where-Object { $_ -is [System.Management.Automation.Language.AttributeAst] -and $_.TypeName.Name -eq 'Parameter' })) {
-        $set = ''; $mandatory = $false
-        foreach ($arg in $attribute.NamedArguments) {
-            if ($arg.ArgumentName -eq 'ParameterSetName') { $set = $arg.Argument.Extent.Text.Trim("'", '"') }
-            if ($arg.ArgumentName -eq 'Mandatory') { $mandatory = ($arg.Argument.Extent.Text -match '^\$true$') }
-        }
-        $facts += [pscustomobject]@{ Set = $set; Mandatory = $mandatory }
-    }
-    if ($facts.Count -eq 0) { $facts += [pscustomobject]@{ Set = ''; Mandatory = $false } }
-    return $facts
-}
-
-function Format-SyntaxLine([string] $Name, [object[]] $Items) {
-    $parts = @($Name)
-    foreach ($item in $Items) {
-        if ($item.Type -eq 'switch') { $text = "-$($item.Name)" } else { $text = "-$($item.Name) <$($item.Type)>" }
-        if ($item.Mandatory) { $parts += $text } else { $parts += "[$text]" }
-    }
-    return ($parts -join ' ')
-}
 
 # Trailing lines that read as a sentence are the description of an example; everything before them is code.
 function Split-Example([string] $Text) {
@@ -75,82 +40,70 @@ function Format-ExampleHtml([string[]] $Code) {
     return '<div class="code-box terminal-example"><pre><code>' + ($out -join "`n") + '</code></pre></div>'
 }
 
-function Get-CliCommands([string] $Notes) {
-    $found = New-Object System.Collections.Generic.List[string]
-    foreach ($m in [regex]::Matches($Notes, '(?m)^\s*Command run: (sf [^\r\n(]*?)\s*(?:\(plugin[^\r\n]*)?$')) {
-        $c = $m.Groups[1].Value.Trim()
-        if ($c -and -not $found.Contains($c)) { $found.Add($c) }
+function Add-HelpParagraphs([System.Text.StringBuilder] $Builder, [string] $Text, [string] $Class) {
+    foreach ($paragraph in ($Text.Trim() -split '\r?\n[ \t]*\r?\n')) {
+        [void]$Builder.Append('<p class="' + $Class + '">' + (ConvertTo-HtmlText ($paragraph.Trim() -replace '\s+', ' ')) + '</p>')
     }
-    return @($found)
 }
 
-function Get-Commands([string] $Module) {
-    # A module's code is its .psm1. The code of the public commands that the core module exports from an internal module (the SOQL converters in psfdx-shared) is read from there.
-    $files = @(Get-Item -LiteralPath (Join-Path (Join-Path $Root $Module) "$Module.psm1"))
-    foreach ($internal in @(Get-PsfdxInternalModules)) { $files += @(Get-ChildItem -LiteralPath (Join-Path $Root $internal) -Filter '*.ps1' -File | Where-Object { $_.Name -notlike '*.Tests.ps1' }) }
-    $exports = @((Import-PowerShellDataFile -Path (Join-Path (Join-Path $Root $Module) "$Module.psd1")).FunctionsToExport)
-    $found = @{}
-    foreach ($file in $files) {
-        $ast = [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$null, [ref]$null)
-        foreach ($f in $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {
-            if ($f.Name -in $exports) { $found[$f.Name] = $f }
-        }
-    }
-    foreach ($name in $exports) { if (-not $found.ContainsKey($name)) { throw "$Module exports $name but no function of that name was found" } }
-    return @($exports | Sort-Object { $_.ToLowerInvariant() } | ForEach-Object { $found[$_] })
-}
-
-function Build-Entry([System.Management.Automation.Language.FunctionDefinitionAst] $Function) {
-    $name = $Function.Name
-    $help = $Function.GetHelpContent()
-    if (-not $help -or -not $help.Synopsis) { throw "$name has no help synopsis" }
-    $parameters = @()
-    if ($Function.Body.ParamBlock) { $parameters = @($Function.Body.ParamBlock.Parameters) }
-    $items = @()
-    foreach ($p in $parameters) {
-        $pname = $p.Name.VariablePath.UserPath
-        $items += [pscustomobject]@{ Name = $pname; Type = (Get-TypeText $p); Facts = @(Get-ParameterFacts $p) }
-    }
-    # one syntax line per parameter set (parameters with no set belong to every set); a command with no sets has one line
-    $sets = @($items | ForEach-Object { $_.Facts } | ForEach-Object { $_.Set } | Where-Object { $_ } | Select-Object -Unique)
-    $syntax = @()
-    if ($sets.Count -eq 0) { $sets = @('') }
-    foreach ($set in $sets) {
-        $rows = @()
-        foreach ($item in $items) {
-            $fact = @($item.Facts | Where-Object { $_.Set -eq $set -or $_.Set -eq '' }) | Select-Object -First 1
-            if (-not $fact) { continue }
-            $rows += [pscustomobject]@{ Name = $item.Name; Type = $item.Type; Mandatory = $fact.Mandatory }
-        }
-        # required parameters first, as Get-Command -Syntax lists them, then the optional ones in declaration order
-        $rows = @(@($rows | Where-Object { $_.Mandatory }) + @($rows | Where-Object { -not $_.Mandatory }))
-        $syntax += (Format-SyntaxLine $name $rows)
-    }
-    $syntax = @($syntax | Select-Object -Unique)
+function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [string] $Module) {
+    $name = $Command.Name
+    $qualifiedName = $Module + '\' + $name
+    $help = Get-Help -Name $qualifiedName -Full
+    $description, $mapping = ($help.description.Text -join [Environment]::NewLine) -split '(?m)^[ \t]*SALESFORCE CLI[ \t]*\r?$', 2
+    if (-not $mapping) { throw "$name has no SALESFORCE CLI section" }
+    $syntax = @(($help.syntax | Out-String -Width 32767) -split '\r?\n' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    $defaultHelp = Get-Help -Name $qualifiedName | Out-String -Width 32767
+    $remarks = [regex]::Match($defaultHelp, '(?ms)^REMARKS[ \t]*\r?\n(.*)\z').Groups[1].Value.Trim()
+    if (-not $remarks) { throw "Cannot read the native remarks for $name. Run the generator in an English PowerShell session." }
 
     $sb = New-Object System.Text.StringBuilder
     [void]$sb.Append('<details class="cmd" id="' + (ConvertTo-HtmlText $name) + '"><summary><span class="cmd-name">' + (ConvertTo-HtmlText $name) + '</span></summary><div class="cmd-body">')
-    $description = if ($help.Description) { $help.Description.Trim() } else { $help.Synopsis.Trim() }
+    [void]$sb.Append('<h4>Synopsis</h4>')
+    Add-HelpParagraphs $sb $help.Synopsis 'cmd-description'
+    [void]$sb.Append('<h4>Syntax</h4><pre class="cmd-syntax"><code>' + (($syntax | ForEach-Object { ConvertTo-HtmlText $_ }) -join [char]10) + '</code></pre>')
     [void]$sb.Append('<h4>Description</h4>')
-    foreach ($paragraph in ($description -split '\r?\n[ \t]*\r?\n')) {
-        [void]$sb.Append('<p class="cmd-description">' + (ConvertTo-HtmlText ($paragraph.Trim() -replace '\s+', ' ')) + '</p>')
+    Add-HelpParagraphs $sb $description 'cmd-description'
+    [void]$sb.Append('<h4>Salesforce CLI</h4><div class="cmd-cli">')
+    foreach ($line in ($mapping.Trim() -split '\r?\n' | Where-Object { $_.Trim() })) {
+        $text = ConvertTo-HtmlText $line.Trim()
+        if ($line.Trim() -match '^(Command run: )(sf [^(]+?)([ \t]+\(.*|$)') {
+            $text = (ConvertTo-HtmlText $Matches[1]) + '<code>' + (ConvertTo-HtmlText $Matches[2]) + '</code>' + (ConvertTo-HtmlText $Matches[3])
+        }
+        [void]$sb.Append('<p>' + $text + '</p>')
     }
-    [void]$sb.Append('<h4>Syntax</h4><pre class="cmd-syntax"><code>' + (($syntax | ForEach-Object { ConvertTo-HtmlText $_ }) -join "`n") + '</code></pre>')
-    if ($items.Count -gt 0) {
+    [void]$sb.Append('</div><h4>Related links</h4><ul>')
+    foreach ($link in $help.relatedLinks.navigationLink) {
+        $uri = ConvertTo-HtmlText $link.uri
+        $label = if ($link.linkText) { ConvertTo-HtmlText $link.linkText } else { $uri }
+        if ($uri) { $label = '<a href="' + $uri + '">' + $label + '</a>' }
+        [void]$sb.Append('<li>' + $label + '</li>')
+    }
+    [void]$sb.Append('</ul><h4>Remarks</h4><ul>')
+    foreach ($line in ($remarks -split '\r?\n' | Where-Object { $_.Trim() })) {
+        # Windows PowerShell lowercases the help invocation and adds a period after the closing quote.
+        $remark = $line.Trim() -replace '"get-help ', '"Get-Help ' -replace '-examples"\.?$', '-Examples"' -replace '-detailed"\.?$', '-Detailed"' -replace '-full"\.?$', '-Full"' -replace '-online"\.?$', '-Online"'
+        [void]$sb.Append('<li>' + (ConvertTo-HtmlText $remark) + '</li>')
+    }
+    [void]$sb.Append('</ul>')
+
+    $parameters = @($help.parameters.parameter | Where-Object { $_.name })
+    if ($parameters.Count -gt 0) {
         [void]$sb.Append('<h4>Parameters</h4><dl class="cmd-params">')
-        foreach ($item in $items) {
-            $text = ''
-            foreach ($key in $help.Parameters.Keys) { if ($key -eq $item.Name.ToUpperInvariant()) { $text = ([string]$help.Parameters[$key]).Trim() } }
-            $allMandatory = (@($item.Facts | Where-Object { -not $_.Mandatory }).Count -eq 0)
-            $anyMandatory = (@($item.Facts | Where-Object { $_.Mandatory }).Count -gt 0)
+        foreach ($parameter in $parameters) {
+            $facts = @($Command.ParameterSets.Parameters | Where-Object { $_.Name -eq $parameter.name })
+            $mandatory = @($facts | Where-Object { $_.IsMandatory }).Count
             $flag = ''
-            if ($allMandatory) { $flag = ', required' } elseif ($anyMandatory) { $flag = ', required in some parameter sets' }
-            $typeText = if ($item.Type -eq 'switch') { 'switch' } else { $item.Type }
-            [void]$sb.Append('<dt><code>-' + (ConvertTo-HtmlText $item.Name) + '</code> <span class="cmd-type">' + (ConvertTo-HtmlText $typeText) + $flag + '</span></dt><dd>' + (ConvertTo-HtmlText ($text -replace '\s+', ' ')) + '</dd>')
+            if ($mandatory -gt 0 -and $mandatory -eq $facts.Count) { $flag = ', required' }
+            elseif ($mandatory -gt 0) { $flag = ', required in some parameter sets' }
+            $type = if ($parameter.type.name -eq 'SwitchParameter') { 'switch' } else { $parameter.type.name }
+            [void]$sb.Append('<dt><code>-' + (ConvertTo-HtmlText $parameter.name) + '</code> <span class="cmd-type">' + (ConvertTo-HtmlText $type) + $flag + '</span></dt><dd>' + (ConvertTo-HtmlText (($parameter.description.Text -join ' ') -replace '\s+', ' ')) + '</dd>')
         }
         [void]$sb.Append('</dl>')
     }
-    $example = @($help.Examples) | Select-Object -First 1
+    # Preserve the website terminal example's multiline layout.
+    $sourceHelp = $Command.ScriptBlock.Ast.GetHelpContent()
+    $example = @($sourceHelp.Examples) | Select-Object -First 1
     if ($example) {
         $split = Split-Example ([string]$example)
         if ($split.Code.Count -gt 0) {
@@ -158,10 +111,8 @@ function Build-Entry([System.Management.Automation.Language.FunctionDefinitionAs
             if ($split.Description) { [void]$sb.Append('<p class="cmd-example-note">' + (ConvertTo-HtmlText $split.Description) + '</p>') }
         }
     }
-    $cli = @(Get-CliCommands ([string]$help.Notes))
-    if ($cli.Count -gt 0) { [void]$sb.Append('<h4>Salesforce CLI</h4><p class="cmd-cli">Runs ' + (($cli | ForEach-Object { '<code>' + (ConvertTo-HtmlText $_) + '</code>' }) -join ', ') + '.</p>') }
     [void]$sb.Append('</div></details>')
-    return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); Cli = $cli }
+    return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); WithCli = ($mapping -match '(?m)^\s*Command run: sf ') }
 }
 
 # Match specific command types first, then broader families. Patterns match the full cmdlet name.
@@ -239,7 +190,12 @@ $summary = @()
 foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInternalModules) })) {
     $page = Join-Path (Join-Path (Join-Path (Join-Path $Root 'site') 'src') 'modules') (Join-Path $module 'index.html')
     if (-not (Test-Path -LiteralPath $page)) { throw "No website page for $module at $page" }
-    $entries = @(Get-Commands $module | ForEach-Object { Build-Entry $_ })
+    $manifest = Join-Path (Join-Path $Root $module) "$module.psd1"
+    $loaded = Import-Module -Name $manifest -Scope Local -PassThru -DisableNameChecking
+    $exports = (Import-PowerShellDataFile -Path $manifest).FunctionsToExport
+    $entries = @(foreach ($name in ($exports | Sort-Object { $_.ToLowerInvariant() })) {
+        Build-Entry $loaded.ExportedFunctions[$name] $module
+    })
     $commandList = if (($entries.Count -ge 20 -or $module -eq 'psfdx-org') -and $commandGroups.ContainsKey($module)) {
         # Group in order of first appearance. Group-Object does not promise that order on Windows PowerShell 5.1, and the pages must be identical on both editions.
         $groupNames = New-Object System.Collections.Generic.List[string]
@@ -280,7 +236,7 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
             [System.IO.File]::WriteAllText($page, $new, $enc)
         }
     }
-    $summary += [pscustomobject]@{ Module = $module; Commands = $entries.Count; WithCli = @($entries | Where-Object { $_.Cli.Count -gt 0 }).Count }
+    $summary += [pscustomobject]@{ Module = $module; Commands = $entries.Count; WithCli = @($entries | Where-Object { $_.WithCli }).Count }
 }
 if ($Check) { return @($stale) }
 $summary | Format-Table -AutoSize | Out-String | Write-Host

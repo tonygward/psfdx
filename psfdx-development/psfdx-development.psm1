@@ -133,6 +133,14 @@ function New-SalesforceProject {
     .DESCRIPTION
     Runs sf template generate project and creates the project folder with sfdx-project.json and the standard layout.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate project (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir; -DefaultPackageDirectory = --default-package-dir; -Namespace = --namespace; -GenerateManifest = --manifest; -LwcLanguage = --lwc-language.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Also calls these psfdx cmdlets: Set-SalesforceTargetOrg.
+
     .PARAMETER Name
     Name of the generated project. Passed to sf as --name. Required.
 
@@ -167,14 +175,6 @@ function New-SalesforceProject {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate project (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir; -DefaultPackageDirectory = --default-package-dir; -Namespace = --namespace; -GenerateManifest = --manifest; -LwcLanguage = --lwc-language.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Also calls these psfdx cmdlets: Set-SalesforceTargetOrg.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -243,6 +243,13 @@ function Set-SalesforceTargetOrg {
     .DESCRIPTION
     Runs sf config set target-org=<value>, for the current project or with -Global for the whole computer. Cmdlets that take -TargetOrg then use this org when you do not give one. Returns the CLI's list of successes.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config set (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Global = --global.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Value
     Username or alias of the org to use by default. Required.
 
@@ -255,13 +262,6 @@ function Set-SalesforceTargetOrg {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config set (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Global = --global.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -296,19 +296,18 @@ function Get-SalesforceTargetOrg {
     .DESCRIPTION
     Runs sf config get target-org and returns the value with where it is set (Local or Global). With -Global only the global setting is returned.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config get (plugin @salesforce/plugin-settings)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --verbose
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Global
     Return only the global value (set for the whole computer), not a project-local one. The filter runs in PowerShell.
 
     .EXAMPLE
     Get-SalesforceTargetOrg
     The org that cmdlets use when you give no -TargetOrg.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config get (plugin @salesforce/plugin-settings)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --verbose
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -343,6 +342,13 @@ function Remove-SalesforceTargetOrg {
     .DESCRIPTION
     Runs sf config unset target-org, locally or with -Global for the whole computer. Only configuration changes; no org is touched. Returns the CLI's list of successes.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config unset (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Global = --global.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Global
     Clear the global setting instead of the one for the current project. Adds --global.
 
@@ -352,13 +358,6 @@ function Remove-SalesforceTargetOrg {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config unset (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Global = --global.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -392,16 +391,15 @@ function Get-SalesforceConfig {
     .DESCRIPTION
     Runs sf config list and returns one object per variable (name, value, location: Local or Global).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config list (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     Get-SalesforceConfig
     Every variable that is set.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config list (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -431,6 +429,13 @@ function Set-SalesforceTargetDevHub {
     .DESCRIPTION
     Runs sf config set target-dev-hub=<value>, for the current project or with -Global for the whole computer. Returns the CLI's list of successes.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config set (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Global = --global.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Value
     Username or alias of the Dev Hub org. Required.
 
@@ -443,13 +448,6 @@ function Set-SalesforceTargetDevHub {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config set (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Global = --global.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -485,19 +483,18 @@ function Get-SalesforceTargetDevHub {
     .DESCRIPTION
     Runs sf config get target-dev-hub and returns the value with where it is set (Local or Global). With -Global only the global setting is returned.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config get (plugin @salesforce/plugin-settings)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --verbose
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Global
     Return only the global value (set for the whole computer), not a project-local one. The filter runs in PowerShell.
 
     .EXAMPLE
     Get-SalesforceTargetDevHub
     The Dev Hub that new scratch orgs are created from.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config get (plugin @salesforce/plugin-settings)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --verbose
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -533,6 +530,13 @@ function Remove-SalesforceTargetDevHub {
     .DESCRIPTION
     Runs sf config unset target-dev-hub, locally or with -Global for the whole computer. Only configuration changes; no org is touched. Returns the CLI's list of successes.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf config unset (plugin @salesforce/plugin-settings)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Global = --global.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Global
     Clear the global setting instead of the one for the current project. Adds --global.
 
@@ -542,13 +546,6 @@ function Remove-SalesforceTargetDevHub {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf config unset (plugin @salesforce/plugin-settings)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Global = --global.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -586,6 +583,13 @@ function Enable-SalesforceSourceTracking {
     .DESCRIPTION
     Runs sf org enable tracking. Source tracking lets deploy and retrieve report what changed between your project and the org. It can be enabled only in an org that supports it, such as a sandbox that was created with source tracking turned off. Supports -WhatIf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org enable tracking (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -595,13 +599,6 @@ function Enable-SalesforceSourceTracking {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org enable tracking (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -639,6 +636,13 @@ function Disable-SalesforceSourceTracking {
     .DESCRIPTION
     Runs sf org disable tracking. After it, deploy and retrieve no longer report what changed between your project and the org, and source tracking may not be possible to turn on again for that org. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org disable tracking (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER NoPrompt
     Don't ask for confirmation. The CLI command has no prompt flag, so this only skips the PowerShell confirmation; it does not turn off -WhatIf.
 
@@ -651,13 +655,6 @@ function Disable-SalesforceSourceTracking {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org disable tracking (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -701,6 +698,13 @@ function New-SalesforceOrgShape {
     .DESCRIPTION
     Runs sf org create shape. An org shape records the edition, features and settings of the source org, so that scratch orgs can be created to match it (see New-SalesforceScratchOrg -SourceOrgId). The org must have Scratch Org Shape turned on.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create shape (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the org to take the shape from. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -710,13 +714,6 @@ function New-SalesforceOrgShape {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create shape (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -754,16 +751,15 @@ function Get-SalesforceOrgShapes {
     .DESCRIPTION
     Runs sf org list shape and returns one object per shape (the org it came from, the shape ID, its status and when it was created).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list shape (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     Get-SalesforceOrgShapes | Format-Table
     List every shape.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list shape (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -793,6 +789,13 @@ function Remove-SalesforceOrgShape {
     .DESCRIPTION
     Runs sf org delete shape. This cannot be undone, and scratch orgs can no longer be created from the deleted shape. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org delete shape (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org. psfdx always passes --no-prompt, because it asks first.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER NoPrompt
     Don't ask for confirmation. Skips the PowerShell confirmation; psfdx always passes --no-prompt to the CLI after it has confirmed.
 
@@ -805,13 +808,6 @@ function Remove-SalesforceOrgShape {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org delete shape (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org. psfdx always passes --no-prompt, because it asks first.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -853,6 +849,13 @@ function New-SalesforceOrgSnapshot {
     .DESCRIPTION
     Runs sf org create snapshot. A snapshot is a copy of a scratch org that you can create new scratch orgs from (see New-SalesforceScratchOrg -Snapshot). The snapshot is made in the Dev Hub. Snapshots are a pilot feature of Salesforce. Creation is asynchronous: use Get-SalesforceOrgSnapshot to see when it is ready.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create snapshot (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SourceOrg = --source-org; -SnapshotName = --name; -Description = --description; -TargetDevHub = --target-dev-hub.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SourceOrg
     Username or alias of the scratch org to copy. Passed to sf as --source-org. Required.
 
@@ -871,13 +874,6 @@ function New-SalesforceOrgSnapshot {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create snapshot (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SourceOrg = --source-org; -SnapshotName = --name; -Description = --description; -TargetDevHub = --target-dev-hub.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -918,6 +914,13 @@ function Get-SalesforceOrgSnapshot {
     .DESCRIPTION
     Runs sf org get snapshot for the snapshot name or ID. Use Get-SalesforceOrgSnapshots to list them all.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org get snapshot (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Snapshot = --snapshot; -TargetDevHub = --target-dev-hub.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Snapshot
     Name or ID of the snapshot. Passed to sf as --snapshot. Required.
 
@@ -927,14 +930,6 @@ function Get-SalesforceOrgSnapshot {
     .EXAMPLE
     Get-SalesforceOrgSnapshot -Snapshot Release1 -TargetDevHub devhub
     Show the status of the snapshot.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org get snapshot (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Snapshot = --snapshot; -TargetDevHub = --target-dev-hub.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -969,20 +964,19 @@ function Get-SalesforceOrgSnapshots {
     .DESCRIPTION
     Runs sf org list snapshot and returns one object per snapshot (name, ID, status, source org and when it was created).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list snapshot (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetDevHub = --target-dev-hub.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetDevHub
     Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. Passed to sf as --target-dev-hub.
 
     .EXAMPLE
     Get-SalesforceOrgSnapshots -TargetDevHub devhub | Format-Table
     List the snapshots of the Dev Hub.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list snapshot (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetDevHub = --target-dev-hub.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1016,6 +1010,13 @@ function Remove-SalesforceOrgSnapshot {
     .DESCRIPTION
     Runs sf org delete snapshot. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org delete snapshot (plugin @salesforce/plugin-signups)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Snapshot = --snapshot; -TargetDevHub = --target-dev-hub. psfdx always passes --no-prompt, because it asks first.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Snapshot
     Name or ID of the snapshot to delete. Passed to sf as --snapshot. Required.
 
@@ -1031,13 +1032,6 @@ function Remove-SalesforceOrgSnapshot {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org delete snapshot (plugin @salesforce/plugin-signups)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Snapshot = --snapshot; -TargetDevHub = --target-dev-hub. psfdx always passes --no-prompt, because it asks first.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1130,6 +1124,13 @@ function Invoke-SalesforceCodeAnalyzer {
     The plugin is installed with the Salesforce CLI or with Install-SalesforcePlugin. Engines such as PMD and the Java-based rules need Java 11 or later;
     the CLI downloads engine dependencies on first use, so the first run can be slow and needs network access.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf code-analyzer run (plugin @salesforce/plugin-code-analyzer)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -SeverityThreshold = --severity-threshold; -IncludeFixes = --include-fixes; -IncludeSuggestions = --include-suggestions; -NoSuppressions = --no-suppressions; -TargetOrg = --target-org; -View = --view; -OutputFile = --output-file (psfdx also passes its own temporary --output-file to read the results).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Workspace
     Set of files that make up your workspace. Passed to sf as --workspace.
 
@@ -1171,14 +1172,6 @@ function Invoke-SalesforceCodeAnalyzer {
 
     .EXAMPLE
     (Invoke-SalesforceCodeAnalyzer -Workspace . -Target force-app/main/default/classes).Violations | Group-Object Rule | Sort-Object Count -Descending
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf code-analyzer run (plugin @salesforce/plugin-code-analyzer)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -SeverityThreshold = --severity-threshold; -IncludeFixes = --include-fixes; -IncludeSuggestions = --include-suggestions; -NoSuppressions = --no-suppressions; -TargetOrg = --target-org; -View = --view; -OutputFile = --output-file (psfdx also passes its own temporary --output-file to read the results).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1328,6 +1321,13 @@ function Get-SalesforceCodeAnalyzerRule {
     Returns one object per rule (as the CLI reports it: name, engine, severity, tags, description, resources). The CLI has no --json flag, so the rules are read from a temporary JSON report file. With no selector the CLI lists
     its default rules. A selector such as Recommended, Security, pmd or pmd:Security narrows the list. A plugin or engine failure throws the CLI message with install guidance.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf code-analyzer rules (plugin @salesforce/plugin-code-analyzer)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -RuleSelector = --rule-selector; -Workspace = --workspace; -Target = --target; -ConfigFile = --config-file; -View = --view.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER RuleSelector
     Selection of rules, based on engine name, severity level, rule name, tag, or a combination of criteria separated by colons. Passed to sf as --rule-selector.
 
@@ -1345,14 +1345,6 @@ function Get-SalesforceCodeAnalyzerRule {
 
     .EXAMPLE
     Get-SalesforceCodeAnalyzerRule -RuleSelector Security | Select-Object name, engine, severity
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf code-analyzer rules (plugin @salesforce/plugin-code-analyzer)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -RuleSelector = --rule-selector; -Workspace = --workspace; -Target = --target; -ConfigFile = --config-file; -View = --view.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1418,6 +1410,13 @@ function Get-SalesforceCodeAnalyzerConfig {
     .DESCRIPTION
     Runs sf code-analyzer config and returns the configuration as one YAML string: the top-level settings and the engine and rule overrides for the selected rules, with any code-analyzer.yml in the current folder (or -ConfigFile) applied. The CLI has no --json flag, so the YAML is read from a file. Give -OutputFile to keep that file, for example to save the state as the new code-analyzer.yml (the CLI keeps the values and overwrites the comments); without it a temporary file is used and removed. A plugin or engine failure throws the CLI message with install guidance.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf code-analyzer config (plugin @salesforce/plugin-code-analyzer)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -OutputFile = --output-file; -IncludeUnmodifiedRules = --include-unmodified-rules; -NoSuppressions = --no-suppressions.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Workspace
     Set of files that make up your workspace. Each is passed to sf as its own --workspace. Each must exist. Passed to sf as --workspace.
 
@@ -1446,14 +1445,6 @@ function Get-SalesforceCodeAnalyzerConfig {
     .EXAMPLE
     Get-SalesforceCodeAnalyzerConfig -ConfigFile .\code-analyzer.yml -OutputFile .\code-analyzer.yml | Out-Null
     Rewrite the configuration file with its current state.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf code-analyzer config (plugin @salesforce/plugin-code-analyzer)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Workspace = --workspace; -Target = --target; -RuleSelector = --rule-selector; -ConfigFile = --config-file; -OutputFile = --output-file; -IncludeUnmodifiedRules = --include-unmodified-rules; -NoSuppressions = --no-suppressions.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1521,6 +1512,13 @@ function Get-SalesforceCodeAnalyzerAst {
     .DESCRIPTION
     Runs sf code-analyzer ast-dump. The AST is what PMD sees when it parses the file, which helps you write and debug custom PMD rules. It works for Apex, Visualforce, HTML, XML and JavaScript files, and it needs Java 11 or later. The CLI writes the tree to a file, so psfdx reads that file: with -Format json (the default here) you get one object per node, with its name, attributes, parent and ancestors, as the CLI reports them; with -Format xml you get the raw tree as an XML document. Give -OutputFile to keep the file; without it a temporary file is used and removed.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf code-analyzer ast-dump (plugin @salesforce/plugin-code-analyzer)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -File = --file; -Language = --language; -Format = --format; -OutputFile = --output-file.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER File
     Path of the source file to parse. It must exist and be a file, not a folder. Passed to sf as --file. Required.
 
@@ -1540,14 +1538,6 @@ function Get-SalesforceCodeAnalyzerAst {
     .EXAMPLE
     ([xml](Get-SalesforceCodeAnalyzerAst -File .\page.page -Language visualforce -Format xml)).OuterXml
     The raw XML tree of a Visualforce page.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf code-analyzer ast-dump (plugin @salesforce/plugin-code-analyzer)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -File = --file; -Language = --language; -Format = --format; -OutputFile = --output-file.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1615,6 +1605,13 @@ function Test-SalesforceApex {
     .DESCRIPTION
     Runs sf apex run test (waiting up to -WaitMinutes) and returns the result in the format you choose. -TestsInProject runs the test classes found in the local project. With the default json format the result is returned as an object. For a run that returns a run ID to poll, use Start-SalesforceApexTest.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex run test (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ClassName = --tests; -TestName = --tests; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -WaitMinutes = --wait; -OutputDirectory = --output-dir; -TestsInProject = --tests; -PollIntervalSeconds = --poll-interval; -Synchronous = --synchronous; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ClassName
     Test class to run. psfdx passes it as --tests <ClassName>, or as --tests <ClassName>.<TestName> when -TestName is also given. Ignored with -TestsInProject.
 
@@ -1658,14 +1655,6 @@ function Test-SalesforceApex {
     .EXAMPLE
     Test-SalesforceApex -ClassName AccountServiceTest -Synchronous -TargetOrg dev1
     Run one test class synchronously.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex run test (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ClassName = --tests; -TestName = --tests; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -WaitMinutes = --wait; -OutputDirectory = --output-dir; -TestsInProject = --tests; -PollIntervalSeconds = --poll-interval; -Synchronous = --synchronous; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1787,6 +1776,10 @@ function Get-SalesforceCodeCoverage {
     .DESCRIPTION
     Queries the Tooling API object ApexCodeCoverage with Select-SalesforceRecords and returns one object per class, trigger and test method with the percentage covered, the covered and uncovered line counts, and CodeCoverageOK (true at 75 percent or more). -ApexClassOrTrigger filters the result in PowerShell after the query.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER ApexClassOrTrigger
     Keep only rows where this name is the class or trigger, or the test class. The filter runs in PowerShell, after the query.
 
@@ -1796,11 +1789,6 @@ function Get-SalesforceCodeCoverage {
     .EXAMPLE
     Get-SalesforceCodeCoverage -ApexClassOrTrigger MyService -TargetOrg dev1
     Coverage rows for MyService.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1853,6 +1841,10 @@ function Watch-SalesforceApex {
     .DESCRIPTION
     Watches the project folder with a file system watcher. On each change to an Apex class or trigger file it deploys that one component and, when it finds test classes that reference it in the project, runs them as part of the deployment. It keeps running until you press Ctrl+C. The deployment goes to the default target org; there is no -TargetOrg.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It does not run sf directly. For each changed Apex file an internal helper (Watch-SalesforceApexAction) runs sf project deploy start --metadata ApexClass:<name> (or ApexTrigger:<name>) --ignore-warnings. When it finds related test classes it adds --test-level RunSpecifiedTests and one --tests per class; otherwise --test-level NoTestRun. -IgnoreErrors adds --ignore-errors. The command is run in the default target org.
+
     .PARAMETER ProjectFolder
     Folder of the Salesforce DX project to watch. Defaults to the current folder. It must exist.
 
@@ -1868,10 +1860,6 @@ function Watch-SalesforceApex {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It does not run sf directly. For each changed Apex file an internal helper (Watch-SalesforceApexAction) runs sf project deploy start --metadata ApexClass:<name> (or ApexTrigger:<name>) --ignore-warnings. When it finds related test classes it adds --test-level RunSpecifiedTests and one --tests per class; otherwise --test-level NoTestRun. -IgnoreErrors adds --ignore-errors. The command is run in the default target org.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1931,6 +1919,13 @@ function Invoke-SalesforceApex {
     .DESCRIPTION
     Runs sf apex run --file. The code executes in the org with your user's permissions and can change data, so review it first. Returns the execution result (success, compile and run problems, and the debug log).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex run (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ApexFile = --file; -DebugLevel = --debug-level; -CategoryLevel = --category-level; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ApexFile
     Path of the local file that holds the Apex statements to run. Passed to sf as --file. Required.
 
@@ -1953,13 +1948,6 @@ function Invoke-SalesforceApex {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex run (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ApexFile = --file; -DebugLevel = --debug-level; -CategoryLevel = --category-level; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2287,6 +2275,10 @@ function Get-SalesforceApexClass {
     .DESCRIPTION
     Queries ApexClass (Id, Name, Body) through the Tooling API with Select-SalesforceRecords. The name is matched exactly and escaped as a SOQL literal; at most one class is returned.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER Name
     Exact name of the Apex class. Required.
 
@@ -2296,11 +2288,6 @@ function Get-SalesforceApexClass {
     .EXAMPLE
     (Get-SalesforceApexClass -Name MyService -TargetOrg dev1).Body
     The source code of MyService.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Select-SalesforceRecords. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2340,6 +2327,13 @@ function Start-SalesforceApexTest {
     asking only when you fetch the results retrieves nothing new. The returned TestRunId works from any later session on any computer: pass it to
     Get-SalesforceApexTestResult or Wait-SalesforceApexTest. To run and wait in one call use Test-SalesforceApex.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex run test (plugin @salesforce/plugin-apex)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --poll-interval, --synchronous
+        Parameter to flag: -TestLevel = --test-level; -CodeCoverage = --code-coverage; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ClassName
     Apex test classes to run. Passed as --class-names, one flag per class. Cannot be combined with -TestName or -SuiteName.
 
@@ -2364,14 +2358,6 @@ function Start-SalesforceApexTest {
     .EXAMPLE
     # Later, in another shell:
     Wait-SalesforceApexTest -TestRunId 707xx0000000001 -TimeoutMinutes 30 -CodeCoverage -TargetOrg myorg
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex run test (plugin @salesforce/plugin-apex)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --poll-interval, --synchronous
-    Parameter to flag: -TestLevel = --test-level; -CodeCoverage = --code-coverage; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2431,6 +2417,14 @@ function Get-SalesforceApexTestResult {
     use Wait-SalesforceApexTest to wait. A finished run with failing tests writes the object and then throws PsfdxTestsFailed (TargetObject is the
     summary). Coverage is returned, never judged: there is no threshold here.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex get test (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TestRunId = --test-run-id; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -Concise = --concise; -OutputDirectory = --output-dir; -ResultFormat = --result-format; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Also calls these psfdx cmdlets: Select-SalesforceRecords.
+
     .PARAMETER TestRunId
     ID of the test run. Passed to sf as --test-run-id. Required.
 
@@ -2458,15 +2452,6 @@ function Get-SalesforceApexTestResult {
     .EXAMPLE
     Get-SalesforceApexTestResult -TestRunId 707xx0000000001 -ResultFormat junit -OutputDirectory .\results -TargetOrg myorg
     Write the results as JUnit XML for a CI system.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex get test (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TestRunId = --test-run-id; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -Concise = --concise; -OutputDirectory = --output-dir; -ResultFormat = --result-format; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Also calls these psfdx cmdlets: Select-SalesforceRecords.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2535,6 +2520,10 @@ function Wait-SalesforceApexTest {
     -TimeoutMinutes pass first it throws PsfdxTestRunTimeout, whose TargetObject is the TestRunId, and the run carries on in the org. Failing
     tests and CLI errors surface exactly as for Get-SalesforceApexTestResult.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceApexTestResult. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER TestRunId
     ID of the test run to wait for, as returned by Start-SalesforceApexTest or Test-SalesforceApex. It must start with 707. Required.
 
@@ -2561,11 +2550,6 @@ function Wait-SalesforceApexTest {
 
     .EXAMPLE
     $run = Start-SalesforceApexTest -TargetOrg myorg; Wait-SalesforceApexTest -TestRunId $run.TestRunId -TimeoutMinutes 30 -CodeCoverage -TargetOrg myorg
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceApexTestResult. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2630,6 +2614,13 @@ function Test-SalesforceFlow {
 
     Code coverage is returned but never judged; there is no coverage threshold.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf flow run test (plugin @salesforce/plugin-flow)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SuiteName = --suite-names; -TestLevel = --test-level; -Synchronous = --synchronous; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER FlowName
     Flows to test (--class-names). Cannot be combined with -TestName or -SuiteName.
 
@@ -2668,14 +2659,6 @@ function Test-SalesforceFlow {
 
     .EXAMPLE
     $run = Test-SalesforceFlow -TestLevel RunLocalTests -TargetOrg myorg; Get-SalesforceFlowTestResult -TestRunId $run.TestRunId -TargetOrg myorg
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf flow run test (plugin @salesforce/plugin-flow)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SuiteName = --suite-names; -TestLevel = --test-level; -Synchronous = --synchronous; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2749,6 +2732,13 @@ function Get-SalesforceFlowTestResult {
     throws PsfdxTestRunInvocationFailed, as for Test-SalesforceFlow. A run that has not finished yet is reported by the CLI as
     an invocation failure or as its current counts, depending on the CLI version.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf flow get test (plugin @salesforce/plugin-flow)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TestRunId = --test-run-id; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TestRunId
     ID of the test run. Passed to sf as --test-run-id. Required.
 
@@ -2772,14 +2762,6 @@ function Get-SalesforceFlowTestResult {
 
     .EXAMPLE
     Get-SalesforceFlowTestResult -TestRunId 707xx0000000001 -TargetOrg myorg
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf flow get test (plugin @salesforce/plugin-flow)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TestRunId = --test-run-id; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2833,6 +2815,13 @@ function Test-SalesforceLogic {
     an object with a TestRunId for Get-SalesforceLogicTestResult. Failed tests throw PsfdxTestsFailed; a command that could not
     run throws PsfdxTestRunInvocationFailed. -TestCategory needs -TestLevel. The command is in beta in the CLI. Test-SalesforceApex still runs Apex alone.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf logic run test (beta) (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TestLevel = --test-level; -Synchronous = --synchronous; -WaitMinutes = --wait; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ClassName
     Test classes to run. Passed as --class-names. Use only one of -ClassName, -TestName, -SuiteName and -TestCategory.
 
@@ -2877,14 +2866,6 @@ function Test-SalesforceLogic {
 
     .EXAMPLE
     Test-SalesforceLogic -TestName 'OrderFlow.Test1', 'OrderTest.testSave' -WaitMinutes 10 -TargetOrg myorg
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf logic run test (beta) (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TestLevel = --test-level; -Synchronous = --synchronous; -WaitMinutes = --wait; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2963,6 +2944,13 @@ function Get-SalesforceLogicTestResult {
     .DESCRIPTION
     Takes the TestRunId that Test-SalesforceLogic returned. Errors are the same as for Test-SalesforceLogic.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf logic get test (beta) (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TestRunId = --test-run-id; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TestRunId
     ID of the test run. Passed to sf as --test-run-id. Required.
 
@@ -2986,14 +2974,6 @@ function Get-SalesforceLogicTestResult {
 
     .EXAMPLE
     Get-SalesforceLogicTestResult -TestRunId 707xx0000000001 -CodeCoverage -TargetOrg myorg
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf logic get test (beta) (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TestRunId = --test-run-id; -ResultFormat = --result-format; -Concise = --concise; -CodeCoverage = --code-coverage; -CodeCoverageDetailed = --detailed-coverage; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3113,6 +3093,14 @@ function New-SalesforceApexClass {
     .DESCRIPTION
     Runs sf template generate apex class and writes the .cls and .cls-meta.xml files. The output folder must already exist.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate apex class (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+          Values psfdx cannot pass: --template ApexException, BasicUnitTest, Batchable, Queueable
+        Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the generated Apex class. Passed to sf as --name. Required.
 
@@ -3128,14 +3116,6 @@ function New-SalesforceApexClass {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate apex class (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-      Values psfdx cannot pass: --template ApexException, BasicUnitTest, Batchable, Queueable
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3180,6 +3160,13 @@ function New-SalesforceApexTrigger {
     .DESCRIPTION
     Runs sf template generate apex trigger and writes the .trigger and .trigger-meta.xml files. The output folder must already exist.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate apex trigger (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Event = --event; -SObject = --sobject; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the generated Apex trigger. Passed to sf as --name. Required.
 
@@ -3201,13 +3188,6 @@ function New-SalesforceApexTrigger {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate apex trigger (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Event = --event; -SObject = --sobject; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3260,18 +3240,18 @@ function Install-SalesforceLwcDevServer {
     .DESCRIPTION
     Runs sf plugins install @salesforce/plugin-lightning-dev. Start-SalesforceLwcDevServer stops with a message pointing here until the plugin is installed.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf plugins install (plugin @oclif/plugin-plugins)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --force, --help, --silent, --verbose
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .EXAMPLE
     Install-SalesforceLwcDevServer
     Install the plugin.
 
     .NOTES
     Installs or updates software on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf plugins install (plugin @oclif/plugin-plugins)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --force, --help, --silent, --verbose
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3308,6 +3288,18 @@ function Start-SalesforceLwcDevServer {
     .DESCRIPTION
     Runs sf lightning dev app, component or site, chosen by -Mode, and keeps running until you stop it. Needs the @salesforce/plugin-lightning-dev plugin (Install-SalesforceLwcDevServer). -DeviceType only applies to -Mode App.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf lightning dev app (plugin @salesforce/plugin-lightning-dev)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Command run: sf lightning dev component (plugin @salesforce/plugin-lightning-dev)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Command run: sf lightning dev site (plugin @salesforce/plugin-lightning-dev)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -DeviceType = --device-type; -DeviceId = --device-id; -ClientSelect = --client-select; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Before it starts, an internal helper (Test-SalesforceLightningDevPluginInstalled) runs sf plugins --core --json to check that @salesforce/plugin-lightning-dev is listed.
+
     .PARAMETER Mode
     What to preview: App (the default), Component or Site. psfdx runs the CLI command with that last word. Default: App. Valid values: App, Component, Site.
 
@@ -3333,19 +3325,6 @@ function Start-SalesforceLwcDevServer {
     .EXAMPLE
     Start-SalesforceLwcDevServer -Mode App -Name Sales -DeviceType ios -DeviceId 8A1B2C3D -TargetOrg dev1
     Preview an app on a specific iOS simulator.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf lightning dev app (plugin @salesforce/plugin-lightning-dev)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Command run: sf lightning dev component (plugin @salesforce/plugin-lightning-dev)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Command run: sf lightning dev site (plugin @salesforce/plugin-lightning-dev)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -DeviceType = --device-type; -DeviceId = --device-id; -ClientSelect = --client-select; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Before it starts, an internal helper (Test-SalesforceLightningDevPluginInstalled) runs sf plugins --core --json to check that @salesforce/plugin-lightning-dev is listed.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3401,16 +3380,16 @@ function Install-SalesforceJest {
     .DESCRIPTION
     Runs yarn add -D @salesforce/sfdx-lwc-jest when yarn is on the PATH, otherwise npm install -D @salesforce/sfdx-lwc-jest. This downloads and runs code from the package registry. Node.js is required.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It runs npm (or yarn when it is on the PATH) through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
     .EXAMPLE
     Install-SalesforceJest
     Add the Jest runner as a dev dependency.
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It runs npm (or yarn when it is on the PATH) through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -3436,6 +3415,10 @@ function New-SalesforceJestTest {
     .DESCRIPTION
     Does not use the Salesforce CLI (the old sf force lightning lwc test create command was removed). It writes <name>.test.js into the component's __tests__ folder, with a test that renders the component. It refuses to overwrite an existing test unless you pass -Force.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It works locally in PowerShell and .NET.
+
     .PARAMETER LwcName
     Name of the Lightning web component (letters, digits and underscores, starting with a letter). Its folder must exist under force-app/main/default/lwc. Required.
 
@@ -3451,10 +3434,6 @@ function New-SalesforceJestTest {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It works locally in PowerShell and .NET.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -3523,14 +3502,13 @@ function Test-SalesforceJest {
     .DESCRIPTION
     Runs npm run test:unit in the current folder, so the project's package.json must define that script.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
     .EXAMPLE
     Test-SalesforceJest
     Run every Jest test.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -3552,14 +3530,13 @@ function Debug-SalesforceJest {
     .DESCRIPTION
     Runs npm run test:unit:debug in the current folder, so the project's package.json must define that script (the sfdx project template does). Output is returned as text.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
     .EXAMPLE
     Debug-SalesforceJest
     Start the Jest tests with the Node debugger.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -3581,14 +3558,13 @@ function Watch-SalesforceJest {
     .DESCRIPTION
     Runs npm run test:unit:watch in the current folder, so the project's package.json must define that script. It keeps running until you stop it.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
+
     .EXAMPLE
     Watch-SalesforceJest
     Watch mode for Jest.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It runs npm through Invoke-Salesforce, which runs a program with an argument array. The program is found on the PATH when the cmdlet runs.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -3614,20 +3590,19 @@ function Get-SalesforceApexCompileStatus {
     .DESCRIPTION
     Runs sf apex get compile-status. It returns the compile results of only the Apex classes and triggers that are invalid or have warnings, instead of compiling the whole org, so it is a quick check after a deploy or an upgrade. It only reads. No result means that everything compiles.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex get compile-status (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceApexCompileStatus -TargetOrg dev1
     The classes and triggers in dev1 with compile errors or warnings.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex get compile-status (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3689,6 +3664,13 @@ function New-SalesforceLightningApp {
     .DESCRIPTION
     Runs sf template generate lightning app. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning app already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate lightning app (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Lightning app. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -3704,14 +3686,6 @@ function New-SalesforceLightningApp {
     .EXAMPLE
     New-SalesforceLightningApp -Name MyApp -OutputDirectory force-app/main/default/aura
     Generate the Lightning app.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate lightning app (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3750,6 +3724,13 @@ function New-SalesforceLightningEvent {
     .DESCRIPTION
     Runs sf template generate lightning event. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning event already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate lightning event (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Lightning event. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -3765,14 +3746,6 @@ function New-SalesforceLightningEvent {
     .EXAMPLE
     New-SalesforceLightningEvent -Name MyEvent -OutputDirectory force-app/main/default/aura
     Generate the Lightning event.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate lightning event (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3811,6 +3784,13 @@ function New-SalesforceLightningInterface {
     .DESCRIPTION
     Runs sf template generate lightning interface. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning interface already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate lightning interface (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Lightning interface. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -3826,14 +3806,6 @@ function New-SalesforceLightningInterface {
     .EXAMPLE
     New-SalesforceLightningInterface -Name MyInterface -OutputDirectory force-app/main/default/aura
     Generate the Lightning interface.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate lightning interface (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3872,6 +3844,13 @@ function New-SalesforceLightningTest {
     .DESCRIPTION
     Runs sf template generate lightning test. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Lightning test already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate lightning test (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Lightning test. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -3887,14 +3866,6 @@ function New-SalesforceLightningTest {
     .EXAMPLE
     New-SalesforceLightningTest -Name MyTest -OutputDirectory force-app/main/default/staticresources
     Generate the Lightning test.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate lightning test (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3933,6 +3904,13 @@ function New-SalesforceVisualforceComponent {
     .DESCRIPTION
     Runs sf template generate visualforce component. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Visualforce component already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate visualforce component (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Label = --label; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Visualforce component. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -3951,14 +3929,6 @@ function New-SalesforceVisualforceComponent {
     .EXAMPLE
     New-SalesforceVisualforceComponent -Name MyComponent -Label 'My Component' -OutputDirectory force-app/main/default/components
     Generate the Visualforce component.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate visualforce component (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Label = --label; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3998,6 +3968,13 @@ function New-SalesforceVisualforcePage {
     .DESCRIPTION
     Runs sf template generate visualforce page. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Visualforce page already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate visualforce page (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Label = --label; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Visualforce page. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4013,14 +3990,6 @@ function New-SalesforceVisualforcePage {
     .EXAMPLE
     New-SalesforceVisualforcePage -Name MyPage -Label 'My Page' -OutputDirectory force-app/main/default/pages
     Generate the Visualforce page.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate visualforce page (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Label = --label; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4059,6 +4028,13 @@ function New-SalesforceAnalyticsTemplate {
     .DESCRIPTION
     Runs sf template generate analytics template. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the Analytics template already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate analytics template (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Analytics template. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4071,14 +4047,6 @@ function New-SalesforceAnalyticsTemplate {
     .EXAMPLE
     New-SalesforceAnalyticsTemplate -Name SalesDashboard -OutputDirectory force-app/main/default/waveTemplates
     Generate the Analytics template.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate analytics template (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4116,6 +4084,13 @@ function New-SalesforceLightningComponent {
     .DESCRIPTION
     Runs sf template generate lightning component. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the component already exists in the output folder the cmdlet stops, unless you pass -Force. The output folder must be named lwc for a web component and aura for an Aura component.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate lightning component (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Type = --type; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the component. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4138,14 +4113,6 @@ function New-SalesforceLightningComponent {
     .EXAMPLE
     New-SalesforceLightningComponent -Name accountCard -Type lwc -Template typescript -OutputDirectory force-app/main/default/lwc
     Generate a TypeScript component.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate lightning component (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Type = --type; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4186,6 +4153,13 @@ function New-SalesforceStaticResource {
     .DESCRIPTION
     Runs sf template generate static-resource. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. It writes the metadata file and an empty folder for the content. If the static resource already exists in the output folder the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate static-resource (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Type = --type; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the static resource. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4201,14 +4175,6 @@ function New-SalesforceStaticResource {
     .EXAMPLE
     New-SalesforceStaticResource -Name Logos -Type application/zip -OutputDirectory force-app/main/default/staticresources
     Generate a zip static resource.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate static-resource (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Type = --type; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4247,6 +4213,13 @@ function New-SalesforceUiBundle {
     .DESCRIPTION
     Runs sf template generate ui-bundle, which writes a bundle for a UI built with a non-native framework such as React or Angular, under a uiBundles folder in the output folder. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. If the bundle already exists the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate ui-bundle (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Label = --label; -Template = --template; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the UI bundle. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4265,14 +4238,6 @@ function New-SalesforceUiBundle {
     .EXAMPLE
     New-SalesforceUiBundle -Name Storefront -Label Storefront -Template reactbasic -OutputDirectory force-app/main/default
     Generate a React bundle.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate ui-bundle (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Label = --label; -Template = --template; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4313,6 +4278,13 @@ function New-SalesforceUiEmbedding {
     .DESCRIPTION
     Runs sf template generate ui-embedding, which writes a Lightning web component that wraps the lightning-ui-embedding base component and shows -Src in a sandboxed frame. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. The output folder must be named lwc. If the component already exists the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate ui-embedding (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Src = --src; -Title = --title; -Sandbox = --sandbox; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the component. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4334,14 +4306,6 @@ function New-SalesforceUiEmbedding {
     .EXAMPLE
     New-SalesforceUiEmbedding -Name statusPage -Src https://status.example.com -Title 'Status' -Sandbox allow-scripts, allow-forms -OutputDirectory force-app/main/default/lwc
     Embed a status page.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate ui-embedding (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Src = --src; -Title = --title; -Sandbox = --sandbox; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4383,6 +4347,13 @@ function New-SalesforceFlexiPage {
     .DESCRIPTION
     Runs sf template generate flexipage, which writes a record page, app page or home page under a flexipages folder in the output folder. This CLI command is in beta, so its flags and output can change in a later release. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. A record page needs -SObject. If the page already exists the cmdlet stops, unless you pass -Force.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate flexipage (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Template = --template; -SObject = --sobject; -Label = --label; -Description = --description; -PrimaryField = --primary-field; -SecondaryFields = --secondary-fields; -DetailFields = --detail-fields; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     API name of the FlexiPage. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -4416,14 +4387,6 @@ function New-SalesforceFlexiPage {
     .EXAMPLE
     New-SalesforceFlexiPage -Name Account_Record_Page -Template RecordPage -SObject Account -PrimaryField Name -SecondaryFields Industry, Phone -OutputDirectory force-app/main/default
     Generate a record page for Account.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate flexipage (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Template = --template; -SObject = --sobject; -Label = --label; -Description = --description; -PrimaryField = --primary-field; -SecondaryFields = --secondary-fields; -DetailFields = --detail-fields; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4477,6 +4440,13 @@ function New-SalesforceLightningOutApp {
     .DESCRIPTION
     Runs sf template generate lightning-out, which scaffolds the files for a Lightning Out 2.0 app that puts Lightning web components in an outside web page. It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput. The CLI needs the External Client App name, contact email and callback URL, the runtime and the host domains. Give them as parameters, or in a -DefinitionFile JSON file; a parameter replaces the same value in the file. Without a file all of them are needed, and the cmdlet says which are missing before it runs sf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate lightning-out (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -AppName = --app-name; -Components = --components; -DefinitionFile = --definition-file; -EcaName = --eca-name; -EcaContactEmail = --eca-contact-email; -EcaCallbackUrl = --eca-callback-url; -HostDomains = --host-domains; -Runtime = --runtime; -OutputDirectory = --output-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER AppName
     Developer name of the new Lightning Out 2.0 app. Passed to sf as --app-name.
 
@@ -4510,14 +4480,6 @@ function New-SalesforceLightningOutApp {
     .EXAMPLE
     New-SalesforceLightningOutApp -AppName StoreWidget -Components storeCart -EcaName StoreWidgetEca -EcaContactEmail dev@example.com -EcaCallbackUrl https://shop.example.com/callback -HostDomains https://shop.example.com -Runtime LWR_CORE -OutputDirectory force-app/main/default
     Generate the app with every required value given.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate lightning-out (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -AppName = --app-name; -Components = --components; -DefinitionFile = --definition-file; -EcaName = --eca-name; -EcaContactEmail = --eca-contact-email; -EcaCallbackUrl = --eca-callback-url; -HostDomains = --host-domains; -Runtime = --runtime; -OutputDirectory = --output-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4593,6 +4555,13 @@ function New-SalesforceExperienceSite {
     .DESCRIPTION
     Runs sf template generate digital-experience site. This CLI command is a preview, so its flags, templates and output can change in a later release. It writes the site files into the project; it does not create the site in an org (deploy the files for that). It writes local files and needs no org; run it inside a Salesforce DX project. It returns the CLI result: outputDir, created (the files it wrote) and rawOutput.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf template generate digital-experience site (plugin @salesforce/plugin-templates)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -TemplateName = --template-name; -AdminEmail = --admin-email; -UrlPathPrefix = --url-path-prefix; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the Experience Cloud site. Passed to sf as --name. Required.
 
@@ -4614,14 +4583,6 @@ function New-SalesforceExperienceSite {
     .EXAMPLE
     New-SalesforceExperienceSite -Name 'Partner Portal' -TemplateName 'Build Your Own (LWR)' -UrlPathPrefix partners -TargetOrg dev1
     Generate the files of an LWR site.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf template generate digital-experience site (plugin @salesforce/plugin-templates)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -TemplateName = --template-name; -AdminEmail = --admin-email; -UrlPathPrefix = --url-path-prefix; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -4669,6 +4630,13 @@ function Start-SalesforceUiBundleDevServer {
     .DESCRIPTION
     Runs sf ui-bundle dev, which starts a local proxy in front of your own development server (such as a Vite server on https://localhost:5173). Pages, static files and hot updates are sent to your server, and Salesforce data and API requests go to the org with your login, so you can work on a UI bundle against real data before you deploy it. It keeps running until you stop it (Ctrl+C), so run it in its own terminal. Nothing is deployed and no org data changes. The command comes from the @salesforce/plugin-ui-bundle-dev plugin, which the CLI installs when it first needs it; if it is missing, install it with Install-SalesforcePlugin.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf ui-bundle dev (plugin @salesforce/plugin-ui-bundle-dev)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Url = --url; -Port = --port; -Open = --open; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the UI bundle to preview. If you leave it out the CLI looks in the project. Passed to sf as --name.
 
@@ -4687,14 +4655,6 @@ function Start-SalesforceUiBundleDevServer {
     .EXAMPLE
     Start-SalesforceUiBundleDevServer -Name myApp -Url https://localhost:5173 -Open -TargetOrg dev1
     Proxy a local Vite server, with the org's data, and open the browser.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf ui-bundle dev (plugin @salesforce/plugin-ui-bundle-dev)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Url = --url; -Port = --port; -Open = --open; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html

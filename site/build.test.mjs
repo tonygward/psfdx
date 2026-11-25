@@ -353,7 +353,7 @@ test('every entry has a description, syntax and a practical example with the PS>
     for (const m of page.matchAll(/<details class="cmd" id="([^"]+)">([\s\S]*?)<\/details>/g)) {
       const [, name, body] = m;
       assert.ok(body.startsWith(`<summary><span class="cmd-name">${name}</span></summary>`), `${name}: collapsed label`);
-      assert.match(body, /<div class="cmd-body"><h4>Description<\/h4><p class="cmd-description">[^<]+<\/p>/, `${name}: description`);
+      assert.match(body, /<h4>Description<\/h4><p class="cmd-description">[^<]+<\/p>/, `${name}: description`);
       assert.match(body, /<h4>Syntax<\/h4><pre class="cmd-syntax"><code>/, `${name}: syntax`);
       assert.match(body, /<h4>Example<\/h4>/, `${name}: example`);
       assert.match(body, /class="ps-prompt">PS&gt;<\/span>/, `${name}: PS> prompt`);
