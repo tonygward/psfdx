@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.62 - 2026-11-25
+
 - psfdx: Default help for every public cmdlet now shows its Salesforce CLI mapping. The website command reference uses the same help and keeps its inline examples.
 
 ## 0.8.61 - 2026-11-24

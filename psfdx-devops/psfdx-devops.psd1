@@ -1,6 +1,6 @@
 @{
     RootModule = 'psfdx-devops.psm1'
-    ModuleVersion = '0.8.61'
+    ModuleVersion = '0.8.62'
     GUID = '730e3596-f750-4d8a-aa3a-26835fe3a8e9'
     Author = 'Tony Ward'
     Description = 'Salesforce DevOps Center helpers for the Salesforce CLI: projects, work items, pipelines, stages, branches, environments, promotion, and the beta pipeline deploy commands.'
