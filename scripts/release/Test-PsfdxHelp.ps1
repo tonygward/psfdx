@@ -4,7 +4,7 @@ Checks that the help of every command in an installed (or built) psfdx package w
 .DESCRIPTION
 Imports psfdx from a module path (the bundle, or the umbrella and the modules it requires) and, for each function exported by the psfdx modules, runs Get-Help -Full, -Examples and -Parameter *.
 It fails when a command has no real synopsis or description, a parameter without a description, no written example, or no
-"Salesforce CLI mapping" note. Used by the Gallery install check, after the package has been installed from the Gallery, and by the
+SALESFORCE CLI section. Used by the Gallery install check, after the package has been installed from the Gallery, and by the
 repository tests on a package built from the source. Works on Windows PowerShell 5.1 and PowerShell 7; needs no Salesforce CLI.
 #>
 [CmdletBinding()]
@@ -44,7 +44,7 @@ foreach ($command in $commands) {
     if ($missing.Count) { $problems += 'parameters without help: ' + ($missing -join ', ') }
     $written = @($help.examples.example | Where-Object { (($_.code | Out-String).Trim()) -and (($_.code | Out-String).Trim() -notmatch '\[<CommonParameters>\]') })
     if ($written.Count -eq 0) { $problems += 'no written example' }
-    if ((($help.alertSet | Out-String)) -notmatch 'Salesforce CLI mapping') { $problems += 'no Salesforce CLI mapping note' }
+    if (($help.description.Text -join [Environment]::NewLine) -notmatch '(?m)^[ \t]*SALESFORCE CLI[ \t]*\r?$') { $problems += 'no SALESFORCE CLI section' }
     # The other ways a person asks for help must work too.
     if (-not $Quick -or ($position % 10) -eq 1) {
         if (@((Get-Help -Name $name -Examples).examples.example).Count -eq 0) { $problems += 'Get-Help -Examples returned nothing' }

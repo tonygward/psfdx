@@ -133,19 +133,18 @@ function Get-SalesforceSandboxes {
     .DESCRIPTION
     Runs sf org list and returns the connected orgs that are sandboxes. With -Name, only those whose sandbox name, user name or alias equals it. It reads the local list of orgs; there is no -TargetOrg.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Keep only sandboxes whose sandbox name, user name or alias equals this value. The filter runs in PowerShell.
 
     .EXAMPLE
     Get-SalesforceSandboxes
     Every sandbox this computer knows about.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -191,6 +190,13 @@ function New-SalesforceSandbox {
 
     .DESCRIPTION
     Runs sf org create sandbox. A sandbox uses a license of your production org. The CLI waits only when you give -WaitMinutes; otherwise finish with Resume-SalesforceSandbox.
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create sandbox (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SandboxName = --name; -Alias = --alias; -DefinitionFile = --definition-file; -LicenseType = --license-type; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -NoTrackSource = --no-track-source; -Async = --async; -PollIntervalSeconds = --poll-interval; -SetDefault = --set-default; -SourceId = --source-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER SandboxName
     Name of the sandbox org. Passed to sf as --name. Required.
@@ -238,13 +244,6 @@ function New-SalesforceSandbox {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create sandbox (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SandboxName = --name; -Alias = --alias; -DefinitionFile = --definition-file; -LicenseType = --license-type; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -NoTrackSource = --no-track-source; -Async = --async; -PollIntervalSeconds = --poll-interval; -SetDefault = --set-default; -SourceId = --source-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -301,6 +300,13 @@ function Resume-SalesforceSandbox {
     .DESCRIPTION
     Runs sf org resume sandbox. Use it after New-SalesforceSandbox, Copy-SalesforceSandbox or Update-SalesforceSandbox returned without waiting. Say which sandbox with -SandboxName, with the -JobId of the sandbox process, or with -UseMostRecent for the latest one.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org resume sandbox (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SandboxName = --name; -JobId = --job-id; -UseMostRecent = --use-most-recent; -WaitMinutes = --wait; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SandboxName
     Name of the sandbox org. Passed to sf as --name. Required unless you give -JobId or -UseMostRecent.
 
@@ -326,13 +332,6 @@ function Resume-SalesforceSandbox {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org resume sandbox (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SandboxName = --name; -JobId = --job-id; -UseMostRecent = --use-most-recent; -WaitMinutes = --wait; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -377,6 +376,13 @@ function Copy-SalesforceSandbox {
     .DESCRIPTION
     Runs sf org create sandbox with --source-sandbox-name, which clones an existing sandbox. The CLI waits only when you give -WaitMinutes.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create sandbox (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SourceSandboxName = --source-sandbox-name; -SourceId = --source-id; -CloneSandboxName = --name; -LicenseType = --license-type; -Alias = --alias; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -Async = --async; -PollIntervalSeconds = --poll-interval; -SetDefault = --set-default; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SourceSandboxName
     Name of the sandbox org to clone. Passed to sf as --source-sandbox-name. Required unless you give -SourceId.
 
@@ -416,13 +422,6 @@ function Copy-SalesforceSandbox {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create sandbox (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SourceSandboxName = --source-sandbox-name; -SourceId = --source-id; -CloneSandboxName = --name; -LicenseType = --license-type; -Alias = --alias; -WaitMinutes = --wait; -NoPrompt = --no-prompt; -Async = --async; -PollIntervalSeconds = --poll-interval; -SetDefault = --set-default; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -477,6 +476,13 @@ function Remove-SalesforceSandbox {
     .DESCRIPTION
     Runs sf org delete sandbox. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt also turns off the CLI's own question.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org delete sandbox (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER NoPrompt
     Don't prompt the user to confirm the deletion. Adds --no-prompt.
 
@@ -489,13 +495,6 @@ function Remove-SalesforceSandbox {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org delete sandbox (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -NoPrompt = --no-prompt; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -535,6 +534,13 @@ function Update-SalesforceSandbox {
 
     .DESCRIPTION
     Runs sf org refresh sandbox. A refresh replaces the sandbox's data and metadata with a fresh copy, so everything in it that is not in the source is lost. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time. The CLI waits only when you give -WaitMinutes; otherwise finish with Resume-SalesforceSandbox. Give the sandbox with -SandboxName, or put its name in a -DefinitionFile.
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org refresh sandbox (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SandboxName = --name; -DefinitionFile = --definition-file; -SourceSandboxName = --source-sandbox-name; -SourceId = --source-id; -NoAutoActivate = --no-auto-activate; -Async = --async; -WaitMinutes = --wait; -PollIntervalSeconds = --poll-interval; -TargetOrg = --target-org. psfdx always passes --no-prompt, because it asks first.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER SandboxName
     Name of the sandbox to refresh. Passed to sf as --name.
@@ -576,13 +582,6 @@ function Update-SalesforceSandbox {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org refresh sandbox (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SandboxName = --name; -DefinitionFile = --definition-file; -SourceSandboxName = --source-sandbox-name; -SourceId = --source-id; -NoAutoActivate = --no-auto-activate; -Async = --async; -WaitMinutes = --wait; -PollIntervalSeconds = --poll-interval; -TargetOrg = --target-org. psfdx always passes --no-prompt, because it asks first.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -647,6 +646,13 @@ function Get-SalesforceSandboxRefreshStatus {
     .DESCRIPTION
     Runs sf data query on the Tooling API objects SandboxInfo and SandboxProcess (two queries) for the sandbox name, and combines them. The name is escaped as a SOQL literal.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf data query (plugin @salesforce/plugin-data)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the sandbox. Required.
 
@@ -656,14 +662,6 @@ function Get-SalesforceSandboxRefreshStatus {
     .EXAMPLE
     Get-SalesforceSandboxRefreshStatus -Name dev1 -TargetOrg prod
     The refresh status of dev1.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf data query (plugin @salesforce/plugin-data)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -753,7 +751,14 @@ function Get-SalesforceScratchOrgs {
     Lists the scratch orgs this computer knows about.
 
     .DESCRIPTION
-    Runs sf org list --all and returns the scratch orgs (orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias). With -Last only the most recently used one is returned. 
+    Runs sf org list --all and returns the scratch orgs (orgId, instanceUrl, username, connectedStatus, isDevHub, lastUsed, alias). With -Last only the most recently used one is returned.
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SkipConnectionStatus = --skip-connection-status.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER SkipConnectionStatus
     Skip retrieving the connection status of non-scratch orgs. Adds --skip-connection-status.
@@ -764,14 +769,6 @@ function Get-SalesforceScratchOrgs {
     .EXAMPLE
     Get-SalesforceScratchOrgs | Where-Object connectedStatus -eq 'Connected'
     Scratch orgs that are reachable.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SkipConnectionStatus = --skip-connection-status.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -815,6 +812,13 @@ function New-SalesforceScratchOrg {
 
     .DESCRIPTION
     Runs sf org create scratch from a scratch org definition file. Use -Async to return before the org is ready, then finish with Resume-SalesforceScratchOrg. Scratch orgs use your Dev Hub's allocation and expire after the duration.
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org create scratch (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username; -Alias = --alias; -OAuthClientId = --client-id; -NoAncestors = --no-ancestors; -NoNamespace = --no-namespace; -NoTrackSource = --no-track-source.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER TargetDevHub
     Username or alias of the Dev Hub org. Passed to sf as --target-dev-hub.
@@ -879,13 +883,6 @@ function New-SalesforceScratchOrg {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org create scratch (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetDevHub = --target-dev-hub; -SetDefault = --set-default; -DurationDays = --duration-days; -DefinitionFile = --definition-file; -WaitMinutes = --wait; -Async = --async; -Edition = --edition; -Snapshot = --snapshot; -AdminEmail = --admin-email; -Description = --description; -Name = --name; -Release = --release; -SourceOrgId = --source-org; -AdminUsername = --username; -Alias = --alias; -OAuthClientId = --client-id; -NoAncestors = --no-ancestors; -NoNamespace = --no-namespace; -NoTrackSource = --no-track-source.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -959,6 +956,13 @@ function Resume-SalesforceScratchOrg {
     when -WaitMinutes ends (the CLI's StillInProgressError) returns Completed: false with Status InProgress, so a script can poll; a failed creation throws the CLI message.
     Permission sets are assigned afterwards with Grant-SalesforcePermissionSet (psfdx), which asks for confirmation.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org resume scratch (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -WaitMinutes = --wait.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     Job ID of the incomplete scratch org create that you want to resume. Passed to sf as --job-id.
 
@@ -975,14 +979,6 @@ function Resume-SalesforceScratchOrg {
 
     .EXAMPLE
     Resume-SalesforceScratchOrg -JobId 2SR000000000001AAA -WaitMinutes 5
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org resume scratch (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -WaitMinutes = --wait.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1040,6 +1036,13 @@ function Remove-SalesforceScratchOrg {
     .DESCRIPTION
     Runs sf org delete scratch. This cannot be undone. Asks for confirmation and supports -WhatIf; -NoPrompt also turns off the CLI's own question.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org delete scratch (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org; -NoPrompt = --no-prompt.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org. Required.
 
@@ -1052,13 +1055,6 @@ function Remove-SalesforceScratchOrg {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org delete scratch (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org; -NoPrompt = --no-prompt.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1096,16 +1092,16 @@ function Remove-SalesforceScratchOrgs {
     .DESCRIPTION
     Lists scratch orgs with Get-SalesforceScratchOrgs and deletes each one with Remove-SalesforceScratchOrg -NoPrompt. One confirmation names all of them. This cannot be undone. Supports -WhatIf.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceScratchOrgs, Remove-SalesforceScratchOrg. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .EXAMPLE
     Remove-SalesforceScratchOrgs -WhatIf
     List the orgs that would be deleted.
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceScratchOrgs, Remove-SalesforceScratchOrg. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md

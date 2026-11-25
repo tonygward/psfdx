@@ -133,6 +133,13 @@ function Watch-SalesforceDebugLogs {
     .DESCRIPTION
     Runs sf apex tail log with --color, which keeps running until you press Ctrl+C. Unless you pass -SkipTraceFlag the CLI first creates a trace flag for you, which stays after you stop.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex tail log (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -DebugLevel = --debug-level; -SkipTraceFlag = --skip-trace-flag; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER DebugLevel
     Debug level to set on the DEVELOPER_LOG trace flag for your user. Passed to sf as --debug-level.
 
@@ -145,14 +152,6 @@ function Watch-SalesforceDebugLogs {
     .EXAMPLE
     Watch-SalesforceDebugLogs -DebugLevel SFDC_DevConsole -TargetOrg dev1
     Follow the logs of the org.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex tail log (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -DebugLevel = --debug-level; -SkipTraceFlag = --skip-trace-flag; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -189,20 +188,19 @@ function Select-SalesforceDebugLogs {
     .DESCRIPTION
     Runs sf apex list log and returns one object per log (Id, Application, Operation, StartTime, LogLength, and so on), in the order the CLI returns them.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex list log (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Select-SalesforceDebugLogs -TargetOrg dev1 | Select-Object -First 5
     The five newest logs.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex list log (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -234,6 +232,13 @@ function Get-SalesforceDebugLogs {
     .DESCRIPTION
     Runs sf apex get log with --log-id or --number. Give exactly one of -LogId and -Last. With -OutputDir the CLI saves the logs as files; with -Raw the text is returned as it is.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex get log (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -OutputDir = --output-dir; -LogId = --log-id; -Last = --number; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER OutputDir
     Directory for saving the log files. Passed to sf as --output-dir.
 
@@ -252,14 +257,6 @@ function Get-SalesforceDebugLogs {
     .EXAMPLE
     Get-SalesforceDebugLogs -Last 1 -Raw -TargetOrg dev1
     The newest log, as text.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex get log (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -OutputDir = --output-dir; -LogId = --log-id; -Last = --number; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -327,6 +324,10 @@ function Export-SalesforceDebugLogs {
     .DESCRIPTION
     Lists the logs with Select-SalesforceDebugLogs, keeps the first -Limit of them and writes each one with Get-SalesforceDebugLogs to <log id>.log in the output folder, with a progress bar. Existing files with the same name are overwritten.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceDebugLogs, Select-SalesforceDebugLogs. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER Limit
     How many logs to save, taken from the start of the list the CLI returns. Default 50. Default: 50.
 
@@ -342,10 +343,6 @@ function Export-SalesforceDebugLogs {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceDebugLogs, Select-SalesforceDebugLogs. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -396,17 +393,16 @@ function Convert-SalesforceDebugLog {
     .DESCRIPTION
     Does not use the Salesforce CLI. Pipe in the text of a log, for example from Get-SalesforceDebugLogs -Raw; the first (header) line is skipped and each remaining line is split on | into DateTime, LogType and, when present, SubType and Detail. It writes a warning that it is still in development, so the properties may change.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It works locally in PowerShell and .NET.
+
     .PARAMETER Log
     The log text to convert. Accepts pipeline input. Required.
 
     .EXAMPLE
     Get-SalesforceDebugLogs -Last 1 -Raw -TargetOrg dev1 | Convert-SalesforceDebugLog | Select-Object -First 20
     The first twenty log lines as objects.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It works locally in PowerShell and .NET.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -461,6 +457,14 @@ function Enable-SalesforceDebugLogging {
     .DESCRIPTION
     Runs sf apex trace create. Identify what to trace with one of -TracedEntityId, -Username, -ApexClass or -ApexTrigger; the last three are looked up with a SOQL query first and the cmdlet stops if no record, or more than one, matches. -DebugLevel names an existing debug level. The trace flag stays until it expires or you remove it with Disable-SalesforceDebugLogging.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex trace create (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TracedEntityId = --traced-entity-id; -DebugLevel = --debug-level; -LogType = --log-type; -Duration = --duration; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Also calls these psfdx cmdlets: Select-SalesforceRecords.
+
     .PARAMETER TracedEntityId
     ID of the user, Apex class, or Apex trigger to trace. Passed to sf as --traced-entity-id. Required in the Id parameter set.
 
@@ -491,14 +495,6 @@ function Enable-SalesforceDebugLogging {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex trace create (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TracedEntityId = --traced-entity-id; -DebugLevel = --debug-level; -LogType = --log-type; -Duration = --duration; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Also calls these psfdx cmdlets: Select-SalesforceRecords.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -562,20 +558,19 @@ function Get-SalesforceDebugLogging {
     .DESCRIPTION
     Runs sf apex trace list and returns one object per trace flag. Pipe them to Disable-SalesforceDebugLogging to remove them.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex trace list (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
     .EXAMPLE
     Get-SalesforceDebugLogging -TargetOrg dev1
     Active trace flags.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex trace list (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -608,6 +603,13 @@ function Disable-SalesforceDebugLogging {
     -TraceId can come from the pipeline: a trace flag from Get-SalesforceDebugLogging is used through its Id. Each flag is confirmed on its own,
     so -WhatIf previews every delete, and an org with no trace flags deletes nothing.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf apex trace delete (plugin @salesforce/plugin-apex)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TraceId = --trace-flag-id; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TraceId
     ID of the trace flag to delete. Passed to sf as --trace-flag-id. Required. Alias: Id, TraceFlagId. Accepts input from the pipeline by property name.
 
@@ -616,14 +618,6 @@ function Disable-SalesforceDebugLogging {
 
     .EXAMPLE
     Get-SalesforceDebugLogging -TargetOrg myorg | Disable-SalesforceDebugLogging -TargetOrg myorg -WhatIf
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf apex trace delete (plugin @salesforce/plugin-apex)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TraceId = --trace-flag-id; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -668,6 +662,13 @@ function Get-SalesforceFlowInterviews {
     .DESCRIPTION
     Runs sf data query on FlowInterview (Id, CreatedDate, InterviewLabel, InterviewStatus, Error) filtered by status and optional date, newest first. Values are escaped as SOQL literals.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf data query (plugin @salesforce/plugin-data)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Limit = --query; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Type
     Interview status to list: Error, Paused, Running, Completed, VersionPaused, Autosaved, Expired, or All (the default). Default: All. Valid values: Error, Paused, Running, Completed, VersionPaused, Autosaved, Expired, All.
 
@@ -683,14 +684,6 @@ function Get-SalesforceFlowInterviews {
     .EXAMPLE
     Get-SalesforceFlowInterviews -Type Error -After (Get-Date).AddDays(-1) -TargetOrg prod
     Flow errors in the last day.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf data query (plugin @salesforce/plugin-data)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Limit = --query; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -749,6 +742,14 @@ function Get-SalesforceLoginHistory {
     .DESCRIPTION
     Runs sf data query on LoginHistory (Id, LoginTime, UserId, SourceIp, Application, Status). The user filter is applied through a subquery on User. Values are escaped as SOQL literals.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf data query (plugin @salesforce/plugin-data)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Limit = --query; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Also calls these psfdx cmdlets: Get-SalesforceUsers.
+
     .PARAMETER After
     Only logins at or after this time.
 
@@ -767,15 +768,6 @@ function Get-SalesforceLoginHistory {
     .EXAMPLE
     Get-SalesforceLoginHistory -Username me@example.com -Limit 20 -TargetOrg prod
     The last twenty logins of one user.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf data query (plugin @salesforce/plugin-data)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Limit = --query; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Also calls these psfdx cmdlets: Get-SalesforceUsers.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -857,6 +849,10 @@ function Get-SalesforceLoginFailures {
     .DESCRIPTION
     Calls Get-SalesforceLoginHistory with the same filters and keeps the rows whose Status is not Success. Returns an empty array when there are none.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceLoginHistory. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER After
     Only logins at or after this time.
 
@@ -875,11 +871,6 @@ function Get-SalesforceLoginFailures {
     .EXAMPLE
     Get-SalesforceLoginFailures -After (Get-Date).AddDays(-1) -TargetOrg prod
     Failed logins in the last day.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceLoginHistory. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -936,6 +927,13 @@ function Select-SalesforceEventFiles {
     .DESCRIPTION
     Runs sf data query on EventLogFile (Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate), newest log date first, with optional filters. Values are escaped as SOQL literals.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf data query (plugin @salesforce/plugin-data)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -EventType = --query; -After = --query; -Before = --query; -Limit = --query; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER EventType
     Only this event type, for example Login or ApexExecution. Passed to sf as --query.
 
@@ -954,14 +952,6 @@ function Select-SalesforceEventFiles {
     .EXAMPLE
     Select-SalesforceEventFiles -EventType Login -Limit 10 -TargetOrg prod
     The ten newest login files.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf data query (plugin @salesforce/plugin-data)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -EventType = --query; -After = --query; -Before = --query; -Limit = --query; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1014,6 +1004,15 @@ function Get-SalesforceEventFile {
     .DESCRIPTION
     Finds the newest REST API version of the org, then runs sf api request rest on /services/data/<version>/sobjects/EventLogFile/<Id>/Logfile and returns the CSV text. The ID must be a 15 or 18 character Salesforce ID.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf api request rest (plugin @salesforce/plugin-api)
+          Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
+          Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Also calls these psfdx cmdlets: Get-SalesforceLatestApiVersion.
+
     .PARAMETER Id
     ID of the EventLogFile record. Required.
 
@@ -1023,16 +1022,6 @@ function Get-SalesforceEventFile {
     .EXAMPLE
     Get-SalesforceEventFile -Id 0AT000000000001AAA -TargetOrg prod
     The CSV of that file.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf api request rest (plugin @salesforce/plugin-api)
-      Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
-      Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Also calls these psfdx cmdlets: Get-SalesforceLatestApiVersion.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1067,6 +1056,10 @@ function Export-SalesforceEventFile {
     .DESCRIPTION
     Gets the file with Get-SalesforceEventFile and writes it to <Id>.csv in the output folder. The ID must be a 15 or 18 character Salesforce ID, so it cannot point outside the folder.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Get-SalesforceEventFile. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER Id
     ID of the EventLogFile record. Required.
 
@@ -1082,10 +1075,6 @@ function Export-SalesforceEventFile {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Get-SalesforceEventFile. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -1129,6 +1118,14 @@ function Export-SalesforceEventFiles {
     .DESCRIPTION
     Finds files with Select-SalesforceEventFiles using the filters you give, then saves each one with Export-SalesforceEventFile, with a progress bar. See Select-SalesforceEventFiles for how the filters work.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf data query (plugin @salesforce/plugin-data)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -EventType = --query; -After = --query; -Before = --query; -Limit = --query; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+        Also calls these psfdx cmdlets: Export-SalesforceEventFile.
+
     .PARAMETER EventType
     SOQL query to execute. Passed to sf as --query.
 
@@ -1153,14 +1150,6 @@ function Export-SalesforceEventFiles {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf data query (plugin @salesforce/plugin-data)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -EventType = --query; -After = --query; -Before = --query; -Limit = --query; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
-    Also calls these psfdx cmdlets: Export-SalesforceEventFile.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1228,17 +1217,16 @@ function Out-Notepad {
     .DESCRIPTION
     Does not use the Salesforce CLI. Pipe text in; it is written to a new temporary file that Notepad opens. The file is not deleted afterwards, so remove it if the text is sensitive. On other systems it does nothing.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It works locally in PowerShell and .NET.
+
     .PARAMETER Content
     The text to show. Accepts pipeline input. Required.
 
     .EXAMPLE
     Get-SalesforceDebugLogs -Last 1 -Raw -TargetOrg dev1 | Out-Notepad
     Read the newest log in Notepad.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It works locally in PowerShell and .NET.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md

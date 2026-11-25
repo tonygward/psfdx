@@ -4,7 +4,7 @@ The comment-based help of every exported psfdx command was written or completed 
 
 ## What every command's help has
 
-`Get-Help <command> -Full` shows a synopsis, a description, one entry for every parameter (with its default, valid values, whether it is required, and the CLI flag it feeds), written examples, notes and links. The notes always carry a **Salesforce CLI mapping** section:
+`Get-Help <command> -Full` shows a synopsis, a description, one entry for every parameter (with its default, valid values, whether it is required, and the CLI flag it feeds), written examples and links. The **SALESFORCE CLI** subsection is also visible in default help, after the behavioural description:
 
 - for a command that runs `sf`: the executable (found on the PATH at run time; no path or version is stored), the exact command or commands it runs, the old name or word order it is invoked by when that differs from the canonical command, the flags of that command that no psfdx cmdlet passes, the values it cannot pass, and how each parameter maps to a flag;
 - for a command that does not: a statement that it does not run an `sf` command and how it works instead (REST API, npm, other psfdx cmdlets, or PowerShell and .NET only).

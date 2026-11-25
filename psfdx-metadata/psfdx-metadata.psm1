@@ -183,14 +183,13 @@ function Clear-SalesforceMetadataTypeCache {
     .DESCRIPTION
     Does not use the Salesforce CLI. psfdx caches the list of metadata types for the session so -Type can be completed and checked; this removes the cache so the next use asks the org again.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It works locally in PowerShell and .NET.
+
     .EXAMPLE
     Clear-SalesforceMetadataTypeCache
     Force a fresh list of metadata types.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It works locally in PowerShell and .NET.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -403,6 +402,13 @@ function Retrieve-SalesforceComponent {
     .DESCRIPTION
     Runs sf project retrieve start with --metadata Type, Type:Name or Type:Name.ChildName. The type is checked against the org's metadata types.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Type = --metadata; -Name = --metadata; -ChildName = --metadata; -SourceDir = --source-dir; -RootTypeWithDependencies = --root-type-with-dependencies; -TargetOrg = --target-org; -Wait = --wait; -OutputDir = --output-dir; -IgnoreConflicts = --ignore-conflicts.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Type
     Metadata type, for example ApexClass or CustomField. Required unless you give -SourceDir; completes from the org's metadata types and is checked.
 
@@ -436,13 +442,6 @@ function Retrieve-SalesforceComponent {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Type = --metadata; -Name = --metadata; -ChildName = --metadata; -SourceDir = --source-dir; -RootTypeWithDependencies = --root-type-with-dependencies; -TargetOrg = --target-org; -Wait = --wait; -OutputDir = --output-dir; -IgnoreConflicts = --ignore-conflicts.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -517,6 +516,13 @@ function Retrieve-SalesforceMetadata {
     .DESCRIPTION
     Runs sf project retrieve start with --manifest and --target-metadata-dir, optionally unzipped. Both the manifest file and the output folder must exist.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Manifest = --manifest; -OutputDir = --target-metadata-dir; -Wait = --wait; -Unzip = --unzip; -SinglePackage = --single-package; -ZipFileName = --zip-file-name; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Manifest
     File path for the manifest (package.xml) that specifies the components to retrieve. Passed to sf as --manifest. Required.
 
@@ -544,13 +550,6 @@ function Retrieve-SalesforceMetadata {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Manifest = --manifest; -OutputDir = --target-metadata-dir; -Wait = --wait; -Unzip = --unzip; -SinglePackage = --single-package; -ZipFileName = --zip-file-name; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -601,6 +600,13 @@ function Retrieve-SalesforcePackage {
     .DESCRIPTION
     Runs sf project retrieve start with --package-name and --output-dir. The output folder must exist.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --package-name; -OutputDir = --output-dir; -Wait = --wait; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Name of the package to retrieve. Passed as --package-name. Required.
 
@@ -619,13 +625,6 @@ function Retrieve-SalesforcePackage {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --package-name; -OutputDir = --output-dir; -Wait = --wait; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -667,6 +666,10 @@ function Retrieve-SalesforceField {
     .DESCRIPTION
     A shortcut for Retrieve-SalesforceComponent -Type CustomField with the object as the name and the field as the child name.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Retrieve-SalesforceComponent. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER ObjectName
     API name of the object that holds the field. Required.
 
@@ -682,10 +685,6 @@ function Retrieve-SalesforceField {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Retrieve-SalesforceComponent. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -709,6 +708,10 @@ function Retrieve-SalesforceValidationRule {
     .DESCRIPTION
     A shortcut for Retrieve-SalesforceComponent -Type ValidationRule with the object and rule name combined.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Retrieve-SalesforceComponent. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER ObjectName
     API name of the object that holds the rule. Required.
 
@@ -724,10 +727,6 @@ function Retrieve-SalesforceValidationRule {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Retrieve-SalesforceComponent. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -751,6 +750,15 @@ function Retrieve-SalesforceOrg {
     .DESCRIPTION
     Runs two commands. First sf project generate manifest --from-org --name=allMetadata --output-dir . writes allMetadata.xml in the current folder; then sf project retrieve start --manifest allMetadata.xml retrieves everything it lists. This can take a long time on a large org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project generate manifest (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the org to retrieve from. Passed as --from-org to sf project generate manifest and as --target-org to sf project retrieve start. If omitted, the CLI uses the default target org.
 
@@ -763,15 +771,6 @@ function Retrieve-SalesforceOrg {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project generate manifest (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Command run: sf project retrieve start (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -820,6 +819,13 @@ function Deploy-SalesforceComponent {
 
     .DESCRIPTION
     Runs sf project deploy start with --metadata Type:Name or --source-dir, with optional test level and tests. -DryRun adds --dry-run, which validates without deploying, so only a real deployment is confirmed. Supports -WhatIf and -Confirm (no prompt by default).
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy start (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Type = --metadata; -Name = --metadata; -SourceDir = --source-dir; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -Wait = --wait; -TestLevel = --test-level; -Tests = --tests; -Async = --async; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir; -DryRun = --dry-run; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER Type
     Metadata type, for example ApexClass. Completes from the org's metadata types. Needed unless -SourceDir is given. Passed to sf as --metadata.
@@ -882,13 +888,6 @@ function Deploy-SalesforceComponent {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy start (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Type = --metadata; -Name = --metadata; -SourceDir = --source-dir; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -Wait = --wait; -TestLevel = --test-level; -Tests = --tests; -Async = --async; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir; -DryRun = --dry-run; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -989,6 +988,13 @@ function Deploy-SalesforceMetadata {
     .DESCRIPTION
     Runs sf project deploy start with --manifest, --metadata-dir or --single-package. Give exactly one of -Manifest, -InputDir and -ManifestPackage. Supports -WhatIf and -Confirm (no prompt by default).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy start (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Manifest = --manifest; -InputDir = --metadata-dir; -ManifestPackage = --single-package; -TargetOrg = --target-org; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -PreDestructiveChanges = --pre-destructive-changes; -PostDestructiveChanges = --post-destructive-changes; -PurgeOnDelete = --purge-on-delete; -Async = --async; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Manifest
     Path of package.xml. Passed as --manifest.
 
@@ -1041,13 +1047,6 @@ function Deploy-SalesforceMetadata {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy start (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Manifest = --manifest; -InputDir = --metadata-dir; -ManifestPackage = --single-package; -TargetOrg = --target-org; -IgnoreConflicts = --ignore-conflicts; -IgnoreWarnings = --ignore-warnings; -IgnoreErrors = --ignore-errors; -PreDestructiveChanges = --pre-destructive-changes; -PostDestructiveChanges = --post-destructive-changes; -PurgeOnDelete = --purge-on-delete; -Async = --async; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1220,6 +1219,13 @@ function Test-SalesforceDeploy {
     .DESCRIPTION
     Runs sf project deploy validate. Nothing is deployed; a passing validation can be released later with Start-SalesforceQuickDeploy. The test level must run tests (NoTests is not offered).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy validate (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Manifest = --manifest; -SourceDir = --source-dir; -InputDir = --metadata-dir; -Metadata = --metadata; -PreDestructiveChanges = --pre-destructive-changes; -PostDestructiveChanges = --post-destructive-changes; -PurgeOnDelete = --purge-on-delete; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir; -ManifestPackage = --single-package; -TestLevel = --test-level; -Tests = --tests; -IgnoreWarnings = --ignore-warnings; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Manifest
     Full file path for manifest (package.xml) of components to validate for deployment. Passed to sf as --manifest.
 
@@ -1279,14 +1285,6 @@ function Test-SalesforceDeploy {
     .EXAMPLE
     Test-SalesforceDeploy -SourceDir force-app -TestLevel TestsInOrg -TargetOrg prod
     Validate against production with all local tests.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy validate (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Manifest = --manifest; -SourceDir = --source-dir; -InputDir = --metadata-dir; -Metadata = --metadata; -PreDestructiveChanges = --pre-destructive-changes; -PostDestructiveChanges = --post-destructive-changes; -PurgeOnDelete = --purge-on-delete; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir; -ManifestPackage = --single-package; -TestLevel = --test-level; -Tests = --tests; -IgnoreWarnings = --ignore-warnings; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1392,6 +1390,13 @@ function Start-SalesforceQuickDeploy {
     .DESCRIPTION
     Runs sf project deploy quick for the validation job ID (or the most recent with -UseMostRecent). The validation must have passed recently. Asks for confirmation and supports -WhatIf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy quick (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     Job ID of the deployment you want to quick deploy. Passed to sf as --job-id.
 
@@ -1419,13 +1424,6 @@ function Start-SalesforceQuickDeploy {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy quick (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1480,6 +1478,13 @@ function Get-SalesforceDeployStatus {
     .DESCRIPTION
     Runs sf project deploy report for a job ID, or for the most recent deployment with -UseMostRecent. Give one of the two. With -Wait the CLI keeps polling.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy report (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -Wait = --wait; -TargetOrg = --target-org; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     Job ID of the deploy operation you want to check the status of. Passed to sf as --job-id.
 
@@ -1503,14 +1508,6 @@ function Get-SalesforceDeployStatus {
     .EXAMPLE
     Get-SalesforceDeployStatus -UseMostRecent -TargetOrg dev1
     Status of the last deployment.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy report (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -Wait = --wait; -TargetOrg = --target-org; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1556,6 +1553,13 @@ function Resume-SalesforceDeploy {
     .DESCRIPTION
     Runs sf project deploy resume for a job ID, or the most recent one with -UseMostRecent. The CLI finds the org from its record of the job, so there is no -TargetOrg.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy resume (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -Wait = --wait; -ConciseResults = --concise; -DetailedResults = --verbose; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     Job ID of the deploy operation you want to resume. Passed to sf as --job-id.
 
@@ -1582,14 +1586,6 @@ function Resume-SalesforceDeploy {
     .EXAMPLE
     Resume-SalesforceDeploy -UseMostRecent -Wait 10
     Wait up to ten more minutes for the last deployment.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy resume (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -Wait = --wait; -ConciseResults = --concise; -DetailedResults = --verbose; -CoverageFormatters = --coverage-formatters; -Junit = --junit; -ResultsDir = --results-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1639,6 +1635,13 @@ function Stop-SalesforceDeploy {
     .DESCRIPTION
     Runs sf project deploy cancel for a job ID or the most recent one. Asks for confirmation and supports -WhatIf.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy cancel (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -JobId = --job-id; -Wait = --wait; -Async = --async; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER JobId
     Job ID of the deploy operation you want to cancel. Passed to sf as --job-id.
 
@@ -1660,13 +1663,6 @@ function Stop-SalesforceDeploy {
 
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy cancel (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -JobId = --job-id; -Wait = --wait; -Async = --async; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1782,6 +1778,13 @@ function Get-SalesforceDeployPreview {
     Source tracking is required: scratch orgs and tracked sandboxes work; other orgs return the CLI error with guidance.
     Narrow the preview with -SourceDir, -Manifest (one package.xml; the CLI accepts only one) or -Metadata (any combination the CLI accepts).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project deploy preview (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SourceDir = --source-dir; -Manifest = --manifest; -Metadata = --metadata; -IgnoreConflicts = --ignore-conflicts; -ConciseResults = --concise; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SourceDir
     Path to the local source files to preview. Passed to sf as --source-dir.
 
@@ -1804,14 +1807,6 @@ function Get-SalesforceDeployPreview {
 
     .EXAMPLE
     $p = Get-SalesforceDeployPreview -SourceDir force-app/main/default/classes; if ($p.HasConflicts) { $p.Conflicts }
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project deploy preview (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SourceDir = --source-dir; -Manifest = --manifest; -Metadata = --metadata; -IgnoreConflicts = --ignore-conflicts; -ConciseResults = --concise; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1859,6 +1854,13 @@ function Get-SalesforceRetrievePreview {
     Read-only: nothing is retrieved or changed. Returns the same object as Get-SalesforceDeployPreview. The CLI command takes no selection
     flags, so it previews the org's tracked changes. Source tracking is required (see Get-SalesforceDeployPreview).
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project retrieve preview (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -IgnoreConflicts = --ignore-conflicts; -ConciseResults = --concise; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER IgnoreConflicts
     Don't display conflicts in the preview of the retrieval. Adds --ignore-conflicts.
     .PARAMETER ConciseResults
@@ -1869,14 +1871,6 @@ function Get-SalesforceRetrievePreview {
 
     .EXAMPLE
     Get-SalesforceRetrievePreview -TargetOrg my-scratch
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project retrieve preview (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -IgnoreConflicts = --ignore-conflicts; -ConciseResults = --concise; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -1917,6 +1911,13 @@ function New-SalesforceManifest {
     .DESCRIPTION
     Runs sf project generate manifest and returns the CLI result (the path of the manifest written). Build the manifest from -Metadata names, from -SourceDir files, or from the metadata of an org with -FromOrg. Use -Type to write a destructive-changes or package manifest instead of package.xml. The output folder must already exist.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project generate manifest (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Metadata = --metadata; -ExcludedMetadata = --excluded-metadata; -SourceDir = --source-dir; -FromOrg = --from-org; -IncludePackages = --include-packages; -Name = --name; -OutputDir = --output-dir; -Type = --type.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Metadata
     Metadata components to put in the manifest, such as ApexClass:MyClass. Passed as one --metadata per value.
 
@@ -1951,13 +1952,6 @@ function New-SalesforceManifest {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project generate manifest (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Metadata = --metadata; -ExcludedMetadata = --excluded-metadata; -SourceDir = --source-dir; -FromOrg = --from-org; -IncludePackages = --include-packages; -Name = --name; -OutputDir = --output-dir; -Type = --type.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2013,6 +2007,13 @@ function ConvertTo-SalesforceSourceFormat {
     .DESCRIPTION
     Runs sf project convert mdapi. The files in -RootDir, which you retrieved as a package, are converted into source format and written to -OutputDir, or to the default package folder of the project. Use -Manifest, -Metadata or -MetadataDir to convert only part of them. Works on local files only; it does not touch an org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project convert mdapi (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -RootDir = --root-dir; -OutputDir = --output-dir; -Manifest = --manifest; -Metadata = --metadata; -MetadataDir = --metadata-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER RootDir
     Folder that holds the Metadata API files. It must exist. Passed as --root-dir. Required.
 
@@ -2034,13 +2035,6 @@ function ConvertTo-SalesforceSourceFormat {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project convert mdapi (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -RootDir = --root-dir; -OutputDir = --output-dir; -Manifest = --manifest; -Metadata = --metadata; -MetadataDir = --metadata-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2085,6 +2079,13 @@ function ConvertTo-SalesforceMdapiFormat {
     .DESCRIPTION
     Runs sf project convert source. The source in the project (or in -RootDir or -SourceDir) is converted into the format that Metadata API deploys, and written to -OutputDir. Works on local files only; it does not touch an org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project convert source (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -RootDir = --root-dir; -SourceDir = --source-dir; -OutputDir = --output-dir; -Manifest = --manifest; -Metadata = --metadata; -PackageName = --package-name.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER RootDir
     Folder that holds the source files. Passed as --root-dir. The CLI uses the project package folders when omitted.
 
@@ -2109,13 +2110,6 @@ function ConvertTo-SalesforceMdapiFormat {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project convert source (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -RootDir = --root-dir; -SourceDir = --source-dir; -OutputDir = --output-dir; -Manifest = --manifest; -Metadata = --metadata; -PackageName = --package-name.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2166,6 +2160,13 @@ function Enable-SalesforceSourceBehavior {
     .DESCRIPTION
     Runs sf project convert source-behavior, a beta command, so its name, flags and result can change in a later CLI release. It rewrites the source files of the project and adds the behavior to sfdx-project.json. Supports -WhatIf and -Confirm (no prompt by default). -DryRun asks the CLI to show what it would change and changes nothing, so it runs without confirmation.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project convert source-behavior (plugin @salesforce/plugin-deploy-retrieve, beta)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Behavior = --behavior; -DryRun = --dry-run; -PreserveTempDir = --preserve-temp-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Behavior
     The behavior to turn on. Valid values: decomposeCustomLabelsBeta2, decomposeCustomLabelsBeta, decomposePermissionSetBeta, decomposePermissionSetBeta2, decomposeSharingRulesBeta, decomposeWorkflowBeta, decomposeExternalServiceRegistrationBeta. Passed as --behavior. Required.
 
@@ -2185,13 +2186,6 @@ function Enable-SalesforceSourceBehavior {
     .NOTES
     This runs a beta Salesforce CLI command. Beta commands can change or be removed without notice; psfdx does not promise they stay stable.
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project convert source-behavior (plugin @salesforce/plugin-deploy-retrieve, beta)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Behavior = --behavior; -DryRun = --dry-run; -PreserveTempDir = --preserve-temp-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2241,20 +2235,19 @@ function Get-SalesforceIgnoredFiles {
     .DESCRIPTION
     Runs sf project list ignored and returns one path per ignored file. Read-only. Use -SourceDir to check one folder instead of every package directory.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project list ignored (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SourceDir = --source-dir.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER SourceDir
     Folder or file to check. It must exist. Passed as --source-dir. The CLI checks every package directory when omitted.
 
     .EXAMPLE
     Get-SalesforceIgnoredFiles -SourceDir force-app/main/default/classes
     Which class files does .forceignore skip.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project list ignored (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SourceDir = --source-dir.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2294,6 +2287,13 @@ function Remove-SalesforceSource {
 
     .DESCRIPTION
     Runs sf project delete source. The named source files or metadata components are deleted from a org that does not use source tracking, and their files are deleted from the project. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. -CheckOnly validates the delete without making it, so it needs no confirmation. Give -SourceDir or -Metadata. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
+
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project delete source (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -SourceDir = --source-dir; -Metadata = --metadata; -CheckOnly = --check-only; -ForceOverwrite = --force-overwrite; -TrackSource = --track-source; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -DetailedResults = --verbose; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .PARAMETER SourceDir
     Source folders or files to delete. Each path must exist. Passed as one --source-dir per value.
@@ -2339,13 +2339,6 @@ function Remove-SalesforceSource {
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project delete source (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -SourceDir = --source-dir; -Metadata = --metadata; -CheckOnly = --check-only; -ForceOverwrite = --force-overwrite; -TrackSource = --track-source; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -DetailedResults = --verbose; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2424,6 +2417,13 @@ function Remove-SalesforceSourceTracking {
     .DESCRIPTION
     Runs sf project delete tracking. The local files that record what has changed between the project and the org are deleted; nothing in the org or in your source files changes, but the next deploy or retrieve cannot tell what changed. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project delete tracking (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER NoPrompt
     Do not ask for confirmation. Use it in unattended scripts. -WhatIf still shows what would happen without deleting.
 
@@ -2436,13 +2436,6 @@ function Remove-SalesforceSourceTracking {
 
     .NOTES
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project delete tracking (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -NoPrompt = --no-prompt; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2483,6 +2476,13 @@ function Reset-SalesforceSourceTracking {
     .DESCRIPTION
     Runs sf project reset tracking. Source tracking is reset to the latest revision in the org, or to the revision number you give with -Revision. After a reset the next deploy or retrieve starts from that point, so changes made before it are no longer reported. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. psfdx confirms first, so it always passes --no-prompt and the CLI does not ask a second time.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf project reset tracking (plugin @salesforce/plugin-deploy-retrieve)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Revision = --revision; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Revision
     SourceMember revision number to reset to. Passed as --revision. The CLI uses the latest revision when omitted; 0 resets to the beginning.
 
@@ -2499,13 +2499,6 @@ function Reset-SalesforceSourceTracking {
     .NOTES
     Changes data or settings in the org. Try it with -WhatIf first where the cmdlet supports it.
     Changes local files or local Salesforce CLI configuration on this computer.
-
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf project reset tracking (plugin @salesforce/plugin-deploy-retrieve)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Revision = --revision; -NoPrompt = --no-prompt; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2554,6 +2547,13 @@ function Describe-SalesforceObjects {
     .DESCRIPTION
     Runs sf sobject list and returns the object names. With no category the CLI lists all objects.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf sobject list (plugin @salesforce/plugin-schema)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org; -Category = --sobject.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Category
     Which objects to list. Valid values: all, standard, custom. The CLI default is all. Passed to sf as --sobject.
 
@@ -2567,14 +2567,6 @@ function Describe-SalesforceObjects {
     .EXAMPLE
     Describe-SalesforceObjects -Category custom -TargetOrg dev1
     Only the custom objects.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf sobject list (plugin @salesforce/plugin-schema)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org; -Category = --sobject.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2610,6 +2602,13 @@ function Describe-SalesforceObject {
     .DESCRIPTION
     Runs sf sobject describe and returns the full description as an object. Use Describe-SalesforceFields for just the field list.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf sobject describe (plugin @salesforce/plugin-schema)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --sobject; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     API name of the object. Passed as --sobject. Required.
 
@@ -2622,14 +2621,6 @@ function Describe-SalesforceObject {
     .EXAMPLE
     Describe-SalesforceObject -Name Account -TargetOrg dev1
     The full description of Account.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf sobject describe (plugin @salesforce/plugin-schema)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --sobject; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2667,6 +2658,10 @@ function Describe-SalesforceFields {
     .DESCRIPTION
     Describes the object with Describe-SalesforceObject and returns name, label, type and byteLength for each field, sorted by name.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Describe-SalesforceObject. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER ObjectName
     API name of the object. Required.
 
@@ -2679,11 +2674,6 @@ function Describe-SalesforceFields {
     .EXAMPLE
     Describe-SalesforceFields -ObjectName Account -TargetOrg dev1
     The fields of Account.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Describe-SalesforceObject. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2715,6 +2705,13 @@ function Describe-SalesforceMetadataTypes {
     .DESCRIPTION
     Runs sf org list metadata-types and returns just the type names (the xmlName of each type), for example ApexClass. Returns an empty array when the org reports none.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list metadata-types (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TargetOrg = --target-org; -OutputFile = --output-file.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TargetOrg
     Username or alias of the target org. Not required if the `target-org` configuration variable is already set. Passed to sf as --target-org.
 
@@ -2724,14 +2721,6 @@ function Describe-SalesforceMetadataTypes {
     .EXAMPLE
     Describe-SalesforceMetadataTypes -TargetOrg dev1
     Every metadata type the org supports.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list metadata-types (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TargetOrg = --target-org; -OutputFile = --output-file.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2780,6 +2769,13 @@ function Get-SalesforceMetadataComponents {
     .DESCRIPTION
     Runs sf org list metadata for a metadata type, for example ApexClass or CustomObject, and returns one object per component (fullName, fileName, type, id, createdDate, lastModifiedDate and who changed it). Use Describe-SalesforceMetadataTypes to see which types an org has. Types that live in folders, such as Report or EmailTemplate, need -Folder.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf org list metadata (plugin @salesforce/plugin-org)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -MetadataType = --metadata-type; -Folder = --folder; -OutputFile = --output-file; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER MetadataType
     Metadata type to list, for example ApexClass. Passed to sf as --metadata-type. Required. Tab completion offers the types of the org.
 
@@ -2799,14 +2795,6 @@ function Get-SalesforceMetadataComponents {
     .EXAMPLE
     Get-SalesforceMetadataComponents -MetadataType Report -Folder Sales -TargetOrg dev1
     The reports in the Sales folder.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf org list metadata (plugin @salesforce/plugin-org)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -MetadataType = --metadata-type; -Folder = --folder; -OutputFile = --output-file; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -2850,6 +2838,10 @@ function Build-SalesforceQuery {
     .DESCRIPTION
     Reads the object's fields with Describe-SalesforceFields and returns the query text, for example SELECT Id,Name FROM Account. Use the switches to leave out groups of fields. Returns an empty string when the object has no fields. Field and object names are checked so only valid API names end up in the query.
 
+    SALESFORCE CLI
+        This cmdlet does not run an sf command.
+        It is built on other psfdx cmdlets: Describe-SalesforceFields. They run the sf commands; this cmdlet adds PowerShell logic on top.
+
     .PARAMETER ObjectName
     API name of the object. Required.
 
@@ -2871,11 +2863,6 @@ function Build-SalesforceQuery {
     .EXAMPLE
     Build-SalesforceQuery -ObjectName Account -ExcludeAuditFields -TargetOrg dev1
     A query for the fields of Account without the audit fields.
-
-    .NOTES
-    Salesforce CLI mapping
-    This cmdlet does not run an sf command.
-    It is built on other psfdx cmdlets: Describe-SalesforceFields. They run the sf commands; this cmdlet adds PowerShell logic on top.
 
     .LINK
     https://github.com/tonygward/psfdx/blob/main/docs/cli-parity.md
@@ -2954,6 +2941,13 @@ function New-SalesforceCustomMetadataType {
     .DESCRIPTION
     Runs sf cmdt generate object, which writes the metadata file of a custom metadata type under a folder named <TypeName>__mdt. It works on local files and needs no org; run it inside a Salesforce DX project. Add fields with New-SalesforceCustomMetadataField and records with New-SalesforceCustomMetadataRecord. The result lists the type name, label, plural label and visibility.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf cmdt generate object (plugin @salesforce/plugin-custom-metadata)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TypeName = --type-name; -Label = --label; -PluralLabel = --plural-label; -Visibility = --visibility; -OutputDirectory = --output-directory.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TypeName
     Unique API name of the custom metadata type, without the __mdt suffix, for example MyCustomType. Letters, digits and underscores only. Passed to sf as --type-name. Required.
 
@@ -2972,14 +2966,6 @@ function New-SalesforceCustomMetadataType {
     .EXAMPLE
     New-SalesforceCustomMetadataType -TypeName Feature_Flag -Label 'Feature Flag' -PluralLabel 'Feature Flags' -Visibility Protected -OutputDirectory force-app/main/default/objects
     Create a protected type in the project's objects folder.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf cmdt generate object (plugin @salesforce/plugin-custom-metadata)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TypeName = --type-name; -Label = --label; -PluralLabel = --plural-label; -Visibility = --visibility; -OutputDirectory = --output-directory.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3020,6 +3006,13 @@ function New-SalesforceCustomMetadataField {
     .DESCRIPTION
     Runs sf cmdt generate field, which writes a field definition file. Point -OutputDirectory at the type's folder, for example force-app/main/default/objects/MyCmdt__mdt, so the file lands in its fields folder. It works on local files and needs no org. A Picklist field needs -PicklistValues; -DecimalPlaces is for Number and Percent fields.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf cmdt generate field (plugin @salesforce/plugin-custom-metadata)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Name = --name; -Type = --type; -Label = --label; -DecimalPlaces = --decimal-places; -PicklistValues = --picklist-values; -OutputDirectory = --output-directory.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Name
     Unique API name of the field, without the __c suffix. Letters, digits and underscores only. Passed to sf as --name. Required.
 
@@ -3045,14 +3038,6 @@ function New-SalesforceCustomMetadataField {
     .EXAMPLE
     New-SalesforceCustomMetadataField -Name Threshold -Type Number -DecimalPlaces 2 -OutputDirectory force-app/main/default/objects/Feature_Flag__mdt
     Add a number field with two decimal places.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf cmdt generate field (plugin @salesforce/plugin-custom-metadata)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Name = --name; -Type = --type; -Label = --label; -DecimalPlaces = --decimal-places; -PicklistValues = --picklist-values; -OutputDirectory = --output-directory.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3100,6 +3085,13 @@ function New-SalesforceCustomMetadataRecord {
     .DESCRIPTION
     Runs sf cmdt generate record, which writes a record file. The type must already be in the project (-InputDirectory says where to read its definition from). Give the field values as a hashtable in -Values, for example @{ Color__c = 'Red'; Size__c = 32 }; each pair is passed to the CLI as Field=Value. It works on local files and needs no org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf cmdt generate record (plugin @salesforce/plugin-custom-metadata)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -TypeName = --type-name; -RecordName = --record-name; -Label = --label; -Protected = --protected; -InputDirectory = --input-directory; -OutputDirectory = --output-directory.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER TypeName
     API name of the custom metadata type. The CLI needs the __mdt suffix, for example MyCmdt__mdt. Passed to sf as --type-name. Required.
 
@@ -3124,14 +3116,6 @@ function New-SalesforceCustomMetadataRecord {
     .EXAMPLE
     New-SalesforceCustomMetadataRecord -TypeName Feature_Flag__mdt -RecordName Checkout -Label 'Checkout' -Values @{ Mode__c = 'On'; Threshold__c = 2.5 }
     Create a record with two field values.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf cmdt generate record (plugin @salesforce/plugin-custom-metadata)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -TypeName = --type-name; -RecordName = --record-name; -Label = --label; -Protected = --protected; -InputDirectory = --input-directory; -OutputDirectory = --output-directory.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3188,6 +3172,13 @@ function New-SalesforceCustomMetadataRecordsFromCsv {
     .DESCRIPTION
     Runs sf cmdt generate records, which writes one record file per CSV row. The type must already be in the project. The Name column gives each record its name unless you pick another with -NameColumn; the other columns are field names. It returns one object per record. It works on local files and needs no org.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf cmdt generate records (plugin @salesforce/plugin-custom-metadata)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Csv = --csv; -TypeName = --type-name; -NameColumn = --name-column; -InputDirectory = --input-directory; -OutputDirectory = --output-directory.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Csv
     Path of the CSV file. The file must exist. Passed to sf as --csv. Required.
 
@@ -3206,14 +3197,6 @@ function New-SalesforceCustomMetadataRecordsFromCsv {
     .EXAMPLE
     New-SalesforceCustomMetadataRecordsFromCsv -Csv .\flags.csv -TypeName Feature_Flag -NameColumn Key
     One record per row, named from the Key column.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf cmdt generate records (plugin @salesforce/plugin-custom-metadata)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Csv = --csv; -TypeName = --type-name; -NameColumn = --name-column; -InputDirectory = --input-directory; -OutputDirectory = --output-directory.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3255,6 +3238,13 @@ function New-SalesforceCustomMetadataTypeFromOrg {
     .DESCRIPTION
     Runs sf cmdt generate fromorg. It reads the fields and the records of a custom object or custom setting in the org and writes a custom metadata type with those fields and one record per row into the project, so you can move the data to custom metadata. A field of a type that custom metadata does not support becomes a text field, unless you pass -IgnoreUnsupported. Only local files are written; nothing in the org changes.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf cmdt generate fromorg (plugin @salesforce/plugin-custom-metadata)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -DevName = --dev-name; -Sobject = --sobject; -Label = --label; -PluralLabel = --plural-label; -Visibility = --visibility; -IgnoreUnsupported = --ignore-unsupported; -TypeOutputDirectory = --type-output-directory; -RecordsOutputDir = --records-output-dir; -TargetOrg = --target-org.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER DevName
     API name for the new custom metadata type, without the __mdt suffix. Passed to sf as --dev-name. Required.
 
@@ -3285,14 +3275,6 @@ function New-SalesforceCustomMetadataTypeFromOrg {
     .EXAMPLE
     New-SalesforceCustomMetadataTypeFromOrg -DevName App_Config -Sobject App_Config__c -IgnoreUnsupported -TargetOrg dev1
     Turn the App_Config__c custom setting into a custom metadata type.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf cmdt generate fromorg (plugin @salesforce/plugin-custom-metadata)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -DevName = --dev-name; -Sobject = --sobject; -Label = --label; -PluralLabel = --plural-label; -Visibility = --visibility; -IgnoreUnsupported = --ignore-unsupported; -TypeOutputDirectory = --type-output-directory; -RecordsOutputDir = --records-output-dir; -TargetOrg = --target-org.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3357,6 +3339,13 @@ function New-SalesforceCustomObject {
     .DESCRIPTION
     Runs sf schema generate sobject, which writes the metadata files of a custom object, with its Name field. It is interactive: it asks you questions (the API name, plural label, field type and so on, with suggestions based on the label), so it needs a terminal and a Salesforce DX project folder. Run it as a plain command. If you assign its output to a variable or pipe it, PowerShell captures the output and you cannot see the questions. It returns nothing; the files it writes are the result. Use -UseDefaultFeatures to switch on the optional features, such as reports and search, without being asked about each. To add fields afterwards use New-SalesforceCustomField.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf schema generate sobject (plugin @salesforce/plugin-sobject)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Label = --label; -UseDefaultFeatures = --use-default-features.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Label
     Label of the custom object, for example My Object. The command suggests the API name and plural label from it. Passed to sf as --label. Required.
 
@@ -3366,14 +3355,6 @@ function New-SalesforceCustomObject {
     .EXAMPLE
     New-SalesforceCustomObject -Label 'Invoice' -UseDefaultFeatures
     Create the Invoice object and answer the rest of the questions at the prompt.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf schema generate sobject (plugin @salesforce/plugin-sobject)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Label = --label; -UseDefaultFeatures = --use-default-features.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3407,6 +3388,13 @@ function New-SalesforceCustomField {
     .DESCRIPTION
     Runs sf schema generate field, which writes the metadata file of a custom field on a standard or custom object. The object's source files must already be in the project (retrieve them first if they are not). It is interactive: it asks you questions (the API name, plural label, field type and so on, with suggestions based on the label), so it needs a terminal and a Salesforce DX project folder. Run it as a plain command. If you assign its output to a variable or pipe it, PowerShell captures the output and you cannot see the questions. It returns nothing; the files it writes are the result.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf schema generate field (plugin @salesforce/plugin-sobject)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Label = --label; -ObjectDirectory = --object.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Label
     Label of the field, for example Invoice Total. The command suggests the API name from it. Passed to sf as --label. Required.
 
@@ -3416,14 +3404,6 @@ function New-SalesforceCustomField {
     .EXAMPLE
     New-SalesforceCustomField -Label 'Invoice Total' -ObjectDirectory force-app/main/default/objects/Invoice__c
     Add a field to the Invoice object and answer the questions about its type.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf schema generate field (plugin @salesforce/plugin-sobject)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Label = --label; -ObjectDirectory = --object.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3458,20 +3438,19 @@ function New-SalesforcePlatformEvent {
     .DESCRIPTION
     Runs sf schema generate platformevent, which writes the metadata file of a platform event. It is interactive: it asks you questions (the API name, plural label, field type and so on, with suggestions based on the label), so it needs a terminal and a Salesforce DX project folder. Run it as a plain command. If you assign its output to a variable or pipe it, PowerShell captures the output and you cannot see the questions. It returns nothing; the files it writes are the result.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf schema generate platformevent (plugin @salesforce/plugin-sobject)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -Label = --label.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER Label
     Label of the platform event, for example Order Shipped. The command suggests the API name from it. Passed to sf as --label. Required.
 
     .EXAMPLE
     New-SalesforcePlatformEvent -Label 'Order Shipped'
     Create the platform event and answer the rest of the questions at the prompt.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf schema generate platformevent (plugin @salesforce/plugin-sobject)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -Label = --label.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
@@ -3503,6 +3482,13 @@ function New-SalesforceCustomTab {
     .DESCRIPTION
     Runs sf schema generate tab, which writes a custom tab file. Unlike the other schema generators it asks no questions: everything comes from the parameters. Run it inside a Salesforce DX project. The custom object's own source files do not have to be in the project. It returns the CLI result as an object.
 
+    SALESFORCE CLI
+        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Command run: sf schema generate tab (plugin @salesforce/plugin-sobject)
+          Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
+        Parameter to flag: -ObjectName = --object; -Directory = --directory; -Icon = --icon.
+        psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
+
     .PARAMETER ObjectName
     API name of the custom object the tab is for, for example Invoice__c. Letters, digits and underscores only. Passed to sf as --object. Required.
 
@@ -3515,14 +3501,6 @@ function New-SalesforceCustomTab {
     .EXAMPLE
     New-SalesforceCustomTab -ObjectName Invoice__c -Directory force-app/main/default/tabs -Icon 54
     Create a tab for the Invoice object with icon 54.
-
-    .NOTES
-    Salesforce CLI mapping
-    Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
-    Command run: sf schema generate tab (plugin @salesforce/plugin-sobject)
-      Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
-    Parameter to flag: -ObjectName = --object; -Directory = --directory; -Icon = --icon.
-    psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
 
     .LINK
     https://developer.salesforce.com/docs/platform/salesforce-cli-reference/guide/cli_reference.html
