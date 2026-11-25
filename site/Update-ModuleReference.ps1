@@ -52,6 +52,8 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
     $help = Get-Help -Name $qualifiedName -Full
     $description, $mapping = ($help.description.Text -join [Environment]::NewLine) -split '(?m)^[ \t]*SALESFORCE CLI[ \t]*\r?$', 2
     if (-not $mapping) { throw "$name has no SALESFORCE CLI section" }
+    $cliCommands = @([regex]::Matches($mapping, '(?m)^[ \t]*Command run: (sf [^(\r\n]+)') |
+        ForEach-Object { $_.Groups[1].Value.Trim() } | Select-Object -Unique)
     $syntax = @(($help.syntax | Out-String -Width 32767) -split '\r?\n' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     $defaultHelp = Get-Help -Name $qualifiedName | Out-String -Width 32767
     $remarks = [regex]::Match($defaultHelp, '(?ms)^REMARKS[ \t]*\r?\n(.*)\z').Groups[1].Value.Trim()
@@ -65,13 +67,10 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
     [void]$sb.Append('<h4>Description</h4>')
     Add-HelpParagraphs $sb $description 'cmd-description'
     [void]$sb.Append('<h4>Salesforce CLI</h4><div class="cmd-cli">')
-    foreach ($line in ($mapping.Trim() -split '\r?\n' | Where-Object { $_.Trim() })) {
-        $text = ConvertTo-HtmlText $line.Trim()
-        if ($line.Trim() -match '^(Command run: )(sf [^(]+?)([ \t]+\(.*|$)') {
-            $text = (ConvertTo-HtmlText $Matches[1]) + '<code>' + (ConvertTo-HtmlText $Matches[2]) + '</code>' + (ConvertTo-HtmlText $Matches[3])
-        }
-        [void]$sb.Append('<p>' + $text + '</p>')
+    foreach ($cliCommand in $cliCommands) {
+        [void]$sb.Append('<p><code>' + (ConvertTo-HtmlText $cliCommand) + '</code></p>')
     }
+    if ($cliCommands.Count -eq 0) { [void]$sb.Append('<p>No direct Salesforce CLI command.</p>') }
     [void]$sb.Append('</div><h4>Related links</h4><ul>')
     foreach ($link in $help.relatedLinks.navigationLink) {
         $uri = ConvertTo-HtmlText $link.uri
@@ -112,7 +111,7 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
         }
     }
     [void]$sb.Append('</div></details>')
-    return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); WithCli = ($mapping -match '(?m)^\s*Command run: sf ') }
+    return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); WithCli = ($cliCommands.Count -gt 0) }
 }
 
 # Match specific command types first, then broader families. Patterns match the full cmdlet name.

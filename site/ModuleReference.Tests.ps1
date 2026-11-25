@@ -58,6 +58,11 @@ Describe 'Website command reference' {
         $entry | Should -Match 'PS&gt;</span> Get-SalesforceSObjectRecordCount -SObject Account, Contact -TargetOrg dev1'
     }
 
+    It 'shows just the command name for the alias mapping' {
+        $entry = [regex]::Match($script:Pages['psfdx'], '(?s)<details class="cmd" id="Add-SalesforceAlias">.*?</details>').Value
+        $entry | Should -Match '<h4>Salesforce CLI</h4><div class="cmd-cli"><p><code>sf alias set</code></p></div>'
+    }
+
     It 'shows only Salesforce CLI commands that exist in the parity inventory or the compatibility list' {
         $inventory = Get-Content -Path (Join-Path (Join-Path $script:Root 'docs') 'cli-parity-inventory.json') -Raw | ConvertFrom-Json
         $known = New-Object System.Collections.Generic.HashSet[string]
