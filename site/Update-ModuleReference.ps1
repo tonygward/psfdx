@@ -64,31 +64,9 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
     [void]$sb.Append('<h4>Synopsis</h4>')
     Add-HelpParagraphs $sb $help.Synopsis 'cmd-description'
     [void]$sb.Append('<h4>Syntax</h4><pre class="cmd-syntax"><code>' + (($syntax | ForEach-Object { ConvertTo-HtmlText $_ }) -join [char]10) + '</code></pre>')
-    [void]$sb.Append('<h4>Description</h4>')
-    Add-HelpParagraphs $sb $description 'cmd-description'
-    [void]$sb.Append('<h4>Salesforce CLI</h4><div class="cmd-cli">')
-    foreach ($cliCommand in $cliCommands) {
-        [void]$sb.Append('<p><code>' + (ConvertTo-HtmlText $cliCommand) + '</code></p>')
-    }
-    if ($cliCommands.Count -eq 0) { [void]$sb.Append('<p>No direct Salesforce CLI command.</p>') }
-    [void]$sb.Append('</div><h4>Related links</h4><ul>')
-    foreach ($link in $help.relatedLinks.navigationLink) {
-        $uri = ConvertTo-HtmlText $link.uri
-        $label = if ($link.linkText) { ConvertTo-HtmlText $link.linkText } else { $uri }
-        if ($uri) { $label = '<a href="' + $uri + '">' + $label + '</a>' }
-        [void]$sb.Append('<li>' + $label + '</li>')
-    }
-    [void]$sb.Append('</ul><h4>Remarks</h4><ul>')
-    foreach ($line in ($remarks -split '\r?\n' | Where-Object { $_.Trim() })) {
-        # Windows PowerShell lowercases the help invocation and adds a period after the closing quote.
-        $remark = $line.Trim() -replace '"get-help ', '"Get-Help ' -replace '-examples"\.?$', '-Examples"' -replace '-detailed"\.?$', '-Detailed"' -replace '-full"\.?$', '-Full"' -replace '-online"\.?$', '-Online"'
-        [void]$sb.Append('<li>' + (ConvertTo-HtmlText $remark) + '</li>')
-    }
-    [void]$sb.Append('</ul>')
-
     $parameters = @($help.parameters.parameter | Where-Object { $_.name })
     if ($parameters.Count -gt 0) {
-        [void]$sb.Append('<h4>Parameters</h4><dl class="cmd-params">')
+        [void]$sb.Append('<p><strong>Parameters</strong></p><dl class="cmd-params">')
         foreach ($parameter in $parameters) {
             $facts = @($Command.ParameterSets.Parameters | Where-Object { $_.Name -eq $parameter.name })
             $mandatory = @($facts | Where-Object { $_.IsMandatory }).Count
@@ -100,6 +78,14 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
         }
         [void]$sb.Append('</dl>')
     }
+    [void]$sb.Append('<h4>Description</h4>')
+    Add-HelpParagraphs $sb $description 'cmd-description'
+    [void]$sb.Append('<h4>Salesforce CLI</h4><div class="cmd-cli">')
+    foreach ($cliCommand in $cliCommands) {
+        [void]$sb.Append('<p><code>' + (ConvertTo-HtmlText $cliCommand) + '</code></p>')
+    }
+    if ($cliCommands.Count -eq 0) { [void]$sb.Append('<p>No direct Salesforce CLI command.</p>') }
+    [void]$sb.Append('</div>')
     # Preserve the website terminal example's multiline layout.
     $sourceHelp = $Command.ScriptBlock.Ast.GetHelpContent()
     $example = @($sourceHelp.Examples) | Select-Object -First 1
@@ -110,6 +96,22 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
             if ($split.Description) { [void]$sb.Append('<p class="cmd-example-note">' + (ConvertTo-HtmlText $split.Description) + '</p>') }
         }
     }
+    [void]$sb.Append('<h4>Remarks</h4><ul>')
+    foreach ($line in ($remarks -split '\r?\n' | Where-Object { $_.Trim() })) {
+        # Windows PowerShell lowercases the help invocation and adds a period after the closing quote.
+        $remark = $line.Trim() -replace '"get-help ', '"Get-Help ' -replace '-examples"\.?$', '-Examples"' -replace '-detailed"\.?$', '-Detailed"' -replace '-full"\.?$', '-Full"' -replace '-online"\.?$', '-Online"'
+        [void]$sb.Append('<li>' + (ConvertTo-HtmlText $remark) + '</li>')
+    }
+    [void]$sb.Append('</ul>')
+
+    [void]$sb.Append('<h4>Related Links</h4><ul>')
+    foreach ($link in $help.relatedLinks.navigationLink) {
+        $uri = ConvertTo-HtmlText $link.uri
+        $label = if ($link.linkText) { ConvertTo-HtmlText $link.linkText } else { $uri }
+        if ($uri) { $label = '<a href="' + $uri + '">' + $label + '</a>' }
+        [void]$sb.Append('<li>' + $label + '</li>')
+    }
+    [void]$sb.Append('</ul>')
     [void]$sb.Append('</div></details>')
     return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); WithCli = ($cliCommands.Count -gt 0) }
 }
