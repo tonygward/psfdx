@@ -355,10 +355,42 @@ test('every entry has a description, syntax and a practical example with the PS>
       assert.ok(body.startsWith(`<summary><span class="cmd-name">${name}</span></summary>`), `${name}: collapsed label`);
       assert.match(body, /<h4>Description<\/h4><p class="cmd-description">[^<]+<\/p>/, `${name}: description`);
       assert.match(body, /<h4>Syntax<\/h4><pre class="cmd-syntax"><code>/, `${name}: syntax`);
-      assert.match(body, /<h4>Example<\/h4>/, `${name}: example`);
+      assert.match(body, /<h4>Examples<\/h4>/, `${name}: example`);
       assert.match(body, /class="ps-prompt">PS&gt;<\/span>/, `${name}: PS> prompt`);
     }
   }
+});
+
+// Issue 306: every command reference, on the website and in the GitHub Markdown, has the same sections in the same order.
+const sectionOrder = ['Synopsis', 'Syntax', 'Description', 'Parameters', 'Salesforce CLI', 'Examples', 'Remarks', 'Related Links'];
+const expectedSections = hasParameters => sectionOrder.filter(s => hasParameters || s !== 'Parameters');
+
+test('every website entry has the standard sections in the standard order, with no NAME, Inputs or Outputs', () => {
+  for (const dir of moduleDirs) {
+    for (const m of pageOf(dir).matchAll(/<details class="cmd" id="([^"]+)">([\s\S]*?)<\/details>/g)) {
+      const [, name, body] = m;
+      const headings = [...body.matchAll(/<h4>([^<]+)<\/h4>/g)].map(h => h[1]);
+      assert.deepEqual(headings, expectedSections(body.includes('<dl class="cmd-params">')), `${dir}/${name}`);
+      assert.ok(!headings.some(h => /^(name|inputs|outputs)$/i.test(h)), `${name}: no NAME, Inputs or Outputs`);
+    }
+  }
+});
+
+test('the GitHub Markdown reference has the same commands and the same section order as the website', () => {
+  const folder = path.join(repoRoot, 'docs', 'reference');
+  const index = fs.readFileSync(path.join(folder, 'README.md'), 'utf8');
+  for (const dir of moduleDirs) {
+    assert.ok(index.includes(`[${dir}](${dir}.md)`), `${dir}: linked from the index`);
+    const text = fs.readFileSync(path.join(folder, `${dir}.md`), 'utf8').replace(/\r\n/g, '\n');
+    const entries = [...text.matchAll(/^### (\S+)\n([\s\S]*?)(?=^### |^## |$(?![\s\S]))/gm)];
+    assert.deepEqual(entries.map(e => e[1]), [...pageOf(dir).matchAll(/<details class="cmd" id="([^"]+)">/g)].map(m => m[1]), `${dir}: same commands in the same order`);
+    for (const [, name, body] of entries) {
+      const headings = [...body.matchAll(/^#### (.+)$/gm)].map(h => h[1]);
+      assert.deepEqual(headings, expectedSections(headings.includes('Parameters')), `${dir}/${name}`);
+      assert.ok(!headings.some(h => /^(name|inputs|outputs)$/i.test(h)), `${name}: no NAME, Inputs or Outputs`);
+    }
+  }
+  assert.ok(!/internal/i.test('') && !fs.existsSync(path.join(folder, 'psfdx-shared.md')), 'no Markdown reference for the internal module');
 });
 
 test('module pages other than the main one are a brief introduction and a command reference, and link to the main installation instructions', () => {

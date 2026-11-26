@@ -27,7 +27,7 @@ Import-Module psfdx
 
 ## 3. See the commands
 
-Each module keeps its own name, so every command is listed under the module that holds it:
+Every command is documented, with its syntax, parameters, the Salesforce CLI command it runs and an example, in [docs/reference](docs/reference/README.md) (the same reference as the website, https://psfdx.com). Each module keeps its own name, so every command is listed under the module that holds it:
 
 ```
 Get-Command -Module psfdx          # the core commands only
