@@ -297,4 +297,18 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .card a code { color: var(--cyan); }
 .get-started-box { margin: clamp(20px, 3vw, 32px) 0 0; max-width: 760px; }
 .get-started-box pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Get started examples on the homepage: the same terminal style as the module pages. */
+.get-started-examples { max-width: 880px; margin-top: clamp(28px, 4vw, 44px); }
+.get-started-examples h3 { font-size: 1.05rem; color: var(--yellow); font-weight: 700; margin: 1.4em 0 .5em; }
+.get-started-examples .code-box { border-left: 3px solid var(--yellow); background: #081d41; padding: 17px 20px; margin: 12px 0 20px; border-radius: 12px; }
+.get-started-examples .code-box pre { font-size: clamp(.76rem, 1.2vw, .9rem); line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: hidden; font-weight: 400; }
+.get-started-examples .code-box code { background: transparent; padding: 0; font-size: inherit; border-radius: 0; }
+.get-started-examples .terminal-line { display: block; white-space: pre-wrap; overflow-wrap: anywhere; }
+.get-started-examples .terminal-continuation { color: var(--text); padding-left: 2.6rem; }
+.get-started-examples .ps-prompt { color: var(--yellow); font-weight: 700; }
+.get-started-examples .terminal-output { display: block; border-top: 1px solid var(--border-strong); margin-top: 12px; padding-top: 12px; white-space: pre-wrap; color: var(--muted); font-weight: 400; }
+.get-started-examples .example-note { color: var(--muted); font-size: .82rem; }
+.get-started-examples p > code { color: var(--yellow); }
+.get-started-examples a { color: var(--yellow); }
+@media (max-width: 600px) { .get-started-examples .code-box { padding: 12px 14px; } .get-started-examples .code-box pre { font-size: .74rem; } .get-started-examples .terminal-continuation { padding-left: 1.8rem; } }
 .module-catalogue h1 { font-size: clamp(1.9rem, 1.2rem + 3vw, 3.4rem); max-width: 22ch; }

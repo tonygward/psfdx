@@ -7,38 +7,8 @@
 <nav aria-label="Main"><ul class="nav-list"><li><a href="/">Home</a></li><li><a href="/modules/">Modules</a></li><li><a href="%GITHUB_URL%#readme">GitHub docs</a></li></ul></nav>
 </div></header><main id="main" class="section"><div class="wrap documentation">
 <p class="eyebrow">MODULE REFERENCE / psfdx</p><h1>psfdx</h1><p class="tagline">Core commands</p><p class="section-intro">Authentication, org management, users and permissions, REST and GraphQL requests, and Salesforce CLI administration.</p>
-<p>To install psfdx, follow <a href="/#get-started">Get started</a> on the homepage.</p>
-<h2>Examples</h2>
-<div class="example-group">
-<h3>1. Connect to your sandbox</h3>
-<div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> Connect-Salesforce -Sandbox</span></code></pre></div>
-<h3>2. Explore built-in help</h3>
-<div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> Get-Help Select-SalesforceRecords -Full</span>
-<span class="terminal-output">NAME
-    Select-SalesforceRecords
-
-SYNOPSIS
-    Runs a Salesforce SOQL query and returns PowerShell objects.
-
-SYNTAX
-    Select-SalesforceRecords -Query &lt;String&gt; [-TargetOrg &lt;String&gt;] ...
-
-DESCRIPTION
-    Query Salesforce records with SOQL.
-
-    ... additional parameters and examples omitted ...</span></code></pre></div>
-<p class="example-note">Illustrative excerpt, shortened for readability. Run the command to view the complete installed help.</p>
-<h3>3. Export Salesforce records to CSV</h3>
-<div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> Select-SalesforceRecords `</span>
-<span class="terminal-line terminal-continuation">    -Query 'SELECT Id, Name FROM Account LIMIT 10' `</span>
-<span class="terminal-line terminal-continuation">    -TargetOrg myorg |</span>
-<span class="terminal-line terminal-continuation">    Export-Csv -Path './accounts.csv' -NoTypeInformation</span></code></pre></div>
-<h3>4. Update the entire suite</h3>
-<div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> Update-Module psfdx</span></code></pre></div>
-</div>
-<h2>Discover every command and parameter</h2>
-<p>Use <code>Get-Command -Module psfdx</code> to list the core cmdlets or <code>Get-Command -Module 'psfdx*'</code> to list all modules after <code>Import-Module psfdx</code>. PowerShell's built-in help includes descriptions, parameters, examples and the underlying <code>sf</code> mapping.</p>
-<p>Further reference: <a href="%GITHUB_URL%#modules">repository command catalogue</a> · <a href="%GITHUB_URL%/blob/main/docs/cli-parity.md">Salesforce CLI parity report</a> · <a href="%GITHUB_URL%/blob/main/docs/install.md">installation and updates</a>.</p>
+<p>Installing <code>psfdx</code> installs every module: see the <a href="/#get-started">installation and update instructions</a>.</p>
+<div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> Get-Command -Module psfdx</span></code></pre></div>
 <h2 id="reference">Command reference</h2>
 <!-- reference:start -->
 <div class="cmd-list">
