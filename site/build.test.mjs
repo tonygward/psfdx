@@ -166,8 +166,7 @@ test('Get started sits directly below the tiles on the homepage and is not repea
   assert.match(section, /<h2 id="get-started-title">Get started<\/h2>/);
   assert.match(section, /data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Get-Command -Module psfdx\*"/);
   assert.ok(section.includes('<span class="cmd">Get-Command</span> <span class="param">-Module</span> <span class="v">psfdx*</span>'),'lists every module, not just the core one');
-  assert.ok(section.includes('There is only one PowerShell Gallery package: <code>psfdx</code>.'));
-  assert.ok(section.includes('href="https://github.com/tonygward/psfdx/blob/main/docs/install.md"'));
+  assert.ok(!section.includes('There is only one PowerShell Gallery package'), 'no package explainer under the install commands');
   const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
   assert.ok(!core.includes('id="get-started"') && !core.includes('Get started</h2>'), 'no second Get started section');
   assert.ok(core.includes('href="/#get-started"'), 'the psfdx page points to it');
@@ -198,7 +197,7 @@ test('the Modules page lists every module and is linked from the homepage, the n
 
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
   for (const command of ['Get-Help Deploy-SalesforceMetadata -Examples', 'Select-SalesforceRecords', 'Export-Csv']) assert.ok(html.includes(command), command);
-  assert.ok(html.includes("Export-Csv -Path './accounts.csv' -NoTypeInformation"), 'the CSV example is on the homepage');
+  assert.ok(html.replace(/<[^>]+>/g, '').includes("Export-Csv -Path './accounts.csv' -NoTypeInformation"), 'the CSV example is on the homepage');
   for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
@@ -332,7 +331,9 @@ test('the ordered examples sit in the homepage Get started section, not on a mod
   }
   assert.match(core, /<span class="terminal-output">NAME/, 'help contains a sample result');
   assert.match(core, /Illustrative excerpt, shortened for readability/, 'sample result is clearly labelled');
-  assert.match(core, /Update-Module psfdx<\/span><\/code><\/pre><\/div>/, 'update is last executable example');
+  assert.match(core, /<span class="cmd">Update-Module<\/span> <span class="v">psfdx<\/span><\/span><\/code><\/pre><\/div>/, 'update is last executable example');
+  for (const command of ['Connect-Salesforce', 'Get-Help', 'Select-SalesforceRecords', 'Export-Csv', 'Update-Module']) assert.ok(core.includes('<span class="cmd">' + command + '</span>'), command + ' is colour coded like the install commands');
+  assert.ok(core.includes(`<span class="str">'SELECT Id, Name FROM Account LIMIT 10'</span>`), 'strings are colour coded');
   assert.ok(core.indexOf('Discover every command and parameter') > core.indexOf('4. Update the entire suite'), 'discovery follows the examples');
   for (const dir of fs.readdirSync(path.join(dist, 'modules'))) {
     const page = path.join(dist, 'modules', dir, 'index.html');
