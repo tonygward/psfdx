@@ -12,6 +12,7 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'psfdx-site-'));
 const dist = path.join(out, 'dist');
 build({ outDir: dist, env: {} });
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
+const modulesPage = fs.readFileSync(path.join(dist, 'modules', 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(dist, 'style.css'), 'utf8');
 const js = fs.readFileSync(path.join(dist, 'script.js'), 'utf8');
 const release = readReleaseVersion();
@@ -57,8 +58,8 @@ test('every local file the page and stylesheet refer to exists in the build', ()
   assert.ok(fs.existsSync(path.join(dist, '_headers')));
 });
 
-test('the eight sections are present, in order', () => {
-  const marks = ['class="site-header"', 'class="hero"', 'class="marquee-band"', 'id="why"', 'id="modules"', 'class="closing"', 'class="site-footer"'];
+test('the sections are present, in order', () => {
+  const marks = ['class="site-header"', 'class="hero"', 'class="marquee-band"', 'id="why"', 'id="get-started"', 'id="modules"', 'class="closing"', 'class="site-footer"'];
   let last = -1;
   for (const mark of marks) {
     const at = html.indexOf(mark);
@@ -68,9 +69,9 @@ test('the eight sections are present, in order', () => {
   assert.ok(html.indexOf('id="console"') > html.indexOf('class="hero"') && html.indexOf('id="console"') < html.indexOf('class="marquee-band"'), 'the console sits in the hero');
 });
 
-test('the header links work: Docs, Releases and the GitHub pill', () => {
+test('the header links work: Modules, Releases and the GitHub pill', () => {
   const nav = html.match(/<nav aria-label="Main">[\s\S]*?<\/nav>/)[0];
-  assert.match(nav, /href="\/#modules">Docs</);
+  assert.match(nav, /href="\/modules\/">Modules</);
   assert.match(nav, /href="https:\/\/github\.com\/tonygward\/psfdx\/releases">Releases</);
   assert.match(nav, /class="nav-cta" href="https:\/\/github\.com\/tonygward\/psfdx">/);
   assert.match(nav, /GitHub/);
@@ -83,7 +84,7 @@ test('the hero: headline, tagline, copy command, docs link and release pill', ()
   assert.ok(html.includes('Powerful Salesforce tools.<br>Familiar PowerShell commands.<br>One <span class="pipe">|</span> away from anything.'));
   assert.match(html, /class="install" data-copy="Install-Module psfdx"/);
   assert.match(html, /<code>Install-Module psfdx<\/code>/);
-  assert.match(html, /class="button secondary" href="\/#modules">Read the docs</);
+  assert.match(html, /class="button secondary" href="\/modules\/">Read the docs</);
 });
 
 test('the release pill shows the version in the VERSION file, never a typed-in number', () => {
@@ -115,27 +116,22 @@ test('the marquee lists real psfdx commands (and Export-Csv), twice, with the co
   assert.match(css, /animation: marquee 32s linear infinite/);
 });
 
-test('the feature examples and all ten public modules use real content', () => {
-  for (const text of ['| pipeline', 'Objects, not JSON', 'win · mac · linux', 'Runs everywhere', 'Get-Command · Get-Help', 'Everything is discoverable', 'Deploy and test as you save.', 'Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).', 'A simpler, more intuitive way to work with Salesforce.', 'One install.', 'Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
+test('the feature tiles and all ten public modules use real content', () => {
+  for (const text of ['| pipeline', 'Objects, not JSON', 'win · mac · linux', 'Runs everywhere', 'Get-Command · Get-Help', 'Everything is discoverable', 'save · deploy · test', 'Deploy and test as you save', 'A simpler, more intuitive way to work with Salesforce.', 'One install.', 'Every Salesforce workflow.', "Get-Command -Module 'psfdx*'"]) {
     assert.ok(html.includes(text), text);
   }
-  const modules = [...html.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
+  const modules = [...modulesPage.matchAll(/class="module-name">([^<]+)</g)].map(m => m[1]);
   assert.deepEqual(modules, ['psfdx', 'psfdx-data', 'psfdx-org', 'psfdx-metadata', 'psfdx-logs', 'psfdx-development', 'psfdx-devops', 'psfdx-packages', 'psfdx-agentforce', 'psfdx-plugins']);
   for (const m of modules) assert.ok(fs.existsSync(path.join(repoRoot, m, `${m}.psd1`)), `${m} is not a module in this repository`);
-  for (const m of modules) assert.ok(html.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
+  for (const m of modules) assert.ok(modulesPage.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
 });
 
-test('the homepage copy is tight: objects not text, discoverability, one CSV example, a short watch section and an update tile', () => {
+test('the homepage copy is tight: four feature tiles including Watch, Get started below them, and a link to the modules', () => {
   assert.ok(!html.includes('Less time remembering CLI syntax'), 'the repeated tagline is gone');
   assert.ok(!html.includes('See exactly what runs') && !html.includes('Get-SalesforceOrgDetails -TargetOrg dev -Verbose'), 'the -Verbose card is replaced');
   assert.match(html, /Every command returns real PowerShell objects, not text to parse[\s\S]*No <code>jq<\/code>, no string handling/);
   assert.match(html, /<h3>Everything is discoverable<\/h3>[\s\S]*Get-Command -Module 'psfdx\*'[\s\S]*Get-Help Deploy-SalesforceMetadata -Examples/);
   for (const gone of ['BUILT FOR POWERSHELL', 'The little things that make a big difference', 'Compare the PowerShell and Bash examples', 'Explore each module above', 'Every command explained', 'One update, every module']) assert.ok(!html.includes(gone), gone);
-  assert.match(html, /<section id="powershell-examples"[^>]*aria-labelledby="powershell-examples-title"[\s\S]*<h2 id="powershell-examples-title">Comparison: Export accounts to CSV<\/h2>/);
-  assert.match(html, /<h2 id="watch-title">Deploy and test as you save\.<\/h2>\s*<p class="section-intro">Run <code>Watch-SalesforceApex<\/code> in your project\.<br>Every save deploys the change and runs its tests\.<\/p>/);
-  assert.match(html, /<figcaption class="fine">Example output after saving <code>InvoiceService\.cls<\/code>\.<\/figcaption>/);
-  assert.match(html, /<h2 id="modules-title"><span class="h1-line">One install\.<\/span> <span class="h1-line">Every Salesforce workflow\.<\/span><\/h2>/);
-  assert.match(html, /<\/ul>\s*<div class="update-row">\s*<div class="install" data-copy="Update-Module psfdx">[\s\S]*?<code>Update-Module psfdx<\/code><\/div>\s*<p>One command updates every module\.<\/p>/);
   assert.ok(!/update-tile/.test(html + css), 'the old update tile is gone');
   assert.ok(!/Copy the install command/.test(fs.readFileSync(new URL('./src/script.js', import.meta.url), 'utf8')), 'copy label is not install-specific');
   assert.ok(!/\.disclaimer \{[^}]*max-width/.test(css), 'the disclaimer is not narrowed');
@@ -144,9 +140,64 @@ test('the homepage copy is tight: objects not text, discoverability, one CSV exa
   for (let i = 1; i < levels.length; i++) assert.ok(levels[i] - levels[i - 1] <= 1, 'heading levels skip near heading ' + (i + 1));
 });
 
+// Issue 308: a simpler homepage, with the module catalogue on its own page.
+test('the homepage has no export comparison and no standalone Watch section', () => {
+  for (const gone of ['id="powershell-examples"', 'Comparison: Export accounts to CSV', 'Bash with the Salesforce CLI and jq', 'id="watch"', 'class="module-list"', 'class="module-row"']) assert.ok(!html.includes(gone), gone);
+  for (const gone of ['.pipeline-comparison', '.watch-example', '#powershell-examples']) assert.ok(!css.includes(gone), `unused rule ${gone}`);
+});
+
+test('the four feature tiles share one style, the last one is Watch, and they reflow on small screens', () => {
+  const cards = html.match(/<ul class="cards">([\s\S]*?)<\/ul>/)[1];
+  const tiles = [...cards.matchAll(/<li class="card">([\s\S]*?)<\/li>/g)].map(m => m[1]);
+  assert.equal(tiles.length, 4);
+  for (const tile of tiles) assert.match(tile, /^\s*<p class="card-tag">[^<]+<\/p>\s*<h3>[^<]+<\/h3>\s*<p>/, 'tag, heading and copy');
+  assert.match(tiles[3], /<h3>Deploy and test as you save<\/h3>/);
+  assert.match(tiles[3], /href="\/modules\/psfdx-development\/#Watch-SalesforceApex"><code>Watch-SalesforceApex<\/code><\/a>/);
+  const textLength = tile => tile.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().length;
+  assert.ok(textLength(tiles[3]) <= Math.max(...tiles.slice(0, 3).map(textLength)), 'the Watch tile is no longer than the others');
+  assert.match(css, /#why \.cards \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); \}/);
+  assert.match(css, /@media \(max-width: 1100px\) \{ #why \.cards \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \} \}/);
+  assert.match(css, /@media \(max-width: 640px\) \{ #why \.cards \{ grid-template-columns: minmax\(0, 1fr\); \} \}/);
+});
+
+test('Get started sits directly below the tiles on the homepage and is not repeated on the psfdx page', () => {
+  assert.match(html, /<\/ul>\s*<\/div>\s*<\/section>\s*<section id="get-started" class="section" aria-labelledby="get-started-title">/, 'directly after the tiles');
+  const section = html.match(/<section id="get-started"[\s\S]*?<\/section>/)[0];
+  assert.match(section, /<h2 id="get-started-title">Get started<\/h2>/);
+  assert.match(section, /data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Get-Command -Module psfdx"/);
+  assert.ok(section.includes('There is only one PowerShell Gallery package: <code>psfdx</code>.'));
+  assert.ok(section.includes('href="https://github.com/tonygward/psfdx/blob/main/docs/install.md"'));
+  const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
+  assert.ok(!core.includes('id="get-started"') && !core.includes('Get started</h2>'), 'no second Get started section');
+  assert.ok(core.includes('href="/#get-started"'), 'the psfdx page points to it');
+});
+
+test('the Modules page lists every module and is linked from the homepage, the navigation and every module page', () => {
+  assert.match(modulesPage, /<h1 id="modules-title">/);
+  assert.equal((modulesPage.match(/<h1[ >]/g) || []).length, 1);
+  assert.match(modulesPage, /<link rel="canonical" href="https:\/\/psfdx\.com\/modules\/">/);
+  assert.match(modulesPage, /<nav aria-label="Main">[\s\S]*href="\/modules\/">Modules<[\s\S]*<\/nav>/);
+  assert.match(modulesPage, /<\/ul>\s*<div class="update-row">\s*<div class="install" data-copy="Update-Module psfdx">[\s\S]*?<code>Update-Module psfdx<\/code><\/div>\s*<p>One command updates every module\.<\/p>/);
+  assert.ok(modulesPage.includes('<script src="/script.js" defer></script>'), 'the copy button works');
+  assert.ok(modulesPage.includes('psfdx is an independent open-source project and is not affiliated with or endorsed by Salesforce.'));
+  for (const ref of [...modulesPage.matchAll(/(?:href|src)="(\/[^"#?]*)"/g)].map(m => m[1]).filter(r => r !== '/')) {
+    assert.ok(fs.existsSync(path.join(dist, ref.endsWith('/') ? ref + 'index.html' : ref)), `${ref} is missing from the build`);
+  }
+  assert.match(html, /<section id="modules"[\s\S]*?class="button secondary" href="\/modules\/">Browse all modules →<\/a>/, 'a prominent homepage link');
+  for (const dir of fs.readdirSync(path.join(dist, 'modules'), { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name)) {
+    const page = fs.readFileSync(path.join(dist, 'modules', dir, 'index.html'), 'utf8');
+    assert.ok(page.includes('href="/modules/">Modules</a>'), `${dir}: Modules in the navigation`);
+    assert.ok(!page.includes('href="/#modules"'), `${dir}: links to the Modules page, not the homepage`);
+  }
+  assert.match(css, /\.nav-list a:not\(\.nav-cta\):not\(\[href="\/modules\/"\]\) \{ display: none; \}/, 'Modules stays in the navigation on phones');
+  const sitemap = fs.readFileSync(path.join(dist, 'sitemap.xml'), 'utf8');
+  assert.match(sitemap, /<loc>https:\/\/psfdx\.com\/modules\/<\/loc>/);
+  assert.doesNotMatch(sitemap, /index\.html/);
+});
+
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
-  assert.match(html, /PowerShell with psfdx[\s\S]*Bash with the Salesforce CLI and jq[\s\S]*Both examples do the same job/);
-  for (const command of ['Get-Help Deploy-SalesforceMetadata -Examples', 'Select-SalesforceRecords', 'Export-Csv ./accounts.csv -NoTypeInformation']) assert.ok(html.includes(command), command);
+  for (const command of ['Get-Help Deploy-SalesforceMetadata -Examples', 'Select-SalesforceRecords', 'Export-Csv']) assert.ok(html.includes(command), command);
+  assert.ok(fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8').includes("Export-Csv -Path './accounts.csv' -NoTypeInformation"), 'the CSV example is on the psfdx page');
   for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
@@ -399,15 +450,15 @@ test('module pages other than the main one are a brief introduction and a comman
     const intro = page.slice(page.indexOf('<main'), page.indexOf('id="reference"'));
     assert.ok(intro.length < 2200, `${dir}: the introduction before the reference is brief (${intro.length} characters)`);
     assert.ok(!/Install-Module|Update-Module|Get started|<h2>Examples<\/h2>/.test(page.replace(/<details class="cmd"[\s\S]*?<\/details>/g, '')), `${dir}: no installation or marketing copy outside the reference`);
-    assert.ok(page.includes('href="/modules/psfdx/#get-started"'), `${dir}: links to the main installation instructions`);
+    assert.ok(page.includes('href="/#get-started"'), `${dir}: links to the installation instructions`);
     assert.ok(page.includes('Get-Command -Module ' + dir), `${dir}: shows how to list its commands`);
     assert.match(page, /<h1>psfdx[-a-z]*<\/h1><p class="tagline">[^<]+<\/p><p class="section-intro">[^<]+/, `${dir}: keeps its definition and overview`);
   }
 });
 
-test('the main psfdx page keeps its introduction, installation and examples, and has the reference of its own commands at the bottom', () => {
+test('the main psfdx page keeps its introduction and examples, and has the reference of its own commands at the bottom', () => {
   const page = pageOf('psfdx');
-  for (const text of ['Core commands', 'Get started', 'Install-Module psfdx', '1. Connect to your sandbox', '2. Explore built-in help', '3. Export Salesforce records to CSV', '4. Update the entire suite', 'id="get-started"']) assert.ok(page.includes(text), text);
+  for (const text of ['Core commands', '1. Connect to your sandbox', '2. Explore built-in help', '3. Export Salesforce records to CSV', '4. Update the entire suite']) assert.ok(page.includes(text), text);
   const reference = page.indexOf('id="reference"');
   assert.ok(reference > page.indexOf('4. Update the entire suite'), 'the reference comes after the existing examples');
   assert.ok(page.indexOf('<details class="cmd"') > reference, 'the entries are in the reference');
