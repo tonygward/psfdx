@@ -1,9 +1,10 @@
 <#
 .SYNOPSIS
-Writes the command reference of every psfdx module into its page of the website.
+Writes the command reference of every psfdx module into its page of the website and into docs/reference/<module>.md.
 .DESCRIPTION
-Imports the repository modules and renders their native Get-Help content in the website command reference.
-With -Check nothing is written; it returns the pages that are out of date.
+Imports the repository modules and renders their native Get-Help content, once, as the website command reference and as the GitHub Markdown reference.
+Both show the same sections in the same order (see $referenceSections).
+With -Check nothing is written; it returns the files that are out of date.
 Run it after changing a command, its help, or which module exports it:  pwsh ./site/Update-ModuleReference.ps1
 #>
 [CmdletBinding()]
@@ -46,7 +47,12 @@ function Add-HelpParagraphs([System.Text.StringBuilder] $Builder, [string] $Text
     }
 }
 
-function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [string] $Module) {
+# The one place that decides which sections a command reference has and in which order. The website and the GitHub Markdown render the same
+# sections in this order. There is no NAME section (the command name is the heading) and no Inputs or Outputs section; native Get-Help is unchanged.
+# A section a command has nothing for (Parameters of a command with none) is left out.
+$referenceSections = @('Synopsis', 'Syntax', 'Description', 'Parameters', 'Salesforce CLI', 'Examples', 'Remarks', 'Related Links')
+
+function Get-CommandModel([System.Management.Automation.FunctionInfo] $Command, [string] $Module) {
     $name = $Command.Name
     $qualifiedName = $Module + '\' + $name
     $help = Get-Help -Name $qualifiedName -Full
@@ -56,64 +62,158 @@ function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [stri
         ForEach-Object { $_.Groups[1].Value.Trim() } | Select-Object -Unique)
     $syntax = @(($help.syntax | Out-String -Width 32767) -split '\r?\n' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
     $defaultHelp = Get-Help -Name $qualifiedName | Out-String -Width 32767
-    $remarks = [regex]::Match($defaultHelp, '(?ms)^REMARKS[ \t]*\r?\n(.*)\z').Groups[1].Value.Trim()
-    if (-not $remarks) { throw "Cannot read the native remarks for $name. Run the generator in an English PowerShell session." }
+    $remarkText = [regex]::Match($defaultHelp, '(?ms)^REMARKS[ \t]*\r?\n(.*)\z').Groups[1].Value.Trim()
+    if (-not $remarkText) { throw "Cannot read the native remarks for $name. Run the generator in an English PowerShell session." }
+    $remarks = @(foreach ($line in ($remarkText -split '\r?\n' | Where-Object { $_.Trim() })) {
+        # Windows PowerShell lowercases the help invocation and adds a period after the closing quote.
+        $line.Trim() -replace '"get-help ', '"Get-Help ' -replace '-examples"\.?$', '-Examples"' -replace '-detailed"\.?$', '-Detailed"' -replace '-full"\.?$', '-Full"' -replace '-online"\.?$', '-Online"'
+    })
+    $parameters = @(foreach ($parameter in @($help.parameters.parameter | Where-Object { $_.name })) {
+        $facts = @($Command.ParameterSets.Parameters | Where-Object { $_.Name -eq $parameter.name })
+        $mandatory = @($facts | Where-Object { $_.IsMandatory }).Count
+        $flag = ''
+        if ($mandatory -gt 0 -and $mandatory -eq $facts.Count) { $flag = ', required' }
+        elseif ($mandatory -gt 0) { $flag = ', required in some parameter sets' }
+        $type = if ($parameter.type.name -eq 'SwitchParameter') { 'switch' } else { $parameter.type.name }
+        [pscustomobject]@{ Name = $parameter.name; Type = $type + $flag; Description = (($parameter.description.Text -join ' ') -replace '\s+', ' ') }
+    })
+    # Preserve the website terminal example's multiline layout.
+    $example = $null
+    $sourceExample = @($Command.ScriptBlock.Ast.GetHelpContent().Examples) | Select-Object -First 1
+    if ($sourceExample) {
+        $split = Split-Example ([string]$sourceExample)
+        if ($split.Code.Count -gt 0) { $example = $split }
+    }
+    $links = @(foreach ($link in $help.relatedLinks.navigationLink) { [pscustomobject]@{ Uri = [string]$link.uri; Text = [string]$link.linkText } })
+    return [pscustomobject]@{
+        Name = $name; Synopsis = [string]$help.Synopsis; Syntax = $syntax; Description = $description; Parameters = $parameters
+        CliCommands = $cliCommands; Example = $example; Remarks = $remarks; Links = $links
+    }
+}
 
+function ConvertTo-HtmlEntry([object] $Model) {
+    $name = $Model.Name
     $sb = New-Object System.Text.StringBuilder
     [void]$sb.Append('<details class="cmd" id="' + (ConvertTo-HtmlText $name) + '"><summary><span class="cmd-name">' + (ConvertTo-HtmlText $name) + '</span></summary><div class="cmd-body">')
-    [void]$sb.Append('<h4>Synopsis</h4>')
-    Add-HelpParagraphs $sb $help.Synopsis 'cmd-description'
-    [void]$sb.Append('<h4>Syntax</h4><pre class="cmd-syntax"><code>' + (($syntax | ForEach-Object { ConvertTo-HtmlText $_ }) -join [char]10) + '</code></pre>')
-    $parameters = @($help.parameters.parameter | Where-Object { $_.name })
-    if ($parameters.Count -gt 0) {
-        [void]$sb.Append('<p><strong>Parameters</strong></p><dl class="cmd-params">')
-        foreach ($parameter in $parameters) {
-            $facts = @($Command.ParameterSets.Parameters | Where-Object { $_.Name -eq $parameter.name })
-            $mandatory = @($facts | Where-Object { $_.IsMandatory }).Count
-            $flag = ''
-            if ($mandatory -gt 0 -and $mandatory -eq $facts.Count) { $flag = ', required' }
-            elseif ($mandatory -gt 0) { $flag = ', required in some parameter sets' }
-            $type = if ($parameter.type.name -eq 'SwitchParameter') { 'switch' } else { $parameter.type.name }
-            [void]$sb.Append('<dt><code>-' + (ConvertTo-HtmlText $parameter.name) + '</code> <span class="cmd-type">' + (ConvertTo-HtmlText $type) + $flag + '</span></dt><dd>' + (ConvertTo-HtmlText (($parameter.description.Text -join ' ') -replace '\s+', ' ')) + '</dd>')
+    foreach ($section in $referenceSections) {
+        switch ($section) {
+            'Synopsis' {
+                [void]$sb.Append('<h4>Synopsis</h4>')
+                Add-HelpParagraphs $sb $Model.Synopsis 'cmd-description'
+            }
+            'Syntax' {
+                [void]$sb.Append('<h4>Syntax</h4><pre class="cmd-syntax"><code>' + (($Model.Syntax | ForEach-Object { ConvertTo-HtmlText $_ }) -join [char]10) + '</code></pre>')
+            }
+            'Description' {
+                [void]$sb.Append('<h4>Description</h4>')
+                Add-HelpParagraphs $sb $Model.Description 'cmd-description'
+            }
+            'Parameters' {
+                if ($Model.Parameters.Count -gt 0) {
+                    [void]$sb.Append('<h4>Parameters</h4><dl class="cmd-params">')
+                    foreach ($parameter in $Model.Parameters) {
+                        [void]$sb.Append('<dt><code>-' + (ConvertTo-HtmlText $parameter.Name) + '</code> <span class="cmd-type">' + (ConvertTo-HtmlText $parameter.Type) + '</span></dt><dd>' + (ConvertTo-HtmlText $parameter.Description) + '</dd>')
+                    }
+                    [void]$sb.Append('</dl>')
+                }
+            }
+            'Salesforce CLI' {
+                [void]$sb.Append('<h4>Salesforce CLI</h4><div class="cmd-cli">')
+                foreach ($cliCommand in $Model.CliCommands) { [void]$sb.Append('<p><code>' + (ConvertTo-HtmlText $cliCommand) + '</code></p>') }
+                if ($Model.CliCommands.Count -eq 0) { [void]$sb.Append('<p>No direct Salesforce CLI command.</p>') }
+                [void]$sb.Append('</div>')
+            }
+            'Examples' {
+                if ($Model.Example) {
+                    [void]$sb.Append('<h4>Examples</h4>' + (Format-ExampleHtml $Model.Example.Code))
+                    if ($Model.Example.Description) { [void]$sb.Append('<p class="cmd-example-note">' + (ConvertTo-HtmlText $Model.Example.Description) + '</p>') }
+                }
+            }
+            'Remarks' {
+                [void]$sb.Append('<h4>Remarks</h4><ul>')
+                foreach ($remark in $Model.Remarks) { [void]$sb.Append('<li>' + (ConvertTo-HtmlText $remark) + '</li>') }
+                [void]$sb.Append('</ul>')
+            }
+            'Related Links' {
+                [void]$sb.Append('<h4>Related Links</h4><ul>')
+                foreach ($link in $Model.Links) {
+                    $uri = ConvertTo-HtmlText $link.Uri
+                    $label = if ($link.Text) { ConvertTo-HtmlText $link.Text } else { $uri }
+                    if ($uri) { $label = '<a href="' + $uri + '">' + $label + '</a>' }
+                    [void]$sb.Append('<li>' + $label + '</li>')
+                }
+                [void]$sb.Append('</ul>')
+            }
         }
-        [void]$sb.Append('</dl>')
     }
-    [void]$sb.Append('<h4>Description</h4>')
-    Add-HelpParagraphs $sb $description 'cmd-description'
-    [void]$sb.Append('<h4>Salesforce CLI</h4><div class="cmd-cli">')
-    foreach ($cliCommand in $cliCommands) {
-        [void]$sb.Append('<p><code>' + (ConvertTo-HtmlText $cliCommand) + '</code></p>')
-    }
-    if ($cliCommands.Count -eq 0) { [void]$sb.Append('<p>No direct Salesforce CLI command.</p>') }
-    [void]$sb.Append('</div>')
-    # Preserve the website terminal example's multiline layout.
-    $sourceHelp = $Command.ScriptBlock.Ast.GetHelpContent()
-    $example = @($sourceHelp.Examples) | Select-Object -First 1
-    if ($example) {
-        $split = Split-Example ([string]$example)
-        if ($split.Code.Count -gt 0) {
-            [void]$sb.Append('<h4>Example</h4>' + (Format-ExampleHtml $split.Code))
-            if ($split.Description) { [void]$sb.Append('<p class="cmd-example-note">' + (ConvertTo-HtmlText $split.Description) + '</p>') }
-        }
-    }
-    [void]$sb.Append('<h4>Remarks</h4><ul>')
-    foreach ($line in ($remarks -split '\r?\n' | Where-Object { $_.Trim() })) {
-        # Windows PowerShell lowercases the help invocation and adds a period after the closing quote.
-        $remark = $line.Trim() -replace '"get-help ', '"Get-Help ' -replace '-examples"\.?$', '-Examples"' -replace '-detailed"\.?$', '-Detailed"' -replace '-full"\.?$', '-Full"' -replace '-online"\.?$', '-Online"'
-        [void]$sb.Append('<li>' + (ConvertTo-HtmlText $remark) + '</li>')
-    }
-    [void]$sb.Append('</ul>')
-
-    [void]$sb.Append('<h4>Related Links</h4><ul>')
-    foreach ($link in $help.relatedLinks.navigationLink) {
-        $uri = ConvertTo-HtmlText $link.uri
-        $label = if ($link.linkText) { ConvertTo-HtmlText $link.linkText } else { $uri }
-        if ($uri) { $label = '<a href="' + $uri + '">' + $label + '</a>' }
-        [void]$sb.Append('<li>' + $label + '</li>')
-    }
-    [void]$sb.Append('</ul>')
     [void]$sb.Append('</div></details>')
-    return [pscustomobject]@{ Name = $name; Html = $sb.ToString(); WithCli = ($cliCommands.Count -gt 0) }
+    return $sb.ToString()
+}
+
+# GitHub Markdown: text that could be read as markup or HTML is escaped; the code blocks are not.
+function ConvertTo-MarkdownText([string] $Text) { ($Text -replace '&', '&amp;' -replace '<', '&lt;' -replace '>', '&gt;') }
+
+function Format-ExampleMarkdown([string[]] $Code) {
+    $out = New-Object System.Collections.Generic.List[string]
+    $continues = $false
+    foreach ($line in $Code) {
+        if ($continues -or $line -match '^\s') { $out.Add('    ' + $line.TrimStart()) } else { $out.Add('PS> ' + $line) }
+        $continues = ($line.TrimEnd() -match '(`|\||,|\{|\()$')
+    }
+    return '```powershell' + "`n" + ($out -join "`n") + "`n" + '```'
+}
+
+function ConvertTo-MarkdownEntry([object] $Model) {
+    $parts = New-Object System.Collections.Generic.List[string]
+    $parts.Add('### ' + $Model.Name)
+    foreach ($section in $referenceSections) {
+        switch ($section) {
+            'Synopsis' {
+                $parts.Add('#### Synopsis')
+                foreach ($paragraph in ($Model.Synopsis.Trim() -split '\r?\n[ \t]*\r?\n')) { $parts.Add((ConvertTo-MarkdownText ($paragraph.Trim() -replace '\s+', ' '))) }
+            }
+            'Syntax' {
+                $parts.Add('#### Syntax')
+                $parts.Add('```powershell' + "`n" + ($Model.Syntax -join "`n") + "`n" + '```')
+            }
+            'Description' {
+                $parts.Add('#### Description')
+                foreach ($paragraph in ($Model.Description.Trim() -split '\r?\n[ \t]*\r?\n')) { $parts.Add((ConvertTo-MarkdownText ($paragraph.Trim() -replace '\s+', ' '))) }
+            }
+            'Parameters' {
+                if ($Model.Parameters.Count -gt 0) {
+                    $parts.Add('#### Parameters')
+                    $parts.Add((($Model.Parameters | ForEach-Object { '- `-' + $_.Name + '` (' + $_.Type + '): ' + (ConvertTo-MarkdownText $_.Description) }) -join "`n"))
+                }
+            }
+            'Salesforce CLI' {
+                $parts.Add('#### Salesforce CLI')
+                if ($Model.CliCommands.Count -gt 0) { $parts.Add((($Model.CliCommands | ForEach-Object { '- `' + $_ + '`' }) -join "`n")) }
+                else { $parts.Add('No direct Salesforce CLI command.') }
+            }
+            'Examples' {
+                if ($Model.Example) {
+                    $parts.Add('#### Examples')
+                    $parts.Add((Format-ExampleMarkdown $Model.Example.Code))
+                    if ($Model.Example.Description) { $parts.Add((ConvertTo-MarkdownText $Model.Example.Description)) }
+                }
+            }
+            'Remarks' {
+                $parts.Add('#### Remarks')
+                $parts.Add((($Model.Remarks | ForEach-Object { '- ' + (ConvertTo-MarkdownText $_) }) -join "`n"))
+            }
+            'Related Links' {
+                $parts.Add('#### Related Links')
+                $parts.Add((($Model.Links | ForEach-Object { if ($_.Uri) { '- <' + $_.Uri + '>' } } | Where-Object { $_ }) -join "`n"))
+            }
+        }
+    }
+    return ($parts -join "`n`n")
+}
+
+function Build-Entry([System.Management.Automation.FunctionInfo] $Command, [string] $Module) {
+    $model = Get-CommandModel $Command $Module
+    return [pscustomobject]@{ Name = $model.Name; Html = (ConvertTo-HtmlEntry $model); Markdown = (ConvertTo-MarkdownEntry $model); WithCli = ($model.CliCommands.Count -gt 0) }
 }
 
 # Match specific command types first, then broader families. Patterns match the full cmdlet name.
@@ -185,8 +285,25 @@ function Get-CommandGroup([string] $Module, [string] $Name) {
     return 'Other commands'
 }
 
+$config = Get-Content -LiteralPath (Join-Path (Join-Path $Root 'site') 'site.config.json') -Raw | ConvertFrom-Json
+$referenceFolder = Join-Path (Join-Path $Root 'docs') 'reference'
 $stale = New-Object System.Collections.Generic.List[string]
 $summary = @()
+$moduleLines = New-Object System.Collections.Generic.List[string]
+
+# Writes a generated text file and records it as stale when it differs. Line endings are not compared, and an existing file keeps its own.
+function Write-GeneratedFile([string] $Path, [string] $Text, [string] $Label) {
+    $existing = if (Test-Path -LiteralPath $Path) { [System.IO.File]::ReadAllText($Path) } else { $null }
+    $crlf = ($null -ne $existing) -and $existing.Contains("`r`n")
+    if (($null -eq $existing) -or ($existing.Replace("`r`n", "`n") -ne $Text)) {
+        $script:stale.Add($Label)
+        if (-not $Check) {
+            if ($crlf) { $Text = $Text.Replace("`n", "`r`n") }
+            [System.IO.File]::WriteAllText($Path, $Text, $enc)
+        }
+    }
+}
+
 # Internal modules have no page: they export no commands and are not part of the public command surface.
 foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInternalModules) })) {
     $page = Join-Path (Join-Path (Join-Path (Join-Path $Root 'site') 'src') 'modules') (Join-Path $module 'index.html')
@@ -197,23 +314,33 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
     $entries = @(foreach ($name in ($exports | Sort-Object { $_.ToLowerInvariant() })) {
         Build-Entry $loaded.ExportedFunctions[$name] $module
     })
-    $commandList = if (($entries.Count -ge 20 -or $module -eq 'psfdx-org') -and $commandGroups.ContainsKey($module)) {
-        # Group in order of first appearance. Group-Object does not promise that order on Windows PowerShell 5.1, and the pages must be identical on both editions.
-        $groupNames = New-Object System.Collections.Generic.List[string]
+    # One list of sections, shared by the page and the Markdown: command groups in order of first appearance (Group-Object does not promise that order
+    # on Windows PowerShell 5.1, and the output must be identical on both editions), or one unnamed section for a short module.
+    $sections = New-Object System.Collections.Generic.List[object]
+    if (($entries.Count -ge 20 -or $module -eq 'psfdx-org') -and $commandGroups.ContainsKey($module)) {
         $byGroup = @{}
         foreach ($entry in $entries) {
             $groupName = Get-CommandGroup $module $entry.Name
-            if (-not $byGroup.ContainsKey($groupName)) { $byGroup[$groupName] = New-Object System.Collections.Generic.List[object]; $groupNames.Add($groupName) }
+            if (-not $byGroup.ContainsKey($groupName)) {
+                $byGroup[$groupName] = New-Object System.Collections.Generic.List[object]
+                $sections.Add([pscustomobject]@{ Title = $groupName; Entries = $byGroup[$groupName] })
+            }
             $byGroup[$groupName].Add($entry)
         }
-        foreach ($groupName in $groupNames) {
-            '<section class="cmd-group">'
-            '<h3>' + (ConvertTo-HtmlText $groupName) + '</h3>'
-            $byGroup[$groupName] | ForEach-Object { $_.Html }
-            '</section>'
-        }
     } else {
-        $entries | ForEach-Object { $_.Html }
+        $sections.Add([pscustomobject]@{ Title = $null; Entries = $entries })
+    }
+
+    # ---- the website page
+    $commandList = foreach ($section in $sections) {
+        if ($section.Title) {
+            '<section class="cmd-group">'
+            '<h3>' + (ConvertTo-HtmlText $section.Title) + '</h3>'
+            $section.Entries | ForEach-Object { $_.Html }
+            '</section>'
+        } else {
+            $section.Entries | ForEach-Object { $_.Html }
+        }
     }
     $fragment = @(
         '<!-- reference:start -->'
@@ -222,7 +349,6 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
         '</div>'
         '<!-- reference:end -->'
     ) -join "`n"
-
     $raw = [System.IO.File]::ReadAllText($page)
     $crlf = $raw.Contains("`r`n")
     $text = $raw.Replace("`r`n", "`n")
@@ -237,8 +363,41 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
             [System.IO.File]::WriteAllText($page, $new, $enc)
         }
     }
+
+    # ---- the GitHub Markdown: docs/reference/<module>.md, from the same entries in the same order
+    $anchor = { param($n) '#' + $n.ToLowerInvariant() }
+    $markdown = New-Object System.Collections.Generic.List[string]
+    $markdown.Add('# ' + $module + ' command reference')
+    $markdown.Add('Generated from the commands'' own help by `site/Update-ModuleReference.ps1`: do not edit it by hand. The same reference is on the website: <' + $config.siteUrl + '/modules/' + $module + '/>. It is part of the `psfdx` package; see the [installation guide](../install.md).')
+    $markdown.Add("$($entries.Count) commands. Every command also takes the common parameters, such as ``-Verbose``.")
+    $markdown.Add('## Commands')
+    foreach ($section in $sections) {
+        $links = ($section.Entries | ForEach-Object { '[' + $_.Name + '](' + (& $anchor $_.Name) + ')' }) -join ', '
+        if ($section.Title) { $markdown.Add('**' + (ConvertTo-MarkdownText $section.Title) + '**: ' + $links) } else { $markdown.Add($links) }
+    }
+    foreach ($section in $sections) {
+        if ($section.Title) { $markdown.Add('## ' + (ConvertTo-MarkdownText $section.Title)) }
+        foreach ($entry in $section.Entries) { $markdown.Add($entry.Markdown) }
+    }
+    if (-not $Check) { $null = New-Item -ItemType Directory -Path $referenceFolder -Force }
+    Write-GeneratedFile (Join-Path $referenceFolder "$module.md") (($markdown -join "`n`n") + "`n") "docs/reference/$module.md"
+
+    $description = (Import-PowerShellDataFile -Path $manifest).Description
+    $moduleLines.Add('| [' + $module + '](' + $module + '.md) | ' + $entries.Count + ' | ' + (ConvertTo-MarkdownText $description) + ' |')
     $summary += [pscustomobject]@{ Module = $module; Commands = $entries.Count; WithCli = @($entries | Where-Object { $_.WithCli }).Count }
 }
+
+# The index of the Markdown reference.
+$index = @(
+    '# psfdx command reference'
+    ''
+    'One page for every module, with every command in the same order as on the website (' + $config.siteUrl + '): Synopsis, Syntax, Description, Parameters, Salesforce CLI, Examples, Remarks, Related Links. Generated from the commands'' own help by `site/Update-ModuleReference.ps1`; do not edit by hand.'
+    ''
+    '| Module | Commands | What it is for |'
+    '| :--- | ---: | :--- |'
+) + $moduleLines + @('')
+Write-GeneratedFile (Join-Path $referenceFolder 'README.md') ($index -join "`n") 'docs/reference/README.md'
+
 if ($Check) { return @($stale) }
 $summary | Format-Table -AutoSize | Out-String | Write-Host
-Write-Host "Updated $($stale.Count) page(s)."
+Write-Host "Updated $($stale.Count) file(s)."
