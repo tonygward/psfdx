@@ -197,7 +197,7 @@ test('the Modules page lists every module and is linked from the homepage, the n
 
 test('the website highlights built-in help, suite updates and native CSV pipelines', () => {
   for (const command of ['Get-Help Deploy-SalesforceMetadata -Examples', 'Select-SalesforceRecords', 'Export-Csv']) assert.ok(html.includes(command), command);
-  assert.ok(fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8').includes("Export-Csv -Path './accounts.csv' -NoTypeInformation"), 'the CSV example is on the psfdx page');
+  assert.ok(html.includes("Export-Csv -Path './accounts.csv' -NoTypeInformation"), 'the CSV example is on the homepage');
   for (const m of ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce']) {
     const doc = path.join(dist, 'modules', m, 'index.html');
     assert.ok(fs.existsSync(doc), `documentation missing: ${m}`);
@@ -311,14 +311,17 @@ test('applyConfig replaces every occurrence', () => {
 });
 
 
-test('module pages display PowerShell prompts, compact code blocks and ordered core examples', () => {
+test('module pages display PowerShell prompts and compact code blocks', () => {
   const moduleNames = ['psfdx', 'psfdx-metadata', 'psfdx-devops', 'psfdx-data', 'psfdx-plugins', 'psfdx-development', 'psfdx-logs', 'psfdx-org', 'psfdx-packages', 'psfdx-agentforce'];
   for (const name of moduleNames) {
     const page = fs.readFileSync(path.join(dist, 'modules', name, 'index.html'), 'utf8');
     assert.match(page, /class="ps-prompt">PS&gt;<\/span>/, name + ' should display PS prompt');
     assert.match(page, /class="code-box terminal-example"/, name + ' should use styled terminal');
   }
-  const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
+});
+
+test('the ordered examples sit in the homepage Get started section, not on a module page', () => {
+  const core = html.match(/<section id="get-started"[\s\S]*?<\/section>/)[0];
   const snippets = ['1. Connect to your sandbox', '2. Explore built-in help', '3. Export Salesforce records to CSV', '4. Update the entire suite'];
   let previous = -1;
   for (const snippet of snippets) {
@@ -329,7 +332,12 @@ test('module pages display PowerShell prompts, compact code blocks and ordered c
   assert.match(core, /<span class="terminal-output">NAME/, 'help contains a sample result');
   assert.match(core, /Illustrative excerpt, shortened for readability/, 'sample result is clearly labelled');
   assert.match(core, /Update-Module psfdx<\/span><\/code><\/pre><\/div>/, 'update is last executable example');
-  for (const rule of ['.documentation h2', '.documentation .ps-prompt', '.documentation .terminal-output', '.documentation .terminal-continuation']) {
+  assert.ok(core.indexOf('Discover every command and parameter') > core.indexOf('4. Update the entire suite'), 'discovery follows the examples');
+  for (const dir of fs.readdirSync(path.join(dist, 'modules'))) {
+    const page = path.join(dist, 'modules', dir, 'index.html');
+    if (fs.existsSync(page)) assert.ok(!fs.readFileSync(page, 'utf8').includes('1. Connect to your sandbox'), dir + ': examples are on the homepage');
+  }
+  for (const rule of ['.get-started-examples h3', '.get-started-examples .ps-prompt', '.get-started-examples .terminal-output', '.get-started-examples .terminal-continuation']) {
     assert.ok(css.includes(rule), rule);
   }
 });
@@ -444,8 +452,8 @@ test('the GitHub Markdown reference has the same commands and the same section o
   assert.ok(!/internal/i.test('') && !fs.existsSync(path.join(folder, 'psfdx-shared.md')), 'no Markdown reference for the internal module');
 });
 
-test('module pages other than the main one are a brief introduction and a command reference, and link to the main installation instructions', () => {
-  for (const dir of moduleDirs.filter(d => d !== 'psfdx')) {
+test('every module page is a brief introduction and a command reference, and links to the main installation instructions', () => {
+  for (const dir of moduleDirs) {
     const page = pageOf(dir);
     const intro = page.slice(page.indexOf('<main'), page.indexOf('id="reference"'));
     assert.ok(intro.length < 2200, `${dir}: the introduction before the reference is brief (${intro.length} characters)`);
@@ -456,11 +464,11 @@ test('module pages other than the main one are a brief introduction and a comman
   }
 });
 
-test('the main psfdx page keeps its introduction and examples, and has the reference of its own commands at the bottom', () => {
+test('the main psfdx page keeps its introduction, and has the reference of its own commands at the bottom', () => {
   const page = pageOf('psfdx');
-  for (const text of ['Core commands', '1. Connect to your sandbox', '2. Explore built-in help', '3. Export Salesforce records to CSV', '4. Update the entire suite']) assert.ok(page.includes(text), text);
+  assert.ok(page.includes('Core commands'));
   const reference = page.indexOf('id="reference"');
-  assert.ok(reference > page.indexOf('4. Update the entire suite'), 'the reference comes after the existing examples');
+  assert.ok(reference > page.indexOf('Get-Command -Module psfdx'), 'the reference comes after the introduction');
   assert.ok(page.indexOf('<details class="cmd"') > reference, 'the entries are in the reference');
   assert.equal([...page.matchAll(/<details class="cmd"/g)].length, exportsOf('psfdx').length, 'only its own commands');
 });
