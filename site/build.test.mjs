@@ -164,7 +164,8 @@ test('Get started sits directly below the tiles on the homepage and is not repea
   assert.match(html, /<\/ul>\s*<\/div>\s*<\/section>\s*<section id="get-started" class="section" aria-labelledby="get-started-title">/, 'directly after the tiles');
   const section = html.match(/<section id="get-started"[\s\S]*?<\/section>/)[0];
   assert.match(section, /<h2 id="get-started-title">Get started<\/h2>/);
-  assert.match(section, /data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Get-Command -Module psfdx"/);
+  assert.match(section, /data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Get-Command -Module psfdx\*"/);
+  assert.ok(section.includes('<span class="cmd">Get-Command</span> <span class="param">-Module</span> <span class="v">psfdx*</span>'),'lists every module, not just the core one');
   assert.ok(section.includes('There is only one PowerShell Gallery package: <code>psfdx</code>.'));
   assert.ok(section.includes('href="https://github.com/tonygward/psfdx/blob/main/docs/install.md"'));
   const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
