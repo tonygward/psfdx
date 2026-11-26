@@ -34,7 +34,7 @@
       <a class="brand" href="/" aria-label="psfdx home"><img src="/psfdx-logo.png" width="803" height="209" alt="psfdx"></a>
       <nav aria-label="Main">
         <ul class="nav-list">
-          <li><a href="/#modules">Docs</a></li>
+          <li><a href="/modules/">Modules</a></li>
           <li><a href="%GITHUB_URL%/releases">Releases</a></li>
           <li><a class="nav-cta" href="%GITHUB_URL%"><span aria-hidden="true">★</span> GitHub</a></li>
         </ul>
@@ -51,7 +51,7 @@
           <p class="tagline">Powerful Salesforce tools.<br>Familiar PowerShell commands.<br>One <span class="pipe">|</span> away from anything.</p>
           <div class="cta-row">
             <div class="install" data-copy="Install-Module psfdx"><span class="install-prompt" aria-hidden="true">PS&gt;</span><code>Install-Module psfdx</code></div>
-            <a class="button secondary" href="/#modules">Read the docs</a>
+            <a class="button secondary" href="/modules/">Read the docs</a>
           </div>
           <p class="fine">PowerShell 7 on Windows, macOS and Linux, or Windows PowerShell 5.1. You also need the <a href="https://developer.salesforce.com/tools/salesforcecli">Salesforce CLI</a>, which psfdx can install for you.</p>
         </div>
@@ -114,42 +114,25 @@
             <pre><code><span class="prompt">PS&gt;</span> Get-Command -Module 'psfdx*'
 <span class="prompt">PS&gt;</span> Get-Help Deploy-SalesforceMetadata -Examples</code></pre>
           </li>
+          <li class="card">
+            <p class="card-tag">save · deploy · test</p>
+            <h3>Deploy and test as you save</h3>
+            <p>Run <a href="/modules/psfdx-development/#Watch-SalesforceApex"><code>Watch-SalesforceApex</code></a> in your project. Every save deploys the change and runs its tests.</p>
+            <pre><code><span class="prompt">PS&gt;</span> Watch-SalesforceApex</code></pre>
+          </li>
         </ul>
       </div>
     </section>
 
-    <section id="powershell-examples" class="section" aria-labelledby="powershell-examples-title">
+    <section id="get-started" class="section" aria-labelledby="get-started-title">
       <div class="wrap">
-        <div id="pipeline-comparison" class="pipeline-comparison">
-          <h2 id="powershell-examples-title">Comparison: Export accounts to CSV</h2>
-          <figure class="code-box">
-            <figcaption>PowerShell with psfdx</figcaption>
-            <pre><code>Select-SalesforceRecords -Query 'SELECT Id, Name FROM Account' -TargetOrg dev |
-    Export-Csv ./accounts.csv -NoTypeInformation</code></pre>
-          </figure>
-          <figure class="code-box">
-            <figcaption>Bash with the Salesforce CLI and jq</figcaption>
-            <pre><code>sf data query --query 'SELECT Id, Name FROM Account' --target-org dev --json |
-  jq -r '["Id", "Name"], (.result.records[] | [.Id, .Name]) | @csv' \
-  &gt; accounts.csv</code></pre>
-          </figure>
-          <p class="section-intro">Both examples do the same job, but the psfdx version is easier to read. psfdx returns PowerShell objects, so you can pipe the results straight into tools like <code>Sort-Object</code> and <code>Group-Object</code>.</p>
+        <h2 id="get-started-title">Get started</h2>
+        <div class="code-box get-started-box" data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Get-Command -Module psfdx">
+<pre><code><span class="prompt">PS&gt;</span> <span class="cmd">Install-Module</span> <span class="v">psfdx</span>
+<span class="prompt">PS&gt;</span> <span class="cmd">Import-Module</span> <span class="v">psfdx</span>
+<span class="prompt">PS&gt;</span> <span class="cmd">Get-Command</span> <span class="param">-Module</span> <span class="v">psfdx</span></code></pre>
         </div>
-      </div>
-    </section>
-
-    <section id="watch" class="section" aria-labelledby="watch-title">
-      <div class="wrap">
-        <h2 id="watch-title">Deploy and test as you save.</h2>
-        <p class="section-intro">Run <code>Watch-SalesforceApex</code> in your project.<br>Every save deploys the change and runs its tests.</p>
-        <figure class="code-box watch-example">
-          <pre><code><span class="prompt">PS&gt;</span> Watch-SalesforceApex
-Watching /work/salesforce for Apex changes. Press Ctrl+C to stop.
-Deploying ApexClass InvoiceService...
-Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest).</code></pre>
-          <figcaption class="fine">Example output after saving <code>InvoiceService.cls</code>.</figcaption>
-        </figure>
-        <p><a href="/modules/psfdx-development/#Watch-SalesforceApex">Apex watcher help</a> · <a href="/modules/psfdx-development/#Watch-SalesforceJest">LWC Jest watch mode</a></p>
+        <p class="section-intro">There is only one PowerShell Gallery package: <code>psfdx</code>. Importing it loads the entire module suite, while each command retains its owning module name. <a href="%GITHUB_URL%/blob/main/docs/install.md">Installation and updates</a></p>
       </div>
     </section>
 
@@ -157,21 +140,9 @@ Deployed ApexClass InvoiceService and successfully ran tests (InvoiceServiceTest
       <div class="wrap">
         <p class="eyebrow"><span class="prompt">PS&gt;</span> Get-Command -Module 'psfdx*'</p>
         <h2 id="modules-title"><span class="h1-line">One install.</span> <span class="h1-line">Every Salesforce workflow.</span></h2>
-        <ul class="module-list">
-          <li><a class="module-row" href="/modules/psfdx/"><span class="module-name">psfdx</span><span class="module-desc">Connection, users, permissions and APIs</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-data/"><span class="module-name">psfdx-data</span><span class="module-desc">SOQL, records, files, tree data and Bulk API 2.0</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-org/"><span class="module-name">psfdx-org</span><span class="module-desc">Sandboxes and scratch orgs</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-metadata/"><span class="module-name">psfdx-metadata</span><span class="module-desc">Retrieve, deploy and describe metadata</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-logs/"><span class="module-name">psfdx-logs</span><span class="module-desc">Debug logs</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-development/"><span class="module-name">psfdx-development</span><span class="module-desc">Projects, tests and deploys</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-devops/"><span class="module-name">psfdx-devops</span><span class="module-desc">DevOps Center projects, work items, pipelines and promotion</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-packages/"><span class="module-name">psfdx-packages</span><span class="module-desc">Create, version, promote and install packages</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-agentforce/"><span class="module-name">psfdx-agentforce</span><span class="module-desc">Agents, Agentforce tests, Data Libraries and MCP</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-          <li><a class="module-row" href="/modules/psfdx-plugins/"><span class="module-name">psfdx-plugins</span><span class="module-desc">Install, inspect and manage Salesforce CLI plugins</span><span class="module-arrow" aria-hidden="true">→</span></a></li>
-        </ul>
-        <div class="update-row">
-          <div class="install" data-copy="Update-Module psfdx"><span class="install-prompt" aria-hidden="true">PS&gt;</span><code>Update-Module psfdx</code></div>
-          <p>One command updates every module.</p>
+        <p class="section-intro">Ten modules cover connections, data, metadata, orgs, logs, development, DevOps Center, packages, Agentforce and CLI plugins.</p>
+        <div class="cta-row">
+          <a class="button secondary" href="/modules/">Browse all modules →</a>
         </div>
       </div>
     </section>

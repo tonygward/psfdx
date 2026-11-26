@@ -209,7 +209,7 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 @media (max-width: 640px) {
   .module-row { grid-template-columns: minmax(0, 1fr) auto; }
   .module-desc { grid-column: 1 / -1; grid-row: 2; }
-  .nav-list a:not(.nav-cta) { display: none; }
+  .nav-list a:not(.nav-cta):not([href="/modules/"]) { display: none; }
   .install { width: 100%; }
 }
 
@@ -231,9 +231,8 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .documentation h2 { font-size: clamp(1.5rem, 2.8vw, 2.15rem); margin: 1.8em 0 .65em; }
 .documentation .section-intro { max-width: 72ch; }
 .documentation .code-box { margin: 18px 0 24px; max-width: 100%; }
-.documentation .code-box pre, :is(#powershell-examples, #why) .card pre { overflow-x: auto; white-space: pre; }
-:is(#powershell-examples, #why) .card pre { background: var(--bg); border: 1px solid var(--border); padding: 14px; border-radius: 8px; font-size: .78rem; line-height: 1.7; }
-#powershell-examples .card code { font-size: inherit; }
+.documentation .code-box pre, #why .card pre { overflow-x: auto; white-space: pre; }
+#why .card pre { background: var(--bg); border: 1px solid var(--border); padding: 14px; border-radius: 8px; font-size: .78rem; line-height: 1.7; }
 
 /* Documentation: compact, high-contrast PowerShell reference styling */
 .documentation { max-width: 880px; font-size: .96rem; line-height: 1.55; }
@@ -286,12 +285,16 @@ code { background: rgba(77, 155, 255, 0.14); color: var(--text); padding: 1px 6p
 .documentation .cmd-body .cmd-description { color: var(--text); margin: 0 0 .65em; font-size: .88rem; line-height: 1.5; }
 @media (max-width: 600px) { .documentation .cmd-body { padding: 0 12px 12px; } }
 
-#why .card pre, .watch-example pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-.watch-example { margin: 20px 0 12px; }
-.watch-example pre { font-size: .9rem; }
-.watch-example figcaption { margin-bottom: 0; }
+#why .card pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 
-.pipeline-comparison { margin-top: 0; }
-#powershell-examples-title { max-width: none; }
-.pipeline-comparison .code-box { margin: 1rem 0; }
-.pipeline-comparison figcaption { color: var(--yellow); font-weight: 600; margin-bottom: .5rem; }
+
+/* Four feature tiles: four across on wide screens, two on tablets, one on phones. */
+#why .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#why .card { padding: 24px; }
+#why .card-tag { font-size: .95rem; }
+@media (max-width: 1100px) { #why .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { #why .cards { grid-template-columns: minmax(0, 1fr); } }
+.card a code { color: var(--cyan); }
+.get-started-box { margin: clamp(20px, 3vw, 32px) 0 0; max-width: 760px; }
+.get-started-box pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.module-catalogue h1 { font-size: clamp(1.9rem, 1.2rem + 3vw, 3.4rem); max-width: 22ch; }

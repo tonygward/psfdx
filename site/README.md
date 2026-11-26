@@ -4,7 +4,7 @@ The public website for psfdx (psfdx.com), with a homepage and a documentation pa
 
 ```
 site/
-  src/               the homepage (index.html), module reference pages (modules/*/index.html), style.css, script.js, fonts/, favicon.png, og-image.png, _headers
+  src/               the homepage (index.html), the Modules page (modules/index.html), module reference pages (modules/*/index.html), style.css, script.js, fonts/, favicon.png, og-image.png, _headers
   site.config.json   domain and link settings
   build.mjs          builds site/dist (needs Node 18 or later, nothing to install)
   build.test.mjs     tests: links and files exist, copy, accessibility basics, no outside requests
@@ -13,7 +13,7 @@ site/
 
 ## Design and fonts
 
-The homepage follows the "psfdx.com Homepage Redesign" handover (21 November 2026): navy console palette, a typing terminal, a rotated command marquee, three feature cards, an eight-module list and a yellow closing panel. The prototype itself is not deployed; the page is plain HTML, CSS and a small script.
+The homepage follows the "psfdx.com Homepage Redesign" handover (21 November 2026): navy console palette, a typing terminal, a rotated command marquee, four feature tiles (the fourth is `Watch-SalesforceApex`), a Get started section, a link to the Modules page and a yellow closing panel. The module catalogue is on its own page, `/modules/`, linked from the navigation on every page. The prototype itself is not deployed; the page is plain HTML, CSS and a small script.
 
 - **Fonts are self-hosted** in `src/fonts/` (Bricolage Grotesque and IBM Plex Mono, latin subset, both under the SIL Open Font License 1.1, downloaded from Google Fonts). The content security policy allows only this site, so no font is loaded from outside.
 - **The release pill** shows the number in the repository's `VERSION` file, put in at build time (`%RELEASE_VERSION%`). Cloudflare Pages rebuilds on every push to `main`, and every release is a push, so it follows the latest release. It is the only version number allowed on the page.
@@ -67,7 +67,7 @@ If a merge to `main` does not appear on psfdx.com, check the Cloudflare Pages `p
 
 ## Module documentation
 
-The homepage links to `/modules/<module-name>/` for each module (every module that exports commands). `psfdx-shared` is internal: it exports nothing, so it has no page, no homepage row and no reference. The pages are a short introduction followed by a command reference. The introductions (definition and overview) are written by hand in `site/src/modules/<module>/index.html`; the main `psfdx` page also keeps its installation instructions and showcase examples.
+The Modules page (`site/src/modules/index.html`) links to `/modules/<module-name>/` for each module (every module that exports commands). `psfdx-shared` is internal: it exports nothing, so it has no page, no Modules page row and no reference. The pages are a short introduction followed by a command reference. The introductions (definition and overview) are written by hand in `site/src/modules/<module>/index.html`; the main `psfdx` page also keeps its showcase examples. Installation is in the homepage Get started section (`/#get-started`), which every module page links to.
 
 The command reference is generated from native `Get-Help`. `site/Update-ModuleReference.ps1` imports the repository modules and fills the region between `<!-- reference:start -->` and `<!-- reference:end -->` on each page. Every entry has the same sections in the same order: **Synopsis, Syntax, Description, Parameters, Salesforce CLI, Examples, Remarks, Related Links** (Parameters is left out for a command with none). There is no NAME section, because the command name is the heading, and no Inputs or Outputs section; native `Get-Help` is unchanged. The Examples section shows the first example with the `PS>` prompt, and cmdlets without a direct CLI command say so in the Salesforce CLI section.
 
