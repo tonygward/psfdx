@@ -344,6 +344,7 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
     }
     $fragment = @(
         '<!-- reference:start -->'
+        ('<p><a href="/reference/' + $module + '.md" download>Download Markdown</a> · <a href="%GITHUB_URL%/commits/main/docs/reference/' + $module + '.md">Source history on GitHub</a></p>')
         '<div class="cmd-list">'
         $commandList
         '</div>'
@@ -368,7 +369,7 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
     $anchor = { param($n) '#' + $n.ToLowerInvariant() }
     $markdown = New-Object System.Collections.Generic.List[string]
     $markdown.Add('# ' + $module + ' command reference')
-    $markdown.Add('Generated from the commands'' own help by `site/Update-ModuleReference.ps1`: do not edit it by hand. The same reference is on the website: <' + $config.siteUrl + '/modules/' + $module + '/>. It is part of the `psfdx` package; see the [installation guide](../install.md).')
+    $markdown.Add('Generated from the commands'' own help by `site/Update-ModuleReference.ps1`: do not edit it by hand. The same reference is on the website: <' + $config.siteUrl + '/modules/' + $module + '/>. It is part of the `psfdx` package; see the [installation guide](' + $config.githubUrl + '/blob/main/docs/install.md).')
     $markdown.Add("$($entries.Count) commands. Every command also takes the common parameters, such as ``-Verbose``.")
     $markdown.Add('## Commands')
     foreach ($section in $sections) {

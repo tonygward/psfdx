@@ -68,10 +68,27 @@ export function build({ outDir = path.join(here, 'dist'), env = process.env } = 
   };
   copyDir(srcDir, outDir);
 
+  const modules = fs.readdirSync(path.join(srcDir, 'modules'), { withFileTypes: true })
+    .filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
+  const referenceDir = path.join(outDir, 'reference');
+  fs.mkdirSync(referenceDir, { recursive: true });
+  const references = modules.map(module => {
+    const file = `${module}.md`;
+    const source = path.join(repoRoot, 'docs', 'reference', file);
+    fs.copyFileSync(source, path.join(referenceDir, file));
+    return fs.readFileSync(source, 'utf8').trimEnd();
+  });
+  const fullReference = [
+    '# psfdx full command reference',
+    `[Source history](${config.githubUrl}/commits/main/docs/reference)`,
+    ...references,
+  ].join('\n\n---\n\n');
+  fs.writeFileSync(path.join(referenceDir, 'psfdx-full.md'), fullReference + '\n');
+
   fs.copyFileSync(path.join(repoRoot, 'images', 'psfdx-logo.png'), path.join(outDir, 'psfdx-logo.png'));
   fs.writeFileSync(path.join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${config.siteUrl}/sitemap.xml\n`);
   fs.writeFileSync(path.join(outDir, 'sitemap.xml'),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${config.siteUrl}/</loc></url>\n  <url><loc>${config.siteUrl}/modules/</loc></url>\n${fs.readdirSync(path.join(srcDir, 'modules'), { withFileTypes: true }).filter(entry => entry.isDirectory()).map(({ name: module }) => `  <url><loc>${config.siteUrl}/modules/${module}/</loc></url>`).join('\n')}\n</urlset>\n`);
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${config.siteUrl}/</loc></url>\n  <url><loc>${config.siteUrl}/modules/</loc></url>\n${modules.map(module => `  <url><loc>${config.siteUrl}/modules/${module}/</loc></url>`).join('\n')}\n</urlset>\n`);
   return { outDir, config };
 }
 
