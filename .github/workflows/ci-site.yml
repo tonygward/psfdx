@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'site/**'
+      - 'docs/reference/**'
       - 'images/psfdx-logo.png'
       - '.github/workflows/ci-site.yml'
 
@@ -25,6 +26,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Regenerate and verify command references
+        shell: pwsh
+        run: |
+          ./site/Update-ModuleReference.ps1
+          $changes = git status --porcelain -- site/src/modules docs/reference
+          if ($changes) { throw "Generated command references are stale: $($changes -join ', ')" }
       - run: node --test "site/*.test.mjs"
       - run: node site/build.mjs
       - uses: actions/upload-artifact@v4

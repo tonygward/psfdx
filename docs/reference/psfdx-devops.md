@@ -1,6 +1,6 @@
 # psfdx-devops command reference
 
-Generated from the commands' own help by `site/Update-ModuleReference.ps1`: do not edit it by hand. The same reference is on the website: <https://psfdx.com/modules/psfdx-devops/>. It is part of the `psfdx` package; see the [installation guide](../install.md).
+Generated from the commands' own help by `site/Update-ModuleReference.ps1`: do not edit it by hand. The same reference is on the website: <https://psfdx.com/modules/psfdx-devops/>. It is part of the `psfdx` package; see the [installation guide](https://github.com/tonygward/psfdx/blob/main/docs/install.md).
 
 31 commands. Every command also takes the common parameters, such as `-Verbose`.
 

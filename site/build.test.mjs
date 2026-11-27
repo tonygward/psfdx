@@ -454,6 +454,26 @@ test('the GitHub Markdown reference has the same commands and the same section o
   assert.ok(!/internal/i.test('') && !fs.existsSync(path.join(folder, 'psfdx-shared.md')), 'no Markdown reference for the internal module');
 });
 
+test('the website ships working Markdown downloads for every public module and the whole suite', () => {
+  const downloadDir = path.join(dist, 'reference');
+  const moduleNames = [...moduleDirs].sort();
+  assert.deepEqual(fs.readdirSync(downloadDir).sort(), [...moduleNames.map(name => `${name}.md`), 'psfdx-full.md'].sort());
+  const expectedCommands = [];
+  for (const module of moduleNames) {
+    const file = `${module}.md`;
+    const page = pageOf(module);
+    assert.ok(page.includes(`href="/reference/${file}" download>Download Markdown</a>`), module);
+    assert.ok(page.includes(`/commits/main/docs/reference/${file}">Source history on GitHub</a>`), module);
+    assert.deepEqual(fs.readFileSync(path.join(downloadDir, file)), fs.readFileSync(path.join(repoRoot, 'docs', 'reference', file)));
+    expectedCommands.push(...[...page.matchAll(/<details class="cmd" id="([^"]+)">/g)].map(match => match[1]));
+  }
+  assert.ok(modulesPage.includes('href="/reference/psfdx-full.md" download>Download full reference</a>'));
+  const full = fs.readFileSync(path.join(downloadDir, 'psfdx-full.md'), 'utf8');
+  const commands = [...full.matchAll(/^### (\S+)\r?$/gm)].map(match => match[1]);
+  assert.deepEqual(commands, expectedCommands);
+  assert.equal(new Set(commands).size, commands.length);
+});
+
 test('every module page is a brief introduction and a command reference, and links to the main installation instructions', () => {
   for (const dir of moduleDirs) {
     const page = pageOf(dir);
