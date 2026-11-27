@@ -344,7 +344,7 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
     }
     $fragment = @(
         '<!-- reference:start -->'
-        ('<p><a href="/reference/' + $module + '.md" download>Download Markdown</a> · <a href="%GITHUB_URL%/commits/main/docs/reference/' + $module + '.md">Source history on GitHub</a></p>')
+        ('<p><a href="/reference/' + $module + '.md" download>Download Markdown</a> &middot; <a href="%GITHUB_URL%/commits/main/docs/reference/' + $module + '.md">Source history on GitHub</a></p>')
         '<div class="cmd-list">'
         $commandList
         '</div>'

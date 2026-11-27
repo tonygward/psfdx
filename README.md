@@ -47,6 +47,8 @@ Get-Help Deploy-SalesforceMetadata -Parameter *
 
 Default help for each public command shows a **SALESFORCE CLI** section after its behavioural description and before related links. It identifies the underlying `sf` commands and relevant flags, or explains how the cmdlet works without a direct CLI equivalent. The website reference uses the same help and includes an inline example. The help checks use the [CLI parity report](docs/cli-parity.md) and are described in the [help audit](docs/help-audit.md).
 
+Using Claude Code or another agent that supports Agent Skills? See [Install the PSFDX Agent Skill](docs/agent-skill.md).
+
 ## 4. Update psfdx
 
 ```
