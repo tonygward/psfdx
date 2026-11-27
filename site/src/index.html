@@ -120,6 +120,12 @@
             <p>Run <a href="/modules/psfdx-development/#Watch-SalesforceApex"><code>Watch-SalesforceApex</code></a> in your project. Every save deploys the change and runs its tests.</p>
             <pre><code><span class="prompt">PS&gt;</span> Watch-SalesforceApex</code></pre>
           </li>
+          <li class="card">
+            <p class="card-tag">Claude Code · Agent Skills</p>
+            <h3>PSFDX Agent Skill</h3>
+            <p>Give Claude Code and compatible agents a guide to finding PSFDX commands, checking the target Salesforce org and building read-only PowerShell workflows.</p>
+            <p><a href="#agent-skill">Install the Agent Skill</a></p>
+          </li>
         </ul>
       </div>
     </section>
@@ -163,8 +169,13 @@ DESCRIPTION
 <h3>Discover every command and parameter</h3>
 <p>Use <code>Get-Command -Module psfdx</code> to list the core cmdlets or <code>Get-Command -Module 'psfdx*'</code> to list all modules after <code>Import-Module psfdx</code>. PowerShell's built-in help includes descriptions, parameters, examples and the underlying <code>sf</code> mapping.</p>
 <p>Further reference: <a href="%GITHUB_URL%#modules">repository command catalogue</a> · <a href="%GITHUB_URL%/blob/main/docs/cli-parity.md">Salesforce CLI parity report</a>.</p>
-<h3>Install the PSFDX Agent Skill</h3>
-<p>Clone the repository and copy <code>skills/psfdx/SKILL.md</code> to your project's <code>.claude/skills/psfdx/</code>. Copy the files from <code>docs/reference/</code> into a <code>references/</code> folder alongside it. For another compatible agent, use its configured skills directory with the same folder layout. <a href="%GITHUB_URL%/blob/main/docs/agent-skill.md">Installation commands and prerequisites</a>.</p>
+<h3 id="agent-skill">Install the PSFDX Agent Skill</h3>
+<p>With Node.js installed, run this from your project directory:</p>
+<div class="code-box get-started-box" data-copy="npx skills add tonygward/psfdx --skill psfdx --agent claude-code">
+<pre><code><span class="prompt">PS&gt;</span> <span class="cmd">npx</span> skills add tonygward/psfdx <span class="param">--skill</span> psfdx <span class="param">--agent</span> claude-code</code></pre>
+</div>
+<p>Run <code>/psfdx</code> in Claude Code. To install the skill across projects, add <code>--global</code> to the install command.</p>
+<p>The <code>npx</code> command installs the skill instructions. For the offline reference files and prerequisites, see the <a href="%GITHUB_URL%/blob/main/docs/agent-skill.md">full installation guide</a>.</p>
         </div>
       </div>
     </section>

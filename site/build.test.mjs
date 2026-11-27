@@ -126,7 +126,7 @@ test('the feature tiles and all ten public modules use real content', () => {
   for (const m of modules) assert.ok(modulesPage.includes(`href="/modules/${m}/"`), `missing module documentation link ${m}`);
 });
 
-test('the homepage copy is tight: four feature tiles including Watch, Get started below them, and a link to the modules', () => {
+test('the homepage keeps feature copy concise and links to the modules', () => {
   assert.ok(!html.includes('Less time remembering CLI syntax'), 'the repeated tagline is gone');
   assert.ok(!html.includes('See exactly what runs') && !html.includes('Get-SalesforceOrgDetails -TargetOrg dev -Verbose'), 'the -Verbose card is replaced');
   assert.match(html, /Every command returns real PowerShell objects, not text to parse[\s\S]*No <code>jq<\/code>, no string handling/);
@@ -146,16 +146,20 @@ test('the homepage has no export comparison and no standalone Watch section', ()
   for (const gone of ['.pipeline-comparison', '.watch-example', '#powershell-examples']) assert.ok(!css.includes(gone), `unused rule ${gone}`);
 });
 
-test('the four feature tiles share one style, the last one is Watch, and they reflow on small screens', () => {
+test('the five feature tiles share one style and reflow on small screens', () => {
   const cards = html.match(/<ul class="cards">([\s\S]*?)<\/ul>/)[1];
   const tiles = [...cards.matchAll(/<li class="card">([\s\S]*?)<\/li>/g)].map(m => m[1]);
-  assert.equal(tiles.length, 4);
+  assert.equal(tiles.length, 5);
   for (const tile of tiles) assert.match(tile, /^\s*<p class="card-tag">[^<]+<\/p>\s*<h3>[^<]+<\/h3>\s*<p>/, 'tag, heading and copy');
   assert.match(tiles[3], /<h3>Deploy and test as you save<\/h3>/);
   assert.match(tiles[3], /href="\/modules\/psfdx-development\/#Watch-SalesforceApex"><code>Watch-SalesforceApex<\/code><\/a>/);
   const textLength = tile => tile.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().length;
   assert.ok(textLength(tiles[3]) <= Math.max(...tiles.slice(0, 3).map(textLength)), 'the Watch tile is no longer than the others');
-  assert.match(css, /#why \.cards \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); \}/);
+  assert.match(tiles[4], /<h3>PSFDX Agent Skill<\/h3>/);
+  assert.match(tiles[4], /href="#agent-skill">Install the Agent Skill<\/a>/);
+  assert.match(html, /<h3 id="agent-skill">Install the PSFDX Agent Skill<\/h3>/);
+  assert.match(css, /#why \.cards \{ grid-template-columns: repeat\(5, minmax\(0, 1fr\)\); \}/);
+  assert.match(css, /@media \(max-width: 1279px\) \{ #why \.cards \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \} \}/);
   assert.match(css, /@media \(max-width: 1100px\) \{ #why \.cards \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \} \}/);
   assert.match(css, /@media \(max-width: 640px\) \{ #why \.cards \{ grid-template-columns: minmax\(0, 1fr\); \} \}/);
 });
@@ -165,6 +169,7 @@ test('Get started sits directly below the tiles on the homepage and is not repea
   const section = html.match(/<section id="get-started"[\s\S]*?<\/section>/)[0];
   assert.match(section, /<h2 id="get-started-title">Get started<\/h2>/);
   assert.match(section, /data-copy="Install-Module psfdx&#10;Import-Module psfdx&#10;Get-Command -Module psfdx\*"/);
+  assert.ok(section.includes('data-copy="npx skills add tonygward/psfdx --skill psfdx --agent claude-code"'), 'copies the Agent Skill install command');
   assert.ok(section.includes('<span class="cmd">Get-Command</span> <span class="param">-Module</span> <span class="v">psfdx*</span>'),'lists every module, not just the core one');
   assert.ok(!section.includes('There is only one PowerShell Gallery package'), 'no package explainer under the install commands');
   const core = fs.readFileSync(path.join(dist, 'modules', 'psfdx', 'index.html'), 'utf8');
