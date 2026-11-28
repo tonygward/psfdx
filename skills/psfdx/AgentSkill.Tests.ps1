@@ -1,10 +1,23 @@
 BeforeAll {
     $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    Import-Module (Join-Path $root 'psfdx-data/psfdx-data.psd1') -Force -DisableNameChecking
+    # Remove any installed copies first, so the examples run against the repository modules and their mocks, never a real org.
+    Get-Module -Name 'psfdx', 'psfdx-data' -All | ForEach-Object {
+        try { Remove-Module -ModuleInfo $_ -Force -ErrorAction Stop } catch { }
+    }
+    Import-Module (Join-Path (Join-Path $root 'psfdx') 'psfdx.psd1') -Force -DisableNameChecking
+    Import-Module (Join-Path (Join-Path $root 'psfdx-data') 'psfdx-data.psd1') -Force -DisableNameChecking
     $skill = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'SKILL.md') -Raw
-    $examples = [regex]::Matches($skill, '(?ms)^```powershell\r?\n(.*?)^```')
-    $read = [scriptblock]::Create($examples[0].Groups[1].Value)
-    $group = [scriptblock]::Create($examples[1].Groups[1].Value)
+    $examples = @([regex]::Matches($skill, '(?ms)^```powershell\r?\n(.*?)^```') | ForEach-Object { $_.Groups[1].Value })
+
+    # Finds each example by what it does, not by its position, so adding an example does not break the others.
+    function Get-SkillExample([string] $Pattern) {
+        $found = @($examples | Where-Object { $_ -match $Pattern })
+        if ($found.Count -ne 1) { throw "Expected one SKILL.md example matching '$Pattern', found $($found.Count)." }
+        [scriptblock]::Create($found[0])
+    }
+    $orgCheck = Get-SkillExample '^Get-SalesforceOrgDetails '
+    $read = Get-SkillExample '^Select-SalesforceRecords .*SELECT Id, Name FROM Account'
+    $group = Get-SkillExample 'Group-Object'
 
     # A fixture for stdout from sf. This test never starts the CLI or connects to an org.
     function sf { $script:reply }
@@ -26,6 +39,17 @@ BeforeAll {
 Describe 'PSFDX agent skill examples' {
     BeforeEach {
         Mock Invoke-Salesforce -ModuleName psfdx-data { $script:reply }
+        Mock Invoke-Salesforce -ModuleName psfdx { $script:reply }
+    }
+
+    It 'checks the target org without putting a token or authorization URL in the output' {
+        $script:reply = '{"status":0,"result":{"id":"00Dfixture","username":"agent@example.com","instanceUrl":"https://fixture.my.salesforce.com","accessToken":"00Dfixture!SECRET","sfdxAuthUrl":"force://SECRET@fixture","clientId":"PlatformCLI","connectedStatus":"Connected"}}'
+        $actual = & $orgCheck | ConvertTo-Json -Compress
+        $actual | Should -BeExactly '{"id":"00Dfixture","username":"agent@example.com","instanceUrl":"https://fixture.my.salesforce.com"}'
+        $actual | Should -Not -Match 'SECRET'
+        Should -Invoke Invoke-Salesforce -ModuleName psfdx -Exactly -Times 1 -ParameterFilter {
+            $FilePath -eq 'sf' -and ($Arguments -join '|') -eq 'org|display|--target-org|my-sandbox|--json'
+        }
     }
 
     It 'returns the same bounded account projection as the raw CLI baseline' {
@@ -58,5 +82,35 @@ Describe 'PSFDX agent skill examples' {
         { & $group } | Should -Throw '*Fixture org is unavailable*'
         { & $rawRead } | Should -Throw '*Fixture org is unavailable*'
         { & $rawGroup } | Should -Throw '*Fixture org is unavailable*'
+    }
+}
+
+Describe 'PSFDX agent skill content' {
+    It 'never tells the agent to run a command whose output contains the access token' {
+        foreach ($example in $examples) {
+            $example | Should -Not -Match '(?m)^\s*sf\s+org\s+display' -Because 'raw sf org display prints the access token'
+            $example | Should -Not -Match '-IncludeToken'
+        }
+    }
+
+    It 'links only to files inside the skill folder, so an installed copy of the folder has no broken links' {
+        $links = @([regex]::Matches($skill, '\]\(([^)#\s]+)') | ForEach-Object { $_.Groups[1].Value } | Where-Object { $_ -notmatch '^[a-z]+:' })
+        $links.Count | Should -BeGreaterThan 0
+        foreach ($link in $links) {
+            $link | Should -Not -Match '\.\.' -Because "$link points outside the skill folder"
+            Test-Path -LiteralPath (Join-Path $PSScriptRoot $link) -PathType Leaf | Should -BeTrue -Because "SKILL.md links to $link"
+        }
+    }
+
+    It 'ships the same command reference as docs/reference' {
+        $docs = Join-Path (Join-Path $root 'docs') 'reference'
+        $copy = Join-Path $PSScriptRoot 'references'
+        $expected = @(Get-ChildItem -LiteralPath $docs -Filter *.md | ForEach-Object Name | Sort-Object)
+        $expected.Count | Should -BeGreaterThan 0
+        @(Get-ChildItem -LiteralPath $copy -Filter *.md | ForEach-Object Name | Sort-Object) | Should -Be $expected
+        foreach ($name in $expected) {
+            [System.IO.File]::ReadAllText((Join-Path $copy $name)).Replace("`r`n", "`n") |
+                Should -BeExactly ([System.IO.File]::ReadAllText((Join-Path $docs $name)).Replace("`r`n", "`n")) -Because "skills/psfdx/references/$name is generated with docs/reference/$name; run pwsh ./site/Update-ModuleReference.ps1"
+        }
     }
 }

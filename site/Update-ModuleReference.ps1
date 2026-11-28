@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Writes the command reference of every psfdx module into its page of the website and into docs/reference/<module>.md.
+Writes the command reference of every psfdx module into its page of the website, into docs/reference/<module>.md and into the Agent Skill's copy, skills/psfdx/references/<module>.md.
 .DESCRIPTION
 Imports the repository modules and renders their native Get-Help content, once, as the website command reference and as the GitHub Markdown reference.
 Both show the same sections in the same order (see $referenceSections).
@@ -287,6 +287,8 @@ function Get-CommandGroup([string] $Module, [string] $Name) {
 
 $config = Get-Content -LiteralPath (Join-Path (Join-Path $Root 'site') 'site.config.json') -Raw | ConvertFrom-Json
 $referenceFolder = Join-Path (Join-Path $Root 'docs') 'reference'
+# The Agent Skill ships the same Markdown reference beside SKILL.md, so `npx skills add` (which copies skills/psfdx) installs working links.
+$skillReferenceFolder = Join-Path (Join-Path (Join-Path $Root 'skills') 'psfdx') 'references'
 $stale = New-Object System.Collections.Generic.List[string]
 $summary = @()
 $moduleLines = New-Object System.Collections.Generic.List[string]
@@ -302,6 +304,16 @@ function Write-GeneratedFile([string] $Path, [string] $Text, [string] $Label) {
             [System.IO.File]::WriteAllText($Path, $Text, $enc)
         }
     }
+}
+
+# Writes one Markdown reference file to docs/reference and to the Agent Skill's copy of it.
+function Write-ReferenceFile([string] $Name, [string] $Text) {
+    Write-GeneratedFile (Join-Path $referenceFolder $Name) $Text "docs/reference/$Name"
+    if (-not (Test-Path -LiteralPath $skillReferenceFolder)) {
+        if ($Check) { $script:stale.Add("skills/psfdx/references/$Name"); return }
+        New-Item -ItemType Directory -Path $skillReferenceFolder -Force | Out-Null
+    }
+    Write-GeneratedFile (Join-Path $skillReferenceFolder $Name) $Text "skills/psfdx/references/$Name"
 }
 
 # Internal modules have no page: they export no commands and are not part of the public command surface.
@@ -381,7 +393,7 @@ foreach ($module in @(Get-PsfdxModules | Where-Object { $_ -notin @(Get-PsfdxInt
         foreach ($entry in $section.Entries) { $markdown.Add($entry.Markdown) }
     }
     if (-not $Check) { $null = New-Item -ItemType Directory -Path $referenceFolder -Force }
-    Write-GeneratedFile (Join-Path $referenceFolder "$module.md") (($markdown -join "`n`n") + "`n") "docs/reference/$module.md"
+    Write-ReferenceFile "$module.md" (($markdown -join "`n`n") + "`n")
 
     $description = (Import-PowerShellDataFile -Path $manifest).Description
     $moduleLines.Add('| [' + $module + '](' + $module + '.md) | ' + $entries.Count + ' | ' + (ConvertTo-MarkdownText $description) + ' |')
@@ -397,7 +409,7 @@ $index = @(
     '| Module | Commands | What it is for |'
     '| :--- | ---: | :--- |'
 ) + $moduleLines + @('')
-Write-GeneratedFile (Join-Path $referenceFolder 'README.md') ($index -join "`n") 'docs/reference/README.md'
+Write-ReferenceFile 'README.md' ($index -join "`n")
 
 if ($Check) { return @($stale) }
 $summary | Format-Table -AutoSize | Out-String | Write-Host
