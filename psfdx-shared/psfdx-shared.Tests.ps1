@@ -211,6 +211,116 @@ InModuleScope 'psfdx-shared' {
         }
     }
 
+    Describe 'Salesforce CLI dependency discovery' {
+        BeforeEach {
+            $script:originalPolicy = $env:PSFDX_CLI_INSTALL
+            $env:PSFDX_CLI_INSTALL = 'Never'
+            $script:PsfdxCliCache = $null
+            $script:fakeCli = Join-Path $TestDrive 'sf'
+            Set-Content -LiteralPath $script:fakeCli -Value ''
+            Mock Get-PsfdxApplicationPath { $script:fakeCli }
+            Mock Invoke-Salesforce { '@salesforce/cli/2.159.7 linux-x64 node-v22.0.0' }
+            Mock Install-PsfdxCliDependency {}
+            Mock Confirm-PsfdxCliInstall { $true }
+            Mock Test-PsfdxCanPrompt { $true }
+        }
+
+        AfterEach {
+            [Environment]::SetEnvironmentVariable('PSFDX_CLI_INSTALL', $script:originalPolicy)
+            $script:PsfdxCliCache = $null
+        }
+
+        It 'checks a compatible executable once and caches its path' {
+            Get-PsfdxCliPath | Should -Be $script:fakeCli
+            Get-PsfdxCliPath | Should -Be $script:fakeCli
+            Should -Invoke Invoke-Salesforce -Exactly -Times 1 -ParameterFilter { $Arguments[0] -eq '--version' }
+            Should -Invoke Install-PsfdxCliDependency -Exactly -Times 0
+        }
+
+        It 'rejects old and unrelated executables without attempting an upgrade: <Banner>' -TestCases @(
+            @{ Banner = '@salesforce/cli/1.0.0' }
+            @{ Banner = 'sf/4.10.0' }
+        ) {
+            param($Banner)
+            $script:versionBanner = $Banner
+            $env:PSFDX_CLI_INSTALL = 'Install'
+            Mock Invoke-Salesforce { $script:versionBanner }
+            { Get-PsfdxCliPath } | Should -Throw '*incompatible*Salesforce CLI v2*'
+            Should -Invoke Install-PsfdxCliDependency -Exactly -Times 0
+        }
+
+        It 'offers installation only according to the selected policy' {
+            Mock Get-PsfdxApplicationPath {}
+            { Get-PsfdxCliPath } | Should -Throw '*was not found on PATH*'
+            $env:PSFDX_CLI_INSTALL = 'Prompt'
+            Mock Test-PsfdxCanPrompt { $false }
+            { Get-PsfdxCliPath } | Should -Throw '*cannot prompt*'
+            Should -Invoke Confirm-PsfdxCliInstall -Exactly -Times 0
+            Mock Test-PsfdxCanPrompt { $true }
+            Mock Confirm-PsfdxCliInstall { $false }
+            { Get-PsfdxCliPath } | Should -Throw '*installation was declined*'
+            Should -Invoke Install-PsfdxCliDependency -Exactly -Times 0
+        }
+
+        It 'discovers the installed CLI after opt-in <Policy>' -TestCases @(
+            @{ Policy = 'Prompt'; Prompts = 1 }
+            @{ Policy = 'Install'; Prompts = 0 }
+        ) {
+            param($Policy, $Prompts)
+            $script:installedCli = $null
+            Mock Get-PsfdxApplicationPath { $script:installedCli }
+            Mock Install-PsfdxCliDependency { $script:installedCli = $script:fakeCli }
+            $env:PSFDX_CLI_INSTALL = $Policy
+            Get-PsfdxCliPath | Should -Be $script:fakeCli
+            Get-PsfdxCliPath | Should -Be $script:fakeCli
+            Should -Invoke Confirm-PsfdxCliInstall -Exactly -Times $Prompts
+            Should -Invoke Install-PsfdxCliDependency -Exactly -Times 1
+        }
+
+        It 'reports an install that exits without making sf available' {
+            Mock Get-PsfdxApplicationPath {}
+            $env:PSFDX_CLI_INSTALL = 'Install'
+            { Get-PsfdxCliPath } | Should -Throw '*npm finished*still missing from PATH*'
+            $script:PsfdxCliCache | Should -BeNullOrEmpty
+        }
+    }
+
+    Describe 'Salesforce CLI npm bootstrap' {
+        BeforeEach {
+            $script:initialPath = $env:PATH
+            $script:prefix = Join-Path $TestDrive ('npm prefix ' + [guid]::NewGuid())
+            $script:bin = if (Test-PsfdxIsWindows) { $script:prefix } else { Join-Path $script:prefix 'bin' }
+            $script:shim = Join-Path $script:bin $(if (Test-PsfdxIsWindows) { 'sf.cmd' } else { 'sf' })
+            $null = New-Item -Path $script:bin -ItemType Directory -Force
+            Mock Get-PsfdxApplicationPath { Join-Path $TestDrive $Name }
+            Mock Invoke-Salesforce { $script:prefix } -ParameterFilter { $Arguments[0] -eq 'prefix' }
+            Mock Invoke-Salesforce { Set-Content -LiteralPath $script:shim -Value '' } -ParameterFilter { $Arguments[0] -eq 'install' }
+        }
+
+        AfterEach { $env:PATH = $script:initialPath }
+
+        It 'adds the npm executable directory to PATH and reuses its existing CLI' {
+            Install-PsfdxCliDependency
+            Install-PsfdxCliDependency
+            @($env:PATH -split [IO.Path]::PathSeparator | Where-Object { $_ -ceq $script:bin }).Count | Should -Be 1
+            Should -Invoke Invoke-Salesforce -Exactly -Times 1 -ParameterFilter {
+                ($Arguments -join '|') -eq 'install|--global|@salesforce/cli' -and $RequireSuccessfulExit
+            }
+        }
+
+        It 'reports missing Node.js and npm before invoking the installer' {
+            Mock Get-PsfdxApplicationPath {}
+            { Install-PsfdxCliDependency } | Should -Throw '*needs Node.js and npm on PATH*'
+            Should -Invoke Invoke-Salesforce -Exactly -Times 0
+        }
+
+        It 'reports npm failure without refreshing PATH' {
+            Mock Invoke-Salesforce { throw 'exit 1' } -ParameterFilter { $Arguments[0] -eq 'install' }
+            { Install-PsfdxCliDependency } | Should -Throw '*bootstrap failed*exit 1*'
+            $env:PATH | Should -Be $script:initialPath
+        }
+    }
+
     Describe 'Invoke-Salesforce process failures' {
         BeforeAll {
             $script:host = (Get-Process -Id $PID).Path
@@ -246,6 +356,19 @@ exit $Code
 
         It 'does not throw when the process succeeds' {
             { Invoke-Salesforce -Command "`"$($script:host)`" -NoProfile -File `"$($script:script)`" -Out ok -Code 0 --json" } | Should -Not -Throw
+        }
+
+        It 'rediscovers the CLI once when its cached executable cannot be launched' {
+            $script:lookups = 0
+            $script:removedCli = Join-Path $TestDrive 'removed-sf'
+            Mock Get-PsfdxCliPath {
+                $script:lookups++
+                if ($script:lookups -eq 1) { return $script:removedCli }
+                return $script:host
+            }
+            Invoke-Salesforce -FilePath 'sf' -Arguments @('-NoProfile', '-File', $script:script, '-Out', 'recovered', '-Code', '0') |
+                Should -Be 'recovered'
+            Should -Invoke Get-PsfdxCliPath -Exactly -Times 2
         }
     }
 
@@ -422,6 +545,7 @@ using System.IO;
 using System.Text;
 public static class ArgvCapture {
     public static int Main(string[] args) {
+        if (args.Length == 1 && args[0] == "--version") { Console.WriteLine("@salesforce/cli/2.159.7"); return 0; }
         var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
         int code = 0;
         foreach (var a in args) {
@@ -607,6 +731,7 @@ using System.IO;
 using System.Text;
 public static class ArgvCapture {
     public static int Main(string[] args) {
+        if (args.Length == 1 && args[0] == "--version") { Console.WriteLine("@salesforce/cli/2.159.7"); return 0; }
         var writer = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(false));
         int code = 0;
         foreach (var a in args) {

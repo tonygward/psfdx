@@ -173,7 +173,7 @@ function Install-SalesforcePlugin {
     value that starts with a dash or contains spaces or control characters is refused, so it cannot be read as a CLI option. Supports -WhatIf and -Confirm.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins install (plugin @oclif/plugin-plugins)
           Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --help
         Parameter to flag: -Force = --force; -Silent = --silent; -ExtendedDetails = --verbose.
@@ -236,7 +236,7 @@ function Get-SalesforcePlugins {
     Runs sf plugins and returns the CLI's own text output, one plugin per line. Add -IncludeCore to include the plugins that ship with the CLI.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins (plugin @oclif/plugin-plugins)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -IncludeCore = --core.
@@ -280,7 +280,7 @@ function Update-SalesforcePlugins {
     Runs sf plugins update. Supports -WhatIf and -Confirm.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins update (plugin @oclif/plugin-plugins)
           Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --help
         Parameter to flag: -ExtendedDetails = --verbose.
@@ -336,7 +336,7 @@ function Uninstall-SalesforcePlugin {
     Runs sf plugins uninstall for each name. Commands the plugin provided stop working, and psfdx cmdlets that need it (for example the agent cmdlets need @salesforce/plugin-agent) will say it is missing. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins uninstall (plugin @oclif/plugin-plugins)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -ExtendedDetails = --verbose.
@@ -397,7 +397,7 @@ function Get-SalesforcePluginDetails {
     Runs sf plugins inspect for each plugin and returns what the CLI knows about it, such as its version and where it is installed. It only reads. For the list of installed plugins see Get-SalesforcePlugins.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins inspect (plugin @oclif/plugin-plugins)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -ExtendedDetails = --verbose.
@@ -453,7 +453,7 @@ function Find-SalesforcePlugins {
     Runs sf plugins discover and returns the third-party plugins that Salesforce lists. It reads a list on the internet and changes nothing. Install one with Install-SalesforcePlugin.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins discover (plugin @salesforce/plugin-marketplace)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -493,7 +493,7 @@ function Reset-SalesforcePlugins {
     Runs sf plugins reset. All user-installed and linked plugins are uninstalled, so commands that came from them stop working until you install them again (or use -Reinstall). Plugins that ship with the CLI stay. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins reset (plugin @oclif/plugin-plugins)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Hard = --hard; -Reinstall = --reinstall.
@@ -552,7 +552,7 @@ function Test-SalesforcePluginSignature {
     Runs sf plugins trust verify, which checks that the signature of the npm package matches the signature and key stored at the URLs the CLI expects. It tells you whether the plugin is signed by Salesforce before you install it. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins trust verify (plugin @salesforce/plugin-trust)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Npm = --npm; -Registry = --registry.
@@ -603,7 +603,7 @@ function Get-SalesforcePluginAllowlist {
     Runs sf plugins trust allowlist list. Plugins on the allowlist can be installed even though they are not signed by Salesforce. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins trust allowlist list (plugin @salesforce/plugin-trust)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         psfdx adds --json when it needs to read the result. It does not pass --api-version or --flags-dir.
@@ -643,7 +643,7 @@ function Add-SalesforcePluginAllowlist {
     Runs sf plugins trust allowlist add. This lowers a safety check of the CLI: a plugin on the allowlist installs without a Salesforce signature, so only add a plugin whose code you trust. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins trust allowlist add (plugin @salesforce/plugin-trust)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Name = --name.
@@ -701,7 +701,7 @@ function Remove-SalesforcePluginAllowlist {
     Runs sf plugins trust allowlist remove. The plugins can no longer be installed without a Salesforce signature. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. The CLI command has no prompt of its own.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf plugins trust allowlist remove (plugin @salesforce/plugin-trust)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Name = --name.

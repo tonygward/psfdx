@@ -238,6 +238,104 @@ function ConvertTo-PsfdxDisplayCommand {
     }
     return ($parts -join ' ')
 }
+$script:PsfdxCliCache = $null
+
+function Get-PsfdxApplicationPath([string] $Name) {
+    $application = Get-Command -Name $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($application) { return $application.Source }
+}
+
+function Test-PsfdxCanPrompt {
+    return $Host.Name -eq 'ConsoleHost' -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected -and
+        -not [Console]::IsOutputRedirected -and -not $env:CI -and
+        -not ([Environment]::GetCommandLineArgs() -match '^[-/]noninteractive$')
+}
+
+function Confirm-PsfdxCliInstall {
+    $choices = @(
+        [System.Management.Automation.Host.ChoiceDescription]::new('&Install')
+        [System.Management.Automation.Host.ChoiceDescription]::new('&Cancel')
+    )
+    return $Host.UI.PromptForChoice('Install Salesforce CLI?', 'Install @salesforce/cli globally with npm?', $choices, 1) -eq 0
+}
+
+function Install-PsfdxCliDependency {
+    $npm = Get-PsfdxApplicationPath 'npm'
+    if (-not $npm -or -not (Get-PsfdxApplicationPath 'node')) {
+        throw 'Automatic Salesforce CLI installation needs Node.js and npm on PATH. Install both, open a new PowerShell session, and retry.'
+    }
+
+    # Use the same native runner and npm package as Install-SalesforceCli. The core module
+    # need not be installed for a standalone satellite module to use the shared runner.
+    try {
+        $prefix = (Invoke-Salesforce -FilePath $npm -Arguments @('prefix', '--global') -RequireSuccessfulExit | Out-String).Trim()
+        if (-not $prefix -or $prefix -match '[\r\n]' -or -not [IO.Path]::IsPathRooted($prefix)) {
+            throw 'npm prefix --global did not return an absolute directory.'
+        }
+        $windows = Test-PsfdxIsWindows
+        $bin = if ($windows) { $prefix } else { Join-Path $prefix 'bin' }
+        $shim = if ($windows) { Join-Path $bin 'sf.cmd' } else { Join-Path $bin 'sf' }
+        if (-not (Test-Path -LiteralPath $shim -PathType Leaf)) {
+            Invoke-Salesforce -FilePath $npm -Arguments @('install', '--global', '@salesforce/cli') -RequireSuccessfulExit | Out-Null
+        }
+        if ((Test-Path -LiteralPath $shim -PathType Leaf) -and ($env:PATH -split [IO.Path]::PathSeparator) -cnotcontains $bin) {
+            $env:PATH += [IO.Path]::PathSeparator + $bin
+        }
+    } catch {
+        throw "Salesforce CLI bootstrap failed. Check your npm global prefix, permissions and registry access, or install Salesforce CLI manually. $($_.Exception.Message)"
+    }
+}
+
+function Get-PsfdxCliPath {
+    if ($script:PsfdxCliCache -and $script:PsfdxCliCache.SearchPath -ceq $env:PATH -and
+        (Test-Path -LiteralPath $script:PsfdxCliCache.Executable -PathType Leaf)) {
+        return $script:PsfdxCliCache.Executable
+    }
+
+    # Use the same process-wide lock as access-token login so dependency subprocesses
+    # cannot inherit its temporary credential, even from a different runspace.
+    $gate = [string]::Intern('psfdx.Connect-SalesforceAccessToken.SF_ACCESS_TOKEN')
+    if (-not [Threading.Monitor]::TryEnter($gate, [TimeSpan]::FromMinutes(5))) {
+        throw 'Another PSFDX call is authenticating or checking Salesforce CLI. Wait for it to finish and retry.'
+    }
+    try {
+        $path = Get-PsfdxApplicationPath 'sf'
+        if (-not $path) {
+            switch ($env:PSFDX_CLI_INSTALL) {
+                'Install' { }
+                'Prompt' {
+                    if (-not (Test-PsfdxCanPrompt)) {
+                        throw 'Salesforce CLI (sf) is missing and this session cannot prompt. Install it manually or set PSFDX_CLI_INSTALL=Install to opt in to unattended npm installation.'
+                    }
+                    if (-not (Confirm-PsfdxCliInstall)) {
+                        throw 'Salesforce CLI installation was declined. Run Install-SalesforceCli or install sf manually and retry.'
+                    }
+                }
+                default {
+                    throw 'Salesforce CLI (sf) was not found on PATH. Run Install-SalesforceCli or install sf manually. To opt in to bootstrap, set PSFDX_CLI_INSTALL=Prompt or PSFDX_CLI_INSTALL=Install.'
+                }
+            }
+            Install-PsfdxCliDependency
+            $path = Get-PsfdxApplicationPath 'sf'
+            if (-not $path) {
+                throw 'npm finished, but Salesforce CLI (sf) is still missing from PATH. Add the npm global executable directory to PATH or restart PowerShell.'
+            }
+        }
+        try {
+            $version = Invoke-Salesforce -FilePath $path -Arguments @('--version') -RequireSuccessfulExit | Out-String
+        } catch {
+            throw "Could not run Salesforce CLI at '$path'. Check that sf --version works and repair your CLI installation. $($_.Exception.Message)"
+        }
+        if ($version -notmatch '(?m)^\s*@salesforce/cli/(?<major>[0-9]+)\.[0-9]+\.[0-9]+\b' -or [int]$Matches.major -lt 2) {
+            throw "The sf executable at '$path' is incompatible. Put Salesforce CLI v2 or newer on PATH and retry."
+        }
+        $script:PsfdxCliCache = @{ SearchPath = $env:PATH; Executable = $path }
+        return $path
+    } finally {
+        [Threading.Monitor]::Exit($gate)
+    }
+}
+
 function Invoke-Salesforce {
     <#
     .SYNOPSIS
@@ -292,7 +390,9 @@ function Invoke-Salesforce {
         [Parameter(Mandatory = $true, ParameterSetName = 'Command')][string] $Command,
         [Parameter(Mandatory = $true, ParameterSetName = 'Arguments')][ValidateNotNullOrEmpty()][string] $FilePath,
         [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][AllowEmptyCollection()][AllowEmptyString()][string[]] $Arguments = @(),
-        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $Interactive
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $Interactive,
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $RequireSuccessfulExit,
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][string] $ResolvedCliPath
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Arguments') {
@@ -309,6 +409,9 @@ function Invoke-Salesforce {
     }
 
     Write-Verbose (Get-PsfdxRedactedCommand -Command $displayCommand)
+    $usesCli = $filePath -eq 'sf' -and -not $ResolvedCliPath
+    if ($ResolvedCliPath) { $filePath = $ResolvedCliPath }
+    elseif ($usesCli) { $filePath = Get-PsfdxCliPath }
     # Wrap in @() so an empty result is an empty array, not $null (Windows PowerShell 5.1 runs a foreach once over $null).
     # The variable that stands for a literal % is named per call, so concurrent calls (other runspaces, jobs or threads in the same process)
     # never share it: one call cannot remove or overwrite another's variable while its child process starts.
@@ -334,6 +437,13 @@ function Invoke-Salesforce {
             $output = & $filePath @nativeArguments
             $exitCode = $global:LASTEXITCODE
         }
+    } catch [System.Management.Automation.CommandNotFoundException], [System.Management.Automation.ApplicationFailedException] {
+        # Retry only if launch failed and the executable disappeared, so a command that
+        # already reached Salesforce can never be replayed by dependency recovery.
+        if (-not $usesCli -or (Test-Path -LiteralPath $filePath -PathType Leaf)) { throw }
+        $script:PsfdxCliCache = $null
+        $replacement = Get-PsfdxCliPath
+        return Invoke-Salesforce -FilePath $replacement -Arguments $rawArguments -Interactive:$Interactive -RequireSuccessfulExit:$RequireSuccessfulExit
     } finally {
         if ($needsPercent) {
             # [NullString]::Value, not $null: PowerShell turns $null into an empty string for this call, which leaves the variable set.
@@ -341,6 +451,9 @@ function Invoke-Salesforce {
         }
     }
 
+    if ($RequireSuccessfulExit -and $exitCode -ne 0) {
+        throw "Executable '$filePath' exited with code $exitCode."
+    }
     if ($Interactive) {
         if ($exitCode -ne 0) { throw "Salesforce CLI exited with code $exitCode." }
         return

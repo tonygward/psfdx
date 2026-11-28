@@ -238,7 +238,7 @@ function Start-SalesforcePipelineDeploy {
     Runs sf project deploy pipeline start, a beta command of the DevOps Center plugin. It needs a DevOps Center org that you are logged in to (-DevOpsCenterUsername) and the name of the DevOps Center project. Because the command is beta, its name, flags and result can change in a later CLI release. Asks for confirmation and supports -WhatIf. Returns the CLI result, which holds the job ID that Get-SalesforcePipelineDeployStatus, Resume-SalesforcePipelineDeploy and Start-SalesforcePipelineQuickDeploy take.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf project deploy pipeline start (plugin @salesforce/plugin-devops-center, beta)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -DevOpsCenterProjectName = --devops-center-project-name; -BranchName = --branch-name; -BundleVersionName = --bundle-version-name; -DeployAll = --deploy-all; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose.
@@ -332,7 +332,7 @@ function Test-SalesforcePipelineDeploy {
     Runs sf project deploy pipeline validate, a beta command of the DevOps Center plugin. Nothing is deployed; a passing validation can be released with Start-SalesforcePipelineQuickDeploy. It needs a DevOps Center org that you are logged in to. Because the command is beta, its name, flags and result can change in a later CLI release.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf project deploy pipeline validate (plugin @salesforce/plugin-devops-center, beta)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -DevOpsCenterProjectName = --devops-center-project-name; -BranchName = --branch-name; -BundleVersionName = --bundle-version-name; -DeployAll = --deploy-all; -TestLevel = --test-level; -Tests = --tests; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose.
@@ -422,7 +422,7 @@ function Start-SalesforcePipelineQuickDeploy {
     Runs sf project deploy pipeline quick, a beta command of the DevOps Center plugin, for the job ID of a validation made with Test-SalesforcePipelineDeploy (or the most recent one with -UseMostRecent). Because the command is beta, its name, flags and result can change in a later CLI release. Asks for confirmation and supports -WhatIf.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf project deploy pipeline quick (plugin @salesforce/plugin-devops-center, beta)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -JobId = --job-id; -UseMostRecent = --use-most-recent; -Wait = --wait; -Async = --async; -ConciseResults = --concise; -DetailedResults = --verbose.
@@ -509,7 +509,7 @@ function Get-SalesforcePipelineDeployStatus {
     Runs sf project deploy pipeline report, a beta command of the DevOps Center plugin, for a job ID or for the most recent deployment with -UseMostRecent. Read-only. Because the command is beta, its name, flags and result can change in a later CLI release.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf project deploy pipeline report (plugin @salesforce/plugin-devops-center, beta)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -JobId = --job-id; -UseMostRecent = --use-most-recent.
@@ -567,7 +567,7 @@ function Resume-SalesforcePipelineDeploy {
     Runs sf project deploy pipeline resume, a beta command of the DevOps Center plugin, for a job ID or for the most recent deployment with -UseMostRecent. Because the command is beta, its name, flags and result can change in a later CLI release.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf project deploy pipeline resume (plugin @salesforce/plugin-devops-center, beta)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -DevOpsCenterUsername = --devops-center-username; -JobId = --job-id; -UseMostRecent = --use-most-recent; -Wait = --wait; -ConciseResults = --concise; -DetailedResults = --verbose.
@@ -650,7 +650,7 @@ function Get-SalesforceDevOpsProject {
     Runs sf devops project list. Returns the DevOps Center projects with their IDs, which the work item, pipeline and promotion cmdlets take. It only reads. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops project list (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetOrg = --target-org.
@@ -696,7 +696,7 @@ function New-SalesforceDevOpsProject {
     Runs sf devops project create. Creates a project with a name and an optional description in the DevOps Center org. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops project create (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Name = --name; -Description = --description; -TargetOrg = --target-org.
@@ -756,7 +756,7 @@ function Update-SalesforceDevOpsProject {
     Runs sf devops project update. Give at least one of -Name, -Description and -IsActive. Use -IsActive to activate the project and -IsActive:$false to deactivate it. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops project update (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -ProjectId = --project-id; -Name = --name; -Description = --description; -IsActive = --is-active; -TargetOrg = --target-org.
@@ -827,7 +827,7 @@ function Get-SalesforceDevOpsWorkItem {
     Runs sf devops work-item list. Each work item shows the branch, environment and repository details needed to check it out and promote it, and its ID, which the promotion cmdlets take. It only reads. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops work-item list (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -ProjectId = --project-id; -TargetOrg = --target-org.
@@ -877,7 +877,7 @@ function New-SalesforceDevOpsWorkItem {
     Runs sf devops work-item create. Creates a work item with a subject and an optional description. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops work-item create (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -ProjectId = --project-id; -Subject = --subject; -Description = --description; -TargetOrg = --target-org.
@@ -941,7 +941,7 @@ function Update-SalesforceDevOpsWorkItem {
     Runs sf devops work-item update. Identify the work item by -WorkItemId or by -WorkItemName, and give at least one of -Subject, -Description and -Status. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops work-item update (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -WorkItemId = --work-item-id; -WorkItemName = --work-item-name; -Subject = --subject; -Description = --description; -Status = --status; -TargetOrg = --target-org.
@@ -1021,7 +1021,7 @@ function Initialize-SalesforceDevOpsWorkItem {
     Runs sf devops work-item prepare. Creates the branches and pull requests in the source control repository that a one-off promotion needs. Run it before Start-SalesforceDevOpsPromotion for a one-off promotion. Get the IDs from Get-SalesforceDevOpsWorkItem. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops work-item prepare (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -WorkItemId = --work-item-id; -TargetStageId = --target-stage-id; -TargetOrg = --target-org.
@@ -1080,7 +1080,7 @@ function Join-SalesforceDevOpsWorkItem {
     Runs sf devops work-item combine. Use it when work items in the same stage share metadata or depend on each other: DevOps Center combines the child work items into the parent so they are promoted as one unit. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops work-item combine (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -ParentWorkItemId = --parent-work-item-id; -ChildWorkItemId = --child-work-item-id; -TargetStageId = --target-stage-id; -TargetOrg = --target-org.
@@ -1145,7 +1145,7 @@ function New-SalesforceDevOpsReview {
     Runs sf devops review create. Creates the pull request through the DevOps Center API with the version control credentials stored in the org, for GitHub and Bitbucket, so no local login to the repository is needed. Identify the work item by -WorkItemId or -WorkItemName. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops review create (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -WorkItemId = --work-item-id; -WorkItemName = --work-item-name; -TargetOrg = --target-org.
@@ -1208,7 +1208,7 @@ function Get-SalesforceDevOpsPipeline {
     Runs sf devops pipeline list. Returns every pipeline with its stages, repositories and connected projects. For one pipeline in detail use Get-SalesforceDevOpsPipelineDetails. It only reads. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline list (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetOrg = --target-org.
@@ -1254,7 +1254,7 @@ function Get-SalesforceDevOpsPipelineDetails {
     Runs sf devops pipeline get. Returns one pipeline: its stages in order, the repository and branch of each stage, and its connected projects. It only reads. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline get (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -TargetOrg = --target-org.
@@ -1304,7 +1304,7 @@ function New-SalesforceDevOpsPipeline {
     Runs sf devops pipeline create. Give the URL of an existing repository as -Repo, or use -CreateRepo with a repository name to create one on GitHub or Bitbucket. After you create the pipeline, add stages (unless you gave -Stage) and activate it with Update-SalesforceDevOpsPipeline -Activate. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline create (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Name = --name; -Repo = --repo; -Stage = --stage; -ProjectId = --project-id; -CreateRepo = --create-repo; -RepoType = --repo-type; -RepoOwner = --repo-owner; -BitbucketWorkspace = --bitbucket-workspace; -BitbucketProjectKey = --bitbucket-project-key; -TargetOrg = --target-org.
@@ -1406,7 +1406,7 @@ function Update-SalesforceDevOpsPipeline {
     Runs sf devops pipeline update. Give at least one of -Name, -Activate and -Deactivate. A pipeline needs at least one stage before you can activate it, and you cannot change its stages after you activate it and promote changes through it, so -Activate asks for confirmation. You can combine -Deactivate and -Name. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline update (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -Name = --name; -Activate = --activate; -Deactivate = --deactivate; -TargetOrg = --target-org.
@@ -1479,7 +1479,7 @@ function Add-SalesforceDevOpsPipelineProject {
     Runs sf devops pipeline project add. Connects the project to the pipeline. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline project add (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -ProjectId = --project-id; -TargetOrg = --target-org.
@@ -1538,7 +1538,7 @@ function Remove-SalesforceDevOpsPipelineProject {
     Runs sf devops pipeline project delete. Removes the connection between the project and the pipeline. The project itself is not deleted. Asks for confirmation (use -Confirm:$false in a script) and supports -WhatIf. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline project delete (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -ProjectId = --project-id; -TargetOrg = --target-org.
@@ -1597,7 +1597,7 @@ function Add-SalesforceDevOpsPipelineStage {
     Runs sf devops pipeline stage add. Inserts an empty stage before the stage given as -NextStageId. The new stage has no branch or environment: add them with Add-SalesforceDevOpsStageBranch and Add-SalesforceDevOpsStageEnvironment. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline stage add (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -Name = --name; -NextStageId = --next-stage-id; -TargetOrg = --target-org.
@@ -1660,7 +1660,7 @@ function Update-SalesforceDevOpsPipelineStage {
     Runs sf devops pipeline stage update. Changes the name of the stage. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline stage update (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -StageId = --stage-id; -Name = --name; -TargetOrg = --target-org.
@@ -1719,7 +1719,7 @@ function Remove-SalesforceDevOpsPipelineStage {
     Runs sf devops pipeline stage delete. If the stage sits between two others, the stage before it is linked to the stage after it, so the chain stays whole. Asks for confirmation (use -Confirm:$false in a script) and supports -WhatIf. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops pipeline stage delete (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -StageId = --stage-id; -TargetOrg = --target-org.
@@ -1778,7 +1778,7 @@ function Add-SalesforceDevOpsStageBranch {
     Runs sf devops stage branch add. By default the branch must already exist in the repository; -CreateVcsBranch creates it. A stage has one branch. If it already has one the command stops so the old branch is not orphaned, unless you give -Force, which replaces it. Branches are set from right to left: a stage can have a branch only after the stage to its right has one. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops stage branch add (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -StageId = --stage-id; -BranchName = --branch-name; -CreateVcsBranch = --create-vcs-branch; -Force = --force; -TargetOrg = --target-org.
@@ -1851,7 +1851,7 @@ function Remove-SalesforceDevOpsStageBranch {
     Runs sf devops stage branch delete. Only the link between the stage and its branch is removed; the branch in the repository stays. Branches are set from right to left, so this also removes the branches of every stage before it (to its left). The pipeline must be inactive. Asks for confirmation (use -Confirm:$false in a script) and supports -WhatIf. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops stage branch delete (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -StageId = --stage-id; -TargetOrg = --target-org.
@@ -1910,7 +1910,7 @@ function Add-SalesforceDevOpsStageEnvironment {
     Runs sf devops stage environment add. Starts an OAuth login to connect the environment, which opens a browser window (-NoBrowser prints the URL instead) and waits until you finish. A stage has one environment. If it already has one the command stops unless you give -Force, which adds the new one first and removes the old one after the new one is connected. Supports -WhatIf and -Confirm; it does not ask by default. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops stage environment add (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -StageId = --stage-id; -EnvironmentName = --environment-name; -OrgType = --org-type; -NoBrowser = --no-browser; -Force = --force; -TargetOrg = --target-org.
@@ -1994,7 +1994,7 @@ function Remove-SalesforceDevOpsStageEnvironment {
     Runs sf devops stage environment delete. The pipeline must be inactive. Asks for confirmation (use -Confirm:$false in a script) and supports -WhatIf. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops stage environment delete (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PipelineId = --pipeline-id; -EnvironmentId = --environment-id; -TargetOrg = --target-org.
@@ -2053,7 +2053,7 @@ function Start-SalesforceDevOpsPromotion {
     Runs sf devops promote. Give -WorkItemId to promote specific work items, or -StageId to promote all the approved work items of a source stage; exactly one of the two. It deploys to the org of the target stage. By default it stops if another promotion to the same stage is running (-Force overrides) and it checks first that each work item has a pull request (-SkipValidation skips that). It returns a request token that Get-SalesforceDevOpsRequestStatus takes. Asks for confirmation (use -Confirm:$false in a script) and supports -WhatIf. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops promote (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetStageId = --target-stage-id; -WorkItemId = --work-item-id; -StageId = --stage-id; -DeployAll = --deploy-all; -Force = --force; -SkipValidation = --skip-validation; -TestLevel = --test-level; -Tests = --tests; -TargetOrg = --target-org.
@@ -2154,7 +2154,7 @@ function Complete-SalesforceDevOpsPromotion {
     Runs sf devops promotion complete. Deploys work items that were merged into the pipeline branch outside DevOps Center (externally merged) into the target stage's org and updates the DevOps Center records. It is the "Complete Promotion" action of the DevOps Center page for a stage that is out of sync. Without -WorkItemId it deploys every undeployed work item of the stage; if there are none it does nothing and succeeds. Asks for confirmation (use -Confirm:$false in a script) and supports -WhatIf. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops promotion complete (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetStageId = --target-stage-id; -WorkItemId = --work-item-id; -DeployAll = --deploy-all; -TestLevel = --test-level; -Tests = --tests; -TargetOrg = --target-org.
@@ -2233,7 +2233,7 @@ function Test-SalesforceDevOpsPromotion {
     Runs sf devops promotion validate. Validates the work items for the target stage: it looks for version control and object permission errors before a promotion is tried. It does not deploy anything. It only reads. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops promotion validate (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetStageId = --target-stage-id; -WorkItemId = --work-item-id; -TargetOrg = --target-org.
@@ -2289,7 +2289,7 @@ function Get-SalesforceDevOpsRequestStatus {
     Runs sf devops request status. Returns the current status of the request with the given token, such as the one Start-SalesforceDevOpsPromotion returns. It only reads. It needs a DevOps Center org that you are logged in to (-TargetOrg, or the target-org configuration) and a user who is allowed to work with DevOps Center; the CLI reports a permission error if not. The command comes from the @salesforce/plugin-devops-center plugin, which the CLI installs the first time it needs it.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf devops request status (plugin @salesforce/plugin-devops-center)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -RequestToken = --request-token; -TargetOrg = --target-org.

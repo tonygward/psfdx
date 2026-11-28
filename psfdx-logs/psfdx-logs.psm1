@@ -134,7 +134,7 @@ function Watch-SalesforceDebugLogs {
     Runs sf apex tail log with --color, which keeps running until you press Ctrl+C. Unless you pass -SkipTraceFlag the CLI first creates a trace flag for you, which stays after you stop.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf apex tail log (plugin @salesforce/plugin-apex)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -DebugLevel = --debug-level; -SkipTraceFlag = --skip-trace-flag; -TargetOrg = --target-org.
@@ -189,7 +189,7 @@ function Select-SalesforceDebugLogs {
     Runs sf apex list log and returns one object per log (Id, Application, Operation, StartTime, LogLength, and so on), in the order the CLI returns them.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf apex list log (plugin @salesforce/plugin-apex)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetOrg = --target-org.
@@ -233,7 +233,7 @@ function Get-SalesforceDebugLogs {
     Runs sf apex get log with --log-id or --number. Give exactly one of -LogId and -Last. With -OutputDir the CLI saves the logs as files; with -Raw the text is returned as it is.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf apex get log (plugin @salesforce/plugin-apex)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -OutputDir = --output-dir; -LogId = --log-id; -Last = --number; -TargetOrg = --target-org.
@@ -458,7 +458,7 @@ function Enable-SalesforceDebugLogging {
     Runs sf apex trace create. Identify what to trace with one of -TracedEntityId, -Username, -ApexClass or -ApexTrigger; the last three are looked up with a SOQL query first and the cmdlet stops if no record, or more than one, matches. -DebugLevel names an existing debug level. The trace flag stays until it expires or you remove it with Disable-SalesforceDebugLogging.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf apex trace create (plugin @salesforce/plugin-apex)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TracedEntityId = --traced-entity-id; -DebugLevel = --debug-level; -LogType = --log-type; -Duration = --duration; -TargetOrg = --target-org.
@@ -559,7 +559,7 @@ function Get-SalesforceDebugLogging {
     Runs sf apex trace list and returns one object per trace flag. Pipe them to Disable-SalesforceDebugLogging to remove them.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf apex trace list (plugin @salesforce/plugin-apex)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetOrg = --target-org.
@@ -604,7 +604,7 @@ function Disable-SalesforceDebugLogging {
     so -WhatIf previews every delete, and an org with no trace flags deletes nothing.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf apex trace delete (plugin @salesforce/plugin-apex)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TraceId = --trace-flag-id; -TargetOrg = --target-org.
@@ -663,7 +663,7 @@ function Get-SalesforceFlowInterviews {
     Runs sf data query on FlowInterview (Id, CreatedDate, InterviewLabel, InterviewStatus, Error) filtered by status and optional date, newest first. Values are escaped as SOQL literals.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data query (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Limit = --query; -TargetOrg = --target-org.
@@ -743,7 +743,7 @@ function Get-SalesforceLoginHistory {
     Runs sf data query on LoginHistory (Id, LoginTime, UserId, SourceIp, Application, Status). The user filter is applied through a subquery on User. Values are escaped as SOQL literals.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data query (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Limit = --query; -TargetOrg = --target-org.
@@ -928,7 +928,7 @@ function Select-SalesforceEventFiles {
     Runs sf data query on EventLogFile (Id, EventType, LogDate, LogFileLength, Sequence, Interval, CreatedDate), newest log date first, with optional filters. Values are escaped as SOQL literals.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data query (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -EventType = --query; -After = --query; -Before = --query; -Limit = --query; -TargetOrg = --target-org.
@@ -1005,7 +1005,7 @@ function Get-SalesforceEventFile {
     Finds the newest REST API version of the org, then runs sf api request rest on /services/data/<version>/sobjects/EventLogFile/<Id>/Logfile and returns the CSV text. The ID must be a 15 or 18 character Salesforce ID.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf api request rest (plugin @salesforce/plugin-api)
           Flags of this command that psfdx does not pass (across all psfdx cmdlets that run it): --file, --header, --include, --stream-to-file
           Values psfdx cannot pass: --method POST, PUT, HEAD, DELETE, OPTIONS, TRACE
@@ -1119,7 +1119,7 @@ function Export-SalesforceEventFiles {
     Finds files with Select-SalesforceEventFiles using the filters you give, then saves each one with Export-SalesforceEventFile, with a progress bar. See Select-SalesforceEventFiles for how the filters work.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data query (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -EventType = --query; -After = --query; -Before = --query; -Limit = --query; -TargetOrg = --target-org.

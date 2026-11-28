@@ -53,7 +53,7 @@
             <div class="install" data-copy="Install-Module psfdx"><span class="install-prompt" aria-hidden="true">PS&gt;</span><code>Install-Module psfdx</code></div>
             <a class="button secondary" href="/modules/">Read the docs</a>
           </div>
-          <p class="fine">PowerShell 7 on Windows, macOS and Linux, or Windows PowerShell 5.1. You also need the <a href="https://developer.salesforce.com/tools/salesforcecli">Salesforce CLI</a>, which psfdx can install for you.</p>
+          <p class="fine">PowerShell 7 on Windows, macOS and Linux, or Windows PowerShell 5.1. Commands that use <code>sf</code> require <a href="https://developer.salesforce.com/tools/salesforcecli">Salesforce CLI</a> v2 or newer. <a href="#salesforce-cli-setup">Set up the CLI</a>.</p>
         </div>
 
         <figure class="console-wrap">
@@ -139,6 +139,8 @@
 <span class="prompt">PS&gt;</span> <span class="cmd">Get-Command</span> <span class="param">-Module</span> <span class="v">psfdx*</span></code></pre>
         </div>
         <div class="get-started-examples">
+<h3 id="salesforce-cli-setup">Set up Salesforce CLI</h3>
+<p>If <code>sf</code> is missing and Node.js and npm are on PATH, set <code>$env:PSFDX_CLI_INSTALL = 'Prompt'</code> to ask before installing. In CI, set it to <code>Install</code> to explicitly allow unattended installation. The default is <code>Never</code>. PSFDX leaves existing CLI installations alone.</p>
 <div class="example-group">
 <h3>1. Connect to your sandbox</h3>
 <div class="code-box terminal-example"><pre><code><span class="terminal-line"><span class="ps-prompt">PS&gt;</span> <span class="cmd">Connect-Salesforce</span> <span class="param">-Sandbox</span></span></code></pre></div>
