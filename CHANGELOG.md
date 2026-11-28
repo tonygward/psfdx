@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- psfdx: Salesforce commands check for Salesforce CLI v2 or newer on first use. Set `PSFDX_CLI_INSTALL` to `Prompt` or `Install` to opt in to installing a missing CLI with npm.
+
 ## 0.8.62 - 2026-11-25
 
 - psfdx: Default help for every public cmdlet now shows its Salesforce CLI mapping. The website command reference uses the same help and keeps its inline examples.

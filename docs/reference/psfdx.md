@@ -1481,6 +1481,8 @@ Install-SalesforceCli [-WhatIf] [-Confirm] [<CommonParameters>]
 
 Runs npm install --global @salesforce/cli. This downloads and runs code from the npm registry. Node.js and npm must already be installed. Asks nothing by default, supports -WhatIf and -Confirm.
 
+Commands that use sf check for Salesforce CLI v2 or newer when first needed. If sf is missing, set PSFDX_CLI_INSTALL to Prompt for an interactive confirmation, or Install to authorize unattended npm installation. The default is Never. Bootstrap can refresh the current session's PATH from npm and does not upgrade a CLI it finds.
+
 #### Parameters
 
 - `-WhatIf` (switch): 

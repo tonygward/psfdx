@@ -59,6 +59,13 @@ This moves every module to the same new version. How upgrades work, and what to 
 
 ## 5. Salesforce CLI
 
+The first command that uses `sf` checks for Salesforce CLI v2 or newer and caches the executable path for the current PowerShell session. To bootstrap a missing CLI with Node.js and npm already on PATH, choose one option:
+
+- Set `$env:PSFDX_CLI_INSTALL = 'Prompt'` to ask before installing in an interactive console.
+- Set `$env:PSFDX_CLI_INSTALL = 'Install'` to explicitly allow unattended installation in CI.
+
+The default is `Never`. Bootstrap does not upgrade an existing CLI. If an installation is incompatible, update it explicitly and retry.
+
    You can install the Salesforce CLI by running:
 
    ```powershell

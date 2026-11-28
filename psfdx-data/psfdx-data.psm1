@@ -134,7 +134,7 @@ function Select-SalesforceRecords {
     Runs sf data query with --query or --file. With the default -ResultFormat json the records are returned as objects without their attributes property; an empty result returns nothing (wrap the call in @() for an empty array). With human or csv the CLI text is returned as it is. A failing query throws the CLI message. The query text is passed as one argument, so quotes and special characters need no escaping.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data query (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Query = --query; -File = --file; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api; -IncludeDeletedRows = --all-rows; -ResultFormat = --result-format; -OutputFile = --output-file.
@@ -232,7 +232,7 @@ function Search-SalesforceRecords {
     Runs sf data search with --query or --file. SOSL searches the text fields of several objects at once, for example FIND {Acme} IN ALL FIELDS RETURNING Account(Id, Name), Contact(Id, Name). With the default -ResultFormat json the records are returned as objects without their attributes property, each with an SObject property that holds the object it came from; no match returns nothing (wrap the call in @() for an empty array). With human or csv the CLI text is returned as it is. A bad search throws the CLI message. The query is passed as one argument, so braces and quotes need no escaping; on Windows the CLI shim rejects a double quote or a line break in an argument, so put such a query in a file and use -File.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data search (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Query = --query; -File = --file; -ResultFormat = --result-format; -TargetOrg = --target-org.
@@ -320,7 +320,7 @@ function New-SalesforceRecord {
     -FieldUpdates is the CLI's values string, for example "Name='Acme' Industry='Energy'". Supports -WhatIf and -Confirm; it does not prompt by default.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data create record (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api; -SkipAssignmentRules = --skip-assignment-rules.
@@ -388,7 +388,7 @@ function Set-SalesforceRecord {
     Supports -WhatIf and -Confirm; it does not prompt by default. A -Where that matches no record, or several, makes the cmdlet throw the CLI's message.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data update record (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Id = --record-id; -Where = --where; -Type = --sobject; -FieldUpdates = --values; -TargetOrg = --target-org; -UseToolingApi = --use-tooling-api; -SkipAssignmentRules = --skip-assignment-rules.
@@ -481,7 +481,7 @@ function Get-SalesforceRecord {
     A record that does not exist makes the cmdlet throw the CLI's message.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data get record (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Type = --sobject; -Id = --record-id; -Where = --where; -UseToolingApi = --use-tooling-api; -TargetOrg = --target-org.
@@ -559,7 +559,7 @@ function Remove-SalesforceRecord {
     -Confirm:$false.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data delete record (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Type = --sobject; -Id = --record-id; -Where = --where; -UseToolingApi = --use-tooling-api; -TargetOrg = --target-org.
@@ -833,7 +833,7 @@ function Get-SalesforceSObjectRecordCount {
     Returns approximate counts from the org's stored totals, which can differ from the results of a SOQL COUNT() query. By default it includes every standard and custom object that supports this operation. Use -SObject to request counts for specific objects.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf org list sobject record-counts (plugin @salesforce/plugin-limits)
         -SObject maps to --sobject and -TargetOrg maps to --target-org. The cmdlet requests JSON output.
 
@@ -882,7 +882,7 @@ function New-SalesforceFile {
     Runs sf data create file. The file becomes a ContentVersion, so it shows under Files in the org. Give -ParentId to attach it to a record, for example an account. Supports -WhatIf and -Confirm; it does not prompt by default. The file is read by the CLI; psfdx only checks that it exists.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data create file (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -File = --file; -ParentId = --parent-id; -Title = --title; -TargetOrg = --target-org.
@@ -958,7 +958,7 @@ function Export-SalesforceTreeData {
     -OutputDirectory if it does not exist.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data export tree (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Plan = --plan; -Prefix = --prefix; -OutputDirectory = --output-dir; -TargetOrg = --target-org.
@@ -1055,7 +1055,7 @@ function Import-SalesforceTreeData {
     StatusCode, Message and Fields. The Tree API imports at most 200 records per call.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data import tree (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Plan = --plan; -File = --files; -TargetOrg = --target-org.
@@ -1176,7 +1176,7 @@ function Export-SalesforceBulkData {
     Resume-SalesforceBulkJob -Operation Export. With -WaitMinutes the cmdlet waits and returns TotalSize.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data export bulk (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -OutputFile = --output-file; -Query = --query; -QueryFile = --query-file; -ResultFormat = --result-format; -AllRows = --all-rows; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -1272,7 +1272,7 @@ function Import-SalesforceBulkData {
     throws PsfdxBulkJobFailed (see Get-SalesforceBulkResult for the row results).
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data import bulk (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -File = --file; -Object = --sobject; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -1347,7 +1347,7 @@ function Update-SalesforceBulkData {
     Results are as for Import-SalesforceBulkData.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data update bulk (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -File = --file; -Object = --sobject; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -1422,7 +1422,7 @@ function Upsert-SalesforceBulkData {
     $ConfirmPreference is Medium or lower, and -WhatIf makes no CLI call. For one record use Upsert-SalesforceRecord.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data upsert bulk (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -File = --file; -Object = --sobject; -ExternalIdField = --external-id; -ColumnDelimiter = --column-delimiter; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -1501,7 +1501,7 @@ function Remove-SalesforceBulkData {
     The CSV needs an Id column. By default the records go to the Recycle Bin; -HardDelete deletes them permanently, which cannot be undone, and needs the Bulk API Hard Delete permission. Asks for confirmation by default, naming the object, the file, the org and whether the delete is permanent; -WhatIf makes no CLI call. Scripts that run unattended need -Confirm:$false. Without -WaitMinutes the job is created and its JobId returned; finish it with Resume-SalesforceBulkJob -Operation Delete. With -WaitMinutes the cmdlet waits and returns the counts. A job with failed rows throws PsfdxBulkJobFailed (see Get-SalesforceBulkResult for the row results).
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data delete bulk (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -File = --file; -Object = --sobject; -HardDelete = --hard-delete; -LineEnding = --line-ending; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -1587,7 +1587,7 @@ function Resume-SalesforceBulkJob {
     Resuming only continues the existing job, so it does not ask for confirmation. Errors are as for the cmdlet that created the job.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data export resume (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Command run: sf data import resume (plugin @salesforce/plugin-data)
@@ -1673,7 +1673,7 @@ function Get-SalesforceBulkResult {
     the org, including ones this computer did not create.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data bulk results (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -JobId = --job-id; -TargetOrg = --target-org.
@@ -1759,7 +1759,7 @@ function Get-SalesforceBulkJobStatus {
     Runs sf data resume, which reads the state of a bulk job from the org and returns it as an object. It only reads: it does not continue or change the job. For a Bulk API 2.0 job started with -WaitMinutes 0, use Resume-SalesforceBulkJob to continue it and Get-SalesforceBulkResult for its row results.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf data resume (plugin @salesforce/plugin-data)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -JobId = --job-id; -BatchId = --batch-id; -TargetOrg = --target-org.

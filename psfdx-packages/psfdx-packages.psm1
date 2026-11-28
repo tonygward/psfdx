@@ -134,7 +134,7 @@ function Get-SalesforcePackages {
     Runs sf package list and returns one object per package.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package list (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetDevHub = --target-dev-hub; -ExtendedPackageDetails = --verbose.
@@ -230,7 +230,7 @@ function New-SalesforcePackage {
     Runs sf package create. The package type is unlocked or managed.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package create (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Name = --name; -PackageType = --package-type; -IsOrgDependent = --org-dependent; -Path = --path; -Description = --description; -ErrorNotificationUsername = --error-notification-username; -NoNamespace = --no-namespace; -TargetDevHub = --target-dev-hub.
@@ -314,7 +314,7 @@ function Remove-SalesforcePackage {
     Runs sf package delete. Asks for confirmation and supports -WhatIf.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package delete (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Name = --package; -TargetDevHub = --target-dev-hub; -NoPrompt = --no-prompt.
@@ -373,7 +373,7 @@ function Get-SalesforcePackagesInstalled {
     Runs sf package installed list and returns one object per installed package version.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package installed list (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -TargetOrg = --target-org; -ApiVersion = --api-version.
@@ -430,7 +430,7 @@ function Convert-SalesforcePackage {
     Runs sf package convert. The first-generation package must be managed and released (it has a released version). The conversion creates a second-generation package and a first package version in the Dev Hub; it can take a long time, so give -WaitMinutes or follow up with Get-SalesforcePackageVersionCreateStatus. Supports -WhatIf and -Confirm; it does not prompt by default.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package convert (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Package = --package; -DefinitionFile = --definition-file; -InstallationKey = --installation-key; -InstallationKeyBypass = --installation-key-bypass; -CodeCoverage = --code-coverage; -PatchVersion = --patch-version; -SeedMetadata = --seed-metadata; -ExtendedDetails = --verbose; -WaitMinutes = --wait; -TargetDevHub = --target-dev-hub.
@@ -528,7 +528,7 @@ function Update-SalesforcePackage {
     Runs sf package update. Only the properties you give are changed. Supports -WhatIf and -Confirm; it does not prompt by default.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package update (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Package = --package; -Name = --name; -Description = --description; -ErrorNotificationUsername = --error-notification-username; -EnableAppAnalytics = --enable-app-analytics; -RecommendedVersionId = --recommended-version-id; -SkipAncestorCheck = --skip-ancestor-check; -TargetDevHub = --target-dev-hub.
@@ -613,7 +613,7 @@ function Uninstall-SalesforcePackage {
     Runs sf package uninstall. The package version and its components are removed from the org, which can delete data stored in the package's custom objects. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question. Without -WaitMinutes the request is made and returned; follow it with Get-SalesforcePackageUninstallStatus.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package uninstall (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Package = --package; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -685,7 +685,7 @@ function Get-SalesforcePackageVersions {
     Runs sf package version list, for one package (by -PackageId or -PackageName) or for all. Pipe the result to Remove-SalesforcePackageVersion or Promote-SalesforcePackageVersion.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version list (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageId = --packages; -Released = --released; -Concise = --concise; -ExtendedDetails = --verbose; -ConversionsOnly = --show-conversions-only; -Branch = --branch; -CreatedLastDays = --created-last-days; -ModifiedLastDays = --modified-last-days; -OrderBy = --order-by; -TargetDevHub = --target-dev-hub.
@@ -794,7 +794,7 @@ function New-SalesforcePackageVersion {
     Runs sf package version create. Without -WaitMinutes the request is queued and its ID (starts with 08c) is returned for Get-SalesforcePackageVersionCreateStatus.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version create (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageId = --package; -Name = --version-name; -Description = --version-description; -Tag = --tag; -InstallationKey = --installation-key; -InstallationKeyBypass = --installation-key-bypass; -CodeCoverage = --code-coverage; -SkipValidation = --skip-validation; -WaitMinutes = --wait; -ScratchOrgDefinitionFile = --definition-file; -Path = --path; -Branch = --branch; -VersionNumber = --version-number; -Language = --language; -PostInstallScript = --post-install-script; -UninstallScript = --uninstall-script; -PostInstallUrl = --post-install-url; -ReleaseNotesUrl = --releasenotes-url; -SkipAncestorCheck = --skip-ancestor-check; -AsyncValidation = --async-validation; -GeneratePackageZip = --generate-pkg-zip; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
@@ -988,7 +988,7 @@ function Promote-SalesforcePackageVersion {
     -PackageVersionId can come from the pipeline, through the SubscriberPackageVersionId (04t) of a version from Get-SalesforcePackageVersions.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version promote (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -TargetDevHub = --target-dev-hub; -NoPrompt = --no-prompt.
@@ -1052,7 +1052,7 @@ function Remove-SalesforcePackageVersion {
     Each version is confirmed on its own, so -WhatIf previews every delete.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version delete (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -TargetDevHub = --target-dev-hub; -NoPrompt = --no-prompt.
@@ -1113,7 +1113,7 @@ function Install-SalesforcePackageVersion {
     Runs sf package install for a version ID (04t...). With -AsObject the result comes back as an object whose Id is the install request ID for Get-SalesforcePackageInstallStatus; without it the CLI's text is returned. Supports -WhatIf and -Confirm (no prompt by default).
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package install (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -TargetOrg = --target-org; -NoPrompt = --no-prompt; -WaitMinutes = --publish-wait; -SecurityType = --security-type; -AsObject = --json; -ApexCompile = --apex-compile; -InstallationKey = --installation-key; -UpgradeType = --upgrade-type.
@@ -1216,7 +1216,7 @@ function Get-SalesforcePackageVersion {
     Runs sf package version report and returns the version's details (version number, branch, tag, code coverage, validation state, ancestor and more). It only reads. Use Get-SalesforcePackageVersions to list versions.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version report (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
@@ -1271,7 +1271,7 @@ function Update-SalesforcePackageVersion {
     Runs sf package version update. Only the properties you give are changed. A released version can change only some of them. Supports -WhatIf and -Confirm; it does not prompt by default.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version update (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -Branch = --branch; -InstallationKey = --installation-key; -Tag = --tag; -Description = --version-description; -Name = --version-name; -TargetDevHub = --target-dev-hub.
@@ -1351,7 +1351,7 @@ function Retrieve-SalesforcePackageVersion {
     Runs sf package version retrieve. It works only for second-generation managed package versions and unlocked package versions. The metadata is written under -OutputDir.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version retrieve (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -OutputDir = --output-dir; -TargetDevHub = --target-dev-hub.
@@ -1406,7 +1406,7 @@ function Get-SalesforcePackageVersionAncestry {
     Runs sf package version displayancestry. The ancestry shows which version each version builds on. It works for second-generation managed packages. With -DotCode the result is DOT graph code that you can draw with Graphviz.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version displayancestry (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Package = --package; -DotCode = --dot-code; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
@@ -1466,7 +1466,7 @@ function Get-SalesforcePackageVersionDependencies {
     Runs sf package version displaydependencies. It lists the package versions that the version depends on. The package must have the dependencies set in its project file.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version displaydependencies (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package; -EdgeDirection = --edge-direction; -InstallationKey = --installation-key; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
@@ -1545,7 +1545,7 @@ function Get-SalesforcePackageVersionCreateStatus {
     PsfdxPackageJobFailed after the object is written, for CI.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version create report (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -RequestId = --package-create-request-id; -TargetDevHub = --target-dev-hub.
@@ -1634,7 +1634,7 @@ function Get-SalesforcePackageInstallStatus {
     object is written. The report is read from the org the package is being installed into (-TargetOrg).
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package install report (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -RequestId = --request-id; -TargetOrg = --target-org.
@@ -1738,7 +1738,7 @@ function Get-SalesforcePackageVersionCreateRequests {
     Runs sf package version create list and returns one object per request (ID, status, package, version, branch, created date). Use Get-SalesforcePackageVersionCreateStatus for one request.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package version create list (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -CreatedLastDays = --created-last-days; -ConversionsOnly = --show-conversions-only; -Status = --status; -ExtendedDetails = --verbose; -TargetDevHub = --target-dev-hub.
@@ -1804,7 +1804,7 @@ function Get-SalesforcePackageUninstallStatus {
     Runs sf package uninstall report. The request ID comes from Uninstall-SalesforcePackage when it returned without waiting. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package uninstall report (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -RequestId = --request-id; -TargetOrg = --target-org.
@@ -1858,7 +1858,7 @@ function New-SalesforcePushUpgrade {
     Runs sf package push-upgrade schedule. A push upgrade installs a package version in subscriber orgs without their admins starting it. It cannot be undone once it starts, though a request that has not started can be stopped with Stop-SalesforcePushUpgrade. Give the subscriber orgs as -OrgList or -OrgFile. Asks for confirmation and supports -WhatIf.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package push-upgrade schedule (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Package = --package; -OrgList = --org-list; -OrgFile = --org-file; -StartTime = --start-time; -MigrateTo2gp = --migrate-to-2gp; -TargetDevHub = --target-dev-hub.
@@ -1941,7 +1941,7 @@ function Get-SalesforcePushUpgrades {
     Runs sf package push-upgrade list and returns one object per request (ID, status, package version, scheduled start and end). It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package push-upgrade list (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -Package = --package; -ScheduledLastDays = --scheduled-last-days; -ShowMigrationsOnly = --show-push-migrations-only; -Status = --status; -TargetDevHub = --target-dev-hub.
@@ -2006,7 +2006,7 @@ function Get-SalesforcePushUpgrade {
     Runs sf package push-upgrade report for the request ID that New-SalesforcePushUpgrade returned. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package push-upgrade report (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PushRequestId = --push-request-id; -TargetDevHub = --target-dev-hub.
@@ -2056,7 +2056,7 @@ function Stop-SalesforcePushUpgrade {
     Runs sf package push-upgrade abort. Only a request with the status Created or Pending can be aborted; one that has started cannot. Asks for confirmation and supports -WhatIf; -NoPrompt skips the question.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package push-upgrade abort (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PushRequestId = --push-request-id; -TargetDevHub = --target-dev-hub.
@@ -2123,7 +2123,7 @@ function New-SalesforceFirstGenPackageVersion {
     Runs sf package1 version create in the packaging org that owns the first-generation package. The upload can take a while: give -WaitMinutes, or follow up with Get-SalesforceFirstGenPackageVersionCreateStatus. For second-generation packages use New-SalesforcePackageVersion. Supports -WhatIf and -Confirm; it does not prompt by default.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package1 version create (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageId = --package-id; -Name = --name; -Description = --description; -Version = --version; -InstallationKey = --installation-key; -ManagedReleased = --managed-released; -PostInstallUrl = --post-install-url; -ReleaseNotesUrl = --release-notes-url; -WaitMinutes = --wait; -TargetOrg = --target-org.
@@ -2219,7 +2219,7 @@ function Get-SalesforceFirstGenPackageVersionCreateStatus {
     Runs sf package1 version create get for the request ID from New-SalesforceFirstGenPackageVersion. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package1 version create get (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -RequestId = --request-id; -TargetOrg = --target-org.
@@ -2269,7 +2269,7 @@ function Get-SalesforceFirstGenPackageVersion {
     Runs sf package1 version display. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package1 version display (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageVersionId = --package-version-id; -TargetOrg = --target-org.
@@ -2319,7 +2319,7 @@ function Get-SalesforceFirstGenPackageVersions {
     Runs sf package1 version list and returns one object per version. Without -PackageId it lists the versions of every package in the org. It only reads.
 
     SALESFORCE CLI
-        Executable: sf, found on the PATH when the cmdlet runs. psfdx does not store a path or a CLI version.
+        Executable: sf. PSFDX checks for Salesforce CLI v2 or newer and caches the executable path in the current session.
         Command run: sf package1 version list (plugin @salesforce/plugin-packaging)
           Every flag of this command is passed by some psfdx cmdlet (apart from --flags-dir and --api-version).
         Parameter to flag: -PackageId = --package-id; -TargetOrg = --target-org.
