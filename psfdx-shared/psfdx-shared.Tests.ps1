@@ -217,6 +217,7 @@ InModuleScope 'psfdx-shared' {
             $env:PSFDX_CLI_INSTALL = 'Never'
             $script:PsfdxCliCache = $null
             $script:fakeCli = Join-Path $TestDrive 'sf'
+            Set-Content -LiteralPath $script:fakeCli -Value ''
             Mock Get-PsfdxApplicationPath { $script:fakeCli }
             Mock Invoke-Salesforce { '@salesforce/cli/2.159.7 linux-x64 node-v22.0.0' }
             Mock Install-PsfdxCliDependency {}

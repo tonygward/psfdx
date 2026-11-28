@@ -862,10 +862,13 @@ function Connect-SalesforceAccessToken {
         throw 'Another Connect-SalesforceAccessToken call in this process is still running. Run the logins one after the other.'
     }
     try {
+        # Finish discovery before exposing the temporary token. Invoke the resolved path
+        # directly so a failed launch cannot start dependency recovery with the token set.
+        $cliPath = Get-PsfdxCliPath
         $previous = [Environment]::GetEnvironmentVariable($variable)
         try {
             [Environment]::SetEnvironmentVariable($variable, (ConvertTo-SalesforcePlainSecret -Value $AccessToken -Name 'AccessToken'))
-            $result = Invoke-Salesforce -FilePath 'sf' -Arguments $arguments @commonParams
+            $result = Invoke-Salesforce -FilePath 'sf' -ResolvedCliPath $cliPath -Arguments $arguments @commonParams
         }
         finally {
             [Environment]::SetEnvironmentVariable($variable, $previous)

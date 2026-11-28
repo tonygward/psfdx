@@ -733,6 +733,11 @@ Describe 'psfdx sf org parity (issue 248)' {
 
         Context 'Connect-SalesforceAccessToken' {
             BeforeEach {
+                $script:bootstrapToken = $null
+                Mock Get-PsfdxCliPath {
+                    $script:bootstrapToken = [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN')
+                    'resolved-sf'
+                }
                 $script:seenToken = $null
                 $script:seenArgs = $null
                 Mock Invoke-Salesforce {
@@ -758,6 +763,15 @@ Describe 'psfdx sf org parity (issue 248)' {
                 Mock Invoke-Salesforce { throw 'sf exploded' }
                 { Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure } | Should -Throw -ExpectedMessage '*sf exploded*'
                 [Environment]::GetEnvironmentVariable('SF_ACCESS_TOKEN') | Should -Be 'EARLIER'
+            }
+            It 'resolves the dependency before making the temporary access token available' {
+                [Environment]::SetEnvironmentVariable('SF_ACCESS_TOKEN', 'EARLIER')
+                Connect-SalesforceAccessToken -InstanceUrl 'https://x.my.salesforce.com' -AccessToken $script:secure | Out-Null
+                $script:bootstrapToken | Should -Be 'EARLIER'
+                $script:seenToken | Should -Be 'TOPSECRETTOKEN'
+                Should -Invoke Invoke-Salesforce -Exactly -Times 1 -ParameterFilter {
+                    $FilePath -eq 'sf' -and $ResolvedCliPath -eq 'resolved-sf'
+                }
             }
             It 'refuses a non-https or relative instance URL before sending the token' {
                 foreach ($url in 'http://x.my.salesforce.com', 'x.my.salesforce.com', 'ftp://x') {

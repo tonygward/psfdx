@@ -287,18 +287,18 @@ function Install-PsfdxCliDependency {
 }
 
 function Get-PsfdxCliPath {
-    if ($script:PsfdxCliCache -and $script:PsfdxCliCache.SearchPath -ceq $env:PATH) {
+    if ($script:PsfdxCliCache -and $script:PsfdxCliCache.SearchPath -ceq $env:PATH -and
+        (Test-Path -LiteralPath $script:PsfdxCliCache.Executable -PathType Leaf)) {
         return $script:PsfdxCliCache.Executable
     }
 
-    # Runspaces can share PATH and the npm prefix even when they have separate module scopes.
-    # Recheck under the lock before offering or starting an installation.
-    $mutex = [Threading.Mutex]::new($false, "PSFDX_CLI_BOOTSTRAP_$PID")
-    $locked = $false
+    # Use the same process-wide lock as access-token login so dependency subprocesses
+    # cannot inherit its temporary credential, even from a different runspace.
+    $gate = [string]::Intern('psfdx.Connect-SalesforceAccessToken.SF_ACCESS_TOKEN')
+    if (-not [Threading.Monitor]::TryEnter($gate, [TimeSpan]::FromMinutes(5))) {
+        throw 'Another PSFDX call is authenticating or checking Salesforce CLI. Wait for it to finish and retry.'
+    }
     try {
-        try { $locked = $mutex.WaitOne([TimeSpan]::FromMinutes(5)) }
-        catch [Threading.AbandonedMutexException] { $locked = $true }
-        if (-not $locked) { throw 'Another PSFDX call is checking or installing Salesforce CLI. Wait for it to finish and retry.' }
         $path = Get-PsfdxApplicationPath 'sf'
         if (-not $path) {
             switch ($env:PSFDX_CLI_INSTALL) {
@@ -332,8 +332,7 @@ function Get-PsfdxCliPath {
         $script:PsfdxCliCache = @{ SearchPath = $env:PATH; Executable = $path }
         return $path
     } finally {
-        if ($locked) { $mutex.ReleaseMutex() }
-        $mutex.Dispose()
+        [Threading.Monitor]::Exit($gate)
     }
 }
 
@@ -392,7 +391,8 @@ function Invoke-Salesforce {
         [Parameter(Mandatory = $true, ParameterSetName = 'Arguments')][ValidateNotNullOrEmpty()][string] $FilePath,
         [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][AllowEmptyCollection()][AllowEmptyString()][string[]] $Arguments = @(),
         [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $Interactive,
-        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $RequireSuccessfulExit
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][switch] $RequireSuccessfulExit,
+        [Parameter(Mandatory = $false, ParameterSetName = 'Arguments')][string] $ResolvedCliPath
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Arguments') {
@@ -409,8 +409,9 @@ function Invoke-Salesforce {
     }
 
     Write-Verbose (Get-PsfdxRedactedCommand -Command $displayCommand)
-    $usesCli = $filePath -eq 'sf'
-    if ($usesCli) { $filePath = Get-PsfdxCliPath }
+    $usesCli = $filePath -eq 'sf' -and -not $ResolvedCliPath
+    if ($ResolvedCliPath) { $filePath = $ResolvedCliPath }
+    elseif ($usesCli) { $filePath = Get-PsfdxCliPath }
     # Wrap in @() so an empty result is an empty array, not $null (Windows PowerShell 5.1 runs a foreach once over $null).
     # The variable that stands for a literal % is named per call, so concurrent calls (other runspaces, jobs or threads in the same process)
     # never share it: one call cannot remove or overwrite another's variable while its child process starts.
