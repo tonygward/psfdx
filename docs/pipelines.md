@@ -34,7 +34,7 @@ Every workflow name starts with one of four prefixes, so its kind is clear at a 
 
 ## CI - Pester tests
 
-A first job, `Changes`, classifies the changed files. If no changed file can affect the Pester suite, it sets `docs_only=true`. That is every file that is Markdown, under `prompts/`, `docs/` or `images/`, an image, or under `tools/` (except the Matrix launcher's PowerShell, which Pester tests). The rule is `scripts/release/changes.mjs` (`node scripts/release/changes.mjs tests`), the same file `CD - Bump version` uses to decide whether a change ships. The test jobs then skip their steps (the job itself still succeeds), so a required check never waits forever.
+A first job, `Changes`, classifies the changed files. If no changed file can affect the Pester suite, it sets `docs_only=true`. That is every file that is Markdown, under `prompts/`, `docs/` or `images/`, an image, or under `tools/` (except the Matrix launcher's PowerShell, which Pester tests). Anything under `skills/` always runs Pester, Markdown included, because `skills/psfdx/AgentSkill.Tests.ps1` runs the examples in `SKILL.md` and checks its references. The rule is `scripts/release/changes.mjs` (`node scripts/release/changes.mjs tests`), the same file `CD - Bump version` uses to decide whether a change ships. The test jobs then skip their steps (the job itself still succeeds), so a required check never waits forever.
 
 Pester is pinned to 5.x on every leg: the tests use `Assert-MockCalled`, which Pester 6 can't load. On Windows PowerShell 5.1, Pester 5 is installed with `-SkipPublisherCheck` because Windows ships Pester 3.4. Each leg uploads its `testResults.xml`.
 

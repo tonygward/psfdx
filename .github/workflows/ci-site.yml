@@ -31,7 +31,7 @@ jobs:
         shell: pwsh
         run: |
           ./site/Update-ModuleReference.ps1
-          $changes = git status --porcelain -- site/src/modules docs/reference
+          $changes = git status --porcelain -- site/src/modules docs/reference skills/psfdx/references
           if ($changes) { throw "Generated command references are stale: $($changes -join ', ')" }
       - run: node --test "site/*.test.mjs"
       - run: node site/build.mjs
@@ -42,7 +42,7 @@ jobs:
           $references = Join-Path $skill 'references'
           New-Item -ItemType Directory -Path $references | Out-Null
           Copy-Item -LiteralPath ./skills/psfdx/SKILL.md -Destination $skill
-          Copy-Item -Path ./docs/reference/*.md -Destination $references
+          Copy-Item -Path ./skills/psfdx/references/*.md -Destination $references
       - uses: actions/upload-artifact@v4
         with:
           name: psfdx-agent-skill

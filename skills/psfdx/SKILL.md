@@ -13,11 +13,17 @@ Use an existing authorized org. If sign-in is needed, ask the user to authentica
 
 1. List command names and modules with `Get-Command -Module 'psfdx*' | Select-Object Name, Source`. Narrow the list by task before requesting help.
 2. Open `Get-Help <command> -Full`, or `Get-Help <command> -Examples`. Inspect parameter sets with `(Get-Command <command>).ParameterSets`. Prefer the installed command's metadata when it differs from a newer reference.
-3. For offline lookup, read only the relevant file under [references](references/README.md). For example, use [psfdx-data](references/psfdx-data.md) for SOQL, records and bulk data, or [psfdx-metadata](references/psfdx-metadata.md) for deploy and retrieve. Find the remaining modules in the index. The [website reference](https://psfdx.com/modules/) is also available.
+3. For offline lookup, read only the relevant file under [references](references/README.md). For example, use [psfdx-data](references/psfdx-data.md) for SOQL, records and bulk data, or [psfdx-metadata](references/psfdx-metadata.md) for deploy and retrieve. Find the remaining modules in the index. If the `references` folder is missing, use `Get-Help` or the [website reference](https://psfdx.com/modules/) instead.
 
 ## Verify the org and get approval
 
-Pass an explicit target alias or username to every org-scoped command. Confirm it resolves to the user's intended org before running the workflow. For example, use `sf org display --target-org my-sandbox --json` and extract only the org ID, username and instance URL from the JSON in the shell. Raw org display output can contain credentials. An alias alone does not establish that the org is a sandbox.
+Pass an explicit target alias or username to every org-scoped command. Confirm it resolves to the user's intended org before running the workflow:
+
+```powershell
+Get-SalesforceOrgDetails -TargetOrg my-sandbox | Select-Object id, username, instanceUrl
+```
+
+`Get-SalesforceOrgDetails` removes the access token, refresh token, authorization URL and other secrets from its result. Never pass `-IncludeToken`, and never run `sf org display` or `sf org display --verbose` directly: their output contains the access token. An alias alone does not establish that the org is a sandbox.
 
 Obtain explicit approval before destructive operations or any production deployment. State the target org, objects or components, and expected effect. Use `-WhatIf` or a validation-only deployment when supported and appropriate. Never use confirmation-suppressing flags to replace user approval.
 

@@ -26,8 +26,9 @@ export const shipsNothing = files => Array.isArray(files) && files.length > 0 &&
 
 // Files the Pester suite cannot be affected by: documentation, prompts, images, and Matrix's own Node code and
 // container files, which have their own test workflows. The Matrix launcher script is tested by Pester, so it is not exempt.
+// The Agent Skill's Markdown is not exempt either: skills/psfdx/AgentSkill.Tests.ps1 runs the examples in SKILL.md and checks its references.
 const NO_PESTER = [/\.md$/, /^prompts\//, /^docs\//, /^images\//, /\.(?:png|jpe?g|gif|svg)$/];
-const PESTER_ANYWAY = [/^tools\/matrix-linux\/.*\.ps1$/];
+const PESTER_ANYWAY = [/^tools\/matrix-linux\/.*\.ps1$/, /^skills\//];
 const NO_PESTER_TOOLS = [/^tools\//];
 
 export const needsPester = file => {

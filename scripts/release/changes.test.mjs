@@ -21,16 +21,19 @@ test('a change ships nothing only when it has files and none ship; an empty list
   assert.equal(shipsNothing([]), false);
 });
 
-test('Pester is skipped only for docs, prompts, images and Matrix Node/container files', () => {
+test('Pester is skipped only for docs, prompts, images and Matrix Node/container files, never for the Agent Skill', () => {
   for (const f of ['README.md', 'prompts/x.txt', 'docs/a/b.txt', 'images/x.bin', 'a.png', 'a.svg', 'tools/matrix/x.mjs', 'tools/matrix-linux/Dockerfile', 'tools/matrix-linux/entrypoint.sh']) {
     assert.equal(needsPester(f), false, f);
   }
   for (const f of ['psfdx/x.psm1', 'scripts/release/New-ReleaseZip.ps1', 'scripts/release/New-ReleaseZip.Tests.ps1', '.github/workflows/ci.yml', 'VERSION', 'modules.ps1',
-    'tests/Repository.Tests.ps1', 'tools/matrix-linux/Start-MatrixPsfdx.ps1', 'tools/matrix-linux/Start-MatrixPsfdx.Tests.ps1']) {
+    'tests/Repository.Tests.ps1', 'tools/matrix-linux/Start-MatrixPsfdx.ps1', 'tools/matrix-linux/Start-MatrixPsfdx.Tests.ps1',
+    'skills/psfdx/SKILL.md', 'skills/psfdx/references/psfdx-data.md', 'skills/psfdx/AgentSkill.Tests.ps1']) {
     assert.equal(needsPester(f), true, f);
   }
   assert.equal(testsNeeded([]), false);
   assert.equal(testsNeeded(['README.md', 'psfdx/x.psm1']), true);
+  assert.equal(testsNeeded(['skills/psfdx/SKILL.md']), true, 'the skill tests run the examples in SKILL.md');
+  assert.equal(shipsRelease('skills/psfdx/SKILL.md'), false, 'the Agent Skill is not in the Gallery package');
 });
 
 test('the workflows use this file instead of their own copy of the rule', () => {
